@@ -776,9 +776,10 @@ function offerGift() {
 $('#decorBtn').onclick=()=>{decorating=!decorating;$('#panel').classList.remove('open');renderDecor();toast(decorating?'점선 원을 눌러 소품을 골라요':'꾸미기 완료');};
 
 /* ---------- 디버그 (?debug=1) ---------- */
+let debugPanel;
 function setupDebug() {
   if (params.get('bgcheck') === '1') document.documentElement.classList.add('bgcheck');
-  const d = $('#debug'); d.classList.remove('hidden');
+  const d = debugPanel = $('#debug');
   d.innerHTML = `<button data-d="spd">⏩ 속도 x1</button><button data-d="coin">+10만 코인</button><button data-d="happy">행복도 가득</button><button data-d="off">오프라인 2시간</button><button data-d="skip">튜토 건너뛰기</button><button data-d="reset">초기화</button>`;
   d.addEventListener('click', e => {
     const k = e.target.dataset.d; if (!k) return;
@@ -795,7 +796,15 @@ function setupDebug() {
 
 /* ---------- 시작 ---------- */
 $('#sheetClose').onclick = () => { $('#panel').classList.remove('open'); CafeMap.focus(); };
-$('#settings').onclick = () => { modal('<h2>설정</h2><p>게임은 자동으로 저장돼요.</p><button class="btn" id="settingsClose">닫기</button>'); $('#settingsClose').onclick = closeModal; };
+$('#settings').onclick = () => {
+  modal('<h2>설정</h2><p>게임은 자동으로 저장돼요.</p><button class="btn" id="settingsClose">닫기</button>');
+  if (DEBUG) {
+    // Keep the node and its handlers when another modal replaces the settings sheet.
+    debugPanel.classList.remove('hidden');
+    $('#modalCard').append(debugPanel);
+  }
+  $('#settingsClose').onclick = closeModal;
+};
 function start() {
   const had = load();
   $('#boss').innerHTML = `<div class="body">${ownerImg()}</div>`;

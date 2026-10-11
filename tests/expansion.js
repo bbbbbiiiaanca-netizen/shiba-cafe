@@ -51,10 +51,13 @@ const url=new URL(base);url.searchParams.set('debug','1');
   await page.goto(url.href);await page.waitForFunction(()=>window.__game);await page.evaluate(()=>__game.setSpeed(0));
   const migrated=await page.evaluate(()=>({ver:__game.S.ver,coins:__game.S.coins,zones:__game.S.zones,up:__game.S.up}));
   assert.equal(migrated.ver,2);assert.equal(migrated.zones.z1_tatami.state,'open');assert.equal(migrated.zones.z2_garden.state,'open');assert.equal(migrated.up.slots,undefined);assert.equal(migrated.up.seats,5);
-  assert(migrated.coins>=500+150+480+1536,'all purchased slots refunded');
+  assert.equal(migrated.coins,500+150+480+1536,'exact cost of all purchased slots refunded');
+  await page.evaluate(()=>{__game.S.coins=1e7;__game.switchTab('cafe');});
   assert.equal(await page.locator('[data-act=buy][data-arg=seats]').count(),0,'legacy seat levels retained, further purchase blocked');
   await page.reload();await page.waitForFunction(()=>window.__game);assert.equal(await page.evaluate(()=>__game.S.up.seats),5);
-  assert((await page.evaluate(()=>__game.S.coins))<500+2166+20,'refund once');
+  await page.evaluate(()=>__game.setSpeed(0));
+  assert.equal(await page.evaluate(()=>__game.S.coins),1e7,'refund once');
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('shibaCafe_v1')).ver),2,'v2 persisted');
   assert.deepEqual(errors,[]);console.log('ALL PASS (zones, play exclusion/cooldown, offline summary, v1 refund/migration)');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -88,10 +88,13 @@ let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); 
   ok(await G(() => { __game.S.ads.total = 10; const g = __game.adGate('adopt'); __game.S.ads.total = 2; return !g.ok && g.cap; }), '하루 전역 10회 캡');
   // 오프라인 2시간 (입양 2마리 → 최대 1시간)
   await G(() => { __game.S.ads.lastAt = 0; });
-  await page.tap('#debug [data-d=off]'); await page.waitForTimeout(500);
+  await page.tap('#settings'); await page.tap('#debug [data-d=off]'); await page.waitForTimeout(500);
   ok(await G(() => /최대 1시간/.test(document.querySelector('#modalCard').textContent) && !!document.querySelector('#oAd')), '오프라인: 상한 1시간 표시 + 30분 이상이라 광고 버튼');
   await shot('13_offline.png');
   await page.tap('#oOk'); await page.waitForTimeout(300);
+  await page.tap('#settings');
+  ok(await page.locator('#debug [data-d=off]').isVisible(), '디버그 컨트롤은 설정에서 다시 열림');
+  await page.tap('#settingsClose');
   // 쓰다듬기 상한/쿨다운
   const th = await G(() => { const p = __game.S.pups[0]; p.happy = 0; p.tapHappy = 0; return p.id; });
   for (let i = 0; i < 30; i++) await page.evaluate(id => document.querySelector(`#floor .pup[data-id="${id}"]`).click(), th);
