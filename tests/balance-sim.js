@@ -5,6 +5,7 @@
 //   active : tap1 + 유튜브 연속 촬영 + 산책 + 교육 + 모든 업그레이드
 // --legacy 는 692bbdd(변경 전) 공식 근사치로 같은 시뮬을 돌려 비교용.
 const { BAL, F } = require('../balance.js');
+const { ZONES } = require('../zones.js');
 const args = process.argv.slice(2);
 const LEGACY = args.includes('--legacy');
 const RUNS = +(args[args.indexOf('--runs') + 1] || 0) || 30;
@@ -26,17 +27,25 @@ const G = LEGACY ? { ...F, ...L } : F;
 
 function sim(profile, seed) {
   const R = rng(seed);
-  const S = { t: 0, coins: BAL.startCoins, rep: 0, subs: 0, up: { menu: 0, seats: 0, toys: 0, slots: 0, trainer: 0, course: 0, cam: 0 }, pups: [], adopted: 0, dex: new Set(), custs: [], custT: 0, rushUntil: -1, film: null, walks: [], train: null, queue: [], tapCoins: 0, custCoins: 0 };
+  const S = { t: 0, coins: BAL.startCoins, rep: 0, subs: 0, up: { menu: 0, seats: 0, toys: 0, slots: 0, trainer: 0, course: 0, cam: 0 }, pups: [], adopted: 0, dex: new Set(), custs: [], custT: 0, rushUntil: -1, film: null, walks: [], train: null, queue: [], tapCoins: 0, custCoins: 0, stage: 1, building: null };
   const mk = () => ({ born: S.t, happy: 0, trait: TRAITS[Math.floor(R() * 5)], coat: COATW[Math.floor(R() * COATW.length)], skill: 0, tapHappy: 0, lastTap: -9, sleep: false });
-  const maxPups = () => 2 + S.up.slots, seatCap = () => 2 + S.up.seats;
+  const maxPups = () => LEGACY ? 2+S.up.slots : (S.stage>=2?3:2), seatCap = () => 2 + S.up.seats;
   while (S.pups.length < maxPups()) S.pups.push(mk());
-  const out = { firstUp: null, adopt: {}, grow: {}, ips: {}, subs: {}, tapShare: null };
+  const out = { firstUp: null, adopt: {}, grow: {}, ips: {}, subs: {}, tapShare: null, zones: {}, zoneRates: {}, referenceRates: {} };
   const marks = [10, 30, 60, 120].filter(m => m <= MIN);
   const dt = 0.1; let wanderT = 0, tapT = 0;
-  const buyKeys = profile === 'active' ? ['menu', 'seats', 'toys', 'slots', 'trainer', 'course', 'cam'] : ['menu', 'seats', 'toys', 'slots'];
+  const buyKeys = profile === 'active' ? ['menu', 'seats', 'toys', 'trainer', 'course', 'cam'] : ['menu', 'seats', 'toys'];
   const custInc = () => F.perCust(S.up.menu) * (1 + S.rep * BAL.repIncome) * (S.pups.some(p => p.trait === '먹보') ? BAL.foodie : 1);
   for (let step = 0; step < MIN * 600; step++) {
     S.t += dt;
+    if (S.building && S.t >= S.building.end) { S.stage++;out.zones[S.stage]=S.t;S.building=null; }
+    const z=ZONES[S.stage];
+    if(z && !z.placeholder && S.adopted>=z.unlock.adoptions && out.referenceRates[z.no]==null) out.referenceRates[z.no]=(S.custs.filter(c=>c.t>=1.3&&c.t<1.3+c.stay).length*custInc()+S.subs*BAL.subsIncome)*60;
+    if (!LEGACY && z && !z.placeholder && !S.building && S.adopted>=z.unlock.adoptions && S.coins>=z.unlock.coins) {
+      out.zoneRates[z.no]=(S.custs.filter(c=>c.t>=1.3&&c.t<1.3+c.stay).length*custInc()+S.subs*BAL.subsIncome)*60;
+      S.coins-=z.unlock.coins;S.building={end:S.t+z.buildSec};
+    }
+
     // 손님
     S.custT += dt;
     if (S.custT >= G.spawnInterval(S.subs, S.rep, S.t < S.rushUntil)) { S.custT = 0; if (S.custs.length < seatCap()) S.custs.push({ t: 0, stay: BAL.stayMin + R() * (BAL.stayMax - BAL.stayMin) }); }
@@ -59,13 +68,13 @@ function sim(profile, seed) {
           const cap = LEGACY ? Infinity : BAL.tapHappyCap; const add = Math.min(BAL.tapHappy, Math.max(0, cap - p.tapHappy)); p.tapHappy += add; p.happy = Math.min(100, p.happy + add); p.sleep = false; } } } }
     // 활동 (active)
     if (profile === 'active') {
-      if (!S.film) { const p = S.pups[Math.floor(R() * S.pups.length)]; S.film = { p, left: BAL.filmSec }; }
+      if (!S.film) { const p = S.pups.find(p=>!S.walks.some(w=>w.p===p)&&(!S.train||S.train.p!==p)); if(p) S.film = { p, left: BAL.filmSec }; }
       else if ((S.film.left -= dt) <= 0) { const p = S.film.p; const r = G.filmSubs(p.skill, S.up.cam, p.trait === '잠꾸러기', R, S.subs); S.subs += r.subs; S.film = null; }
-      if (S.walks.length < F.walkCap(S.up.course)) { const p = S.pups.find(q => !S.walks.some(w => w.p === q) && q.happy < 90); if (p) S.walks.push({ p, left: BAL.walkSec }); }
+      if (S.walks.length < F.walkCap(S.up.course)) { const p = S.pups.find(q => !S.walks.some(w => w.p === q) && (!S.film||S.film.p!==q) && (!S.train||S.train.p!==q) && q.happy < 90); if (p) S.walks.push({ p, left: BAL.walkSec }); }
       S.walks.forEach(w => w.left -= dt);
       for (const w of S.walks.filter(w => w.left <= 0)) { const r = F.walkReward(S.up.menu, seatCap(), S.up.course); S.coins += r; w.p.happy = Math.min(100, w.p.happy + (LEGACY ? L.walkHappy : BAL.walkHappy)); S.rushUntil = S.t + BAL.rushSec; }
       S.walks = S.walks.filter(w => w.left > 0);
-      if (!S.train) { const p = S.pups.find(q => q.skill < 15 && q.happy < 70); if (p) { const c = F.trainCost(S.up.menu, seatCap(), S.adopted, p.skill); if (S.coins > c * 3) { S.coins -= c; S.train = { p, left: F.trainTime(Math.floor(p.skill / 5), S.up.trainer) }; } } }
+      if (!S.train) { const p = S.pups.find(q => q.skill < 15 && q.happy < 70 && (!S.film||S.film.p!==q) && !S.walks.some(w=>w.p===q)); if (p) { const c = F.trainCost(S.up.menu, seatCap(), S.adopted, p.skill); if (S.coins > c * 3) { S.coins -= c; S.train = { p, left: F.trainTime(Math.floor(p.skill / 5), S.up.trainer) }; } } }
       else if ((S.train.left -= dt) <= 0) { S.train.p.skill++; S.train = null; }
     }
     // 입양
@@ -81,7 +90,7 @@ function sim(profile, seed) {
     for (let i = 0; i < need; i++) { const last = S.queue.length ? S.queue[S.queue.length - 1] : S.t; S.queue.push(last + (LEGACY ? L.newPup : BAL.newPupMin + R() * (BAL.newPupMax - BAL.newPupMin))); }
     while (S.queue.length && S.queue[0] <= S.t) { S.queue.shift(); if (S.pups.length < maxPups()) S.pups.push(mk()); }
     // 구매 (가장 싼 것)
-    let best = null; for (const k of buyKeys) { if (S.up[k] >= BAL.up[k].max) continue; const c = G.upCost(k, S.up[k]); if (!best || c < best.c) best = { k, c }; }
+    let best = null; for (const k of buyKeys) { if (S.up[k] >= (k==='seats'&&!LEGACY?2:BAL.up[k].max)) continue; const c = G.upCost(k, S.up[k]); if (!best || c < best.c) best = { k, c }; }
     if (best && S.coins >= best.c) { S.coins -= best.c; S.up[best.k]++; if (out.firstUp === null) out.firstUp = S.t; }
     for (const m of marks) if (Math.abs(S.t - m * 60) < dt / 2) { out.ips[m] = (seated * custInc() + S.subs * BAL.subsIncome) * 60; out.subs[m] = S.subs; }
   }
@@ -100,5 +109,7 @@ for (const prof of ['idle', 'tap1', 'active']) {
   console.log(`\n[${prof}] 첫 업그레이드 ${fmtS(g(r => r.firstUp))} | 입양 1번째 ${fmtS(g(r => r.adopt[1]))} · 5번째 ${fmtS(g(r => r.adopt[5]))} · 20번째 ${fmtS(g(r => r.adopt[20]))} · 50번째 ${fmtS(g(r => r.adopt[50]))}`);
   console.log(`  그 시바가 카페에 온 뒤 입양까지(성장 시간): 1번째 ${fmtS(g(r => r.grow[1]))} · 5번째 ${fmtS(g(r => r.grow[5]))} · 20번째 ${fmtS(g(r => r.grow[20]))} · 50번째 ${fmtS(g(r => r.grow[50]))}`);
   console.log(`  분당 코인(수입): ` + marks.map(m => `${m}분 ${fmtN(g(r => r.ips[m]))}`).join(' · ') + ` | 구독자: ` + marks.map(m => `${m}분 ${fmtN(g(r => r.subs[m]))}`).join(' · '));
+  console.log('  가격 기준 R: '+[2,3,4].map(n=>`${n}: ${fmtN(g(r=>r.referenceRates[n]))}/분 × ${ZONES[n-1].unlock.nMin}`).join(' · '));
+  console.log('  구역 완공: '+[2,3,4].map(n=>`${n}: ${fmtS(g(r=>r.zones[n]))} (직전 R ${fmtN(g(r=>r.zoneRates[n]))}/분 × ${ZONES[n-1].unlock.nMin})`).join(' · '));
   console.log(`  탭 수익 / 손님·구독자 수익 = ${g(r => r.tapShare).toFixed(2)} | ${MIN}분 입양 ${g(r => r.end.adopted)}마리, 도감 ${g(r => r.end.dex)}/20 | 끝 업그레이드 ${JSON.stringify(rs[0].end.up)}`);
 }

@@ -2,6 +2,7 @@
 (function () {
 'use strict';
 const { BAL, F } = window.SC;
+const { ZONES } = window.CafeZones;
 
 /* ============================================================
  * [광고 연동 지점] showRewardedAd(cb)
@@ -112,7 +113,7 @@ function newState() {
     boostUntil: 0, boostReadyAt: 0, train: [], walks: [], film: null, videos: [],
     last: Date.now(), playSec: 0, queue: [], dex: {},
     tut: 0, tutPets: 0, freeTrain: true, firstWalk: true,
-    ads: null,
+    ads: null, zones: {z1_tatami: {state:"open"}}, pendingGifts: [],
   };
 }
 function load() {
@@ -459,6 +460,7 @@ function renderTut() {
 /* ---------- 메인 틱 ---------- */
 let speed = 1, wanderT = 0, saveT = 0, panelT = 0;
 function tick(dt) {
+  updateZones();
   S.playSec += dt;
   updateCustomers(dt);
   const income = ips(); addCoins(income * dt);
@@ -495,6 +497,7 @@ function loop() {
 
 /* ---------- HUD / 패널 ---------- */
 function renderHUD() {
+  renderZoneGoal();
   $('#coins').textContent = fmt(S.coins);
   $('#rep').textContent = fmt(S.rep);
   $('#subs').textContent = fmt(S.subs);
@@ -633,8 +636,10 @@ $('#boss').addEventListener('click', () => {
 let bossT;
 
 function offlineEarnings() {
+  updateZones(true);
+  const completed = S.offlineZones || []; S.offlineZones = [];
   const away = Math.max(0, (Date.now() - S.last) / 1000);
-  if (away < 60) return;
+  if (away < 60) { if (completed.length) modal(`<h2>공사 완료</h2><p>${completed.join(' · ')} 완공!</p><button class="btn" id="zoneSummaryOk">확인</button>`); if ($('#zoneSummaryOk')) $('#zoneSummaryOk').onclick=closeModal; return; }
   const cap = F.offlineCap(adoptedN()), secs = Math.min(cap, away);
   const avgSeated = seatCap() * BAL.offlineSeatFill;
   const earned = Math.floor((avgSeated * custIncome() + subsIncome()) * secs * BAL.offlineIncome);
@@ -644,7 +649,7 @@ function offlineEarnings() {
   const aw = Math.floor(away / 3600) ? fmtTime(away) : `${Math.floor(away / 60)}분`;
   const g = adGate('offline'), showAd = away >= BAL.ads.offline.minAwaySec && g.ok;
   modal(`<div class="pic">${ownerImg()}</div><h2>어서 와요, 사장님!</h2>
-    <p>${aw} 동안 아기 시바들이<br>카페를 지키며 돈을 벌었어요 🐾</p>
+    ${completed.length ? `<p>🔨 ${completed.join(' · ')} 완공!</p>` : ''}<p>${aw} 동안 아기 시바들이<br>카페를 지키며 돈을 벌었어요 🐾</p>
     <div class="big">🪙 ${fmt(earned)}</div>
     <p class="small">자리 비움 보상은 최대 ${fmtTime(cap)}까지 쌓여요${adoptedN() < 5 ? ' (입양을 더 하면 늘어나요)' : ''}</p>
     <div class="btns">${showAd ? `<button class="btn pink" id="oAd">📺 광고 보고 2배 받기 (🪙 ${fmt(earned * 2)})</button>` : ''}<button class="btn" id="oOk">받기</button></div>`);
@@ -652,8 +657,63 @@ function offlineEarnings() {
   if (showAd) $('#oAd').onclick = () => { closeModal(); watchAd('offline', () => { addCoins(earned * 2); toast(`🪙 +${fmt(earned * 2)}`); }, () => addCoins(earned)); };
 }
 
+/* ---------- 확장: saved wall-clock construction, never reward ads ---------- */
+const zoneState = z => S.zones[z.id]?.state || 'locked';
+const zoneOpen = no => zoneState(ZONES[no-1]) === 'open';
+const nextZone = () => ZONES.find(z => z.no > 1 && !z.placeholder && zoneState(z) !== 'open');
+function renderZones() {
+  const layer = $('#zoneLayer'); layer.innerHTML = '';
+  const next = nextZone();
+  for (const z of ZONES.slice(1)) {
+    const state=zoneState(z), r=z.rect, el=document.createElement('div');
+    el.className='zone '+state; el.dataset.zone=z.id;
+    Object.assign(el.style,{left:r.x+'px',top:r.y+'px',width:r.w+'px',height:r.h+'px'});
+    // Art is optional until delivered: avoid 404 requests for placeholder paths.
+    el.innerHTML=`<div class="diamond"><span>${state==='open' ? (z.no===2?'🌿 🪨 🌱':z.no===3?'🐾 🪨 🐾':'🛝 🪵 🎾') : '🎋 🌳 🎋'}</span></div><b class="zone-label">${z.no} · ${z.name}</b>${z.placeholder?'<p>다음 업데이트</p>':''}`;
+    if(state==='building') el.innerHTML+='<div class="scaffold">🚧 🏗️<span data-build="'+z.id+'"></span></div>';
+    if(z===next) { const b=document.createElement('button');b.className='zone-sign';b.textContent='🔨 '+z.name;b.onclick=()=>openZone(z);el.appendChild(b); }
+    layer.appendChild(el);
+  }
+  const opened=ZONES.filter(z=>zoneState(z)==='open');
+  const left=Math.min(...opened.map(z=>z.rect.x)),top=Math.min(...opened.map(z=>z.rect.y));
+  CafeMap.setBounds({x:left,y:top,w:Math.max(...opened.map(z=>z.rect.x+z.rect.w))-left,h:Math.max(...opened.map(z=>z.rect.y+z.rect.h))-top});
+}
+function renderZoneGoal() {
+  const z=nextZone(),b=$('#nextGoal');
+  if(!z) {b.textContent='두 번째 다다미방 · 다음 업데이트';return;}
+  const building=zoneState(z)==='building',pct=Math.min(100,S.coins/z.unlock.coins*100);
+  b.innerHTML=building ? `공사 중: ${z.name} · ${fmtTime((S.zones[z.id].endsAt-Date.now())/1000)}` : `다음: ${z.name} · ${fmt(S.coins)} / ${fmt(z.unlock.coins)} · 입양 ${adoptedN()}/${z.unlock.adoptions}<progress id="zoneProgress" max="100" value="${pct}"></progress>`;
+  const sign=$(`[data-zone="${z.id}"] .zone-sign`);if(sign){sign.dataset.material=Math.floor(pct/25);sign.textContent=`🔨 ${z.name} ${Math.floor(pct/25)>0?'🪵'.repeat(Math.min(3,Math.floor(pct/25))):''}`;}
+  document.querySelectorAll('[data-build]').forEach(el=>el.textContent=fmtTime((S.zones[el.dataset.build].endsAt-Date.now())/1000));
+}
+function openZone(z) {
+  $('#panel').classList.remove('open');CafeMap.focus(z.rect.x+z.rect.w/2,z.rect.y+z.rect.h/2);
+  if(zoneState(z)==='building') {toast('아직이야. 목수 아저씨들\n방석은 건드리지 마.');return;}
+  const u=z.unlock,can=zoneOpen(z.no-1)&&S.coins>=u.coins&&adoptedN()>=u.adoptions;
+  const pct=S.coins/u.coins;
+  const line=pct>=.75?'거의 다 됐다.\n울타리 너머가 궁금하네.':pct>=.25?'자재가 조금 모였다.\n…아직 멀었어.':'울타리 너머에 새 자리를 만들자.';
+  modal(`<h2>🔨 ${z.name}</h2><p>${line.replaceAll('\n','<br>')}</p><p>${z.feature}</p><p>🪙 ${fmt(u.coins)} · 입양 ${adoptedN()}/${u.adoptions} · 공사 ${fmtTime(z.buildSec)}</p><p>추천: 메뉴 개발로 손님 수입을 늘려요.</p><button class="btn" id="startBuild" ${can?'':'disabled'}>공사 시작</button> <button class="btn gray" id="zoneClose">닫기</button>`);
+  $('#startBuild').onclick=()=>startBuild(z);$('#zoneClose').onclick=closeModal;
+}
+function startBuild(z) {
+  if(z!==nextZone() || zoneState(z)==='building' || !zoneOpen(z.no-1) || S.coins<z.unlock.coins || adoptedN()<z.unlock.adoptions)return;
+  S.coins-=z.unlock.coins;S.zones[z.id]={state:'building',endsAt:Date.now()+z.buildSec*1000};save();closeModal();renderZones();toast('공사 시작이다.\n망치 소리는… 참아줄게.');
+}
+let celebrationTimer;
+function updateZones(offline=false) {
+  for(const z of ZONES) if(zoneState(z)==='building' && S.zones[z.id].endsAt<=Date.now()) {
+    S.zones[z.id]={state:'open'};S.pendingGifts.push(z.id);renderZones();fillPups(false);save();
+    if(offline){(S.offlineZones ||= []).push(z.name);save();}
+    else {const previous={...CafeMap.state};CafeMap.focus(z.rect.x+z.rect.w/2,z.rect.y+z.rect.h/2);toast(z.done+'\n'+z.feature);
+      clearTimeout(celebrationTimer);celebrationTimer=setTimeout(()=>{CafeMap.focus((previous.vw/2-previous.x)/previous.s,(previous.vh/2-previous.y)/previous.s,previous.s);if(typeof offerGift==='function')offerGift();},3000);}
+  }
+}
+$('#room').addEventListener('pointermove',()=>{if(celebrationTimer){clearTimeout(celebrationTimer);celebrationTimer=null;if(typeof offerGift==='function')offerGift();}});
+$('#nextGoal').onclick=()=>{const z=nextZone();if(z)openZone(z);};
+
 /* ---------- 디버그 (?debug=1) ---------- */
 function setupDebug() {
+  if (params.get('bgcheck') === '1') document.documentElement.classList.add('bgcheck');
   const d = $('#debug'); d.classList.remove('hidden');
   d.innerHTML = `<button data-d="spd">⏩ 속도 x1</button><button data-d="coin">+10만 코인</button><button data-d="happy">행복도 가득</button><button data-d="off">오프라인 2시간</button><button data-d="skip">튜토 건너뛰기</button><button data-d="reset">초기화</button>`;
   d.addEventListener('click', e => {
@@ -666,7 +726,7 @@ function setupDebug() {
     if (k === 'reset') { localStorage.removeItem(SAVE_KEY); location.reload(); }
     renderPanel();
   });
-  window.__game = { BAL, F, TRAIT_FACE, spriteSrc, get S() { return S; }, setSpeed: v => speed = v, tick, ips, fmt, openAdoption, renderPanel, adGate, switchTab };
+  window.__game = { BAL, F, TRAIT_FACE, spriteSrc, get S() { return S; }, setSpeed: v => speed = v, tick, ips, fmt, openAdoption, renderPanel, adGate, switchTab, debug: { setStage(n) { S.zones={};ZONES.forEach(z=>S.zones[z.id]={state:z.no<=n&&!z.placeholder?"open":"locked"});renderZones(); }, advanceBuild(sec) { ZONES.forEach(z=>{if(zoneState(z)==="building")S.zones[z.id].endsAt-=sec*1000;});updateZones(); }, caps: () => ({pupCap:maxPups(),walkCap:F.walkCap(S.up.course)}), camera: CafeMap }, save };
 }
 
 /* ---------- 시작 ---------- */
@@ -676,9 +736,10 @@ function start() {
   const had = load();
   $('#boss').innerHTML = `<div class="body">${ownerImg()}</div>`;
   $('#adDog').innerHTML = ownerImg();
+  renderZones();
   fillPups(true);
   renderTabs(); renderPanel(); renderHUD(); CafeMap.measure(); CafeMap.focus();
-  if (had) offlineEarnings();
+  if (had) { updateZones(true); offlineEarnings(); }
   else { modal(`<div class="pic">${ownerImg()}</div><h2>시바견 카페에 오신 걸 환영해요!</h2>
     <p>저는 사장님 <b>동구</b>예요 🐾<br>아기 시바들을 돌보고, 손님을 맞고,<br>행복해진 아이들을 <b>새 가족</b>에게 보내 줘요.</p>
     <div class="btns"><button class="btn pink" id="go">카페 오픈하기</button></div>`); $('#go').onclick = () => { closeModal(); renderTut(); }; }
