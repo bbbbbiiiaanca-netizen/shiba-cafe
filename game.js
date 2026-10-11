@@ -108,7 +108,7 @@ let S;
 function newState() {
   return {
     ver: SAVE_VER, coins: BAL.startCoins, rep: 0, subs: 0, total: 0,
-    up: { menu: 0, seats: 0, toys: 0, slots: 0, trainer: 0, course: 0, cam: 0 },
+    up: { menu: 0, seats: 0, toys: 0, trainer: 0, course: 0, cam: 0 },
     pups: [], adopted: [], nextId: 1, nameIdx: Math.floor(Math.random() * NAMES.length),
     plays: [], boostUntil: 0, boostReadyAt: 0, train: [], walks: [], film: null, videos: [],
     last: Date.now(), playSec: 0, queue: [], dex: {},
@@ -125,7 +125,18 @@ function load() {
       S = Object.assign(newState(), d); S.up = Object.assign(newState().up, d.up);
       [...S.pups, ...S.adopted].forEach(p => { if (!COATS[p.coat]) p.coat = 'white'; });
       S.pups.forEach(p => { if (p.tapHappy == null) p.tapHappy = 0; });
-      for (const k in S.up) S.up[k] = Math.min(S.up[k], upMax(k));
+      // Earlier game builds already used ver=2, so absence of zones also marks legacy.
+      const legacyMap = !d.zones;
+      if(legacyMap) {
+        S.zones={z1_tatami:{state:'open'},z2_garden:{state:'open'}};
+        const levels=Math.max(0,Math.min(4,Math.floor(Number(S.up.slots)||0)));
+        for(let lv=0;lv<levels;lv++) S.coins+=F.upCost('slots',lv);
+      }
+      delete S.up.slots;
+      for (const k in S.up) { if(!BAL.up[k]){delete S.up[k];continue;} S.up[k]=Math.max(0,Math.floor(Number(S.up[k])||0)); if(k!=='seats'||!legacyMap)S.up[k]=Math.min(S.up[k],upMax(k)); }
+      // Grandfather old seat purchases on subsequent v2 reloads as well.
+      if(d.up?.seats>2) S.up.seats=Math.min(6,Math.floor(d.up.seats));
+      S.ver=SAVE_VER;
       if (old) {   // v1 세이브: 튜토리얼 완료로 간주, 탭 전부 해금, 도감 재구성
         S.ver = SAVE_VER; S.tut = TUT.length; S.freeTrain = false; S.firstWalk = false; S.playSec = 9999;
         S.dex = {}; S.adopted.forEach(a => { const k = a.coat + '_' + a.trait; S.dex[k] = (S.dex[k] || 0) + 1; });
@@ -136,7 +147,7 @@ function load() {
   } catch (e) { console.warn('save load fail', e); }
   S = newState(); return false;
 }
-function save() { S.last = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
+function save(preserveLast=false) { if(!preserveLast) S.last = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
 
 function makePup() {
   const ws = Object.entries(COATS).flatMap(([k, c]) => Array(c.w).fill(k));
@@ -478,6 +489,7 @@ function tick(dt) {
   const seated = seatedCount();
   for (const p of S.pups) {
     let r = F.happyRate(seated, S.up.toys, p.trait, p.sleep && !isWalking(p), adoptedN());
+    if (!tutDone() && adoptedN()===0) r=Math.max(.60,r);
     if (isWalking(p)) r *= BAL.walkHappyRate;
     p.happy = Math.min(100, p.happy + r * dt);
   }
@@ -610,8 +622,7 @@ $('#panel').addEventListener('click', e => {
   if (a === 'buy') {
     const c = upCost(arg); if (S.coins < c || S.up[arg] >= upMax(arg)) return;
     S.coins -= c; S.up[arg]++;
-    if (arg === 'slots') fillPups(false, 1.5);
-    toast(`✨ ${UPGRADES[arg].n} Lv${S.up[arg]}!`);
+        toast(`✨ ${UPGRADES[arg].n} Lv${S.up[arg]}!`);
     renderPanel(); save();
     tutEvent('buy:' + arg);
   } else if (a === 'adopt') { const p = S.pups.find(q => q.id === +arg); if (p) openAdoption(p); }
@@ -630,7 +641,7 @@ document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click
 }));
 
 /* ---------- 모달 / 광고 부스트 / 오프라인 ---------- */
-function modal(html) { $('#modalCard').innerHTML = html; $('#modal').classList.remove('hidden'); }
+function modal(html) { CafeMap.stop(); $('#modalCard').innerHTML = html; $('#modal').classList.remove('hidden'); }
 function closeModal() { $('#modal').classList.add('hidden'); setTimeout(offerGift, 50); }
 $('#boostBtn').addEventListener('click', () => {
   const g = adGate('boost'); if (!g.ok) return toast(g.why);
@@ -654,7 +665,7 @@ let bossT;
 
 function offlineEarnings() {
   updateZones(true);
-  const completed = S.offlineZones || []; S.offlineZones = [];
+  const completed = S.offlineZones || []; S.offlineZones = []; save(true);
   const away = Math.max(0, (Date.now() - S.last) / 1000);
   if (away < 60) { if (completed.length) modal(`<h2>공사 완료</h2><p>${completed.join(' · ')} 완공!</p><button class="btn" id="zoneSummaryOk">확인</button>`); if ($('#zoneSummaryOk')) $('#zoneSummaryOk').onclick=closeModal; return; }
   const cap = F.offlineCap(adoptedN()), secs = Math.min(cap, away);
@@ -711,6 +722,7 @@ function openZone(z) {
   const pct=S.coins/u.coins;
   const line=pct>=.75?'거의 다 됐다.\n울타리 너머가 궁금하네.':pct>=.25?'자재가 조금 모였다.\n…아직 멀었어.':'울타리 너머에 새 자리를 만들자.';
   modal(`<h2>🔨 ${z.name}</h2><p>${line.replaceAll('\n','<br>')}</p><p>${z.feature}</p><p>🪙 ${fmt(u.coins)} · 입양 ${adoptedN()}/${u.adoptions} · 공사 ${fmtTime(z.buildSec)}</p><p>추천: 메뉴 개발로 손님 수입을 늘려요.</p><button class="btn" id="startBuild" ${can?'':'disabled'}>공사 시작</button> <button class="btn gray" id="zoneClose">닫기</button>`);
+  CafeMap.focus(z.rect.x+z.rect.w/2,z.rect.y+z.rect.h/2);
   $('#startBuild').onclick=()=>startBuild(z);$('#zoneClose').onclick=closeModal;
 }
 function startBuild(z) {
@@ -720,8 +732,8 @@ function startBuild(z) {
 let celebrationTimer;
 function updateZones(offline=false) {
   for(const z of ZONES) if(zoneState(z)==='building' && S.zones[z.id].endsAt<=Date.now()) {
-    S.zones[z.id]={state:'open'};S.pendingGifts.push(z.id);renderZones();fillPups(false);save();
-    if(offline){(S.offlineZones ||= []).push(z.name);save();}
+    S.zones[z.id]={state:'open'};S.pendingGifts.push(z.id);renderZones();fillPups(false);save(offline);
+    if(offline){(S.offlineZones ||= []).push(z.name);save(true);}
     else {const previous={...CafeMap.state};CafeMap.focus(z.rect.x+z.rect.w/2,z.rect.y+z.rect.h/2);toast(z.done+'\n'+z.feature);
       clearTimeout(celebrationTimer);celebrationTimer=setTimeout(()=>{CafeMap.focus((previous.vw/2-previous.x)/previous.s,(previous.vh/2-previous.y)/previous.s,previous.s);if(typeof offerGift==='function')offerGift();},3000);}
   }
@@ -750,6 +762,7 @@ function equipDecor(slot,item,free=false) {
 function openDecor(slot) {
   $('#panel').classList.remove('open');CafeMap.focus(slot.x,slot.y);
   modal(`<h2>🎨 소품 고르기</h2><p>꾸미기는 외형만 바꿔요.</p>${DECOR.filter(d=>d.cat===slot.cat).map(d=>`<div class="row"><div class="ic">${d.emoji}</div><div class="tx"><b>${d.name}</b></div><button class="btn" data-decor="${d.id}" ${!S.ownedDecor.includes(d.id)&&S.coins<d.coins?'disabled':''}>${S.ownedDecor.includes(d.id)?'장착':'🪙 '+fmt(d.coins)}</button></div>`).join('')}<button class="btn gray" id="decorClose">닫기</button>`);
+  CafeMap.focus(slot.x,slot.y);
   document.querySelectorAll('[data-decor]').forEach(b=>b.onclick=()=>{equipDecor(slot,DECOR.find(d=>d.id===b.dataset.decor));closeModal();});$('#decorClose').onclick=closeModal;
 }
 function offerGift() {
@@ -757,6 +770,7 @@ function offerGift() {
   const zone=S.pendingGifts[0],z=ZONES.find(z=>z.id===zone);
   const choices=z.no===2?DECOR.filter(d=>d.cat==='garden'):DECOR.filter(d=>d.cat==='light');
   modal(`<h2>${z.name} 완공 선물</h2><p>무료 소품 하나를 골라 주세요.</p>${choices.map(d=>`<button class="btn" data-gift="${d.id}">${d.emoji} ${d.name}</button>`).join(' ')}`);
+  CafeMap.focus(z.rect.x+z.rect.w/2,z.rect.y+z.rect.h/2);
   document.querySelectorAll('[data-gift]').forEach(b=>b.onclick=()=>{const item=DECOR.find(d=>d.id===b.dataset.gift),slot=SLOTS.find(s=>s.cat===item.cat);equipDecor(slot,item,true);S.pendingGifts.shift();save();closeModal();});
 }
 $('#decorBtn').onclick=()=>{decorating=!decorating;$('#panel').classList.remove('open');renderDecor();toast(decorating?'점선 원을 눌러 소품을 골라요':'꾸미기 완료');};
@@ -776,7 +790,7 @@ function setupDebug() {
     if (k === 'reset') { localStorage.removeItem(SAVE_KEY); location.reload(); }
     renderPanel();
   });
-  window.__game = { BAL, F, TRAIT_FACE, spriteSrc, get S() { return S; }, setSpeed: v => speed = v, tick, ips, fmt, openAdoption, renderPanel, adGate, switchTab, debug: { setStage(n) { S.zones={};ZONES.forEach(z=>S.zones[z.id]={state:z.no<=n&&!z.placeholder?"open":"locked"});renderZones(); }, advanceBuild(sec) { ZONES.forEach(z=>{if(zoneState(z)==="building")S.zones[z.id].endsAt-=sec*1000;});updateZones(); }, caps: () => ({pupCap:maxPups(),walkCap:walkCap()}), camera: CafeMap }, save };
+  window.__game = { BAL, F, TRAIT_FACE, spriteSrc, get S() { return S; }, setSpeed: v => speed = v, tick, ips, fmt, openAdoption, renderPanel, adGate, switchTab, debug: { setStage(n) { S.zones={};ZONES.forEach(z=>S.zones[z.id]={state:z.no<=n&&!z.placeholder?"open":"locked"});renderZones();syncPupEls();renderPanel(); }, advanceBuild(sec) { ZONES.forEach(z=>{if(zoneState(z)==="building")S.zones[z.id].endsAt-=sec*1000;});updateZones(); }, caps: () => ({pupCap:maxPups(),walkCap:walkCap()}), camera: CafeMap }, save };
 }
 
 /* ---------- 시작 ---------- */

@@ -24,7 +24,8 @@ function measure() {
 function focus(px=1800,py=2940,scale=defS) {
   motionId++; s=clamp(scale,minS,maxS);
   const top=document.querySelector('#topbar').offsetHeight;
-  const bottom=document.querySelector('#tabs').offsetHeight + (document.querySelector('#panel').classList.contains('open') ? document.querySelector('#panel').offsetHeight : 0);
+  const sheet = !document.querySelector('#modal').classList.contains('hidden') ? document.querySelector('#modalCard').offsetHeight : (document.querySelector('#panel').classList.contains('open') ? document.querySelector('#panel').offsetHeight : 0);
+  const bottom=document.querySelector('#tabs').offsetHeight + sheet;
   x=vw/2-px*s; y=top+(vh-top-bottom)/2-py*s; apply();
 }
 function zoom(ns,cx=vw/2,cy=vh/2) { motionId++; const wx=(cx-x)/s,wy=(cy-y)/s; s=clamp(ns,minS,maxS); x=cx-wx*s;y=cy-wy*s;apply(); }
@@ -45,7 +46,9 @@ view.addEventListener('pointerdown',e=>{if(locked() || e.target.closest('#mapCon
 });
 view.addEventListener('pointermove',e=>{const p=ptrs.get(e.pointerId);if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
   if(ptrs.size===1){if(tapOK && Math.hypot(p.x-startX,p.y-startY)>8){tapOK=false;dragged=true;view.setPointerCapture(e.pointerId);}if(tapOK)return;
-    x+=dx;y+=dy;samples.push({t:e.timeStamp,x:p.x,y:p.y});if(samples.length>8)samples.shift();apply();
+    // Edge resistance stays inside the filled world, so a rubber drag never exposes the page.
+    const rx=(dx>0? -x:x-(vw-W*s)),ry=(dy>0? -y:y-(vh-H*s));
+    x+=dx*Math.min(1,Math.max(.18,rx/60));y+=dy*Math.min(1,Math.max(.18,ry/60));samples.push({t:e.timeStamp,x:p.x,y:p.y});if(samples.length>8)samples.shift();apply();
   }else if(pinch){const [a,b]=two(),mx=(a.x+b.x)/2,my=(a.y+b.y)/2;s=clamp(pinch.s*Math.hypot(a.x-b.x,a.y-b.y)/pinch.d,minS,maxS);x=mx-pinch.wx*s;y=my-pinch.wy*s;apply();}
 });
 function release(e){if(!ptrs.has(e.pointerId))return;ptrs.delete(e.pointerId);if(ptrs.size===2){startPinch();return;}pinch=null;if(ptrs.size)return;

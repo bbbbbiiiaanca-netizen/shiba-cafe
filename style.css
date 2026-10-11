@@ -168,3 +168,8 @@ html.bgcheck,html.bgcheck body,html.bgcheck #room{background:#ff00ff!important}
 .decor-slot{position:absolute;z-index:70;width:100px;height:100px;font-size:62px;display:grid;place-items:center;pointer-events:none;background:none;border:0;filter:drop-shadow(0 5px 4px #34472c55)}
 .decor-slot.editing{pointer-events:auto;border:5px dashed #fff5c7;border-radius:50%;min-width:var(--hit);min-height:var(--hit);background:#ffffff33}
 .pup.tut-target{position:absolute}
+
+#boss{min-width:var(--hit);min-height:var(--hit)}
+.btn.sm{min-width:44px}
+.modal .card{min-height:40dvh}
+#hudRow2{overflow:hidden}.res b{overflow:hidden;text-overflow:ellipsis}
