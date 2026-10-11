@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>시바견 카페 · 세로 화면</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="common.css">
+<style>
+:root{--top:max(env(safe-area-inset-top),12px);--nav-h:calc(70px + max(env(safe-area-inset-bottom),18px))}
+html,body{touch-action:none}
+.screen{position:fixed;left:0;top:0;width:100%;height:100%;height:100dvh;overflow:hidden;background:linear-gradient(#6b4426,#3e2714)}
+.view{position:absolute;inset:0;touch-action:none;cursor:grab;background:linear-gradient(#7a4f2c,#4a2e1a 55%,#3a2210)}
+.view:active{cursor:grabbing}
+.world{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;will-change:transform}
+.world img{display:block;width:1280px;height:720px;-webkit-user-drag:none;pointer-events:none}
+.topbar{position:absolute;top:0;left:0;right:0;padding:calc(var(--top) + 4px) 10px 14px;display:flex;flex-direction:column;gap:6px;z-index:5;pointer-events:none;background:linear-gradient(rgba(43,29,18,.55),rgba(43,29,18,0))}
+.topbar>*{pointer-events:auto}
+.topbar .quest{align-self:flex-start}
+.cur{display:flex;gap:6px}.cur .pill{flex:1}
+.sign{left:14px;top:calc(var(--top) + 100px);width:84px;padding:7px 4px;font-size:19px;z-index:5;pointer-events:none}
+.sign .paw{font-size:12px}
+.mini{position:absolute;right:10px;top:calc(var(--top) + 100px);width:78px;height:44px;border:2px solid #f6ead2;border-radius:6px;background:#2b1d12 url(scene.jpg) 0 0/100% 100%;box-shadow:0 2px 6px rgba(0,0,0,.4);z-index:5;pointer-events:none}
+.mini i{position:absolute;border:2px solid #ffd35a;background:rgba(255,211,90,.15);left:0;top:0;width:100%;height:100%}
+.edge{position:absolute;top:50%;margin-top:-27px;width:26px;height:54px;background:rgba(246,234,210,.8);border:2px solid #c9a77a;display:flex;align-items:center;justify-content:center;font-size:18px;z-index:5;pointer-events:none;transition:opacity .2s}
+.edge.l{left:0;border-radius:0 14px 14px 0;border-left:0}.edge.r{right:0;border-radius:14px 0 0 14px;border-right:0}
+.hints{position:absolute;left:0;right:0;bottom:calc(var(--nav-h) + 14px);display:flex;flex-direction:column;align-items:center;gap:6px;z-index:5;pointer-events:none;transition:opacity .3s}
+.hint{background:rgba(43,29,18,.62);color:#fff6e2;border-radius:999px;padding:7px 14px;font-size:14px;white-space:nowrap;display:flex;gap:8px;align-items:center;transition:opacity .5s}
+.hint.sm{font-size:12px;padding:4px 11px}
+.hint.gone{opacity:0}
+.hints.hide{opacity:0}
+.nav{position:absolute;left:0;right:0;bottom:0;height:var(--nav-h);padding:8px 8px max(env(safe-area-inset-bottom),18px);display:flex;gap:6px;background:linear-gradient(#7a4f2c,#5a3a20);border-top:3px solid #3e2714;z-index:30}
+.nav .btn{flex:1;font-size:11px}
+.backdrop{position:absolute;inset:0;z-index:20;background:rgba(43,29,18,.5);opacity:0;visibility:hidden;transition:opacity .28s,visibility 0s .28s;touch-action:none}
+.backdrop.open{opacity:1;visibility:visible;transition-delay:0s}
+.sheet{position:absolute;left:0;right:0;bottom:var(--nav-h);z-index:25;background:#f6ead2;border:2px solid #c9a77a;border-bottom:0;border-radius:20px 20px 0 0;box-shadow:0 -4px 14px rgba(0,0,0,.35);padding:0 12px 12px;touch-action:none;transform:translateY(100%);visibility:hidden;transition:transform .28s cubic-bezier(.2,.8,.2,1),visibility 0s .28s}
+.sheet.open{transform:none;visibility:visible;transition-delay:0s}
+.sheet.drag{transition:none}
+.grab{height:22px;display:flex;align-items:center;justify-content:center;cursor:grab}
+.grab i{width:44px;height:5px;border-radius:9px;background:#c9a77a}
+.ph-h{display:flex;justify-content:space-between;align-items:center;font-size:17px;margin-bottom:8px}
+.ph-h span{font-size:12px;background:#6b4426;color:#fff;border-radius:999px;padding:3px 9px}
+.tabs{display:flex;gap:5px;margin-bottom:8px}.tabs div{font-size:12px;padding:3px 10px;border-radius:999px;background:#ecdcbc;cursor:pointer}.tabs .on{background:#e0a84a;color:#fff}
+.row{display:flex;gap:8px;margin:0 -12px;padding:0 12px;overflow-x:auto;overflow-y:hidden;touch-action:pan-x;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain}
+.row::-webkit-scrollbar{display:none}
+.row .card{flex:0 0 122px}
+.next{justify-content:space-between;margin-top:10px;background:#fff1d6;border:2px dashed #e0a84a;border-radius:12px;padding:8px 10px;font-size:13px;display:flex;align-items:center;gap:8px}.next>span{min-width:0}.next b{font-weight:normal;color:#c0573a}
+.go{flex:0 0 auto;white-space:nowrap;background:linear-gradient(#f6b85a,#e0923a);color:#fff;border-radius:999px;padding:6px 12px;box-shadow:0 2px 0 #a8642a;text-shadow:0 1px 0 #a8642a;cursor:pointer}
+.card{background:#fffaf0;border:2px solid #dcc39b;border-radius:12px;padding:6px;font-size:12px}
+.ph{width:100%;height:84px;border-radius:8px;background-image:url(scene.jpg);background-size:600% auto}
+.nm{font-size:14px;margin-top:4px}.tag{color:#8a6440;font-size:11px}
+.bar{height:7px;background:#ecdcbc;border-radius:9px;margin-top:4px;overflow:hidden}.bar i{display:block;height:100%;background:#f28aa5}
+.st{font-size:10px;color:#8a6440;margin-top:2px}
+</style></head><body>
+<div class="screen">
+  <div class="view" id="view"><div class="world" id="world"><img src="scene.jpg" alt="" draggable="false"></div></div>
+  <div class="topbar"><div class="quest" id="quest"></div><div class="cur" id="cur"></div></div>
+  <div class="sign" id="sign"></div>
+  <div class="mini"><i id="mini"></i></div>
+  <div class="edge l" id="edgeL">‹</div><div class="edge r" id="edgeR">›</div>
+  <div class="hints" id="hints">
+    <div class="hint sm" id="hintZoom">두 손가락으로 줌 · 두 번 탭</div>
+    <div class="hint" id="hintPan">👈 옆으로 밀어서 카페 둘러보기 👉</div>
+  </div>
+  <div class="backdrop" id="backdrop"></div>
+  <div class="sheet" id="sheet">
+    <div class="grab"><i></i></div>
+    <div class="ph-h">🐕 우리 아기 시바들 <span>4 / 6</span></div>
+    <div class="tabs" id="tabs"><div class="on">전체</div><div>교육</div><div>산책</div><div>입양대기</div></div>
+    <div class="row">
+      <div class="card"><div class="ph" style="background-position:3.8% 65.5%"></div><div class="nm">레드·먹보</div><div class="tag">🍖 간식 좋아</div><div class="bar"><i style="width:72%"></i></div><div class="st">💗 행복도 72%</div></div>
+      <div class="card"><div class="ph" style="background-position:24.8% 70.7%"></div><div class="nm">블랙탄·새침</div><div class="tag">😼 만지지 마</div><div class="bar"><i style="width:45%"></i></div><div class="st">💗 행복도 45%</div></div>
+      <div class="card"><div class="ph" style="background-position:47.6% 69.4%"></div><div class="nm">흰색·애교</div><div class="tag">✨ 눈웃음</div><div class="bar"><i style="width:90%"></i></div><div class="st">💗 행복도 90%</div></div>
+      <div class="card"><div class="ph" style="background-position:90.8% 81.0%"></div><div class="nm">레드·잠꾸러기</div><div class="tag">💤 쿨쿨</div><div class="bar"><i style="width:30%"></i></div><div class="st">💗 행복도 30%</div></div>
+      <div class="card"><div class="ph" style="background-position:57.8% 28.0%"></div><div class="nm">흰색·장난</div><div class="tag">😜 혀 메롱</div><div class="bar"><i style="width:58%"></i></div><div class="st">💗 행복도 58%</div></div>
+    </div>
+    <div class="next"><span>🧑‍🦳 박 할아버지가 <b>흰색·애교</b>에게 반했어요!</span><div class="go" id="go">입양 보내기</div></div>
+  </div>
+  <div class="nav" id="nav"></div>
+</div>
+<script src="shared.js"></script>
+<script>
+(function () {
+  'use strict';
+  var W = LT.W, H = LT.H;
+  var $ = function (id) { return document.getElementById(id); };
+  var view = $('view'), world = $('world'), mini = $('mini');
+  var sheet = $('sheet'), backdrop = $('backdrop');
+  var vw = 0, vh = 0, minS = 1, defS = 1, maxS = 2;
+  var s = 1, x = 0, y = 0;
+  var sheetIsOpen = false;
+  var motionId = 0, animId = 0;
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function clampX(px, sc) { var w = W * sc; return w <= vw ? (vw - w) / 2 : clamp(px, vw - w, 0); }
+  function clampY(py, sc) { var h = H * sc; return h <= vh ? (vh - h) / 2 : clamp(py, vh - h, 0); }
+
+  function apply() {
+    world.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0) scale(' + s + ')';
+    var w = W * s, h = H * s;
+    var l = Math.max(0, -x / w), r = Math.min(1, (vw - x) / w);
+    var t = Math.max(0, -y / h), b = Math.min(1, (vh - y) / h);
+    mini.style.left = (l * 100) + '%';
+    mini.style.top = (t * 100) + '%';
+    mini.style.width = ((r - l) * 100) + '%';
+    mini.style.height = ((b - t) * 100) + '%';
+    $('edgeL').style.opacity = x >= -1 || w <= vw ? 0.25 : 1;
+    $('edgeR').style.opacity = x <= vw - w + 1 || w <= vw ? 0.25 : 1;
+  }
+
+  function measure() {
+    vw = view.clientWidth; vh = view.clientHeight;
+    minS = Math.min(vw / W, vh / H);
+    defS = vh / H;
+    maxS = defS * 2;
+  }
+
+  function reset() {
+    s = defS;
+    x = clampX(vw / 2 - 0.45 * W * s, s);
+    y = clampY(0, s);
+    apply();
+  }
+
+  function stopMotion() { motionId++; animId++; }
+
+  function setScaleAt(ns, cx, cy) {
+    ns = clamp(ns, minS, maxS);
+    var wx = (cx - x) / s, wy = (cy - y) / s;
+    s = ns;
+    x = clampX(cx - wx * s, s);
+    y = clampY(cy - wy * s, s);
+    apply();
+  }
+
+  function animateTo(ts, tx, ty, dur) {
+    stopMotion();
+    var id = animId, t0 = performance.now(), s0 = s, x0 = x, y0 = y;
+    function ease(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+    function step(now) {
+      if (id !== animId) return;
+      var t = Math.min(1, (now - t0) / dur), e = ease(t);
+      s = s0 + (ts - s0) * e;
+      x = clampX(x0 + (tx - x0) * e, s);
+      y = clampY(y0 + (ty - y0) * e, s);
+      apply();
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function toggleZoom(cx, cy) {
+    hideZoomHint();
+    if (s > minS * 1.05) {
+      animateTo(minS, 0, 0, 300);
+    } else {
+      var wx = (cx - x) / s;
+      animateTo(defS, vw / 2 - wx * defS, 0, 300);
+    }
+  }
+
+  function momentum(vx, vy) {
+    stopMotion();
+    var id = motionId, last = performance.now();
+    function step(now) {
+      if (id !== motionId) return;
+      var dt = Math.min(48, now - last); last = now;
+      var nx = clampX(x + vx * dt, s), ny = clampY(y + vy * dt, s);
+      if (nx !== x + vx * dt) vx = 0;
+      if (ny !== y + vy * dt) vy = 0;
+      x = nx; y = ny;
+      var f = Math.exp(-dt / 325);
+      vx *= f; vy *= f;
+      apply();
+      if (Math.abs(vx) > 0.02 || Math.abs(vy) > 0.02) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  /* ---- hints ---- */
+  function hidePanHint() { $('hintPan').classList.add('gone'); }
+  function hideZoomHint() { $('hintZoom').classList.add('gone'); }
+
+  /* ---- pointer gestures ---- */
+  var ptrs = new Map();
+  var tapOK = false, startX = 0, startY = 0, samples = [], pinch = null, lastTap = null;
+
+  function twoPts() {
+    var it = ptrs.values();
+    return [it.next().value, it.next().value];
+  }
+  function startPinch() {
+    var p = twoPts();
+    var mx = (p[0].x + p[1].x) / 2, my = (p[0].y + p[1].y) / 2;
+    pinch = { d0: Math.max(1, Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y)), s0: s, wx: (mx - x) / s, wy: (my - y) / s };
+  }
+
+  view.addEventListener('pointerdown', function (e) {
+    if (sheetIsOpen) return;
+    try { view.setPointerCapture(e.pointerId); } catch (_) {}
+    stopMotion();
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.size === 1) {
+      tapOK = true; startX = e.clientX; startY = e.clientY;
+      samples = [{ t: e.timeStamp, x: e.clientX, y: e.clientY }];
+    } else {
+      tapOK = false; samples = [];
+      if (ptrs.size === 2) startPinch();
+    }
+  });
+
+  view.addEventListener('pointermove', function (e) {
+    var p = ptrs.get(e.pointerId);
+    if (!p) return;
+    var dx = e.clientX - p.x, dy = e.clientY - p.y;
+    p.x = e.clientX; p.y = e.clientY;
+    if (ptrs.size === 1) {
+      if (tapOK && Math.hypot(e.clientX - startX, e.clientY - startY) > 8) { tapOK = false; hidePanHint(); }
+      if (tapOK) return;
+      x = clampX(x + dx, s); y = clampY(y + dy, s);
+      samples.push({ t: e.timeStamp, x: e.clientX, y: e.clientY });
+      if (samples.length > 8) samples.shift();
+      apply();
+    } else if (ptrs.size >= 2 && pinch) {
+      var q = twoPts();
+      var mx = (q[0].x + q[1].x) / 2, my = (q[0].y + q[1].y) / 2;
+      var d = Math.hypot(q[0].x - q[1].x, q[0].y - q[1].y);
+      s = clamp(pinch.s0 * d / pinch.d0, minS, maxS);
+      x = clampX(mx - pinch.wx * s, s);
+      y = clampY(my - pinch.wy * s, s);
+      hideZoomHint();
+      apply();
+    }
+  });
+
+  function release(e, cancelled) {
+    if (!ptrs.has(e.pointerId)) return;
+    var wasSingle = ptrs.size === 1;
+    ptrs.delete(e.pointerId);
+    if (ptrs.size === 2) { startPinch(); return; }
+    if (ptrs.size === 1) { pinch = null; samples = []; return; }
+    pinch = null;
+    if (!wasSingle) return;
+    if (!cancelled && tapOK) {
+      LT.tap(e.clientX, e.clientY);
+      var now = e.timeStamp;
+      if (lastTap && now - lastTap.t < 300 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 25) {
+        lastTap = null;
+        toggleZoom(e.clientX, e.clientY);
+      } else {
+        lastTap = { t: now, x: e.clientX, y: e.clientY };
+      }
+      return;
+    }
+    if (!cancelled && samples.length > 1) {
+      var last = samples[samples.length - 1], first = samples[0];
+      for (var i = samples.length - 1; i >= 0; i--) {
+        if (last.t - samples[i].t >= 80) { first = samples[i]; break; }
+      }
+      var dt = last.t - first.t;
+      if (dt > 0 && e.timeStamp - last.t < 80) {
+        var vx = (last.x - first.x) / dt, vy = (last.y - first.y) / dt;
+        if (Math.hypot(vx, vy) > 0.05) momentum(vx, vy);
+      }
+    }
+  }
+  view.addEventListener('pointerup', function (e) { release(e, false); });
+  view.addEventListener('pointercancel', function (e) { release(e, true); });
+
+  view.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    if (sheetIsOpen) return;
+    stopMotion();
+    var k = Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015));
+    setScaleAt(s * k, e.clientX, e.clientY);
+    hideZoomHint();
+  }, { passive: false });
+
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (n) {
+    document.addEventListener(n, function (e) { e.preventDefault(); });
+  });
+  document.addEventListener('dblclick', function (e) { e.preventDefault(); });
+
+  /* ---- bottom sheet ---- */
+  var btns = LT.renderButtons($('nav'), function (key) {
+    if (key !== 'shibas') return false;
+    if (sheetIsOpen) closeSheet(); else openSheet();
+    return true;
+  });
+  function openSheet() {
+    stopMotion();
+    sheetIsOpen = true;
+    sheet.style.transform = '';
+    sheet.classList.add('open');
+    backdrop.classList.add('open');
+    btns.shibas.classList.add('on');
+    $('hints').classList.add('hide');
+  }
+  function closeSheet() {
+    sheetIsOpen = false;
+    sheet.classList.remove('open', 'drag');
+    sheet.style.transform = '';
+    backdrop.classList.remove('open');
+    btns.shibas.classList.remove('on');
+    $('hints').classList.remove('hide');
+  }
+  backdrop.addEventListener('click', closeSheet);
+
+  var drag = null;
+  sheet.addEventListener('pointerdown', function (e) {
+    if (!drag) drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, ly: e.clientY, lt: e.timeStamp, v: 0, on: false, dy: 0 };
+  });
+  sheet.addEventListener('pointermove', function (e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+    if (!drag.on) {
+      if (Math.abs(dy) < 6 || Math.abs(dy) < Math.abs(dx)) return;
+      drag.on = true;
+      try { sheet.setPointerCapture(e.pointerId); } catch (_) {}
+      sheet.classList.add('drag');
+    }
+    var dt = e.timeStamp - drag.lt;
+    if (dt > 0) drag.v = 0.6 * drag.v + 0.4 * ((e.clientY - drag.ly) / dt);
+    drag.ly = e.clientY; drag.lt = e.timeStamp;
+    drag.dy = Math.max(0, dy);
+    sheet.style.transform = 'translateY(' + drag.dy + 'px)';
+  });
+  function endDrag(e, cancelled) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var d = drag; drag = null;
+    if (!d.on) return;
+    var closing = !cancelled && (d.dy > 80 || d.v > 0.6);
+    sheet.classList.remove('drag');
+    if (closing) closeSheet(); else sheet.style.transform = '';
+  }
+  sheet.addEventListener('pointerup', function (e) { endDrag(e, false); });
+  sheet.addEventListener('pointercancel', function (e) { endDrag(e, true); });
+
+  var tabs = $('tabs');
+  tabs.addEventListener('click', function (e) {
+    var t = e.target;
+    if (t.parentNode !== tabs) return;
+    var on = tabs.querySelector('.on');
+    if (on) on.classList.remove('on');
+    t.classList.add('on');
+  });
+  $('go').addEventListener('click', function () { LT.toast('입양 보내기 (레이아웃 테스트)'); });
+  sheet.querySelector('.row').addEventListener('wheel', function (e) {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { this.scrollLeft += e.deltaY; e.preventDefault(); }
+  }, { passive: false });
+
+  /* ---- init ---- */
+  LT.mountHud();
+  LT.ambient(world);
+  measure();
+  reset();
+  window.addEventListener('resize', function () {
+    var fx = (vw / 2 - x) / (W * s), oldS = s, ratioDef = defS;
+    measure();
+    s = clamp(oldS * defS / ratioDef, minS, maxS);
+    x = clampX(vw / 2 - fx * W * s, s);
+    y = clampY(y, s);
+    apply();
+  });
+
+  window.__lt = {
+    getState: function () { return { scale: s, x: x, y: y, minScale: minS, defScale: defS, maxScale: maxS, sheetOpen: sheetIsOpen }; },
+    setScale: function (v) { stopMotion(); setScaleAt(v, vw / 2, vh / 2); },
+    sheetOpen: function () { return sheetIsOpen; }
+  };
+})();
+</script>
+</body></html>
