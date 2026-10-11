@@ -71,7 +71,7 @@ require('fs').mkdirSync(SS, { recursive: true });
   await page.tap('#oOk'); await page.waitForTimeout(300);
   await page.reload(); await page.waitForTimeout(800);
   console.log('after reload', await page.evaluate(() => JSON.stringify({c:Math.floor(__game.S.coins), ad:__game.S.adopted.length, pups:__game.S.pups.length})));
-  await page.evaluate(() => { document.querySelector('#modalCard').innerHTML = '<h2>털색 4종</h2><div style="display:flex">' + ['red','sesame','blacktan','cream'].map(c => '<div style="width:80px">' + __game.shibaSVG(c) + '</div>').join('') + '</div>'; document.querySelector('#modal').classList.remove('hidden'); });
+  await page.evaluate(() => { document.querySelector('#modalCard').innerHTML = '<h2>털색 4종 × 성격 표정</h2>' + ['red','sesame','blacktan','white'].map(c => '<div style="display:flex">' + ['happy','sleepy','grin','aloof','drool','sparkle'].map(f => '<div style="width:50px">' + __game.shibaSVG(c, { face: f }) + '</div>').join('') + '</div>').join(''); document.querySelector('#modal').classList.remove('hidden'); });
   await page.waitForTimeout(200); await page.screenshot({ path: SS + '14_coats.png' });
   console.log('fmt', await page.evaluate(() => [999, 12345, 1234567, 123456789, 5e12].map(__game.fmt).join(' | ')));
   console.log('ERRORS:', errs.length ? errs : 'none');

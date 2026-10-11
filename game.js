@@ -46,10 +46,10 @@ const DEBUG = params.get('debug') === '1';
 
 /* ---------- 데이터 ---------- */
 const COATS = {
-  red:      { name: '적색',   back: '#d9823b', dark: '#b8642a', white: '#fff8ee', w: 5 },
+  red:      { name: '레드',   back: '#d9823b', dark: '#b8642a', white: '#fff8ee', w: 5 },
   sesame:   { name: '참깨',   back: '#c98d52', dark: '#5b3a24', white: '#fff4e6', w: 2 },
   blacktan: { name: '블랙탄', back: '#2f2724', dark: '#1d1715', white: '#fffaf2', tan: '#d39a5a', w: 2 },
-  cream:    { name: '크림',   back: '#f0d9b0', dark: '#e2c290', white: '#fffdf8', w: 1 },
+  white:    { name: '흰색',   back: '#f7efe2', dark: '#e9dcc6', white: '#ffffff', w: 1 },
 };
 const TRAITS = {
   '잠꾸러기': '자는 시간이 많아요. 꿀잠 영상 구독자 +50%',
@@ -110,7 +110,8 @@ function newState() {
 function load() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    if (raw) { const d = JSON.parse(raw); S = Object.assign(newState(), d); S.up = Object.assign(newState().up, d.up); return true; }
+    if (raw) { const d = JSON.parse(raw); S = Object.assign(newState(), d); S.up = Object.assign(newState().up, d.up);
+      [...S.pups, ...S.adopted].forEach(p => { if (!COATS[p.coat]) p.coat = 'white'; }); return true; }
   } catch (e) { console.warn('save load fail', e); }
   S = newState(); return false;
 }
@@ -202,13 +203,35 @@ function shibaSVG(coat, o = {}) {
   <path d="M50 38 C36 38 22 46 24 57 C27 68 40 70 50 70 C60 70 73 68 76 57 C78 46 64 38 50 38 Z" fill="${c.white}"/>
   ${brow}
   <rect x="32" y="66" width="36" height="6" rx="3" fill="${collar}"/><circle cx="50" cy="73" r="3" fill="#ffd36b"/>
-  <g class="eyes-o"><circle cx="40" cy="47" r="4" fill="#1d1715"/><circle cx="60" cy="47" r="4" fill="#1d1715"/><circle cx="41.4" cy="45.6" r="1.4" fill="#fff"/><circle cx="61.4" cy="45.6" r="1.4" fill="#fff"/></g>
-  <g class="eyes-c"><path d="M35 47 q5 4 10 0 M55 47 q5 4 10 0" stroke="#1d1715" stroke-width="2.2" fill="none" stroke-linecap="round"/></g>
-  <ellipse cx="50" cy="54" rx="4" ry="3" fill="#1d1715"/>
-  <path d="M50 57 v2 M45 59 q5 4 5 0 q0 4 5 0" stroke="#1d1715" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-  <ellipse cx="33" cy="57" rx="4" ry="2.4" fill="#ff9db5" opacity=".6"/><ellipse cx="67" cy="57" rx="4" ry="2.4" fill="#ff9db5" opacity=".6"/>
+  ${faceSVG(o.face || 'happy')}
   ${o.apron ? '<path d="M36 70 h28 l-3 22 h-22 z" fill="#fff" stroke="#e2b77c" stroke-width="1.5"/><text x="50" y="86" font-size="8" text-anchor="middle" fill="#d9823b" font-weight="900">사장</text>' : ''}
   </svg>`;
+}
+/* 성격별 표정 (스프라이트 생성 시 같은 키로 매핑: happy/sleepy/grin/aloof/drool/sparkle) */
+const TRAIT_FACE = { '잠꾸러기': 'sleepy', '장난꾸러기': 'grin', '새침데기': 'aloof', '먹보': 'drool', '애교쟁이': 'sparkle' };
+function faceSVG(f) {
+  const K = '#1d1715';
+  const closed = `<g class="eyes-c"><path d="M35 47 q5 4 10 0 M55 47 q5 4 10 0" stroke="${K}" stroke-width="2.2" fill="none" stroke-linecap="round"/></g>`;
+  const dot = (cx, cy, r = 4, hx = 1.4) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${K}"/><circle cx="${cx + hx}" cy="${cy - 1.4}" r="1.4" fill="#fff"/>`;
+  let eyes, mouth = `<path d="M50 57 v2 M45 59 q5 4 5 0 q0 4 5 0" stroke="${K}" stroke-width="1.6" fill="none" stroke-linecap="round"/>`;
+  if (f === 'sleepy') {
+    eyes = `<g class="eyes-o"><path d="M35 47 h10 M55 47 h10" stroke="${K}" stroke-width="2.4" stroke-linecap="round"/><path d="M36 48 q4 2.5 8 0 M56 48 q4 2.5 8 0" fill="${K}"/></g>`;
+  } else if (f === 'grin') {
+    eyes = `<g class="eyes-o">${dot(40, 47)}<path d="M55 47 q5 -4 10 0" stroke="${K}" stroke-width="2.4" fill="none" stroke-linecap="round"/></g>`;
+    mouth = `<path d="M43 58 q7 7 14 0" stroke="${K}" stroke-width="1.8" fill="#c94a5a"/><path d="M50 60 q4 7 7 1" fill="#ff8fa3" stroke="${K}" stroke-width="1"/>`;
+  } else if (f === 'aloof') {
+    eyes = `<g class="eyes-o"><circle cx="42" cy="47" r="3.6" fill="${K}"/><circle cx="62" cy="47" r="3.6" fill="${K}"/><path d="M35 44 h10 M55 44 h10" stroke="${K}" stroke-width="1.8" stroke-linecap="round"/></g>`;
+    mouth = `<path d="M47 60 q3 -2 6 0" stroke="${K}" stroke-width="1.6" fill="none" stroke-linecap="round"/>`;
+  } else if (f === 'drool') {
+    eyes = `<g class="eyes-o">${dot(40, 47, 4.6)}${dot(60, 47, 4.6)}</g>`;
+    mouth = `<path d="M44 58 q6 6 12 0 z" fill="#c94a5a" stroke="${K}" stroke-width="1.4"/><path d="M55 60 q1.5 5 0 7 q-1.5 -2 0 -7" fill="#bfe6ff"/>`;
+  } else if (f === 'sparkle') {
+    eyes = `<g class="eyes-o">${dot(40, 47, 5)}${dot(60, 47, 5)}<circle cx="38.6" cy="49" r=".9" fill="#fff"/><circle cx="58.6" cy="49" r=".9" fill="#fff"/></g>`;
+    mouth = `<path d="M43 58 q7 8 14 0 z" fill="#c94a5a" stroke="${K}" stroke-width="1.4"/><path d="M47 61 q3 4 6 0" fill="#ff8fa3"/>`;
+  } else {
+    eyes = `<g class="eyes-o">${dot(40, 47)}${dot(60, 47)}</g>`;
+  }
+  return eyes + closed + `<ellipse cx="50" cy="54" rx="4" ry="3" fill="${K}"/>` + mouth;
 }
 function custSVG(c) {
   return `<svg viewBox="0 0 40 56" width="40" height="56"><ellipse cx="20" cy="54" rx="13" ry="2.5" fill="#0002"/>
@@ -237,7 +260,7 @@ function syncPupEls() {
     let el = floor.querySelector(`.pup[data-id="${p.id}"]`);
     if (!el) {
       el = document.createElement('div'); el.className = 'pup'; el.dataset.id = p.id;
-      el.innerHTML = shibaSVG(p.coat) + `<div class="hb"><i></i></div><div class="nm">${p.name}</div><div class="zz">💤</div><div class="badge"></div>`;
+      el.innerHTML = shibaSVG(p.coat, { face: TRAIT_FACE[p.trait] }) + `<div class="hb"><i></i></div><div class="nm">${p.name}</div><div class="zz">💤</div><div class="badge"></div>`;
       el.style.left = p.x + '%'; el.style.top = p.y + '%';
       el.addEventListener('click', () => tapPup(p.id));
       floor.appendChild(el);
@@ -290,7 +313,7 @@ function openAdoption(p) {
   if (!p.family) p.family = pick(FAMILIES);
   const r = adoptReward(p), rp = 1 + skillScore(p);
   const sk = SKILLS.filter(s => p.skills[s.k] > 0).map(s => `${s.n} Lv${p.skills[s.k]}`).join(', ');
-  modal(`<div class="pic">${shibaSVG(p.coat)}</div>
+  modal(`<div class="pic">${shibaSVG(p.coat, { face: TRAIT_FACE[p.trait] })}</div>
     <h2>💌 입양 신청이 왔어요!</h2>
     <p><b>${p.family}</b>이(가)<br><b>${p.name}</b>(${COATS[p.coat].name} · ${p.trait})를 가족으로 맞이하고 싶대요.</p>
     ${sk ? `<p>🎓 배운 것: ${sk} <br>(교육 보너스 +${skillScore(p) * 25}%)</p>` : '<p>💡 교육을 시키면 입양 보상이 올라가요</p>'}
@@ -424,7 +447,7 @@ function renderHUD() {
   if (on) $('#boostTimer').textContent = `🔥 수익 2배 ${fmtTime((S.boostUntil - Date.now()) / 1000)}`;
 }
 let tab = 'cafe';
-function pupIcon(p) { return `<div class="ic">${shibaSVG(p.coat)}</div>`; }
+function pupIcon(p) { return `<div class="ic">${shibaSVG(p.coat, { face: TRAIT_FACE[p.trait] })}</div>`; }
 function skillChips(p) { return SKILLS.map(s => `<span class="chip ${p.skills[s.k] ? 'on' : ''}">${s.n}${p.skills[s.k] ? ' ' + p.skills[s.k] : ''}</span>`).join(''); }
 function upRow(k) {
   const u = UPGRADES[k], lv = S.up[k], max = lv >= u.max;
@@ -470,7 +493,7 @@ function renderPanel() {
     }
   } else if (tab === 'book') {
     h += `<div class="h">📖 입양 도감 <small>새 가족을 찾은 아이들 ${S.adopted.length}마리</small></div>`;
-    h += S.adopted.length ? `<div class="book">${S.adopted.map(a => `<div class="bk">${shibaSVG(a.coat)}<b>${a.name}</b>${COATS[a.coat].name} · ${a.trait}<br>🏡 ${a.family}<br><small>${a.date}</small></div>`).join('')}</div>`
+    h += S.adopted.length ? `<div class="book">${S.adopted.map(a => `<div class="bk">${shibaSVG(a.coat, { face: TRAIT_FACE[a.trait] })}<b>${a.name}</b>${COATS[a.coat].name} · ${a.trait}<br>🏡 ${a.family}<br><small>${a.date}</small></div>`).join('')}</div>`
       : `<div class="empty">아직 입양 간 아이가 없어요.<br>행복도를 가득 채우면 입양 신청이 와요! 💌</div>`;
   }
   P.innerHTML = h;
@@ -548,7 +571,7 @@ function setupDebug() {
     if (k === 'reset') { localStorage.removeItem(SAVE_KEY); location.reload(); }
     renderPanel();
   });
-  window.__game = { shibaSVG, get S() { return S; }, setSpeed: v => speed = v, tick, ips, fmt, openAdoption, renderPanel };
+  window.__game = { shibaSVG, TRAIT_FACE, get S() { return S; }, setSpeed: v => speed = v, tick, ips, fmt, openAdoption, renderPanel };
 }
 
 /* ---------- 시작 ---------- */
