@@ -173,3 +173,19 @@ html.bgcheck,html.bgcheck body,html.bgcheck #room{background:#ff00ff!important}
 .btn.sm{min-width:44px}
 .modal .card{min-height:40dvh}
 #hudRow2{overflow:hidden}.res b{overflow:hidden;text-overflow:ellipsis}
+
+/* v0.6 controls remain inside the portrait safe area. */
+#drawBtn,#photoBtn{position:absolute;left:calc(62px + env(safe-area-inset-left));bottom:calc(76px + env(safe-area-inset-bottom));z-index:83;border:0;border-radius:15px;background:#fdf6fae8;font-size:23px}
+#photoBtn{left:calc(114px + env(safe-area-inset-left))}
+.card .row{flex-wrap:wrap}.card .btn{white-space:normal}.card details .btn{width:100%;margin-top:6px}.card summary{min-height:44px;cursor:pointer;padding:12px}
+.card .tx{overflow-wrap:anywhere}.card #photoPreview{display:block;margin:auto;max-width:100%;height:auto}
+.ui-hidden #topbar,.ui-hidden #tabs,.ui-hidden #panel,.ui-hidden #tut,.ui-hidden #mapControls,.ui-hidden #decorBtn,.ui-hidden #drawBtn,.ui-hidden #photoBtn,.ui-hidden #sheetClose{display:none!important}
+.pup[data-rarity=R] .body{filter:drop-shadow(0 0 3px #5e9ab5)}
+.pup[data-rarity=SR] .body{filter:drop-shadow(0 0 5px silver)}
+.pup[data-rarity=SSR] .body{filter:drop-shadow(0 0 6px gold)}
+.pup[data-rarity]::before{content:'◆';position:absolute;top:48%;left:48%;font-size:14px;color:#93b392;z-index:2;pointer-events:none}
+.pup[data-rarity=R]::before{color:#5e9ab5}.pup[data-rarity=SR]::before{color:silver}.pup[data-rarity=SSR]::before{color:gold}
+
+#app:has(#panel.open) #drawBtn,#app:has(#panel.open) #photoBtn,#app:has(#panel.open) #decorBtn{bottom:calc(40% + 76px + env(safe-area-inset-bottom))}
+.ic[class*=scarf-]{position:relative}.ic[class*=scarf-] small{position:absolute;bottom:0;right:0;font-size:10px;background:#e1f0da;border-radius:5px;padding:2px}
+.ic.scarf-R small{background:#cae4ef}.ic.scarf-SR small{background:#ddd}.ic.scarf-SSR small{background:#f7df91}
