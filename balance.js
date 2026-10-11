@@ -1,48 +1,8 @@
 /* 시바견 카페 — 밸런스 상수·공식 (게임과 tests/balance-sim.js가 같이 씀) */
 (function (root) {
 'use strict';
-const BAL = {
-  startCoins: 30,
-  // 손님
-  custBase: 1, custMul: 1.25,  /* 메뉴 레벨당 손님 지출 배율: 기존 1.55 → 시뮬 결과 10분 만에 전부 MAX라 1.25 */ repIncome: 0.02, foodie: 1.1,
-  spawnBase: 7, spawnSubsDiv: 1000, spawnRep: 0.01, spawnMin: 3.5, rushDiv: 3, rushMin: 1.2, rushSec: 25,
-  stayMin: 18, stayMax: 32,
-  subsIncome: 0.02,
-  // 쓰다듬기
-  tapIncomeFrac: 0.25, tapFlat: 1, tapCooldown: 0.4, tapHappy: 1.5, tapHappyCap: 15, mischief: 2,
-  // 행복도 / 입양
-  happyBase: 0.31, happySeat: 0.10, happySeatCap: 4, /* 행복도에 반영되는 손님 수 상한 */ happyToy: 0.035, affection: 1.3, aloof: 0.75, sleepMul: 0.6,
-  adoptSlow: 0.45, adoptLate: 0.10, adoptLong: 4, discoveryEarly: 0.65, discoveryLate: 0.06,   // D(n) = 1 + 0.6·log2(1+n)  (GPT안 0.45 → 시뮬 후 0.6)
-  adoptBase: 80, adoptMenuSeat: 45, adoptPerAdopted: 25, adoptSkill: 0.25, aloofReward: 1.5, firstCombo: 0.20,
-  newPupMin: 5, newPupMax: 15,
-  // 교육
-  trainFrac: 0.08, trainGrowth: 1.08, trainTimes: [15, 25, 35], trainerMul: 0.85, skillMax: 3,
-  // 산책
-  walkSec: 40, walkFirstSec: 20, walkHappy: 14, walkHappyRate: 0.5, walkBase: 25, walkMenuSeat: 18, walkCourse: 0.5,
-  // 유튜브
-  filmSec: 30, filmBase: 12, filmSkill: 4, camBonus: 0.30, filmRndMin: 0.8, filmRndMax: 1.2, sleepyFilm: 1.5,
-  viralP: 0.05, viralMul: 3,
-  // 업그레이드
-  up: {
-    menu:    { base: 15,  mul: 1.62, max: 60 },
-    seats:   { base: 45,  mul: 2.0,  max: 6 },
-    toys:    { base: 40,  mul: 1.6,  max: 20 },   // max 30→20 (후반 입양 속도 유지)
-    slots:   { base: 150, mul: 3.2,  max: 4 },
-    trainer: { base: 120, mul: 2.1,  max: 10 },
-    course:  { base: 100, mul: 2.4,  max: 5 },
-    cam:     { base: 150, mul: 2.5,  max: 5 },
-  },
-  // 광고 (가정값 — /workspace/shiba-cafe-docs/monetization.md §2)
-  ads: {
-    dailyTotal: 10, gapSec: 120,
-    adopt:   { daily: 6 },
-    boost:   { daily: 6, durSec: 300, afterSec: 600, minPlaySec: 150 },
-    offline: { daily: 3, minAwaySec: 1800 },
-  },
-  // 오프라인
-  offlineCapSec: [[0, 15 * 60], [1, 3600], [5, 8 * 3600]],
-  offlineIncome: 0.5, offlineSeatFill: 0.6, offlineHappy: 0.25,
-};
+const CONFIG = typeof module !== 'undefined' && module.exports ? require('./balance-config') : root.BalanceConfig;
+const BAL = CONFIG.legacy;
 const F = {
   pupCombo(known, rand = Math.random) {
     const coats=['red','red','red','red','red','sesame','sesame','blacktan','blacktan','white'];
