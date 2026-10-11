@@ -72,7 +72,7 @@ const CUST_SRC = [1, 2, 3, 4, 5, 6].map(i => `assets/cust_${i}.webp`);
 const KID_CUST = new Set(['assets/cust_5.webp', 'assets/cust_6.webp']);
 
 const NAMES = ['콩이','보리','두부','마루','호두','밤이','깨순','라떼','모카','쿠키','달이','별이','유자','감자','찹쌀','인절미','누룽지','꿀떡','도토리','단추','몽실','솜이','짱구','하루','초코','율무','땅콩','깨비'];
-const FAMILIES = ['서울 김씨네 가족','부산 신혼부부','자취하는 대학생 누나','은퇴하신 할머니','초등학생 쌍둥이네','회사원 삼촌','제주 귤농장 가족','강아지 유튜버 언니','소방관 아저씨','그림 그리는 작가님','캠핑 좋아하는 부부','대전 빵집 사장님'];
+const FAMILIES = ['서울 김씨네 가족','부산 신혼부부','자취하는 대학생','은퇴하신 할머니','초등학생 쌍둥이네','회사원 삼촌','제주 귤농장 가족','강아지 유튜버 언니','소방관 아저씨','그림 그리는 작가님','캠핑 좋아하는 부부','대전 빵집 사장님'];
 const SKILLS = [
   { k: 'sit', n: '앉아' }, { k: 'paw', n: '손' }, { k: 'wait', n: '기다려' },
   { k: 'down', n: '엎드려' }, { k: 'bang', n: '빵야!' },
@@ -363,7 +363,7 @@ function finishWalk(w) {
   for (let i = 0; i < 2; i++) setTimeout(spawnCustomer, 600 + i * 900);
   toast(`🦮 ${p.name} 산책 끝! +${fmt(r)} · 행복도 +${BAL.walkHappy} · 손님이 몰려와요!`);
 }
-const TOPICS = { '잠꾸러기': '배까고 꿀잠 ASMR', '장난꾸러기': '휴지 파티 대참사', '새침데기': '만지지 마라 시바 거절', '먹보': '간식 먹방 눈치게임', '애교쟁이': '손님 무릎 위 애교 폭발' };
+const TOPICS = { '잠꾸러기': '방석 위 꿀잠 ASMR', '장난꾸러기': '보자기 창고 대소동', '새침데기': '만지지 마라 시바 거절', '먹보': '간식 기다려 챌린지', '애교쟁이': '손님 무릎 위 애교 폭발' };
 function startFilm(id) {
   const p = S.pups.find(q => q.id === id); if (!p || busy(p)) return;
   if (S.film) return toast('이미 촬영 중이에요');
@@ -626,7 +626,7 @@ $('#boostBtn').addEventListener('click', () => {
 $('#boss').addEventListener('click', () => {
   hopEl($('#boss'));
   if (!tutDone()) { renderTut(); return; }
-  const line = pick(['손님한테 친절하게 해라 멍!', '만지지 마라… 아빠만 된다.', '오늘도 배까고 자고 싶다…', '아기들아 입양 잘 가거라 🥹', `도감 ${Object.keys(S.dex).length}/20… 아직 멀었다 멍!`]);
+  const line = pick(['손님한테 친절하게 해라 멍!', '만지지 마라… 잠깐이면 된다.', '오늘은 다다미 낮잠 각이다…', '아기들아 입양 잘 가거라 🥹', `도감 ${Object.keys(S.dex).length}/20… 아직 멀었다 멍!`]);
   showBubble('동구 사장님: ' + line); clearTimeout(bossT); bossT = setTimeout(hideBubble, 3000);
 });
 let bossT;
