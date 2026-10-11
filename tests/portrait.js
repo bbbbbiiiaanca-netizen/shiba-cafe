@@ -12,8 +12,8 @@ const viewports=[[390,844],[375,667],[360,800],[412,915],[430,932],[1024,1366]];
   const url=new URL(base);url.searchParams.set('debug','1');url.searchParams.set('bgcheck','1');
   await page.goto(url.href);await page.waitForFunction(()=>window.__game);
   await page.locator('#go').tap();
-  await page.evaluate(()=>{__game.setSpeed(0);__game.S.tut=7;document.querySelector('#tut').classList.add('hidden');document.querySelector('#debug').style.display='none';document.querySelector('#panel').classList.remove('open');});
-  for(const stage of [1,2,4]) {
+  await page.evaluate(()=>{__game.setSpeed(0);__game.S.tut=7;__game.S.flow=5;document.querySelector('#tut').classList.add('hidden');document.querySelector('#debug').style.display='none';document.querySelector('#panel').classList.remove('open');});
+  for(const stage of [1,2]) {
    await page.evaluate(n=>__game.debug.setStage(n),stage);
    for(const zoom of ['minS','defS','maxS']) {
     await page.evaluate(key=>{const c=__game.debug.camera;c.focus();c.zoom(c.state[key]);},zoom);
