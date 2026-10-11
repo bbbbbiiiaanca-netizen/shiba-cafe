@@ -140,10 +140,11 @@ function save() { S.last = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON
 
 function makePup() {
   const ws = Object.entries(COATS).flatMap(([k, c]) => Array(c.w).fill(k));
+  const combo = F.pupCombo(S.dex);
   const cnt = S.nameCount || 0; S.nameCount = cnt + 1;
   const name = NAMES[(S.nameIdx + cnt) % NAMES.length] + (cnt >= NAMES.length ? Math.floor(cnt / NAMES.length) + 1 : '');
   return {
-    id: S.nextId++, name, coat: pick(ws), trait: pick(TRAIT_KEYS),
+    id: S.nextId++, name, coat: combo.split("_")[0], trait: combo.split("_")[1],
     happy: 0, tapHappy: 0, skills: { sit: 0, paw: 0, wait: 0, down: 0, bang: 0 },
     x: rnd(24, 80), y: rnd(22, 58), sleep: false,
   };
@@ -369,7 +370,7 @@ function startPlay(id) {
 function finishWalk(w) {
   const p = S.pups.find(q => q.id === w.id); if (!p) return;
   const r = walkReward(); addCoins(r);
-  p.happy = Math.min(100, p.happy + BAL.walkHappy);
+  p.happy = Math.min(100, p.happy + F.activityHappy(BAL.walkHappy,adoptedN()));
   rushUntil = Date.now() + BAL.rushSec * 1000;    // 갱신(중첩 X)
   for (let i = 0; i < 2; i++) setTimeout(spawnCustomer, 600 + i * 900);
   toast(`🦮 ${p.name} 산책 끝! +${fmt(r)} · 행복도 +${BAL.walkHappy} · 손님이 몰려와요!`);
@@ -428,7 +429,7 @@ const TUT = [
   { ev: 'pet',   text: () => `어서 와요, 사장님! 저는 동구예요 🐾<br>아기 시바를 톡톡 쓰다듬어 주세요 (${Math.min(3, S.tutPets)}/3)`, target: '#floor .pup' },
   { ev: 'buy:menu', text: () => '잘했어요! 모은 코인으로<br><b>☕ 메뉴 개발</b>을 해볼까요?', target: '[data-act=buy][data-arg=menu]', tab: 'cafe' },
   { ev: 'train', text: () => '<b>🎓 교육</b> 탭이 열렸어요!<br>첫 교육은 무료예요. 하나 가르쳐 봐요', target: () => tab === 'train' ? '[data-act=train]:not([disabled])' : '#tabs [data-tab=train]', unlock: 'train' },
-  { ev: 'walk',  text: () => '<b>🦮 산책</b> 탭이 열렸어요!<br>다녀오면 행복도 +25, 손님도 몰려와요 (첫 산책 20초)', target: () => tab === 'walk' ? '[data-act=walk]:not([disabled])' : '#tabs [data-tab=walk]', unlock: 'walk' },
+  { ev: 'walk',  text: () => `<b>🦮 산책</b> 탭이 열렸어요!<br>다녀오면 행복도 +${BAL.walkHappy}, 손님도 몰려와요 (첫 산책 20초)`, target: () => tab === 'walk' ? '[data-act=walk]:not([disabled])' : '#tabs [data-tab=walk]', unlock: 'walk' },
   { ev: 'adopt', text: () => '분홍 하트 막대가 가득 차면<br><b>입양 신청</b>이 와요. 💌를 눌러 보내 줘요!', target: () => S.pups.some(p => p.happy >= 100) ? '#floor .pup .adopt' : '#tabs [data-tab=cafe]', tab: 'cafe' },
   { ev: 'tab:book', text: () => '첫 입양 축하해요 🥹<br><b>📖 도감</b>이 열렸어요. 20칸을 다 모아봐요!', target: '#tabs [data-tab=book]', unlock: 'book' },
   { ev: 'film',  text: () => '<b>🎬 유튜브</b>도 열렸어요!<br>아기 시바 영상을 찍어 구독자를 모아봐요', target: () => tab === 'yt' ? '[data-act=film]:not([disabled])' : '#tabs [data-tab=yt]', unlock: 'yt' },
@@ -492,7 +493,7 @@ function tick(dt) {
   doneW.forEach(finishWalk);
   if (S.film) { S.film.left -= dt; if (S.film.left <= 0) finishFilm(); }
   S.plays.forEach(a=>a.left-=dt);const doneP=S.plays.filter(a=>a.left<=0);
-  for(const a of doneP){const p=S.pups.find(p=>p.id===a.id);if(p)p.happy=Math.min(100,p.happy+BAL.walkHappy*.7);}
+  for(const a of doneP){const p=S.pups.find(p=>p.id===a.id);if(p)p.happy=Math.min(100,p.happy+F.activityHappy(BAL.walkHappy*.7,adoptedN()));}
   S.plays=S.plays.filter(a=>a.left>0);if(doneP.length){syncPupEls();renderPanel();}
   arrivePups();
   if (doneT.length || doneW.length) { syncPupEls(); renderPanel(); }

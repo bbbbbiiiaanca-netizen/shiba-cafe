@@ -9,16 +9,16 @@ const BAL = {
   stayMin: 18, stayMax: 32,
   subsIncome: 0.02,
   // 쓰다듬기
-  tapIncomeFrac: 0.25, tapFlat: 1, tapCooldown: 0.4, tapHappy: 1.5, tapHappyCap: 30, mischief: 2,
+  tapIncomeFrac: 0.25, tapFlat: 1, tapCooldown: 0.4, tapHappy: 1.5, tapHappyCap: 15, mischief: 2,
   // 행복도 / 입양
-  happyBase: 0.50, happySeat: 0.15, happySeatCap: 4, /* 행복도에 반영되는 손님 수 상한 */ happyToy: 0.10, affection: 1.3, aloof: 0.75, sleepMul: 0.6,
-  adoptSlow: 0.6,   // D(n) = 1 + 0.6·log2(1+n)  (GPT안 0.45 → 시뮬 후 0.6)
+  happyBase: 0.31, happySeat: 0.10, happySeatCap: 4, /* 행복도에 반영되는 손님 수 상한 */ happyToy: 0.035, affection: 1.3, aloof: 0.75, sleepMul: 0.6,
+  adoptSlow: 0.45, adoptLate: 0.10, adoptLong: 4, discoveryEarly: 0.65, discoveryLate: 0.06,   // D(n) = 1 + 0.6·log2(1+n)  (GPT안 0.45 → 시뮬 후 0.6)
   adoptBase: 80, adoptMenuSeat: 45, adoptPerAdopted: 25, adoptSkill: 0.25, aloofReward: 1.5, firstCombo: 0.20,
   newPupMin: 5, newPupMax: 15,
   // 교육
   trainFrac: 0.08, trainGrowth: 1.08, trainTimes: [15, 25, 35], trainerMul: 0.85, skillMax: 3,
   // 산책
-  walkSec: 40, walkFirstSec: 20, walkHappy: 25, walkHappyRate: 0.5, walkBase: 25, walkMenuSeat: 18, walkCourse: 0.5,
+  walkSec: 40, walkFirstSec: 20, walkHappy: 14, walkHappyRate: 0.5, walkBase: 25, walkMenuSeat: 18, walkCourse: 0.5,
   // 유튜브
   filmSec: 30, filmBase: 12, filmSkill: 4, camBonus: 0.30, filmRndMin: 0.8, filmRndMax: 1.2, sleepyFilm: 1.5,
   viralP: 0.05, viralMul: 3,
@@ -44,6 +44,14 @@ const BAL = {
   offlineIncome: 0.5, offlineSeatFill: 0.6, offlineHappy: 0.25,
 };
 const F = {
+  pupCombo(known, rand = Math.random) {
+    const coats=['red','red','red','red','red','sesame','sesame','blacktan','blacktan','white'];
+    const traits=['잠꾸러기','장난꾸러기','새침데기','먹보','애교쟁이'];
+    const keys=Object.keys(known).filter(k=>known[k]);
+    const key=()=>coats[Math.floor(rand()*coats.length)]+'_'+traits[Math.floor(rand()*traits.length)];
+    if(keys.length && rand() >= (keys.length<6?BAL.discoveryEarly:BAL.discoveryLate)) return keys[Math.floor(rand()*keys.length)];
+    return key();
+  },
   perCust: lv => BAL.custBase * Math.pow(BAL.custMul, lv),
   upCost: (k, lv) => Math.floor(BAL.up[k].base * Math.pow(BAL.up[k].mul, lv)),
   spawnInterval(subs, rep, rush) {
@@ -51,7 +59,7 @@ const F = {
     if (rush) s = Math.max(BAL.rushMin, s / BAL.rushDiv);
     return s;
   },
-  slow: adopted => 1 + BAL.adoptSlow * Math.log2(1 + adopted),
+  slow: adopted => 1 + BAL.adoptSlow * Math.log2(1 + adopted) + F.lateSlow(adopted),
   happyRate(seated, toys, trait, sleep, adopted) {
     let r = (BAL.happyBase + BAL.happySeat * Math.min(seated, BAL.happySeatCap)) * (1 + BAL.happyToy * toys);
     if (trait === '애교쟁이') r *= BAL.affection;
@@ -59,6 +67,8 @@ const F = {
     if (sleep) r *= BAL.sleepMul;
     return r / F.slow(adopted);
   },
+  lateSlow: adopted => BAL.adoptLate * Math.pow(Math.max(0,adopted-4),2) + Math.pow(BAL.adoptLong,Math.max(0,adopted-12))-1,
+  activityHappy: (amount, adopted) => amount / (1 + F.lateSlow(adopted)),
   tapCoin(seatedIncome, subsInc, trait) {
     return Math.max(1, BAL.tapIncomeFrac * (seatedIncome + subsInc) + BAL.tapFlat) * (trait === '장난꾸러기' ? BAL.mischief : 1);
   },
