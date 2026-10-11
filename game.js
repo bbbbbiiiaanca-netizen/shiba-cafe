@@ -434,6 +434,7 @@ function tutEvent(ev) {
 }
 function advanceTut() {
   S.tut++;
+  if (S.tut === 1) $('#panel').classList.add('open');
   if (S.tut === 1 && S.up.menu > 0) S.tut++;            // 이미 메뉴를 샀으면 건너뜀
   if (S.tut === 4 && adoptedN() > 0) S.tut++;           // 이미 입양했으면 건너뜀
   const st = TUT[S.tut];
@@ -501,9 +502,9 @@ function renderHUD() {
   const on = boostOn(), unlocked = boostUnlocked(), g = unlocked && !on ? adGate('boost') : null;
   const bb = $('#boostBtn');
   bb.classList.toggle('hidden', !!(on || !unlocked || (g && g.cap)));
-  if (g) { bb.classList.toggle('wait', !g.ok); bb.textContent = g.ok ? '📺 광고 보고 수익 2배' : `⏳ ${g.wait ? fmtTime(g.wait) : ''}`; }
+  if (g) { bb.classList.toggle('wait', !g.ok); bb.textContent = g.ok ? '📺' : '⏳'; bb.title = g.ok ? '광고 보고 수익 2배' : g.why; }
   $('#boostTimer').classList.toggle('hidden', !on);
-  if (on) $('#boostTimer').textContent = `🔥 손님·구독자 수익 2배 ${fmtTime((S.boostUntil - Date.now()) / 1000)}`;
+  if (on) $('#boostTimer').textContent = `🔥 ${fmtTime((S.boostUntil - Date.now()) / 1000)}`;
 }
 let tab = 'cafe';
 function pupIcon(p) { return `<div class="ic">${pupImg(p.coat, p.trait)}</div>`; }
@@ -600,7 +601,7 @@ $('#panel').addEventListener('click', e => {
   else if (a === 'film') startFilm(+arg);
 });
 function switchTab(t) {
-  tab = t; renderTabs(); renderPanel(); $('#panel').scrollTop = 0;
+  $('#panel').classList.add('open'); tab = t; renderTabs(); renderPanel(); $('#panel').scrollTop = 0;
 }
 document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click', () => {
   const t = b.dataset.tab;
@@ -669,12 +670,14 @@ function setupDebug() {
 }
 
 /* ---------- 시작 ---------- */
+$('#sheetClose').onclick = () => { $('#panel').classList.remove('open'); CafeMap.focus(); };
+$('#settings').onclick = () => { modal('<h2>설정</h2><p>게임은 자동으로 저장돼요.</p><button class="btn" id="settingsClose">닫기</button>'); $('#settingsClose').onclick = closeModal; };
 function start() {
   const had = load();
   $('#boss').innerHTML = `<div class="body">${ownerImg()}</div>`;
   $('#adDog').innerHTML = ownerImg();
   fillPups(true);
-  renderTabs(); renderPanel(); renderHUD();
+  renderTabs(); renderPanel(); renderHUD(); CafeMap.measure(); CafeMap.focus();
   if (had) offlineEarnings();
   else { modal(`<div class="pic">${ownerImg()}</div><h2>시바견 카페에 오신 걸 환영해요!</h2>
     <p>저는 사장님 <b>동구</b>예요 🐾<br>아기 시바들을 돌보고, 손님을 맞고,<br>행복해진 아이들을 <b>새 가족</b>에게 보내 줘요.</p>

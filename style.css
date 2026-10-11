@@ -135,3 +135,23 @@ img.spr{display:block;width:100%;height:100%;object-fit:contain;pointer-events:n
 #mapControls{position:absolute;right:calc(10px + env(safe-area-inset-right));bottom:calc(76px + env(safe-area-inset-bottom));z-index:83;display:flex;gap:6px}
 #mapControls button{background:#fdf6fae8;border:1px solid #dccbb8;border-radius:14px;padding:8px;color:var(--ink)}
 .tut{top:calc(70px + env(safe-area-inset-top));left:calc(10px + env(safe-area-inset-left));right:calc(10px + env(safe-area-inset-right))}
+#topbar{display:block;padding:env(safe-area-inset-top) calc(10px + env(safe-area-inset-right)) 6px calc(10px + env(safe-area-inset-left));background:linear-gradient(#fdf6faf5,#fdf6fad9,#fdf6fa90);border:0}
+#hudRow1,#hudRow2{display:flex;align-items:center;gap:5px;min-height:44px}
+.sign{position:static;flex:1;box-shadow:none;border:0;background:none;padding:0;color:#513f35;font-size:16px}
+#hudRow2 .res{padding:4px 5px;min-width:0;font-size:12px}.res b{font-size:13px}.ips{font-size:10px}
+#hudRow2 .boost{position:static;padding:4px;box-shadow:none;flex:none;font-size:18px}
+#hudRow2 .boost-timer{position:static;font-size:10px;padding:4px}
+#settings{border:0;background:none;font-size:20px}
+#nextGoal{width:100%;text-align:left;border:0;background:#fffc;border-radius:10px;padding:6px 10px;font-size:12px;color:var(--ink)}
+#zoneProgress{display:block;width:100%;height:5px;margin-top:4px;accent-color:#8aab6b}
+button{min-width:44px;min-height:44px;cursor:pointer}
+#panel:not(.open){display:none}
+#sheetClose{position:absolute;right:calc(12px + env(safe-area-inset-right));bottom:calc(40% + 64px + env(safe-area-inset-bottom));z-index:86;border:0;border-radius:15px;background:#fdf6fa}
+#app:has(#panel:not(.open)) #sheetClose{display:none}
+#decorBtn{position:absolute;left:calc(10px + env(safe-area-inset-left));bottom:calc(76px + env(safe-area-inset-bottom));z-index:83;border:0;border-radius:15px;background:#fdf6fae8;font-size:23px}
+.tut{top:calc(140px + env(safe-area-inset-top))}
+.modal{align-items:flex-end;padding:0 env(safe-area-inset-right) calc(64px + env(safe-area-inset-bottom)) env(safe-area-inset-left)}
+.modal .card{max-width:600px;max-height:65dvh;overflow:auto;border-radius:22px 22px 0 0}
+.modal .pic{width:70px;height:75px}
+#debug{z-index:200;max-width:100%;bottom:calc(65px + env(safe-area-inset-bottom));top:auto}
+html.bgcheck,html.bgcheck body,html.bgcheck #room{background:#ff00ff!important}
