@@ -12,6 +12,22 @@ function apply() {
   x = clamp(x, vw-W*s, 0); y = clamp(y, vh-H*s, 0);
   world.style.transform = `translate3d(${x}px,${y}px,0) scale(${s})`;
   world.style.setProperty('--hit', `${44/s}px`);
+  keepZoneInView();
+}
+// Retain world anchors and click handlers, correcting only the next zone's UI.
+function keepZoneInView() {
+  const hud = document.querySelector('#topbar'), tabs = document.querySelector('#tabs');
+  const padding = getComputedStyle(hud);
+  const left = parseFloat(padding.paddingLeft), right = vw-parseFloat(padding.paddingRight);
+  const top = hud.getBoundingClientRect().bottom+10, bottom = tabs.getBoundingClientRect().top-10;
+  document.querySelectorAll('.zone-sign, .zone:has(.zone-sign) .zone-label').forEach(el => {
+    el.style.maxWidth = `${(right-left)/s}px`;
+    el.style.transform = '';
+    const r = el.getBoundingClientRect();
+    const dx = clamp(r.left,left,right-r.width)-r.left;
+    const dy = clamp(r.top,top,Math.max(top,bottom-r.height))-r.top;
+    el.style.transform = `translate(${dx/s}px,${dy/s}px)`;
+  });
 }
 function measure() {
   vw = view.clientWidth; vh = view.clientHeight;
@@ -60,6 +76,6 @@ view.addEventListener('wheel',e=>{e.preventDefault();if(!locked())zoom(s*Math.ex
 document.querySelector('#mapHome').onclick=()=>{document.querySelector('#panel').classList.remove('open');measure();focus();};
 document.querySelector('#mapAll').onclick=()=>{document.querySelector('#panel').classList.remove('open');measure();focus(bounds.x+bounds.w/2,bounds.y+bounds.h/2,minS);};
 window.addEventListener('resize',()=>{measure();focus();});
-window.CafeMap={measure,focus,zoom,stop:()=>motionId++,setBounds(b){bounds=b;measure();},get state(){return {W,H,vw,vh,minS,defS,maxS,s,x,y};},edge(k){motionId++;if(k==='left')x=0;if(k==='right')x=vw-W*s;if(k==='top')y=0;if(k==='bottom')y=vh-H*s;apply();}};
+window.CafeMap={measure,focus,zoom,keepZoneInView,stop:()=>motionId++,setBounds(b){bounds=b;measure();},get state(){return {W,H,vw,vh,minS,defS,maxS,s,x,y};},edge(k){motionId++;if(k==='left')x=0;if(k==='right')x=vw-W*s;if(k==='top')y=0;if(k==='bottom')y=vh-H*s;apply();}};
 measure();focus();
 })();

@@ -708,6 +708,7 @@ function renderZoneGoal() {
   b.innerHTML=building ? `공사 중: ${z.name} · ${fmtTime((S.zones[z.id].endsAt-Date.now())/1000)}` : `다음: ${z.name} · ${fmt(S.coins)} / ${fmt(z.unlock.coins)} · 입양 ${adoptedN()}/${z.unlock.adoptions}<progress id="zoneProgress" max="100" value="${pct}"></progress>`;
   const sign=$(`[data-zone="${z.id}"] .zone-sign`);if(sign){sign.dataset.material=Math.floor(pct/25);sign.textContent=`🔨 ${z.name} ${Math.floor(pct/25)>0?'🪵'.repeat(Math.min(3,Math.floor(pct/25))):''}`;}
   document.querySelectorAll('[data-build]').forEach(el=>el.textContent=fmtTime((S.zones[el.dataset.build].endsAt-Date.now())/1000));
+  CafeMap.keepZoneInView();
 }
 function freezeZonePrice(z){if(z.no!==2)return;S.zonePrices ||= {};if(S.zonePrices[z.id]==null){S.zonePrices[z.id]=Math.round(unboostedU()*C.garden.minutes);save(true);}z.unlock.coins=S.zonePrices[z.id];}
 function openZone(z) {
@@ -921,7 +922,7 @@ function setupDebug() {
     if (k === 'reset') { saveService.blocked=true;localStorage.removeItem(SAVE_KEY); location.reload(); }
     renderPanel();
   });
-  window.__game = { BAL, F, TRAIT_FACE, spriteSrc, get S() { return S; }, setSpeed: v => speed = v, tick, ips, fmt, openAdoption, renderPanel, adGate, switchTab, debug: { setStage(n) { S.zones={};ZONES.forEach(z=>S.zones[z.id]={state:z.no<=n&&!z.placeholder?"open":"locked"});renderZones();syncPupEls();renderPanel(); }, advanceBuild(sec) { ZONES.forEach(z=>{if(zoneState(z)==="building")S.zones[z.id].endsAt-=sec*1000;});updateZones(); }, caps: () => ({pupCap:maxPups(),walkCap:walkCap()}), camera: CafeMap }, save, saveService, Core, C, openDraw, draw, resolveDuplicate, receiveWaiting, startTrain, startWalk, openGarden, createPhoto, rewardTest, purchaseHook, shareHook, requestReward, tapPup, unboostedU };
+  window.__game = { BAL, F, TRAIT_FACE, spriteSrc, get S() { return S; }, setSpeed: v => speed = v, tick, ips, fmt, openAdoption, renderPanel, adGate, switchTab, debug: { renderZoneGoal, setStage(n) { S.zones={};ZONES.forEach(z=>S.zones[z.id]={state:z.no<=n&&!z.placeholder?"open":"locked"});renderZones();syncPupEls();renderPanel(); }, advanceBuild(sec) { ZONES.forEach(z=>{if(zoneState(z)==="building")S.zones[z.id].endsAt-=sec*1000;});updateZones(); }, caps: () => ({pupCap:maxPups(),walkCap:walkCap()}), camera: CafeMap }, save, saveService, Core, C, openDraw, draw, resolveDuplicate, receiveWaiting, startTrain, startWalk, openGarden, createPhoto, rewardTest, purchaseHook, shareHook, requestReward, tapPup, unboostedU };
 }
 
 /* ---------- 시작 ---------- */
