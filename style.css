@@ -163,3 +163,5 @@ html.bgcheck,html.bgcheck body,html.bgcheck #room{background:#ff00ff!important}
 .zone p{position:absolute;bottom:-15px;left:0;right:0;font-size:22px}
 .zone-sign{position:absolute;left:25%;top:40%;min-width:var(--hit);min-height:var(--hit);font-size:24px;border:4px solid #e1c192;border-radius:14px;background:#82643f;color:#fff7dd;padding:12px}
 .scaffold{position:absolute;inset:80px;background:repeating-linear-gradient(45deg,#d4b577cc 0 15px,#776747cc 15px 30px);border:10px solid #8e7651;font-size:60px}.scaffold span{display:block;font-size:30px}
+.zone .pup{width:100px;height:110px;min-width:var(--hit);min-height:var(--hit);text-align:left}
+.zone .pup .nm{color:var(--ink)}

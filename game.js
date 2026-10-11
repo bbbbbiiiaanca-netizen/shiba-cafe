@@ -90,7 +90,6 @@ const UPGRADES = {
   seats: { n: '좌석 늘리기', ic: '🪑', desc: lv => `최대 손님 ${2 + lv}→${3 + lv}명` },
   toys:  { n: '장난감·인테리어', ic: '🧸',
            desc: lv => `행복도 속도 +${Math.round(BAL.happyToy * 100 * lv)}%→+${Math.round(BAL.happyToy * 100 * (lv + 1))}%` },
-  slots: { n: '강아지 방 넓히기', ic: '🏠', desc: lv => `아기 시바 ${2 + lv}→${3 + lv}마리 (새 친구가 와요)` },
   trainer: { n: '훈련사 고용', ic: '🎓',
            desc: lv => `교육 시간 -${Math.round((1 - F.trainMult(lv)) * 100)}%→-${Math.round((1 - F.trainMult(lv + 1)) * 100)}%` },
   course: { n: '산책 코스', ic: '🦮',
@@ -98,7 +97,7 @@ const UPGRADES = {
   cam:   { n: '촬영 장비', ic: '🎥',
            desc: lv => `${CAMS[lv]} → ${CAMS[lv + 1] || '-'} (구독자 +${Math.round(BAL.camBonus * 100 * lv)}%→+${Math.round(BAL.camBonus * 100 * (lv + 1))}%)` },
 };
-const upMax = k => BAL.up[k].max;
+const upMax = k => k === 'seats' ? 2 : BAL.up[k].max;
 function upCost(k) { return F.upCost(k, S.up[k]); }
 
 /* ---------- 상태 ---------- */
@@ -110,7 +109,7 @@ function newState() {
     ver: SAVE_VER, coins: BAL.startCoins, rep: 0, subs: 0, total: 0,
     up: { menu: 0, seats: 0, toys: 0, slots: 0, trainer: 0, course: 0, cam: 0 },
     pups: [], adopted: [], nextId: 1, nameIdx: Math.floor(Math.random() * NAMES.length),
-    boostUntil: 0, boostReadyAt: 0, train: [], walks: [], film: null, videos: [],
+    plays: [], boostUntil: 0, boostReadyAt: 0, train: [], walks: [], film: null, videos: [],
     last: Date.now(), playSec: 0, queue: [], dex: {},
     tut: 0, tutPets: 0, freeTrain: true, firstWalk: true,
     ads: null, zones: {z1_tatami: {state:"open"}}, pendingGifts: [],
@@ -148,20 +147,22 @@ function makePup() {
     x: rnd(24, 80), y: rnd(22, 58), sleep: false,
   };
 }
-const maxPups = () => 2 + S.up.slots;
+const maxPups = () => ZONES.filter(z=>zoneOpen(z.no)).reduce((n,z)=>n+(z.adds.pupCap||0),0);
+const walkCap = () => F.walkCap(S.up.course) + (zoneOpen(3)?1:0);
+const isPlaying = p => S.plays.some(a=>a.id===p.id);
 const seatCap = () => 2 + S.up.seats;
 const skillScore = p => Object.values(p.skills).reduce((a, b) => a + b, 0);
 const isWalking = p => S.walks.some(w => w.id === p.id);
 const isTraining = p => S.train.some(t => t.id === p.id);
 const isFilming = p => S.film && S.film.id === p.id;
-const busy = p => isWalking(p) || isTraining(p) || isFilming(p);
+const busy = p => isWalking(p) || isTraining(p) || isFilming(p) || isPlaying(p);
 const boostOn = () => Date.now() < S.boostUntil;
 const comboKey = p => p.coat + '_' + p.trait;
 const isNewCombo = p => !S.dex[comboKey(p)];
 
 /* ---------- 손님 (일시 상태, 저장 안 함) ---------- */
 let custs = []; let custTimer = 0; let custSeq = 0; let rushUntil = 0;
-const SEATS = [[4, 2], [16, 6], [28, 1], [40, 5], [56, 2], [68, 6], [80, 1], [88, 7]].map(([x, y]) => ({ x, y }));
+const SEATS = ZONES[0].spots.seats.map(([x, y]) => ({ x, y }));
 function seatedCount() { return custs.filter(c => c.state === 'sit').length; }
 function custIncome() {
   const foodie = S.pups.some(p => p.trait === '먹보' && !isWalking(p)) ? BAL.foodie : 1;
@@ -214,11 +215,11 @@ function hopEl(el) { const b = el.querySelector('.body') || el; b.classList.remo
 /* ---------- 강아지 렌더/행동 ---------- */
 function syncPupEls() {
   const floor = $('#floor');
-  const visible = new Set(S.pups.filter(p => !isWalking(p)).map(p => p.id));
-  floor.querySelectorAll('.pup').forEach(el => { if (!visible.has(+el.dataset.id)) el.remove(); });
+  const visible = new Set(S.pups.map(p => p.id));
+  $('#world').querySelectorAll('.pup').forEach(el => { if (!visible.has(+el.dataset.id)) el.remove(); });
   for (const p of S.pups) {
     if (!visible.has(p.id)) continue;
-    let el = floor.querySelector(`.pup[data-id="${p.id}"]`);
+    let el = $('#world').querySelector(`.pup[data-id="${p.id}"]`);
     if (!el) {
       el = document.createElement('div'); el.className = 'pup'; el.dataset.id = p.id;
       el.innerHTML = `<div class="body"><div class="flipper">${pupImg(p.coat, p.trait)}</div></div><div class="hb"><i></i></div><div class="nm">${p.name}</div><div class="zz">💤</div><div class="badge"></div>`;
@@ -226,11 +227,15 @@ function syncPupEls() {
       el.addEventListener('click', () => tapPup(p.id));
       floor.appendChild(el);
     }
+    const zone = isWalking(p)&&zoneOpen(3)?ZONES[2]:isPlaying(p)?ZONES[3]:zoneOpen(2)&&p.id%3===0?ZONES[1]:ZONES[0];
+    const parent = zone.no===1?floor:$(`[data-zone="${zone.id}"]`);
+    if(parent && el.parentNode!==parent) parent.appendChild(el);
+    p.zone=zone.no;const spot=zone.spots.pups[p.id%zone.spots.pups.length];p.x=spot[0];p.y=spot[1];el.style.left=p.x+'%';el.style.top=p.y+'%';el.style.zIndex=5+Math.round(p.y);
   }
 }
 function updatePupEls() {
   for (const p of S.pups) {
-    const el = $(`#floor .pup[data-id="${p.id}"]`); if (!el) continue;
+    const el = $(`#world .pup[data-id="${p.id}"]`); if (!el) continue;
     el.querySelector('.hb i').style.width = p.happy + '%';
     el.classList.toggle('sleep', !!p.sleep);
     const b = el.querySelector('.badge');
@@ -242,12 +247,12 @@ function updatePupEls() {
 }
 function wander() {
   for (const p of S.pups) {
-    if (isWalking(p) || Math.random() < 0.35) continue;
+    if (busy(p) || Math.random() < 0.35) continue;
     const sleepy = p.trait === '잠꾸러기' ? 0.5 : 0.18;
     p.sleep = !isTraining(p) && !isFilming(p) && p.happy < 100 && Math.random() < sleepy;
     if (!p.sleep) {
-      const nx = clamp(p.x + rnd(-30, 30), 22, 84), ny = clamp(p.y + rnd(-18, 18), 20, 60);
-      const el = $(`#floor .pup[data-id="${p.id}"]`);
+      const spot=pick(ZONES[(p.zone||1)-1].spots.pups);const nx=spot[0],ny=spot[1];
+      const el = $(`#world .pup[data-id="${p.id}"]`);
       if (el) {
         el.classList.toggle('flip', nx < p.x); el.classList.add('moving');
         el.style.left = nx + '%'; el.style.top = ny + '%'; el.style.zIndex = 5 + Math.round(ny);
@@ -260,7 +265,7 @@ function wander() {
 const lastTap = {};
 function tapPup(id) {
   const p = S.pups.find(q => q.id === id); if (!p) return;
-  const el = $(`#floor .pup[data-id="${p.id}"]`);
+  const el = $(`#world .pup[data-id="${p.id}"]`);
   if (p.happy >= 100) { openAdoption(p); return; }
   p.sleep = false;
   if (el) { hopEl(el); popAt(el, '❤️', 'heart'); }
@@ -302,7 +307,7 @@ function openAdoption(p) {
 function doAdopt(p, reward, rp) {
   if (!S.pups.includes(p)) return;
   addCoins(reward); S.rep += rp;
-  S.train = S.train.filter(t => t.id !== p.id); S.walks = S.walks.filter(w => w.id !== p.id);
+  S.train = S.train.filter(t => t.id !== p.id); S.walks = S.walks.filter(w => w.id !== p.id); S.plays = S.plays.filter(a=>a.id!==p.id);
   if (S.film && S.film.id === p.id) S.film = null;
   const d = new Date(), k = comboKey(p), first = !S.dex[k];
   S.dex[k] = (S.dex[k] || 0) + 1;
@@ -350,11 +355,15 @@ function walkReward() { return F.walkReward(S.up.menu, seatCap(), S.up.course); 
 function walkTime() { return S.firstWalk ? BAL.walkFirstSec : BAL.walkSec; }
 function startWalk(id) {
   const p = S.pups.find(q => q.id === id); if (!p || busy(p)) return;
-  if (S.walks.length >= F.walkCap(S.up.course)) return toast(`지금은 동시에 ${F.walkCap(S.up.course)}마리까지 산책할 수 있어요`);
+  if (S.walks.length >= walkCap()) return toast(`지금은 동시에 ${walkCap()}마리까지 산책할 수 있어요`);
   const t = walkTime(); S.firstWalk = false;
   S.walks.push({ id, left: t, dur: t }); syncPupEls(); renderPanel();
   toast(`🦮 ${p.name} ${COURSES[S.up.course]}(으)로 산책 출발!`);
   tutEvent('walk');
+}
+function startPlay(id) {
+  const p=S.pups.find(p=>p.id===id);if(!zoneOpen(4)||!p||busy(p)||Date.now()<(p.playReadyAt||0))return;
+  const dur=BAL.walkSec*.5;S.plays.push({id,left:dur,dur});p.playReadyAt=Date.now()+BAL.walkSec*3*1000;syncPupEls();renderPanel();save();
 }
 function finishWalk(w) {
   const p = S.pups.find(q => q.id === w.id); if (!p) return;
@@ -481,6 +490,9 @@ function tick(dt) {
   S.train = S.train.filter(t => t.left > 0); S.walks = S.walks.filter(w => w.left > 0);
   doneW.forEach(finishWalk);
   if (S.film) { S.film.left -= dt; if (S.film.left <= 0) finishFilm(); }
+  S.plays.forEach(a=>a.left-=dt);const doneP=S.plays.filter(a=>a.left<=0);
+  for(const a of doneP){const p=S.pups.find(p=>p.id===a.id);if(p)p.happy=Math.min(100,p.happy+BAL.walkHappy*.7);}
+  S.plays=S.plays.filter(a=>a.left>0);if(doneP.length){syncPupEls();renderPanel();}
   arrivePups();
   if (doneT.length || doneW.length) { syncPupEls(); renderPanel(); }
 }
@@ -514,7 +526,7 @@ function pupIcon(p) { return `<div class="ic">${pupImg(p.coat, p.trait)}</div>`;
 function skillChips(p) { return SKILLS.map(s => `<span class="chip ${p.skills[s.k] ? 'on' : ''}">${s.n}${p.skills[s.k] ? ' ' + p.skills[s.k] : ''}</span>`).join(''); }
 function upRow(k) {
   const u = UPGRADES[k], lv = S.up[k], max = lv >= upMax(k);
-  return `<div class="row"><div class="ic">${u.ic}</div><div class="tx"><b>${u.n} <small>Lv${lv}</small></b><p>${max ? '최대 레벨!' : u.desc(lv)}</p></div>
+  return `<div class="row"><div class="ic">${u.ic}</div><div class="tx"><b>${u.n} <small>Lv${lv}</small></b><p>${max ? (k==='seats'?'두 번째 다다미방에서 더 늘릴 수 있어요':'최대 레벨!') : u.desc(lv)}</p></div>
     ${max ? '<button class="btn" disabled>MAX</button>' : `<button class="btn" data-act="buy" data-arg="${k}" data-cost="${upCost(k)}">🪙 ${fmt(upCost(k))}</button>`}</div>`;
 }
 function renderTabs() {
@@ -524,7 +536,7 @@ function renderPanel() {
   const P = $('#panel'); let h = '';
   if (tab === 'cafe') {
     h += `<div class="h">카페 업그레이드 <small>손님 <span data-seat>${seatedCount()}</span>/${seatCap()} · 아기 시바 ${S.pups.length}/${maxPups()}</small></div>`;
-    h += ['menu', 'seats', 'toys', 'slots'].map(upRow).join('');
+    h += ['menu', 'seats', 'toys'].map(upRow).join('');
     h += `<div class="h" style="margin-top:12px">우리 아기 시바들 <small>행복도 가득 차면 입양 신청!</small></div>`;
     h += S.pups.map(p => `<div class="row">${pupIcon(p)}<div class="tx"><b>${p.name}</b> <small class="chip">${COATS[p.coat].name}</small> <small class="chip">${p.trait}</small>${isNewCombo(p) ? ' <small class="chip new">도감 NEW</small>' : ''}
        <p>${TRAITS[p.trait]}</p><div class="bar"><i data-happy="${p.id}" style="width:${p.happy}%" class="pink"></i></div></div>
@@ -540,13 +552,15 @@ function renderPanel() {
         <div style="display:flex;gap:5px;flex-wrap:wrap;width:100%">${SKILLS.map(s => p.skills[s.k] >= SKILL_MAX ? '' : `<button class="btn sm" data-act="train" data-arg="${p.id}:${s.k}" data-cost="${cost}" ${b || S.train.length >= TRAIN_SLOTS ? 'data-lock="1" disabled' : ''}>${s.n}<br><small>${Math.round(trainTime(p, s.k))}초</small></button>`).join('')}</div></div>`;
     }).join('');
   } else if (tab === 'walk') {
-    h += `<div class="h">🦮 산책시키기 <small>${COURSES[S.up.course]} · 동시 ${S.walks.length}/${F.walkCap(S.up.course)}</small></div>`;
+    h += `<div class="h">🦮 산책시키기 <small>${COURSES[S.up.course]} · 동시 ${S.walks.length}/${walkCap()}</small></div>`;
     h += `<p class="note">산책 다녀오면 코인 + 행복도 +${BAL.walkHappy}, 그리고 동네 사람들이 보고 손님이 몰려와요! (산책 중에도 행복도는 절반 속도로 올라요)</p>`;
     h += upRow('course');
+    if(zoneOpen(4)) h+=`<div id="playCard"><div class="h">🎾 놀이터 놀이</div><p class="note">${BAL.walkSec*.5}초 · 행복도 +${BAL.walkHappy*.7} · 코인 없음 · 재사용 ${BAL.walkSec*3}초</p>${S.pups.map(p=>`<div class="row">${pupIcon(p)}<div class="tx"><b>${p.name}</b><p>${isPlaying(p)?'놀이 중':Math.max(0,Math.ceil(((p.playReadyAt||0)-Date.now())/1000))+'초 뒤 사용 가능'}</p></div><button class="btn" data-act="play" data-arg="${p.id}" ${busy(p)||Date.now()<(p.playReadyAt||0)?'disabled':''}>놀기</button></div>`).join('')}</div>`;
+
     h += S.pups.map(p => {
       const w = S.walks.find(x => x.id === p.id);
       if (w) return `<div class="row">${pupIcon(p)}<div class="tx"><b>${p.name} 산책 중… 🐾</b><div class="bar"><i data-prog="walk-${p.id}" style="width:${100 - w.left / w.dur * 100}%"></i></div><p data-timer="walk-${p.id}">${fmtTime(w.left)} 남음</p></div></div>`;
-      return `<div class="row">${pupIcon(p)}<div class="tx"><b>${p.name}</b><p>보상 🪙 ${fmt(walkReward())} · ${walkTime()}초</p></div><button class="btn" data-act="walk" data-arg="${p.id}" ${busy(p) || S.walks.length >= F.walkCap(S.up.course) ? 'disabled' : ''}>산책 가기</button></div>`;
+      return `<div class="row">${pupIcon(p)}<div class="tx"><b>${p.name}</b><p>보상 🪙 ${fmt(walkReward())} · ${walkTime()}초</p></div><button class="btn" data-act="walk" data-arg="${p.id}" ${busy(p) || S.walks.length >= walkCap() ? 'disabled' : ''}>산책 가기</button></div>`;
     }).join('');
   } else if (tab === 'yt') {
     h += `<div class="h">🎬 동구네 시바TV <small>구독자 ${fmt(S.subs)}명</small></div>`;
@@ -601,6 +615,7 @@ $('#panel').addEventListener('click', e => {
   } else if (a === 'adopt') { const p = S.pups.find(q => q.id === +arg); if (p) openAdoption(p); }
   else if (a === 'train') { const [id, k] = arg.split(':'); startTrain(+id, k); }
   else if (a === 'walk') startWalk(+arg);
+  else if (a === 'play') startPlay(+arg);
   else if (a === 'film') startFilm(+arg);
 });
 function switchTab(t) {
@@ -726,7 +741,7 @@ function setupDebug() {
     if (k === 'reset') { localStorage.removeItem(SAVE_KEY); location.reload(); }
     renderPanel();
   });
-  window.__game = { BAL, F, TRAIT_FACE, spriteSrc, get S() { return S; }, setSpeed: v => speed = v, tick, ips, fmt, openAdoption, renderPanel, adGate, switchTab, debug: { setStage(n) { S.zones={};ZONES.forEach(z=>S.zones[z.id]={state:z.no<=n&&!z.placeholder?"open":"locked"});renderZones(); }, advanceBuild(sec) { ZONES.forEach(z=>{if(zoneState(z)==="building")S.zones[z.id].endsAt-=sec*1000;});updateZones(); }, caps: () => ({pupCap:maxPups(),walkCap:F.walkCap(S.up.course)}), camera: CafeMap }, save };
+  window.__game = { BAL, F, TRAIT_FACE, spriteSrc, get S() { return S; }, setSpeed: v => speed = v, tick, ips, fmt, openAdoption, renderPanel, adGate, switchTab, debug: { setStage(n) { S.zones={};ZONES.forEach(z=>S.zones[z.id]={state:z.no<=n&&!z.placeholder?"open":"locked"});renderZones(); }, advanceBuild(sec) { ZONES.forEach(z=>{if(zoneState(z)==="building")S.zones[z.id].endsAt-=sec*1000;});updateZones(); }, caps: () => ({pupCap:maxPups(),walkCap:walkCap()}), camera: CafeMap }, save };
 }
 
 /* ---------- 시작 ---------- */
