@@ -116,3 +116,22 @@ img.spr{display:block;width:100%;height:100%;object-fit:contain;pointer-events:n
 .empty{text-align:center;color:var(--ink2);font-size:13px;padding:24px 0}
 #debug{position:fixed;left:4px;top:52px;z-index:110;display:flex;flex-direction:column;gap:3px;opacity:.85}
 #debug button{font-size:11px;padding:4px 6px;border-radius:6px;border:1px solid #333;background:#fffd}
+/* v0.5 ground map: viewport fill is independent of the HUD and sheets. */
+#app{max-width:none;width:100%;height:100dvh;display:block;background:transparent}
+#room{position:absolute;inset:0;height:auto;min-height:0;touch-action:none;background:#91a777}
+#room::after{display:none}
+#world{position:absolute;width:3600px;height:4400px;transform-origin:0 0;background-color:#8fa775;background-image:radial-gradient(ellipse at 30% 40%,#c0bd88aa 0 6px,transparent 7px),radial-gradient(ellipse at 70% 65%,#667f5544 0 3px,transparent 4px),repeating-linear-gradient(23deg,#ffffff04 0 2px,#4b633b08 2px 4px);background-size:83px 71px,39px 43px,7px 9px;will-change:transform}
+.sky{position:absolute;inset:0 0 auto;height:950px;background:linear-gradient(#9bc8d3,#d7e3ba,#8fa775);font-size:180px;padding:200px 600px;color:#fff9}
+.street{position:absolute;inset:auto 0 0;height:800px;background:linear-gradient(#8fa775,#b8aa88 30%,#938778);text-align:center;padding-top:350px;font-size:100px;color:#f8eed6}
+#z1Scene{position:absolute;left:1420px;top:2700px;width:760px;height:480px}
+.zone-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;mask-image:radial-gradient(ellipse,#000 52%,transparent 73%)}
+#floor{inset:25% 8% 12% 8%}
+#boss{left:40px;bottom:30px;width:110px;height:130px}
+#floor .pup{width:100px;height:110px;min-width:var(--hit);min-height:var(--hit)}
+#floor .cust{width:70px;height:100px}
+#topbar{position:absolute;inset:0 0 auto;z-index:85}
+#tabs{position:absolute;inset:auto 0 0;z-index:85;padding:0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);height:calc(64px + env(safe-area-inset-bottom))}
+#panel{position:absolute;left:env(safe-area-inset-left);right:env(safe-area-inset-right);bottom:calc(64px + env(safe-area-inset-bottom));height:40%;max-height:65%;background:#fdf6faf5;border-radius:20px 20px 0 0;z-index:84}
+#mapControls{position:absolute;right:calc(10px + env(safe-area-inset-right));bottom:calc(76px + env(safe-area-inset-bottom));z-index:83;display:flex;gap:6px}
+#mapControls button{background:#fdf6fae8;border:1px solid #dccbb8;border-radius:14px;padding:8px;color:var(--ink)}
+.tut{top:calc(70px + env(safe-area-inset-top));left:calc(10px + env(safe-area-inset-left));right:calc(10px + env(safe-area-inset-right))}
