@@ -3,6 +3,7 @@
 'use strict';
 const { BAL, F } = window.SC;
 const { ZONES } = window.CafeZones;
+const { DECOR, SLOTS } = window.CafeDecor;
 
 /* ============================================================
  * [광고 연동 지점] showRewardedAd(cb)
@@ -112,7 +113,7 @@ function newState() {
     plays: [], boostUntil: 0, boostReadyAt: 0, train: [], walks: [], film: null, videos: [],
     last: Date.now(), playSec: 0, queue: [], dex: {},
     tut: 0, tutPets: 0, freeTrain: true, firstWalk: true,
-    ads: null, zones: {z1_tatami: {state:"open"}}, pendingGifts: [],
+    ads: null, zones: {z1_tatami: {state:"open"}}, pendingGifts: [], slots: {}, ownedDecor: [],
   };
 }
 function load() {
@@ -629,7 +630,7 @@ document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click
 
 /* ---------- 모달 / 광고 부스트 / 오프라인 ---------- */
 function modal(html) { $('#modalCard').innerHTML = html; $('#modal').classList.remove('hidden'); }
-function closeModal() { $('#modal').classList.add('hidden'); }
+function closeModal() { $('#modal').classList.add('hidden'); setTimeout(offerGift, 50); }
 $('#boostBtn').addEventListener('click', () => {
   const g = adGate('boost'); if (!g.ok) return toast(g.why);
   const left = BAL.ads.boost.daily - adState().boost;
@@ -689,6 +690,7 @@ function renderZones() {
     if(z===next) { const b=document.createElement('button');b.className='zone-sign';b.textContent='🔨 '+z.name;b.onclick=()=>openZone(z);el.appendChild(b); }
     layer.appendChild(el);
   }
+  renderDecor();
   const opened=ZONES.filter(z=>zoneState(z)==='open');
   const left=Math.min(...opened.map(z=>z.rect.x)),top=Math.min(...opened.map(z=>z.rect.y));
   CafeMap.setBounds({x:left,y:top,w:Math.max(...opened.map(z=>z.rect.x+z.rect.w))-left,h:Math.max(...opened.map(z=>z.rect.y+z.rect.h))-top});
@@ -725,6 +727,38 @@ function updateZones(offline=false) {
 }
 $('#room').addEventListener('pointermove',()=>{if(celebrationTimer){clearTimeout(celebrationTimer);celebrationTimer=null;if(typeof offerGift==='function')offerGift();}});
 $('#nextGoal').onclick=()=>{const z=nextZone();if(z)openZone(z);};
+
+/* ---------- Cosmetic slots: intentionally no balance effects ---------- */
+let decorating=false;
+function renderDecor() {
+  document.querySelectorAll('.decor-slot').forEach(el=>el.remove());
+  for(const slot of SLOTS) if(zoneOpen(slot.zone)) {
+    const item=DECOR.find(d=>d.id===S.slots[slot.id]);
+    if(!decorating&&!item)continue;
+    const el=document.createElement(decorating?'button':'div');el.className='decor-slot'+(decorating?' editing':'');
+    el.style.left=slot.x+'px';el.style.top=slot.y+'px';el.textContent=item?.emoji||'＋';el.title=slot.cat;
+    if(decorating)el.onclick=()=>openDecor(slot);
+    $('#world').appendChild(el);
+  }
+  $('#signBadge').textContent=DECOR.find(d=>d.id===S.slots.s_entry_sign)?.emoji||'';
+}
+function equipDecor(slot,item,free=false) {
+  if(!S.ownedDecor.includes(item.id)){if(!free&&S.coins<item.coins)return; if(!free)S.coins-=item.coins;S.ownedDecor.push(item.id);}
+  S.slots[slot.id]=item.id;save();renderDecor();
+}
+function openDecor(slot) {
+  $('#panel').classList.remove('open');CafeMap.focus(slot.x,slot.y);
+  modal(`<h2>🎨 소품 고르기</h2><p>꾸미기는 외형만 바꿔요.</p>${DECOR.filter(d=>d.cat===slot.cat).map(d=>`<div class="row"><div class="ic">${d.emoji}</div><div class="tx"><b>${d.name}</b></div><button class="btn" data-decor="${d.id}" ${!S.ownedDecor.includes(d.id)&&S.coins<d.coins?'disabled':''}>${S.ownedDecor.includes(d.id)?'장착':'🪙 '+fmt(d.coins)}</button></div>`).join('')}<button class="btn gray" id="decorClose">닫기</button>`);
+  document.querySelectorAll('[data-decor]').forEach(b=>b.onclick=()=>{equipDecor(slot,DECOR.find(d=>d.id===b.dataset.decor));closeModal();});$('#decorClose').onclick=closeModal;
+}
+function offerGift() {
+  if(!S.pendingGifts.length || !$('#modal').classList.contains('hidden'))return;
+  const zone=S.pendingGifts[0],z=ZONES.find(z=>z.id===zone);
+  const choices=z.no===2?DECOR.filter(d=>d.cat==='garden'):DECOR.filter(d=>d.cat==='light');
+  modal(`<h2>${z.name} 완공 선물</h2><p>무료 소품 하나를 골라 주세요.</p>${choices.map(d=>`<button class="btn" data-gift="${d.id}">${d.emoji} ${d.name}</button>`).join(' ')}`);
+  document.querySelectorAll('[data-gift]').forEach(b=>b.onclick=()=>{const item=DECOR.find(d=>d.id===b.dataset.gift),slot=SLOTS.find(s=>s.cat===item.cat);equipDecor(slot,item,true);S.pendingGifts.shift();save();closeModal();});
+}
+$('#decorBtn').onclick=()=>{decorating=!decorating;$('#panel').classList.remove('open');renderDecor();toast(decorating?'점선 원을 눌러 소품을 골라요':'꾸미기 완료');};
 
 /* ---------- 디버그 (?debug=1) ---------- */
 function setupDebug() {
