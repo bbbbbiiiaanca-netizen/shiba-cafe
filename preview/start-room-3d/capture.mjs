@@ -4,6 +4,7 @@ import {mkdirSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 const output=resolve(process.argv[2]||'/workspace/shiba-cafe-docs/start-room-3d');
 mkdirSync(output+'/frames',{recursive:true});
+spawnSync('rm',['-rf','/tmp/shiba-first-check-capture']);
 const chrome=spawn('google-chrome',['--headless','--no-sandbox','--disable-dev-shm-usage','--user-data-dir=/tmp/shiba-first-check-capture','--remote-debugging-pipe','--allow-file-access-from-files','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'],{stdio:['ignore','ignore','pipe','pipe','pipe']});
 let id=0,buffer='',pending=new Map(),errors='';
 chrome.stderr.on('data',d=>{errors+=d;});

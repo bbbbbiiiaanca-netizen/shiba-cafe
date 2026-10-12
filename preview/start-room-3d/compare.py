@@ -9,7 +9,7 @@ pixels=render.load(); points=[]
 for y in range(render.height):
     for x in range(render.width):
         r,g,b=pixels[x,y]
-        if max(r,g,b)-min(r,g,b)>35 and r<240: points.append((x,y))
+        if r<222: points.append((x,y))
 if not points: raise RuntimeError('No rendered scene found; comparison refused')
 xs,ys=zip(*points); render=render.crop((max(0,min(xs)-12),max(0,min(ys)-12),min(render.width,max(xs)+13),min(render.height,max(ys)+13)))
 canvas=Image.new('RGB',(1000,370),'#fff8ec'); draw=ImageDraw.Draw(canvas)
