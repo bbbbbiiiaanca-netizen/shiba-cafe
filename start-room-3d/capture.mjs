@@ -16,7 +16,7 @@ try{
  const {targetId}=await call('Target.createTarget',{url:'about:blank'});
  const {sessionId}=await call('Target.attachToTarget',{targetId,flatten:true});
  const c=(m,p)=>call(m,p,sessionId);
- await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+ await c('Emulation.setDeviceMetricsOverride',{width:+(process.env.W||390),height:+(process.env.H||844),deviceScaleFactor:1,mobile:true});
  await c('Page.enable');await c('Runtime.enable');
  await c('Page.navigate',{url:'file://'+resolve('start-room-3d/index.html')+'?still=1'+(process.env.Q||'')});
  let ready=false;for(let i=0;i<100;i++){const r=await c('Runtime.evaluate',{expression:'Boolean(window.__firstCheck)'});if(r.result.value){ready=true;break;}await new Promise(r=>setTimeout(r,100));}if(!ready)throw Error('Scene did not initialize');
