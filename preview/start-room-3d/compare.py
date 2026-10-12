@@ -1,18 +1,12 @@
 from PIL import Image, ImageDraw
 from pathlib import Path
 import sys
-out=Path(sys.argv[1])
+out=Path(sys.argv[1]); sfx=sys.argv[2] if len(sys.argv)>2 else ''
 guide=Image.open('/workspace/shiba-cafe-docs/final-chars/pages/p-07.png').convert('RGB').crop((62,127,433,337))
-render=Image.open(out/'still.png').convert('RGB')
-# Preserve the entire portrait capture as a separate deliverable. Crop only cream margins for comparison.
-pixels=render.load(); points=[]
-for y in range(render.height):
-    for x in range(render.width):
-        r,g,b=pixels[x,y]
-        if r<222: points.append((x,y))
-if not points: raise RuntimeError('No rendered scene found; comparison refused')
-xs,ys=zip(*points); render=render.crop((max(0,min(xs)-12),max(0,min(ys)-12),min(render.width,max(xs)+13),min(render.height,max(ys)+13)))
-canvas=Image.new('RGB',(1000,370),'#fff8ec'); draw=ImageDraw.Draw(canvas)
-for img,x,title in [(guide,15,'GUIDE P07 — room + empty dirt'),(render,515,'THREE.JS — same elevated 3/4 view')]:
-    img.thumbnail((470,300));canvas.paste(img,(x+(470-img.width)//2,45+(300-img.height)//2));draw.text((x,15),title,fill='#493022')
-canvas.save(out/'compare-p07.png')
+still=Image.open(out/f'still{sfx}.png').convert('RGB')
+H=520; g=guide.resize((round(guide.width*H/guide.height*0.62),round(H*0.62)))
+s=still.resize((round(still.width*H/still.height),H))
+canvas=Image.new('RGB',(g.width+s.width+60,H+50),'#fff8ec'); d=ImageDraw.Draw(canvas)
+canvas.paste(g,(20,40+(H-g.height)//2)); canvas.paste(s,(g.width+40,40))
+d.text((20,14),'GUIDE v1.1 p07',fill='#493022'); d.text((g.width+40,14),f'THREE.JS render {sfx} (390x844, full phone screen)',fill='#493022')
+canvas.save(out/f'compare-p07{sfx}.png')
