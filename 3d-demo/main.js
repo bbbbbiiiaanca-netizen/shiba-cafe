@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createSim, WIDTH, HEIGHT, CELL, seatOf, accessOf } from './sim.js';
-import { createRoom, createDog, animateDog, createGuest, animateGuest, createFurniture, world, material, heartGeometry } from './models.js';
+import { createRoom, createDog, animateDog, createGuest, animateGuest, createFurniture, world, heartGeometry } from './models.js';
 const canvas=document.querySelector('#scene'),hint=document.querySelector('#hint'),toastEl=document.querySelector('#toast');
 let renderer;
 try {renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});}
@@ -21,11 +21,16 @@ const boss=createDog({adult:true});boss.root.position.set(2.12,0,2.8);boss.root.
 const guestModels=new Map();
 const waitMaterial=new THREE.MeshBasicMaterial({color:'#fff5d9'}),heartMaterial=new THREE.MeshBasicMaterial({color:'#e786ac',side:THREE.DoubleSide,transparent:true,opacity:.85});
 const waitGeometry=new THREE.SphereGeometry(.025,6,4),effects=new THREE.Group();scene.add(effects);
-const hearts=Array.from({length:12},(_,i)=>{const m=new THREE.Mesh(heartGeometry,heartMaterial);m.scale.setScalar(.1);m.visible=false;effects.add(m);return m;});
-const camera=new THREE.PerspectiveCamera(48,1,.1,70),target=new THREE.Vector3(0,.45,-.6);
-let yaw=0,pitch=.73,zoom=1,baseDistance=11;
+// Each heart fades independently; scale is calculated in CSS pixels at its depth.
+heartGeometry.computeBoundingBox();
+const heartHeight=heartGeometry.boundingBox.max.y-heartGeometry.boundingBox.min.y;
+const cameraForward=new THREE.Vector3(),heartOffset=new THREE.Vector3();
+const hearts=Array.from({length:9},()=>{const m=new THREE.Mesh(heartGeometry,heartMaterial.clone());m.visible=false;effects.add(m);return m;});
+const camera=new THREE.PerspectiveCamera(48,1,.1,70),target=new THREE.Vector3(0,.4,.65);
+let yaw=0,pitch=.78,zoom=1,baseDistance=11;
+const cameraLimits={zoom:[.82,1.18],yaw:[-.55,.55],pitch:[.70,.88]};
 function updateCamera(){const r=baseDistance*zoom;camera.position.set(target.x+Math.sin(yaw)*Math.cos(pitch)*r,target.y+Math.sin(pitch)*r,target.z+Math.cos(yaw)*Math.cos(pitch)*r);camera.lookAt(target);}
-function resize(){const w=window.innerWidth,h=window.innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();baseDistance=Math.max(9.8,3.25/(Math.tan(THREE.MathUtils.degToRad(24))*camera.aspect))*1.08;updateCamera();}
+function resize(){const w=window.innerWidth,h=window.innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();baseDistance=Math.max(9.8,3.05/(Math.tan(THREE.MathUtils.degToRad(24))*camera.aspect))*1.03;updateCamera();}
 window.addEventListener('resize',resize);window.visualViewport?.addEventListener('resize',resize);resize();
 const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),floorPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0),hitPoint=new THREE.Vector3();
 const grid=new THREE.Group();scene.add(grid);grid.visible=false;
@@ -47,10 +52,10 @@ function tap(clientX,clientY){const rect=canvas.getBoundingClientRect();pointer.
 }
 const touches=new Map();let gesture=null,pinchDistance=0;
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);touches.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touches.size===1)gesture={startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,drag:false,multi:false};else {gesture.multi=true;const p=[...touches.values()];pinchDistance=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);}});
-canvas.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;touches.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touches.size>=2){const p=[...touches.values()],dist=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);if(pinchDistance>0&&!selected)zoom=THREE.MathUtils.clamp(zoom*pinchDistance/Math.max(dist,1),.72,1.4);pinchDistance=dist;updateCamera();return;}if(!gesture)return;if(Math.hypot(e.clientX-gesture.startX,e.clientY-gesture.startY)>=8)gesture.drag=true;if(gesture.drag&&!selected&&!gesture.multi){yaw=THREE.MathUtils.clamp(yaw-(e.clientX-gesture.lastX)*.005,-.87,.87);pitch=THREE.MathUtils.clamp(pitch+(e.clientY-gesture.lastY)*.003,.62,.87);updateCamera();}gesture.lastX=e.clientX;gesture.lastY=e.clientY;});
+canvas.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;touches.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touches.size>=2){const p=[...touches.values()],dist=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);if(pinchDistance>0&&!selected)zoom=THREE.MathUtils.clamp(zoom*pinchDistance/Math.max(dist,1),...cameraLimits.zoom);pinchDistance=dist;updateCamera();return;}if(!gesture)return;if(Math.hypot(e.clientX-gesture.startX,e.clientY-gesture.startY)>=8)gesture.drag=true;if(gesture.drag&&!selected&&!gesture.multi){yaw=THREE.MathUtils.clamp(yaw-(e.clientX-gesture.lastX)*.005,...cameraLimits.yaw);pitch=THREE.MathUtils.clamp(pitch+(e.clientY-gesture.lastY)*.003,...cameraLimits.pitch);updateCamera();}gesture.lastX=e.clientX;gesture.lastY=e.clientY;});
 function endPointer(e,cancel=false){if(!touches.has(e.pointerId))return;const g=gesture;touches.delete(e.pointerId);if(!cancel&&g&&!g.drag&&!g.multi&&Math.hypot(e.clientX-g.startX,e.clientY-g.startY)<8)tap(e.clientX,e.clientY);if(touches.size===0){gesture=null;pinchDistance=0;}}
 canvas.addEventListener('pointerup',e=>endPointer(e));canvas.addEventListener('pointercancel',e=>endPointer(e,true));
-canvas.addEventListener('wheel',e=>{e.preventDefault();if(!selected){zoom=THREE.MathUtils.clamp(zoom*Math.exp(e.deltaY*.001),.72,1.4);updateCamera();}},{passive:false});
+canvas.addEventListener('wheel',e=>{e.preventDefault();if(!selected){zoom=THREE.MathUtils.clamp(zoom*Math.exp(e.deltaY*.001),...cameraLimits.zoom);updateCamera();}},{passive:false});
 setTimeout(()=>hint.classList.add('hidden'),6500);
 function syncModels(time) {
   for(const g of sim.guests){let model=guestModels.get(g.id);if(!model){model=createGuest(g.kind);model.dots=Array.from({length:3},()=>{const dot=new THREE.Mesh(waitGeometry,waitMaterial);model.root.add(dot);return dot;});guestModels.set(g.id,model);scene.add(model.root);}
@@ -64,10 +69,23 @@ function syncModels(time) {
     if(d.tableId && d.state!=='approaching'){const table=sim.furniture.find(f=>f.id===d.tableId),a=world(accessOf(table).x,accessOf(table).z),b=world(table.x+.5,table.z+.65);b.y=.55;
       let k=d.state==='petting'?1:d.state==='jumping'?Math.min(d.progress,1):d.state==='descending'?1-Math.min(d.progress,1):0;
       model.root.position.lerpVectors(a,b,k);if(d.state==='jumping'||d.state==='descending')model.root.position.y+=Math.sin(k*Math.PI)*.38;
-      model.root.rotation.y=d.state==='approaching'?d.heading:0;
+      const seat=world(seatOf(table).x,seatOf(table).z);
+      model.root.rotation.y=Math.atan2(seat.x-b.x,seat.z-b.z);
     }
     animateDog(model,time,walking,d.state==='petting');
-    for(let i=0;i<4;i++){const heart=hearts[d.id*4+i];heart.visible=d.state==='petting';if(heart.visible){const phase=(time*.7+i*.25)%1;heart.position.copy(model.root.position);heart.position.x+=Math.sin(i*2.7+time)*.17;heart.position.y+=1+phase*.75;heart.position.z+=.1;heart.quaternion.copy(camera.quaternion);heart.scale.setScalar(.08+Math.sin(phase*Math.PI)*.035);}}
+    for(let i=0;i<3;i++){
+      const heart=hearts[d.id*3+i],phase=(time*.65+i/3)%1;
+      heart.visible=d.state==='petting'&&phase<.92;
+      if(heart.visible){
+        heart.position.copy(model.root.position);heart.position.x+=(i-1)*.22+Math.sin(time*2+i)*.05;
+        heart.position.y+=.8+phase*.85;heart.position.z+=.12;heart.quaternion.copy(camera.quaternion);
+        camera.getWorldDirection(cameraForward);
+        const depth=heartOffset.subVectors(heart.position,camera.position).dot(cameraForward);
+        const pixels=18+4*Math.sin(phase*Math.PI);
+        heart.scale.setScalar(pixels*2*depth*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/(window.innerHeight*heartHeight));
+        heart.material.opacity=.95*Math.min(1,phase/.1,(.92-phase)/.25);
+      }
+    }
   }
   boss.head.rotation.y=Math.sin(time*.7)*.2;boss.tail.rotation.y=Math.sin(time*2)*.18;
 }

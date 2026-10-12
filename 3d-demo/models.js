@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CELL, WIDTH, HEIGHT, seededRandom } from './sim.js';
+import { CELL, WIDTH, HEIGHT, ENTRY, seededRandom } from './sim.js';
 const geometries={box:new THREE.BoxGeometry(1,1,1),sphere:new THREE.SphereGeometry(1,12,8),cylinder:new THREE.CylinderGeometry(1,1,1,12),cone:new THREE.ConeGeometry(1,1,8),tail:new THREE.TorusGeometry(.17,.065,6,14,Math.PI*1.65)};
 const materials=new Map();
 export function material(color,extra={}) {
@@ -105,7 +105,7 @@ export function createFurniture(item) {
 }
 export function createRoom() {
   const root=new THREE.Group(),rand=seededRandom(301);
-  const wood='#83543e',lightwood='#aa7754';
+  const wood='#83543e',lightwood='#aa7754',frontRand=seededRandom(902);
   box(root,'#ceacc7',[0,-.1,0],[5.9,.2,6.9]);
   // Fine woven tatami seams and warm perimeter wood.
   for(let x=-2.75;x<=2.75;x+=1.1)box(root,'#bfa0b8',[x,.003,0],[.018,.009,6.6]);
@@ -125,8 +125,64 @@ export function createRoom() {
     for(let z=-3.3;z<-.6;z+=.42)box(root,'#b28565',[s*2.84,.7,z],[.018,1.22,.013]);
   }
   box(root,wood,[0,-.03,3.42],[5.9,.14,.19]);
-  // Entry steps, boss's cushion, and a small entry marker.
-  box(root,'#a47a5e',[.275,-.12,3.75],[1.1,.15,.55]);ball(root,'#a897a9',[2.12,.075,2.8],[.37,.095,.32]);
+  // The doorway straddles the simulation's entry cell, so existing routes pass through it.
+  const entry=world(ENTRY.x,ENTRY.z),entryWood='#79513b';
+  for(const x of [entry.x-.65,entry.x+.65])box(root,entryWood,[x,.98,entry.z],[.10,1.96,.12]);
+  box(root,entryWood,[entry.x,2.0,entry.z],[1.5,.14,.17]);
+  beam(root,lightwood,[entry.x-.7,1.88,entry.z+.025],[entry.x+.7,1.88,entry.z+.025],.028);
+  for(const side of [-1,1]) {
+    const x=entry.x+side*.31;
+    box(root,'#a97692',[x,1.69,entry.z+.06],[.58,.36,.025]);
+    // Cream paw crest on each split noren panel.
+    ball(root,'#f9e8db',[x,1.66,entry.z+.079],[.056,.045,.009]);
+    for(const dx of [-.052,0,.052])ball(root,'#f9e8db',[x+dx,1.73,entry.z+.079],[.019,.024,.009]);
+  }
+  box(root,'#a47a5e',[entry.x,-.12,3.72],[1.24,.15,.5]);
+  ball(root,'#a897a9',[2.12,.075,2.8],[.37,.095,.32]);
+  // Continuous low ground covers the view even at the furthest allowed orbit/zoom.
+  box(root,'#b4ac97',[0,-.38,0],[90,.2,90]);
+  box(root,'#b3ad97',[0,-.25,7.5],[26,.12,8.2]);
+  // Broad timber veranda, flush with the entry step and visibly made of planks.
+  box(root,wood,[0,-.2,4.23],[6.3,.18,1.48]);
+  for(let z=3.55;z<4.96;z+=.18)box(root,z<4.1?'#bd916a':'#b48560',[0,-.103,z],[6.24,.024,.164]);
+  box(root,lightwood,[entry.x,-.235,5.12],[1.5,.12,.38]);
+  for(const x of [-3.04,3.04])box(root,wood,[x,-.13,4.24],[.10,.14,1.48]);
+  // Stepping stones lead out from the actual door, with gravel and moss on both sides.
+  for(let i=0;i<9;i++) {
+    const z=5.5+i*.77,x=entry.x+Math.sin(i*.8)*.32;
+    const stone=ball(root,i%2?'#cec5b5':'#dfd4c4',[x,-.14,z],[.34,.065,.26]);stone.rotation.y=i*.6;
+  }
+  for(let i=0;i<180;i++) {
+    const x=(frontRand()-.5)*23,z=3.7+frontRand()*11;
+    if(Math.abs(x)<3.3&&z<5.3)continue;
+    const gravel=ball(root,['#d8cdbd','#c7bdad','#ede0cf'][i%3],[x,-.17,z],[.045+frontRand()*.055,.022,.035+frontRand()*.06]);gravel.castShadow=false;
+  }
+  for(let i=0;i<32;i++) {
+    const x=(i%2?1:-1)*(1.25+frontRand()*9),z=5.4+frontRand()*9;
+    ball(root,'#8d9c78',[x,-.15,z],[.32+frontRand()*.5,.085,.25+frontRand()*.38]);
+    ball(root,['#a29e8d','#beb5a1'][i%2],[x+.15,-.07,z],[.15+frontRand()*.2,.12,.16+frontRand()*.16]);
+  }
+  // Side gardens also remain visible at either orbit limit.
+  for(const side of [-1,1])for(let i=0;i<15;i++) {
+    const x=side*(3.3+frontRand()*3),z=-3.3+frontRand()*7.3;
+    ball(root,'#929f7d',[x,-.18,z],[.22+frontRand()*.28,.07,.22+frontRand()*.2]);
+    ball(root,'#c2b9a6',[x+.13,-.13,z+.1],[.12,.055,.14]);
+  }
+  // Small veranda pots stay clear of the entry route.
+  for(const x of [-2.5,2.5]) {
+    cyl(root,'#bd9074',[x,.03,4.45],[.18,.27,.18]);cyl(root,'#685344',[x,.173,4.45],[.15,.015,.15]);
+    for(let i=0;i<5;i++) {
+      const a=i*2.4,tip=[x+Math.cos(a)*.14,.38+i*.04,4.45+Math.sin(a)*.12];
+      beam(root,'#67835c',[x,.17,4.45],tip,.014);
+      ball(root,'#91a578',tip,[.09,.12,.06]);
+    }
+  }
+  // Low stone lantern marks the path without hiding the room.
+  const lx=-1.3,lz=6.5;
+  cyl(root,'#c5baa7',[lx,-.10,lz],[.28,.16,.28]);cyl(root,'#b7ac99',[lx,.15,lz],[.10,.40,.10]);
+  box(root,'#d8cbb6',[lx,.43,lz],[.30,.23,.28]);box(root,'#776b56',[lx,.43,lz+.145],[.13,.11,.008]);
+  const entryRoof=mesh(root,'cone','#b1a591',[lx,.63,lz],[.33,.19,.33]);entryRoof.rotation.y=Math.PI/4;
+  ball(root,'#d9ccb6',[lx,.76,lz],[.05,.065,.05]);
   // Vase with cherry twigs on a side shelf.
   box(root,lightwood,[-2.55,.3,-2.3],[.42,.1,1.2]);
   ball(root,'#eee0ca',[-2.55,.5,-2.3],[.13,.2,.13]);cyl(root,'#e0ccb3',[-2.55,.68,-2.3],[.065,.15,.065]);
