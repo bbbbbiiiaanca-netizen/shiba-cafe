@@ -32,4 +32,10 @@ export default async function({ev,check,sleep,temp}){
  await ev('__game.ui.frame();true');await check('promotion card shown','!document.getElementById("promo").hidden&&__game.state.promoQueue.length===0');
  await ev('document.getElementById("promo").click();__game.ui.frame();true');await check('tap skips immediately','document.getElementById("promo").hidden');
  await ev('__game.CFG.FEATURES.promotionCard=false;true');
+ // D-07
+ await ev('__game.open("event");true');await sleep(50);
+ await check('28 day cells, null days say 준비 중','document.querySelectorAll(".obd").length===28&&/준비 중/.test(document.querySelector("[data-ob=\'17\']").textContent)');
+ await check(temp?'day 1 claimable (TEMP)':'nothing claimable (dayMode 미정)',temp?'document.querySelector("[data-ob=\'1\']").classList.contains("claimable")':'document.querySelectorAll(".obd.claimable").length===0');
+ if(temp){await ev('window.__r0=__game.state.items.heartReset;document.querySelector("[data-ob=\'1\']").click();true');await check('day 1 → +1 ticket, claimed once','__game.state.items.heartReset===window.__r0+1&&document.querySelector("[data-ob=\'1\']").classList.contains("claimed")');}
+ await ev('__game.close();true');
 }

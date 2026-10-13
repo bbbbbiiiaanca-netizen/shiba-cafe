@@ -10,11 +10,12 @@ export const startLevel=g=>CFG.grades.bands[g][0];
 export const dexKey=o=>o.coat+'_'+o.expr;
 
 // ---------- persistent state ----------
-export function newState(now=Date.now()){
+export function newState(now=Date.now()){const st=baseState(now);markVisit(st,now);return st;}
+function baseState(now){
  return {v:CFG.saveVersion,coins:CFG.start.coins,hearts:CFG.start.hearts,paws:CFG.start.paws,
   owned:CFG.start.shibas.map((s,i)=>({id:i+1,...s,lv:startLevel('N')})),nextId:CFG.start.shibas.length+1,dex:CFG.start.shibas.map(dexKey),
   served:0,petted:0,upg:0,gachaPulls:0,tut:0,questsClaimed:[],theme:'basic',themesOwned:['basic'],
-  items:{heartReset:0},heartRegenAt:now,promoQueue:[],
+  items:{heartReset:0,capsule:0},heartRegenAt:now,promoQueue:[],onboarding:{visits:[],claimed:[]},
   settings:{sound:true,music:true},lastSeen:now};
 }
 // Old saves (v1): `rarity` field N/R/SR + lv (lv started at 1 and grew by +1 per duplicate).
@@ -36,7 +37,7 @@ export function offlineEarnings(s,now=Date.now()){const sec=Math.min((now-s.last
  if(!(sec>=CFG.offline.minSeconds))return {sec:Math.max(0,sec|0),coins:0};return {sec:sec|0,coins:Math.floor(sec*incomePerSec(s)*CFG.offline.rate)};}
 export function load(storage,now=Date.now()){let s=null;try{s=JSON.parse(storage.getItem(CFG.saveKey));}catch{}
  if(!s||!(s.v===1||s.v===CFG.saveVersion))return {state:newState(now),offline:{sec:0,coins:0},fresh:true};
- const d=newState(now);s=migrate({...d,...s,settings:{...d.settings,...s.settings},items:{...d.items,...s.items}},now);settleHearts(s,now);const offline=offlineEarnings(s,now);s.coins+=offline.coins;s.lastSeen=now;return {state:s,offline,fresh:false};}
+ const d=baseState(now);s=migrate({...d,...s,onboarding:{...d.onboarding,...s.onboarding},settings:{...d.settings,...s.settings},items:{...d.items,...s.items}},now);settleHearts(s,now);markVisit(s,now);const offline=offlineEarnings(s,now);s.coins+=offline.coins;s.lastSeen=now;return {state:s,offline,fresh:false};}
 export function save(storage,s,now=Date.now()){s.lastSeen=now;sanitize(s);storage.setItem(CFG.saveKey,JSON.stringify(s));}
 // rewards are never capped (hearts from rewards may go above hearts.regenCap)
 export function grant(s,r={}){for(const k of ['coins','hearts','paws'])if(r[k])s[k]+=r[k];for(const k of Object.keys(CFG.items))if(r[k])s.items[k]=(s.items[k]||0)+r[k];}
@@ -60,13 +61,26 @@ export function gachaReady(){const R=CFG.gacha.rates;return (R.N!=null&&R.R!=nul
 export function rollGrade(r){const R=CFG.gacha.rates,x=r();if(x<R.S)return 'S';
  if(R.N!=null&&R.R!=null){const y=(x-R.S)/(1-R.S)*(R.N+R.R);return y<R.R?'R':'N';} // N·R share the remaining 1−S in their given ratio
  return CFG.TEMP.gachaNonSAsN?'N':null;}
-export function canPull(s){return gachaReady()&&((CFG.gacha.firstFree&&s.gachaPulls===0)||s.paws>=CFG.gacha.cost.paws);}
-export function pull(s,r){if(!canPull(s))return null;const free=CFG.gacha.firstFree&&s.gachaPulls===0;if(!free)s.paws-=CFG.gacha.cost.paws;
+// opts.capsule: pay with one 시바뽑기 캡슐 instead of paws (same rates, no guarantee)
+export function canPull(s,opts={}){if(!gachaReady())return false;if(opts.capsule)return (s.items.capsule||0)>0;return (CFG.gacha.firstFree&&s.gachaPulls===0)||s.paws>=CFG.gacha.cost.paws;}
+export function pull(s,r,opts={}){if(!canPull(s,opts))return null;const free=!opts.capsule&&CFG.gacha.firstFree&&s.gachaPulls===0;if(opts.capsule)s.items.capsule--;else if(!free)s.paws-=CFG.gacha.cost.paws;
  const coats=Object.keys(CFG.coats);const coat=coats[Math.floor(r()*coats.length)];const exprs=CFG.coatExprs(coat);const expr=exprs[Math.floor(r()*exprs.length)];
  const grade=rollGrade(r);s.gachaPulls++;
  // every pull is a new shiba starting at its band's first level (N 1 / R 11 / S 21); duplicates are merged by the player (D-03)
  const o={id:s.nextId++,coat,expr,lv:startLevel(grade)};const isNew=!s.dex.includes(dexKey(o));const dup=s.owned.some(x=>dexKey(x)===dexKey(o));
  s.owned.push(o);if(isNew)s.dex.push(dexKey(o));return {...o,grade,isNew,dup,free};}
+
+// ---------- 28-day onboarding (D-07) ----------
+const dateKey=now=>{const d=new Date(now);return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;}; // device-local date
+export function markVisit(s,now=Date.now()){const v=s.onboarding.visits,k=dateKey(now);if(!v.includes(k)&&v.length<CFG.onboarding.days)v.push(k);}
+export function onboardingMode(){return CFG.onboarding.dayMode??(CFG.TEMP.onboardingLoginDays?'loginDays':null);}
+export function onboardingDay(s){return onboardingMode()==='loginDays'?Math.min(CFG.onboarding.days,s.onboarding.visits.length):null;} // null = 진행 방식 미정
+// split a day's rewards into decided values and null (미정) keys
+export function onboardingReward(day){const ready={},pending=[];for(const [k,v] of Object.entries(CFG.onboarding.rewards[day]||{}))v==null?pending.push(k):ready[k]=v;return {ready,pending};}
+export function onboardingStatus(s,day){if(s.onboarding.claimed.includes(day))return 'claimed';if(!Object.keys(onboardingReward(day).ready).length)return 'pending';
+ const cur=onboardingDay(s);return cur!=null&&day<=cur?'claimable':'locked';}
+// each day is claimed once; null parts are skipped (shown as 준비 중)
+export function claimOnboarding(s,day){if(onboardingStatus(s,day)!=='claimable')return null;const {ready}=onboardingReward(day);grant(s,ready);s.onboarding.claimed.push(day);return ready;}
 
 // ---------- level changes, merge (D-03) and promotion (D-04) ----------
 // every level change goes through setLevel: clamps to 1..30 and queues a promotion when the computed grade changes

@@ -13,6 +13,7 @@ export const CFG={
  // TEMP: placeholder behaviours the handoff allows "for checking only" (// TEMP 미정). All off; `?temp=1` turns them on in a test build.
  TEMP:{
   gachaNonSAsN:false,
+  onboardingLoginDays:false, // D-07 날짜 진행 방식(onboarding.dayMode) 미정(보상표 Q5 일반 출석과의 관계·Q6 빠뜨린 날): 켜면 '접속한 날짜 수 = 진행 일차'로 임시 진행
   mergeHandoffDefaults:false, // D-03 '같은 시바' 기준·자동/선택·병합 승급 연출 미정(질문 2-3 라·마·바): 켜면 핸드오프 임시값 sameKey 'coat+expr', mode 'manual', playPromotion false  // D-01 N·R 확률 미정(명세 질문 2): 켜면 S가 아닌 결과를 모두 N으로 처리(R 확률을 지어내지 않음), 화면에 확률 표시 안 함
  },
  // ── grades & levels (명세 1.6 ✅ 확정) ──
@@ -39,7 +40,12 @@ export const CFG={
  // D-05 하트 ✅ 확정(명세 1.4): 자연 회복 상한 10, 30분당 1개, 10개 이상이면 회복 타이머 멈춤. 보상 하트는 상한 없이 쌓임.
  hearts:{regenCap:10,regenEverySec:1800},
  // D-06 하트 리셋권 ✅ 확정: 하트 < 10 일 때만 10개로 채움, 10 이상이면 사용 불가(소모 없음). 아이콘 I-01 전까지 이모지.
- items:{heartReset:{icon:'🎟️',name:'하트 리셋권'}},
+ items:{heartReset:{icon:'🎟️',name:'하트 리셋권'},capsule:{icon:'🥚',name:'시바뽑기 캡슐'}}, // capsule = 1 free pull at normal rates (no grade guarantee)
+ // D-07 28일 온보딩 — ✅ 확정분만: 1~7일 하트 리셋권 1장씩(7장) · 캡슐 4·11·18·25일 1개 + 9일 5개 + 19일 10개 = 19개(등급 보장 없음).
+ // 3·17·26일 하트 개수 ❓미정(질문 8) → null('준비 중'). 멍코인·간식·장난감·다이아·인테리어는 보상표의 제안값이라 넣지 않음. ⏸️ 도장 지급 보류 → 넣지 않음.
+ // dayMode ❓미정(Q5·Q6) → null: 일차가 진행되지 않음(CFG.TEMP.onboardingLoginDays로만 임시 진행). 튜토리얼 무료 첫 뽑기(Q4)는 기존 gacha.firstFree 그대로, 변경 없음.
+ onboarding:{days:28,dayMode:null,rewards:{1:{heartReset:1},2:{heartReset:1},3:{heartReset:1,hearts:null},4:{heartReset:1,capsule:1},5:{heartReset:1},6:{heartReset:1},7:{heartReset:1},
+  9:{capsule:5},11:{capsule:1},17:{hearts:null},18:{capsule:1},19:{capsule:10},25:{capsule:1},26:{hearts:null}}},
  upgrade:{base:300,grow:1.8,bonus:.25}, // 업그레이드: 방치 수입 +25%/단계
  idle:{perSec:.5,perShibaPerSec:.25},
  offline:{rate:.5,capHours:8,minSeconds:60},

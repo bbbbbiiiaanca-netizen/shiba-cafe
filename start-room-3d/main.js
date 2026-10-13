@@ -67,7 +67,7 @@ const loaded=S.load(localStorage,Date.now());const state=loaded.state;const worl
 const popLayer=document.getElementById('pops');
 function pop(text,x,z){const [px,py]=P(x,z,1.9);const d=document.createElement('div');d.className='pop';d.textContent=text;d.style.left=px+'px';d.style.top=py+'px';popLayer.appendChild(d);setTimeout(()=>d.remove(),1600);}
 let incomeFrac=0;
-function step(dt){S.settleHearts(state,Date.now());S.tick(world,state,dt);incomeFrac+=S.incomePerSec(state)*dt;if(incomeFrac>=1){const n=Math.floor(incomeFrac);state.coins+=n;incomeFrac-=n;}
+function step(dt){S.settleHearts(state,Date.now());S.markVisit(state,Date.now());S.tick(world,state,dt);incomeFrac+=S.incomePerSec(state)*dt;if(incomeFrac>=1){const n=Math.floor(incomeFrac);state.coins+=n;incomeFrac-=n;}
  for(const e of world.events.splice(0)){if(e.type==='pay')pop(`+${e.coins}🪙 +${e.paws}🐾`,e.x,e.z);if(e.type==='pet')SDK.sfx('pet');}ui.tick();}
 const lastX=new Map();
 function draw(){g.setTransform(DPR,0,0,DPR,0,0);drawGround();const t=world.t;const L=[];

@@ -94,6 +94,24 @@ test('D-04 promotion queued once on 10→11 / 20→21 only when allowed; never f
 test('D-04 card timeline: 0.3 zoom → 0.5 border → badge → 1 s expression, ≈2.5 s total',()=>{
  assert.equal(S.promoPhase(.1).phase,'zoom');assert.equal(S.promoPhase(.5).phase,'border');assert.equal(S.promoPhase(1).phase,'badge');assert.equal(S.promoPhase(2).phase,'expr');assert.equal(S.promoPhase(2.51).phase,'done');});
 
+// ---------- D-07 ----------
+const DAY=86400e3;
+test('D-07 dayMode undecided → no day advances, nothing claimable, no crash',()=>{assert.equal(CFG.onboarding.dayMode,null);const st=S.newState(0);
+ assert.equal(S.onboardingDay(st),null);for(let d=1;d<=28;d++){assert.notEqual(S.onboardingStatus(st,d),'claimable');assert.equal(S.claimOnboarding(st,d),null);}});
+test('D-07 28 days (TEMP login-days): 7 reset tickets on days 1–7, exactly 19 capsules, each day once',()=>{CFG.TEMP.onboardingLoginDays=true;
+ const m=mem();let st=S.newState(0);let resets=0,caps=0;
+ for(let d=1;d<=28;d++){if(d>1){S.save(m,st,(d-1)*DAY-1);st=S.load(m,(d-1)*DAY+1000).state;}
+  assert.equal(S.onboardingDay(st),d);const r=S.claimOnboarding(st,d);if(r){resets+=r.heartReset||0;caps+=r.capsule||0;if(r.heartReset)assert.ok(d<=7);}
+  assert.equal(S.claimOnboarding(st,d),null,'day '+d+' twice');}
+ assert.equal(resets,7);assert.equal(caps,19);assert.equal(st.items.heartReset,7);assert.equal(st.items.capsule,19);
+ S.save(m,st,40*DAY);st=S.load(m,41*DAY).state;assert.equal(S.onboardingDay(st),28);});
+test('D-07 null days show 준비 중 (pending) and never error; day 3 gives its ticket, hearts stay 미정',()=>{CFG.TEMP.onboardingLoginDays=true;
+ for(const d of [3,17,26])assert.deepEqual(S.onboardingReward(d).pending,['hearts']);assert.equal(S.onboardingStatus(S.newState(0),17),'pending');assert.equal(S.onboardingStatus(S.newState(0),8),'pending');
+ const st=S.newState(0);st.onboarding.visits=['a','b','c'];const h=st.hearts;assert.deepEqual(S.claimOnboarding(st,3),{heartReset:1});assert.equal(st.hearts,h);
+ assert.ok(!JSON.stringify(CFG.onboarding).includes('stamp'),'stamps are on hold');});
+test('D-07 capsule pull uses normal rates, consumes one capsule, needs gacha rates',()=>{const st=S.newState(0);st.items.capsule=2;st.gachaPulls=1;st.paws=0;
+ assert.equal(S.pull(st,S.rng(2),{capsule:true}),null);CFG.TEMP.gachaNonSAsN=true;const o=S.pull(st,S.rng(2),{capsule:true});assert.ok(o);assert.equal(st.items.capsule,1);assert.equal(st.paws,0);});
+
 // ---------- report ----------
 let fail=0;for(const [k,n,e] of results){console.log(k==='ok'?'  ok  ':'  FAIL',n);if(e){fail++;console.log('       ',e.message);}}
 console.log(`${results.length-fail}/${results.length} handoff tests passed`);if(fail)process.exit(1);
