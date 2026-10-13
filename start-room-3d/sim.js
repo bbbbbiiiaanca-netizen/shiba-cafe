@@ -2,38 +2,64 @@
 import {CFG} from './config.js';
 export function rng(seed=1){let s=seed>>>0||1;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};}
 
+// ---------- grades & levels (D-02): grade is never stored, always computed from level ----------
+export const GRADES=['N','R','S'];
+export function clampLevel(lv){return Math.max(1,Math.min(CFG.grades.maxLevel,Math.floor(+lv)||1));}
+export function gradeOf(lv){lv=clampLevel(lv);for(const g of GRADES){const [a,b]=CFG.grades.bands[g];if(lv>=a&&lv<=b)return g;}return 'N';}
+export const startLevel=g=>CFG.grades.bands[g][0];
+export const dexKey=o=>o.coat+'_'+o.expr;
+
 // ---------- persistent state ----------
 export function newState(now=Date.now()){
- return {v:1,coins:CFG.start.coins,hearts:CFG.start.hearts,paws:CFG.start.paws,
-  owned:CFG.start.shibas.map((s,i)=>({id:i+1,...s,lv:1,rarity:'N'})),nextId:CFG.start.shibas.length+1,
+ return {v:CFG.saveVersion,coins:CFG.start.coins,hearts:CFG.start.hearts,paws:CFG.start.paws,
+  owned:CFG.start.shibas.map((s,i)=>({id:i+1,...s,lv:startLevel('N')})),nextId:CFG.start.shibas.length+1,dex:CFG.start.shibas.map(dexKey),
   served:0,petted:0,upg:0,gachaPulls:0,tut:0,questsClaimed:[],theme:'basic',themesOwned:['basic'],
   settings:{sound:true,music:true},lastSeen:now};
 }
+// Old saves (v1): `rarity` field N/R/SR + lv (lv started at 1 and grew by +1 per duplicate).
+// → keep the grade the player had (old top label → S), place the shiba at that band's first level plus the levels it had gained, capped at the band end.
+const LEGACY_TOP_GRADE='SR'; // the only place the old label may appear: it is read from old saves and rewritten to 'S'
+export function migrate(s,now=Date.now()){
+ if(s.v===1){
+  for(const o of s.owned||[]){const g=o.rarity===LEGACY_TOP_GRADE?'S':GRADES.includes(o.rarity)?o.rarity:'N';const [a,b]=CFG.grades.bands[g];
+   o.lv=Math.min(b,a+Math.max(0,(Math.floor(o.lv)||1)-1));delete o.rarity;}
+  s.dex=[...new Set((s.owned||[]).map(dexKey))];s.v=2;}
+ return sanitize(s);}
+// invariants enforced on every load and save: no stored grade, level within 1..30
+export function sanitize(s){for(const o of s.owned||[]){if('rarity' in o)delete o.rarity;if('grade' in o)delete o.grade;o.lv=clampLevel(o.lv);}
+ s.dex=[...new Set([...(s.dex||[]),...(s.owned||[]).map(dexKey)])];return s;}
 export function incomePerSec(s){return (CFG.idle.perSec+CFG.idle.perShibaPerSec*Math.min(s.owned.length,CFG.cafe.maxShibas))*(1+CFG.upgrade.bonus*(s.upg||0));}
 export function upgradeCost(s){return Math.round(CFG.upgrade.base*Math.pow(CFG.upgrade.grow,s.upg||0));}
 export function buyUpgrade(s){const c=upgradeCost(s);if(s.coins<c)return false;s.coins-=c;s.upg=(s.upg||0)+1;return true;}
 export function offlineEarnings(s,now=Date.now()){const sec=Math.min((now-s.lastSeen)/1000,CFG.offline.capHours*3600);
  if(!(sec>=CFG.offline.minSeconds))return {sec:Math.max(0,sec|0),coins:0};return {sec:sec|0,coins:Math.floor(sec*incomePerSec(s)*CFG.offline.rate)};}
 export function load(storage,now=Date.now()){let s=null;try{s=JSON.parse(storage.getItem(CFG.saveKey));}catch{}
- if(!s||s.v!==1)return {state:newState(now),offline:{sec:0,coins:0},fresh:true};
- s={...newState(now),...s};const offline=offlineEarnings(s,now);s.coins+=offline.coins;s.lastSeen=now;return {state:s,offline,fresh:false};}
-export function save(storage,s,now=Date.now()){s.lastSeen=now;storage.setItem(CFG.saveKey,JSON.stringify(s));}
+ if(!s||!(s.v===1||s.v===CFG.saveVersion))return {state:newState(now),offline:{sec:0,coins:0},fresh:true};
+ const d=newState(now);s=migrate({...d,...s,settings:{...d.settings,...s.settings}},now);const offline=offlineEarnings(s,now);s.coins+=offline.coins;s.lastSeen=now;return {state:s,offline,fresh:false};}
+export function save(storage,s,now=Date.now()){s.lastSeen=now;sanitize(s);storage.setItem(CFG.saveKey,JSON.stringify(s));}
 export function grant(s,r={}){for(const k of ['coins','hearts','paws'])if(r[k])s[k]+=r[k];}
 
-// ---------- gacha ----------
-export function canPull(s){return (CFG.gacha.firstFree&&s.gachaPulls===0)||s.paws>=CFG.gacha.cost.paws;}
+// ---------- gacha (D-01) ----------
+// S = CFG.gacha.rates.S (2%, 확정). N·R rates are null (미정) → no N/R split is invented; pulls are blocked unless the TEMP switch is on.
+export function gachaReady(){const R=CFG.gacha.rates;return (R.N!=null&&R.R!=null)||!!CFG.TEMP.gachaNonSAsN;}
+export function rollGrade(r){const R=CFG.gacha.rates,x=r();if(x<R.S)return 'S';
+ if(R.N!=null&&R.R!=null){const y=(x-R.S)/(1-R.S)*(R.N+R.R);return y<R.R?'R':'N';} // N·R share the remaining 1−S in their given ratio
+ return CFG.TEMP.gachaNonSAsN?'N':null;}
+export function canPull(s){return gachaReady()&&((CFG.gacha.firstFree&&s.gachaPulls===0)||s.paws>=CFG.gacha.cost.paws);}
 export function pull(s,r){if(!canPull(s))return null;const free=CFG.gacha.firstFree&&s.gachaPulls===0;if(!free)s.paws-=CFG.gacha.cost.paws;
  const coats=Object.keys(CFG.coats);const coat=coats[Math.floor(r()*coats.length)];const exprs=CFG.coatExprs(coat);const expr=exprs[Math.floor(r()*exprs.length)];
- let x=r()*CFG.gacha.rarity.reduce((a,b)=>a+b.w,0),rarity='N';for(const q of CFG.gacha.rarity){if((x-=q.w)<0){rarity=q.id;break;}}
- s.gachaPulls++;const dup=s.owned.find(o=>o.coat===coat&&o.expr===expr);
- if(dup){dup.lv++;return {...dup,dup:true,free};} // stub: duplicate = level +1
- const o={id:s.nextId++,coat,expr,lv:1,rarity};s.owned.push(o);return {...o,dup:false,free};}
+ const grade=rollGrade(r);s.gachaPulls++;
+ // every pull is a new shiba starting at its band's first level (N 1 / R 11 / S 21); duplicates are merged by the player (D-03)
+ const o={id:s.nextId++,coat,expr,lv:startLevel(grade)};const isNew=!s.dex.includes(dexKey(o));const dup=s.owned.some(x=>dexKey(x)===dexKey(o));
+ s.owned.push(o);if(isNew)s.dex.push(dexKey(o));return {...o,grade,isNew,dup,free};}
 
 // ---------- quests / tutorial ----------
 export function questStatus(s){return CFG.quests.map(q=>({...q,done:q.goal(s),claimed:s.questsClaimed.includes(q.id)}));}
 export function claimQuest(s,id){const q=CFG.quests.find(q=>q.id===id);if(!q||!q.goal(s)||s.questsClaimed.includes(id))return false;s.questsClaimed.push(id);grant(s,q.reward);return true;}
 export function tutStep(s){return CFG.tutorial[s.tut]||null;}
-export function tutAdvance(s,force=false){const t=tutStep(s);if(!t)return false;if(force?t.next:(t.done&&t.done(s))){grant(s,t.reward);s.tut++;return true;}return false;}
+// a step that needs the gacha can be passed with 다음 while pulls are blocked (N·R 확률 미정)
+export const tutCanSkip=t=>!!(t&&t.needsGacha&&!gachaReady());
+export function tutAdvance(s,force=false){const t=tutStep(s);if(!t)return false;if(force?(t.next||tutCanSkip(t)):(t.done&&t.done(s))){grant(s,t.reward);s.tut++;return true;}return false;}
 
 // ---------- the cafe floor (runtime only, not saved) ----------
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);

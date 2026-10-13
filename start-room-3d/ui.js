@@ -12,14 +12,14 @@ export function UI(ctx){const {state:s,CFG,S,SDK}=ctx;const $=id=>document.getEl
   $('qpill').textContent=t?'동구의 안내를 따라 카페를 열어요!':ready?`퀘스트 완료: ${ready.text}`:todo?todo.text:'카페를 발전시켜요!';
   $('talk').hidden=!(queue.length||t);
   if(queue.length){const q=queue[0];setSay(q.say,'받기',q.ad?'<button id="sayAd" class="ad">광고 보고 2배 (스텁)</button>':'');}
-  else if(t)setSay(t.say,t.next?'다음 ▶':'');
+  else if(t)setSay(S.tutCanSkip(t)?t.say+' (뽑기 확률이 아직 정해지지 않아 지금은 건너뛰어요.)':t.say,(t.next||S.tutCanSkip(t))?'다음 ▶':'');
   $('qdot').hidden=!S.questStatus(s).some(q=>q.done&&!q.claimed);
   if(openName&&openName!=='gacha'&&panels[openName].live)panels[openName].render();}
  // ---- panels ----
  let openName=null;
  const panels={
-  shiba:{title:'시바들',render(){const coats=Object.keys(CFG.coats),N=Object.keys(CFG.exprs).length;let h=`<button class="big" id="toPull">🎰 새 시바 뽑기</button><p class="sub">도감 ${s.owned.length} / ${N} · 카페에 최대 ${CFG.cafe.maxShibas}마리</p><div class="grid">`;
-   for(const c of coats)for(const e of CFG.coatExprs(c)){const o=s.owned.find(o=>o.coat===c&&o.expr===e);h+=o?`<div class="card"><img src="${ctx.thumb(c,e)}"><b>${CFG.coats[c]}·${CFG.exprs[e]}</b><i>${o.rarity} · Lv.${o.lv}</i></div>`:`<div class="card off"><img src="${ctx.thumb(c,e)}"><b>${CFG.coats[c]}·???</b></div>`;}
+  shiba:{title:'시바들',render(){const coats=Object.keys(CFG.coats),N=Object.keys(CFG.exprs).length;let h=`<button class="big" id="toPull">🎰 새 시바 뽑기</button><p class="sub">도감 ${s.dex.length} / ${N} · 카페에 최대 ${CFG.cafe.maxShibas}마리</p><div class="grid">`;
+   for(const c of coats)for(const e of CFG.coatExprs(c)){const own=s.owned.filter(o=>o.coat===c&&o.expr===e).sort((a,b)=>b.lv-a.lv),o=own[0]||(s.dex.includes(c+'_'+e)?{lv:0}:null);h+=o?`<div class="card"><img src="${ctx.thumb(c,e)}"><b>${CFG.coats[c]}·${CFG.exprs[e]}</b><i>${o.lv?`${S.gradeOf(o.lv)} · Lv.${o.lv}${own.length>1?' ×'+own.length:''}`:'카페에 없음'}</i></div>`:`<div class="card off"><img src="${ctx.thumb(c,e)}"><b>${CFG.coats[c]}·???</b></div>`;}
    body().innerHTML=h+'</div>';$('toPull').onclick=()=>open('gacha');}},
   upgrade:{title:'업그레이드',live:true,render(){const c=S.upgradeCost(s),lv=s.upg||0;const h=`<div class="row"><img src="assets/counter.png"><b>카운터 개선 Lv.${lv}<br><i>방치 수입 +${Math.round(CFG.upgrade.bonus*100)}%씩 · 지금 초당 ${S.incomePerSec(s).toFixed(2)}🪙</i></b><button id="upg" ${s.coins<c?'disabled':''}>🪙 ${c.toLocaleString('ko-KR')}</button></div><p class="sub">땅 확장(상하좌우)과 2층은 다음 단계예요. 카페 양옆의 점선 칸이 확장 자리예요.</p>`;if(this._k===h)return;this._k=h;body().innerHTML=h;$('upg').onclick=()=>{if(S.buyUpgrade(s)){ctx.save();this._k='';tick();}};}},
   event:{title:'이벤트',render(){body().innerHTML=`<p class="sub">계절 이벤트는 준비 중이에요 (카탈로그 14쪽 계절 소품 세트).</p><div class="row"><img src="assets/sakura.png"><b>벚꽃 축제<br><i>준비 중</i></b></div><div class="row"><img src="assets/lantern.png"><b>여름 축제 초롱<br><i>준비 중</i></b></div>`;}},
@@ -44,20 +44,23 @@ export function UI(ctx){const {state:s,CFG,S,SDK}=ctx;const $=id=>document.getEl
  const vid=$('gvid'),gl=$('gacha');let cur=null,revealT0=0,batch=[];
  function showPull(){SDK.sfx('click');const free=CFG.gacha.firstFree&&s.gachaPulls===0;$('gpPaw').textContent=fmt(s.paws);
   $('pull1').textContent=free?'1회 뽑기 · 무료':`1회 뽑기 · 🐾${CFG.gacha.cost.paws}`;$('pull10').textContent=`10회 뽑기 · 🐾${CFG.gacha.cost10.paws}`;
-  $('pull1').disabled=!S.canPull(s);$('pull10').disabled=s.paws<CFG.gacha.cost10.paws;$('gpull').classList.add('on');}
+  $('pull1').disabled=!S.canPull(s);$('pull10').disabled=!S.gachaReady()||s.paws<CFG.gacha.cost10.paws;
+  $('gpNote').hidden=S.gachaReady();$('gpull').classList.add('on');}
  $('pull1').onclick=()=>startGacha(1);$('pull10').onclick=()=>startGacha(10);$('gpClose').onclick=()=>$('gpull').classList.remove('on');
  $('gpShop').onclick=()=>{$('gpull').classList.remove('on');open('shop');};$('gpSet').onclick=()=>{$('gpull').classList.remove('on');open('settings');};
- const RANK={N:0,R:1,SR:2};const cardHtml=o=>`<div class="rc ${o.rarity}">${o.rarity==='SR'?'<em>★ ★ ★</em>':''}<img src="${ctx.thumb(o.coat,o.expr)}"><b>${o.rarity==='SR'?'레어 ':''}${CFG.coats[o.coat]} · ${CFG.exprs[o.expr]}</b><i>${o.rarity}${o.dup?' · Lv.'+o.lv:' · NEW'}</i></div>`;
- function startGacha(n=1){batch=[];if(n===10){if(s.paws<CFG.gacha.cost10.paws)return;s.paws-=CFG.gacha.cost10.paws-CFG.gacha.cost.paws*10;for(let i=0;i<10;i++){const r=S.pull(s,Math.random);if(r)batch.push(r);}}else{const r=S.pull(s,Math.random);if(r)batch.push(r);}if(!batch.length)return;
-  cur=batch.reduce((a,b)=>RANK[b.rarity]>RANK[a.rarity]?b:a);SDK.sfx('click');SDK.sfx('knob');SDK.sfx('reveal');$('gpull').classList.remove('on');ctx.save();close();showGacha();vid.currentTime=0;vid.muted=!s.settings.sound;vid.play().catch(()=>{vid.muted=true;vid.play();});}
+ // result card: colour by grade (N 무색 · R 파랑 · S 금색), on-screen grade text is the initial only
+ const RANK={N:0,R:1,S:2};const gradeOfCard=o=>S.gradeOf(o.lv);
+ const cardHtml=o=>`<div class="rc ${gradeOfCard(o)}"><img src="${ctx.thumb(o.coat,o.expr)}"><b>${CFG.coats[o.coat]} · ${CFG.exprs[o.expr]}</b><i>${gradeOfCard(o)} · Lv.${o.lv}${o.isNew?' · NEW':''}</i></div>`;
+ function startGacha(n=1){batch=[];if(!S.gachaReady())return;if(n===10){if(s.paws<CFG.gacha.cost10.paws)return;s.paws-=CFG.gacha.cost10.paws-CFG.gacha.cost.paws*10;for(let i=0;i<10;i++){const r=S.pull(s,Math.random);if(r)batch.push(r);}}else{const r=S.pull(s,Math.random);if(r)batch.push(r);}if(!batch.length)return;
+  cur=batch.reduce((a,b)=>RANK[gradeOfCard(b)]>RANK[gradeOfCard(a)]?b:a);SDK.sfx('click');SDK.sfx('knob');SDK.sfx('reveal');$('gpull').classList.remove('on');ctx.save();close();showGacha();vid.currentTime=0;vid.muted=!s.settings.sound;vid.play().catch(()=>{vid.muted=true;vid.play();});}
  function showGacha(){gl.classList.add('on');$('gcard').hidden=true;$('revealImg').classList.remove('on');revealT0=0;}
  function reveal(){if(revealT0)return;revealT0=performance.now();const ri=$('revealImg');ri.src=ctx.thumb(cur.coat,cur.expr);ri.classList.remove('on');void ri.offsetWidth;ri.classList.add('on');const c=$('gcard');c.hidden=false;
   SDK.sfx('fanfare');if(!batch.length)batch=[cur];
-  c.innerHTML=(batch.length>1?`<div class="rgrid">${batch.map(cardHtml).join('')}</div>`:cardHtml(cur))+`<button id="gok">${batch.every(b=>b.dup)?'확인':'카페로 보내기'}</button>`;
-  $('gok').onclick=()=>{for(const b of batch)if(!b.dup)ctx.addToCafe(b);gl.classList.remove('on');vid.pause();cur=null;tick();};}
+  c.innerHTML=(batch.length>1?`<div class="rgrid">${batch.map(cardHtml).join('')}</div>`:cardHtml(cur))+`<button id="gok">카페로 보내기</button>`;
+  $('gok').onclick=()=>{for(const b of batch)ctx.addToCafe(b);gl.classList.remove('on');vid.pause();cur=null;tick();};}
  vid.addEventListener('timeupdate',()=>{if(cur&&vid.currentTime>=CFG.gacha.revealAt)reveal();});vid.addEventListener('ended',()=>{if(cur)reveal();});
  $('gskip').onclick=()=>{if(cur){vid.currentTime=Math.max(vid.currentTime,CFG.gacha.revealAt);reveal();}};
  function frame(){}
  // capture helper: show the reveal moment for a given figure at video time t
- async function gachaShow(coat,expr,t,rar){cur={coat,expr,rarity:rar||'R',lv:1,dup:false};batch=[cur];close();showGacha();vid.muted=true;await new Promise(r=>{vid.addEventListener('seeked',r,{once:true});vid.currentTime=t;});vid.pause();if(t>=CFG.gacha.revealAt){reveal();const ri=$('revealImg');ri.style.animation='none';ri.style.opacity=1;ri.style.transform='translate(-50%,-50%) scale(1)';await new Promise(r=>ri.complete?r():ri.onload=r);}return true;}
+ async function gachaShow(coat,expr,t,grade){cur={coat,expr,lv:S.startLevel(grade||'R'),isNew:true};batch=[cur];close();showGacha();vid.muted=true;await new Promise(r=>{vid.addEventListener('seeked',r,{once:true});vid.currentTime=t;});vid.pause();if(t>=CFG.gacha.revealAt){reveal();const ri=$('revealImg');ri.style.animation='none';ri.style.opacity=1;ri.style.transform='translate(-50%,-50%) scale(1)';await new Promise(r=>ri.complete?r():ri.onload=r);}return true;}
  tick();return {tick,open,close,frame,gachaShow};}
