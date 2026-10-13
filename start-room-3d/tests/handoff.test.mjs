@@ -10,8 +10,12 @@ import * as H from '../healing.js';
 const ROOT=join(dirname(fileURLToPath(import.meta.url)),'..');
 const mem=()=>({d:{},getItem(k){return this.d[k]??null},setItem(k,v){this.d[k]=v}});
 const results=[];
-function test(name,fn){const snap=JSON.stringify({F:CFG.FEATURES,T:CFG.TEMP});try{fn();results.push(['ok',name]);}catch(e){results.push(['FAIL',name,e]);}
- finally{const o=JSON.parse(snap);Object.assign(CFG.FEATURES,o.F);Object.assign(CFG.TEMP,o.T);}}
+const KEY0=CFG.saveKey;
+function guarded(fn){const snap=JSON.stringify({F:CFG.FEATURES,T:CFG.TEMP});try{return fn();}finally{const o=JSON.parse(snap);Object.assign(CFG.FEATURES,o.F);Object.assign(CFG.TEMP,o.T);CFG.saveKey=KEY0;}}
+function test(name,fn){try{guarded(fn);results.push(['ok',name]);}catch(e){results.push(['FAIL',name,e]);}}
+// known-fail criterion: fn returns {met, info}. Not met → reported as BLOCKED (does not fail the run, never shown as ok).
+// Met → FAIL, so the stale known-fail mark gets removed instead of hiding a pass.
+function knownFail(name,why,fn){try{const r=guarded(fn);results.push(r.met?['FAIL',name,Error('criterion is now met — remove the known-fail mark: '+r.info)]:['BLOCKED',name,null,why+' · '+r.info]);}catch(e){results.push(['FAIL',name,e]);}}
 
 // ---------- D-01 ----------
 test('D-01 S rate is 2% ±0.1%p over 100,000 rolls; N/R stay null (no invented split)',()=>{
@@ -22,13 +26,19 @@ test('D-01 with N/R undecided the pull is blocked; TEMP switch maps non-S to N o
  const st=S.newState(0);assert.equal(S.gachaReady(),false);assert.equal(S.pull(st,S.rng(1)),null);assert.equal(st.gachaPulls,0);
  CFG.TEMP.gachaNonSAsN=true;const r=S.rng(9);const seen=new Set();const st2=S.newState(0);st2.paws=1e6;
  for(let i=0;i<3000;i++)seen.add(S.pull(st2,r).grade);assert.deepEqual([...seen].sort(),['N','S']);});
-test('D-01 no "SR" grade label left in code (except the one legacy-migration constant)',()=>{
+test('D-01 TEMP: no R is ever pulled (R rate null → not invented), by paws, capsule or first free pull; R appears only via level',()=>{
+ CFG.TEMP.gachaNonSAsN=true;const st=S.newState(0);st.paws=1e6;st.items.capsule=500;const r=S.rng(77);const got={N:0,R:0,S:0};
+ for(let i=0;i<3000;i++){const o=S.pull(st,r,{capsule:i<500});got[o.grade]++;assert.equal(S.gradeOf(o.lv),o.grade);}
+ assert.equal(got.R,0,'R pulls '+got.R);assert.ok(got.N>0&&got.S>0);assert.equal(st.items.capsule,0);
+ assert.equal(S.rollGrade(()=>CFG.gacha.rates.S),'N','first non-S roll is N, not R');CFG.TEMP.gachaNonSAsN=false;assert.equal(S.rollGrade(()=>CFG.gacha.rates.S),null);
+ assert.equal(S.gradeOf(S.startLevel('R')),'R');});
+test('D-01 no "SR" grade label left in code',()=>{
  const files=readdirSync(ROOT).filter(f=>/\.(js|mjs|html)$/.test(f));const hits=[];
  for(const f of files)readFileSync(join(ROOT,f),'utf8').split('\n').forEach((l,i)=>{const m=l.match(/(['"`])SR\1|\.SR\b|\bSR\s*:/g);if(m)hits.push(`${f}: ${l.trim().slice(0,60)}`);});
- assert.equal(hits.length,1,'SR hits '+hits);assert.match(hits[0],/^sim\.js: const LEGACY_TOP_GRADE='SR'/);});
-test('D-01 old save with SR loads as S and the re-saved JSON contains no SR',()=>{
+ assert.equal(hits.length,0,'SR hits '+hits);});
+test('D-01 old save with SR: level kept, grade from level, re-saved JSON has no SR / rarity',()=>{
  const m=mem();m.setItem(CFG.saveKey,JSON.stringify({v:1,coins:1,hearts:0,paws:0,lastSeen:0,owned:[{id:1,coat:'red',expr:'red_smile',lv:3,rarity:'SR'},{id:2,coat:'kuro',expr:'kuro_calm',lv:1,rarity:'R'},{id:3,coat:'white',expr:'white_smile',lv:2,rarity:'N'}],nextId:4}));
- const {state}=S.load(m,1000);assert.deepEqual(state.owned.map(o=>[S.gradeOf(o.lv),o.lv]),[['S',23],['R',11],['N',2]]);
+ const {state}=S.load(m,1000);assert.deepEqual(state.owned.map(o=>[S.gradeOf(o.lv),o.lv]),[['N',3],['N',1],['N',2]]);
  S.save(m,state,1000);const raw=m.getItem(CFG.saveKey);assert.ok(!raw.includes('SR')&&!raw.includes('rarity'),raw);});
 test('D-01 result-card CSS: N colourless, R blue, S gold; no ★/레어 prefix in card markup',()=>{
  const html=readFileSync(join(ROOT,'index.html'),'utf8'),ui=readFileSync(join(ROOT,'ui.js'),'utf8');
@@ -44,9 +54,24 @@ test('D-02 gradeOf bands, promotion boundaries and Lv 30 cap',()=>{
 test('D-02 pulls start at band start level',()=>{
  CFG.TEMP.gachaNonSAsN=true;const st=S.newState(0);st.paws=1e6;const r=S.rng(4);
  for(let i=0;i<2000;i++){const o=S.pull(st,r);assert.equal(o.lv,S.startLevel(o.grade));}});
-test('D-02 old save rarity is converted to a matching level',()=>{
- const st=S.migrate({v:1,owned:[{id:1,coat:'red',expr:'red_smile',lv:15,rarity:'R'},{id:2,coat:'red',expr:'red_wink',lv:1,rarity:'N'}]});
- assert.deepEqual(st.owned.map(o=>o.lv),[20,1]);assert.deepEqual(st.owned.map(o=>S.gradeOf(o.lv)),['R','N']);});
+test('D-02 migration keeps the stored level (no remapping), drops rarity, grade from level',()=>{
+ const st=S.migrate({v:1,owned:[{id:1,coat:'red',expr:'red_smile',lv:15,rarity:'R'},{id:2,coat:'red',expr:'red_wink',lv:1,rarity:'N'},{id:3,coat:'kuro',expr:'kuro_calm',lv:4,rarity:'SR'}]});
+ assert.deepEqual(st.owned.map(o=>o.lv),[15,1,4]);assert.deepEqual(st.owned.map(o=>S.gradeOf(o.lv)),['R','N','N']);assert.ok(st.owned.every(o=>!('rarity' in o)&&!('grade' in o)));});
+test('D-02 migration boundaries: band edges unchanged, only the Lv30 cap clamps',()=>{const B=CFG.grades.bands,cap=CFG.grades.maxLevel;
+ const lv=[B.N[0],B.N[1],B.R[0],B.R[1],B.S[0],B.S[1],cap+1,0,-3,'7',null,undefined,NaN,2.9];
+ const st=S.migrate({v:1,owned:lv.map((l,i)=>({id:i+1,coat:'red',expr:'red_smile',lv:l,rarity:'SR'}))});
+ assert.deepEqual(st.owned.map(o=>o.lv),[B.N[0],B.N[1],B.R[0],B.R[1],B.S[0],B.S[1],cap,1,1,7,1,1,1,2]);
+ assert.deepEqual(st.owned.slice(0,6).map(o=>S.gradeOf(o.lv)),['N','N','R','R','S','S']);});
+test('D-02 migration is idempotent; already-v2 saves are not touched',()=>{
+ const v1=()=>({v:1,lastSeen:0,owned:[{id:1,coat:'red',expr:'red_smile',lv:12,rarity:'N'},{id:2,coat:'white',expr:'white_smile',lv:31,rarity:'SR'}]});
+ const once=S.migrate(v1(),5),twice=S.migrate(JSON.parse(JSON.stringify(once)),99);assert.deepEqual(twice,once);assert.equal(once.v,2);
+ const m=mem();m.setItem(CFG.saveKey,JSON.stringify(v1()));const a=S.load(m,1000).state;S.save(m,a,1000);const b=S.load(m,2000).state;assert.deepEqual(b.owned,a.owned);assert.deepEqual(a.owned.map(o=>o.lv),[12,30]);});
+test('D-02 the original pre-migration save is kept under a backup key (written once)',()=>{
+ const m=mem();const raw=JSON.stringify({v:1,coins:7,hearts:0,paws:0,lastSeen:0,owned:[{id:1,coat:'red',expr:'red_smile',lv:3,rarity:'SR'}],nextId:2});m.setItem(CFG.saveKey,raw);
+ const {state}=S.load(m,1000);assert.equal(S.backupKey(1),CFG.saveKey+':backup.v1');assert.equal(m.getItem(S.backupKey(1)),raw,'byte-for-byte copy');
+ S.save(m,state,1000);assert.notEqual(m.getItem(CFG.saveKey),raw);S.load(m,2000);assert.equal(m.getItem(S.backupKey(1)),raw,'v2 load does not touch the backup');
+ const m2=mem();m2.setItem(CFG.saveKey,JSON.stringify({...S.newState(0)}));S.load(m2,1000);assert.equal(m2.getItem(S.backupKey(1)),null,'no backup for v2 saves');
+ const m3=mem();m3.setItem(S.backupKey(1),'older');m3.setItem(CFG.saveKey,raw);S.load(m3,1000);assert.equal(m3.getItem(S.backupKey(1)),'older','existing backup never overwritten');});
 
 // ---------- D-05 ----------
 const HOUR=3600e3,MIN=60e3;
@@ -131,6 +156,41 @@ test('D-08 stop rule undecided → stop refused; TEMP: back at once, no reward/r
 test('D-08 heart cost is charged when decided (test-only value injected)',()=>{const old=CFG.walk.heartCost;CFG.walk.heartCost={600:1,1200:2,1800:3};
  try{const st=S.newState(0);st.hearts=2;assert.equal(S.walkCheck(st,1,1800),'hearts');assert.ok(S.startWalk(st,1,1200,0));assert.equal(st.hearts,0);}finally{CFG.walk.heartCost=old;}});
 
+test('D-08 returning walker reappears on a full floor (7 owned): reclaims its slot, the stand-in goes back to reserve',()=>{CFG.TEMP.walkFreeWhenCostNull=true;
+ const st=mk(S.newState(0),Array.from({length:7},()=>({lv:1})));const max=CFG.cafe.maxShibas;assert.equal(max,6);const ids=st.owned.map(o=>o.id);
+ const w=S.newWorld(st,1);assert.deepEqual(w.shibas.map(x=>x.id),ids.slice(0,6));
+ const walker=ids[2],reserve=ids[6];S.startWalk(st,walker,600,0);S.leaveFloor(w,st,walker);
+ assert.ok(!w.shibas.some(x=>x.id===walker));assert.ok(w.shibas.some(x=>x.id===reserve),'reserve fills the slot');assert.equal(w.shibas.length,6);
+ const r=S.tickWalk(st,601e3);assert.equal(r.returned,walker);S.returnToFloor(w,st,walker);
+ assert.ok(w.shibas.some(x=>x.id===walker),'walker back on the floor');assert.ok(!w.shibas.some(x=>x.id===reserve),'stand-in back to reserve');assert.equal(w.shibas.length,6);
+ assert.equal(new Set(w.shibas.map(x=>x.id)).size,6);S.returnToFloor(w,st,walker);assert.equal(w.shibas.length,6,'second call is a no-op');
+ // walker was the 7th (reserve) shiba itself → still comes back; the floor shiba last in owned order steps out
+ const st2=mk(S.newState(0),Array.from({length:7},()=>({lv:1})));const w2=S.newWorld(st2,1);const last=st2.owned[6].id;S.startWalk(st2,last,600,0);S.leaveFloor(w2,st2,last);
+ S.tickWalk(st2,601e3);S.returnToFloor(w2,st2,last);assert.ok(w2.shibas.some(x=>x.id===last));assert.ok(!w2.shibas.some(x=>x.id===st2.owned[5].id));assert.equal(w2.shibas.length,6);});
+test('D-08 walker returning while the app was closed (7 owned, full floor) is on the floor after load',()=>{CFG.TEMP.walkFreeWhenCostNull=true;
+ const st=mk(S.newState(0),Array.from({length:7},()=>({lv:1})));const walker=st.owned[1].id;S.startWalk(st,walker,600,0);const m=mem();S.save(m,st,0);
+ const L=S.load(m,HOUR);assert.equal(L.returned,walker);const w=S.newWorld(L.state,1);S.returnToFloor(w,L.state,walker);
+ assert.ok(w.shibas.some(x=>x.id===walker));assert.equal(w.shibas.length,CFG.cafe.maxShibas);assert.ok(!w.shibas.some(x=>x.id===L.state.owned[6].id),'reserve stays in reserve');
+ // walker 7th in owned order (newWorld leaves it out) → still put on the floor
+ const st2=mk(S.newState(0),Array.from({length:7},()=>({lv:1})));const w7=st2.owned[6].id;S.startWalk(st2,w7,600,0);const m2=mem();S.save(m2,st2,0);
+ const L2=S.load(m2,HOUR);const w2=S.newWorld(L2.state,1);assert.ok(!w2.shibas.some(x=>x.id===w7));S.returnToFloor(w2,L2.state,L2.returned);assert.ok(w2.shibas.some(x=>x.id===w7));assert.equal(w2.shibas.length,CFG.cafe.maxShibas);});
+test('D-08 offline income is split at the walk completion time (10-min walk inside a 1-hour absence)',()=>{CFG.TEMP.walkFreeWhenCostNull=true;
+ const st=S.newState(0);S.startWalk(st,1,600,0);const m=mem();S.save(m,st,0);
+ const during=S.incomePerSec(st),after=S.incomePerSec({...st,walk:null});assert.ok(after>during);
+ const L=S.load(m,HOUR);const walkSec=600,rest=HOUR/1000-walkSec;
+ assert.equal(L.offline.coins,Math.floor((walkSec*during+rest*after)*CFG.offline.rate));
+ assert.ok(L.offline.coins>Math.floor(HOUR/1000*during*CFG.offline.rate),'walker earns again after returning');
+ // walk already over before the app was closed → no split; walk still running at reopen → walker absent the whole time
+ const st2=S.newState(0);S.startWalk(st2,1,600,0);st2.lastSeen=0;assert.equal(S.offlineEarnings(st2,5*MIN).coins,Math.floor(300*during*CFG.offline.rate));
+ const st3=S.newState(0);S.startWalk(st3,1,600,0);st3.lastSeen=20*MIN;assert.equal(S.offlineEarnings(st3,HOUR+20*MIN).coins,Math.floor(3600*after*CFG.offline.rate));});
+test('build mode: only exact temp=1 turns TEMP on, and then saves use a separate :temp key',()=>{
+ for(const q of ['','?temp','?temp=','?temp=0','?temp=true','?temp=11','?Temp=1','?xtemp=1']){assert.equal(S.applyBuildMode(q),false,q);assert.ok(Object.values(CFG.TEMP).every(v=>v===false),q);assert.equal(CFG.saveKey,KEY0,q);}
+ const m=mem();const ord=S.newState(0);ord.coins=123;S.save(m,ord,0);const before=m.getItem(KEY0);
+ assert.equal(S.applyBuildMode('?still=1&seed=7&temp=1'),true);assert.ok(Object.values(CFG.TEMP).every(v=>v===true));assert.equal(CFG.saveKey,KEY0+':temp');
+ const L=S.load(m,1000);assert.ok(L.fresh,'TEMP build starts from its own save');L.state.coins=999;S.save(m,L.state,2000);
+ assert.equal(m.getItem(KEY0),before,'ordinary save untouched');assert.equal(JSON.parse(m.getItem(KEY0+':temp')).coins,999);
+ const main=readFileSync(join(ROOT,'main.js'),'utf8');assert.ok(main.includes('S.applyBuildMode(location.search)')&&!/Q\.has\('temp'\)/.test(main),'main.js uses applyBuildMode');});
+
 // ---------- D-09 ----------
 test('D-09 off by default: fatigue has no effect',()=>{assert.equal(CFG.FEATURES.fatigue,false);const st=S.newState(0);S.setFatigue(st,1,1);
  assert.equal(S.fatigueState(st,1),'normal');assert.ok(S.canPlay(st,1));CFG.TEMP.walkFreeWhenCostNull=true;assert.equal(S.walkCheck(st,1,600),null);
@@ -203,12 +263,12 @@ test('D-13 1.7.2 periods from local time, 20 s transition, lock keeps the period
  const T=H.newTod(at(10,59));assert.equal(T.key,'morning');assert.equal(T.k,1,'launch snaps without transition');H.stepTod(T,1,at(11,0));assert.equal(T.key,'day');assert.equal(T.k,0);
  H.stepTod(T,10,at(11,0));assert.ok(T.k>.45&&T.k<.55);H.stepTod(T,10,at(11,0));assert.equal(T.k,1);
  const Lk=H.newTod(at(10,59),true);H.stepTod(Lk,61,at(12));assert.equal(Lk.key,'morning');});
-test('D-13 1.7.2 night guest mix: arrival interval ÷0.7, pay ×1.43 (product within ±5%); measured income ratio reported',()=>{CFG.FEATURES.healingTimeOfDay=true;
- const M=H.customerMix('night');assert.ok(Math.abs(M.countMul*M.tipMul-1)<=.05);assert.deepEqual(H.customerMix('day'),{countMul:1,tipMul:1});
+test('D-13 1.7.2 night guest mix: arrival interval ÷0.7, pay ×1.43 (product within ±5%)',()=>{CFG.FEATURES.healingTimeOfDay=true;
+ const M=H.customerMix('night');assert.ok(Math.abs(M.countMul*M.tipMul-1)<=.05);assert.deepEqual(H.customerMix('day'),{countMul:1,tipMul:1});});
+knownFail('D-13 1.7.2 night income per hour = day ±5% (simulated)','FEATURES.healingTimeOfDay is off; seats, not arrivals, limit guests in this build → needs a decision (impl-notes)',()=>{CFG.FEATURES.healingTimeOfDay=true;
  const run=tod=>{let total=0,spawned=0;for(let seed=1;seed<=6;seed++){const st=S.newState(0);const w=S.newWorld(st,seed);w.tod=tod;const c0=st.coins;for(let i=0;i<30*3600;i++)S.tick(w,st,1/30);total+=st.coins-c0;spawned+=w.nextCust-1;}return {total,spawned};};
- const day=run('day'),night=run('night');
- // KNOWN GAP (impl-notes): seats, not arrivals, limit guests in this build, so night income ≠ day ±5% with the proposal values.
- console.log(`        [info] 1.7.2 night/day coins = ${(night.total/day.total).toFixed(3)}, guests night/day = ${(night.spawned/day.spawned).toFixed(3)} (criterion ±5% NOT met — needs decision)`);});
+ const day=run('day'),night=run('night'),ratio=night.total/day.total;
+ return {met:Math.abs(ratio-1)<=.05,info:`night/day coins = ${ratio.toFixed(3)}, guests night/day = ${(night.spawned/day.spawned).toFixed(3)}`};});
 test('D-13 1.7.3 idle 20 s → an event within ~1 min on average; touch / overlay reset; tod filter',()=>{CFG.FEATURES.healingObserve=true;const r=S.rng(11);let sum=0;
  for(let k=0;k<200;k++){const O=H.newObserve();let t=0;while(O.phase!=='active'){H.stepObserve(O,.5,{overlay:false,tod:'day',month:6,r});t+=.5;}sum+=t-CFG.healing.observe.idleThresholdSec;}
  assert.ok(sum/200<=60,'mean after idle '+(sum/200).toFixed(1));
@@ -222,5 +282,5 @@ test('D-13 1.7.3 tap rewards + journal exactly once; daily cap → 0 reward but 
  assert.equal(H.tapObserve(show('butterfly'),st,86400e3*2).got.coins,5,'cap resets next day');const m=H.tapObserve(show('moonWindow'),st,3);assert.deepEqual(m.got,{});assert.ok(!('stamp' in st));});
 
 // ---------- report ----------
-let fail=0;for(const [k,n,e] of results){console.log(k==='ok'?'  ok  ':'  FAIL',n);if(e){fail++;console.log('       ',e.message);}}
-console.log(`${results.length-fail}/${results.length} handoff tests passed`);if(fail)process.exit(1);
+let fail=0,blocked=0;for(const [k,n,e,info] of results){console.log({ok:'  ok     ',FAIL:'  FAIL   ',BLOCKED:'  BLOCKED'}[k],n);if(e){fail++;console.log('         ',e.message);}if(k==='BLOCKED'){blocked++;console.log('          known-fail:',info);}}
+console.log(`${results.length-fail-blocked}/${results.length} handoff tests passed, ${blocked} BLOCKED (known-fail), ${fail} failed`);if(fail)process.exit(1);

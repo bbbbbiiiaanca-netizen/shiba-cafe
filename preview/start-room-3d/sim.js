@@ -19,15 +19,15 @@ function baseState(now){
   items:{heartReset:0,capsule:0},heartRegenAt:now,promoQueue:[],onboarding:{visits:[],claimed:[]},walk:null,rescueQueue:[],
   settings:{sound:true,music:true,language:null,todLock:CFG.healing.timeOfDay.lockToggle},lastSeen:now};
 }
-// Old saves (v1): `rarity` field N/R/SR + lv (lv started at 1 and grew by +1 per duplicate).
-// → keep the grade the player had (old top label → S), place the shiba at that band's first level plus the levels it had gained, capped at the band end.
-const LEGACY_TOP_GRADE='SR'; // the only place the old label may appear: it is read from old saves and rewritten to 'S'
+// Old saves (v1): `rarity` field N/R/SR + lv. The stored level is kept as is (only clamped to the confirmed Lv30 cap) and the old
+// rarity field (incl. the SR label, = S today) is dropped: grade is computed from the level from now on. No level remapping.
 export function migrate(s,now=Date.now()){
  if(s.v===1){
-  for(const o of s.owned||[]){const g=o.rarity===LEGACY_TOP_GRADE?'S':GRADES.includes(o.rarity)?o.rarity:'N';const [a,b]=CFG.grades.bands[g];
-   o.lv=Math.min(b,a+Math.max(0,(Math.floor(o.lv)||1)-1));delete o.rarity;}
+  for(const o of s.owned||[]){o.lv=clampLevel(o.lv);delete o.rarity;}
   s.dex=[...new Set((s.owned||[]).map(dexKey))];s.heartRegenAt=s.lastSeen??now;s.v=2;}
  return sanitize(s);}
+// the untouched pre-migration save string is kept under this key (written once, never overwritten)
+export const backupKey=v=>CFG.saveKey+':backup.v'+v;
 // invariants enforced on every load and save: no stored grade, level within 1..30
 export function sanitize(s){
  // D-12: themes on hold (sakura/summer) or unknown fall back to the basic theme; D-11: unknown language → ask again
@@ -39,12 +39,22 @@ export function activeOwned(s){return s.owned.filter(o=>!isBusy(s,o.id));}
 export function incomePerSec(s){return (CFG.idle.perSec+CFG.idle.perShibaPerSec*Math.min(activeOwned(s).length,CFG.cafe.maxShibas))*(1+CFG.upgrade.bonus*(s.upg||0));}
 export function upgradeCost(s){return Math.round(CFG.upgrade.base*Math.pow(CFG.upgrade.grow,s.upg||0));}
 export function buyUpgrade(s){const c=upgradeCost(s);if(s.coins<c)return false;s.coins-=c;s.upg=(s.upg||0)+1;return true;}
+// a walk that ends while the app is closed is split at its completion time: the walker earns again from walkStartAt+walkDurationSec.
+// The capped window starts at lastSeen (earnings stop accruing capHours after leaving).
 export function offlineEarnings(s,now=Date.now()){const sec=Math.min((now-s.lastSeen)/1000,CFG.offline.capHours*3600);
- if(!(sec>=CFG.offline.minSeconds))return {sec:Math.max(0,sec|0),coins:0};return {sec:sec|0,coins:Math.floor(sec*incomePerSec(s)*CFG.offline.rate)};}
-export function load(storage,now=Date.now()){let s=null;try{s=JSON.parse(storage.getItem(CFG.saveKey));}catch{}
- if(!s||!(s.v===1||s.v===CFG.saveVersion))return {state:newState(now),offline:{sec:0,coins:0},fresh:true};
- const d=baseState(now);s=migrate({...d,...s,onboarding:{...d.onboarding,...s.onboarding},settings:{...d.settings,...s.settings},items:{...d.items,...s.items}},now);settleHearts(s,now);markVisit(s,now);const offline=offlineEarnings(s,now);tickWalk(s,now);s.coins+=offline.coins;s.lastSeen=now;return {state:s,offline,fresh:false};}
+ if(!(sec>=CFG.offline.minSeconds))return {sec:Math.max(0,sec|0),coins:0};const W=s.walk;
+ const walkSec=W?Math.min(sec,Math.max(0,(W.walkStartAt+W.walkDurationSec*1000-s.lastSeen)/1000)):0;
+ return {sec:sec|0,coins:Math.floor((walkSec*incomePerSec(s)+(sec-walkSec)*incomePerSec({...s,walk:null}))*CFG.offline.rate)};}
+export function load(storage,now=Date.now()){let raw=null,s=null;try{raw=storage.getItem(CFG.saveKey);s=JSON.parse(raw);}catch{}
+ if(!s||!(s.v===1||s.v===CFG.saveVersion))return {state:newState(now),offline:{sec:0,coins:0},fresh:true,returned:null};
+ if(s.v!==CFG.saveVersion&&storage.getItem(backupKey(s.v))==null)storage.setItem(backupKey(s.v),raw);
+ const d=baseState(now);s=migrate({...d,...s,onboarding:{...d.onboarding,...s.onboarding},settings:{...d.settings,...s.settings},items:{...d.items,...s.items}},now);settleHearts(s,now);markVisit(s,now);const offline=offlineEarnings(s,now);const wr=tickWalk(s,now);s.coins+=offline.coins;s.lastSeen=now;
+ return {state:s,offline,fresh:false,returned:wr?.returned??null};} // returned: walker settled on load → main puts it back on the floor
 export function save(storage,s,now=Date.now()){s.lastSeen=now;sanitize(s);storage.setItem(CFG.saveKey,JSON.stringify(s));}
+// test build: only an exact `temp=1` query turns on every CFG.TEMP switch, and then saves go to a separate key so TEMP play never touches the ordinary save
+export const BASE_SAVE_KEY=CFG.saveKey,TEMP_SAVE_SUFFIX=':temp';
+export function applyBuildMode(search){const on=new URLSearchParams(search).get('temp')==='1';
+ if(on){for(const k of Object.keys(CFG.TEMP))CFG.TEMP[k]=true;CFG.saveKey=BASE_SAVE_KEY+TEMP_SAVE_SUFFIX;}return on;}
 // rewards are never capped (hearts from rewards may go above hearts.regenCap)
 export function grant(s,r={}){for(const k of ['coins','hearts','paws'])if(r[k])s[k]+=r[k];for(const k of Object.keys(CFG.items))if(r[k])s.items[k]=(s.items[k]||0)+r[k];}
 
@@ -166,6 +176,14 @@ export function newWorld(s,seed=7){const r=rng(seed);const w={t:0,r,customers:[]
   play:{checkT:CFG.healing.play.checkIntervalSec,globalCdUntil:0,pairs:[]}};
  for(const o of activeOwned(s).slice(0,CFG.cafe.maxShibas))addShiba(w,o);return w;}
 export function addShiba(w,o){if(w.shibas.length>=CFG.cafe.maxShibas)return null;const R=CFG.roam;const sh={id:o.id,coat:o.coat,expr:o.expr,phase:'idle',t:w.r()*2,x:R.x0+w.r()*(R.x1-R.x0),y:0,z:R.z0+w.r()*(R.z1-R.z0),cd:0,heading:0};w.shibas.push(sh);return sh;}
+// floor membership while walking: the walker's free slot is lent to a reserve shiba (recorded in w.standIn) and taken back when it returns.
+// After a reload the loan is not remembered → the floor shiba last in owned order goes back to the reserve.
+export function leaveFloor(w,s,id){removeShiba(w,id);for(const o of activeOwned(s))if(w.shibas.length<CFG.cafe.maxShibas&&!w.shibas.some(x=>x.id===o.id)){addShiba(w,o);(w.standIn||(w.standIn={}))[id]=o.id;break;}}
+export function returnToFloor(w,s,id){const o=s.owned.find(o=>o.id===id);if(!o||isBusy(s,id))return null;const lent=w.standIn?.[id];if(w.standIn)delete w.standIn[id];
+ const on=w.shibas.find(x=>x.id===id);if(on)return on;
+ if(w.shibas.length>=CFG.cafe.maxShibas){const rank=x=>s.owned.findIndex(o=>o.id===x.id);
+  const out=w.shibas.find(x=>x.id===lent)||[...w.shibas].sort((a,b)=>rank(b)-rank(a))[0];removeShiba(w,out.id);}
+ return addShiba(w,o);}
 export function removeShiba(w,id){const i=w.shibas.findIndex(x=>x.id===id);if(i<0)return false;const sh=w.shibas[i];w.shibas.splice(i,1);
  const c=w.customers.find(c=>c.id===sh.cust);if(c){c.shiba=null;c.petting=false;c.t=0;}w.tableBusy=w.tableBusy.map(b=>b===id?null:b);return true;}
 function roamTarget(w){const R=CFG.roam;return {x:R.x0+w.r()*(R.x1-R.x0),z:R.z0+w.r()*(R.z1-R.z0)};}

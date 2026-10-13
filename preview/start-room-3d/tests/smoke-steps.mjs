@@ -2,6 +2,9 @@
 export default async function({ev,check,sleep,temp,reload}){
  // D-11 first run: vertical list, nothing pre-selected, OK disabled until a pick
  await ev('__game.step(.2);true');
+ if(temp){await check('test build: TEMP on, saves go to the separate :temp key','__game.CFG.saveKey===__game.S.BASE_SAVE_KEY+":temp"&&Object.values(__game.CFG.TEMP).every(Boolean)');
+  await ev('sessionStorage.setItem("ord",String(localStorage.getItem(__game.S.BASE_SAVE_KEY)));true');}
+ else await check('default build: TEMP off, ordinary save key','__game.CFG.saveKey===__game.S.BASE_SAVE_KEY&&Object.values(__game.CFG.TEMP).every(v=>!v)');
  await check('language screen on first run, no default, OK disabled','!document.getElementById("lang").hidden&&document.querySelectorAll("#langList button").length===2&&!document.querySelector("#langList button.on")&&document.getElementById("langOk").disabled');
  await ev('document.querySelector("[data-lang=en]").click();document.getElementById("langOk").click();true');await sleep(50);
  await check('English applied to the main screen','document.getElementById("lang").hidden&&document.querySelector("[data-i18n=\'ui.nav.build.quest\']").textContent==="Quests"&&/Donggu|café/i.test(document.getElementById("qpill").textContent)');
@@ -57,7 +60,13 @@ export default async function({ev,check,sleep,temp,reload}){
  await ev('__game.open("shiba");document.querySelector("[data-walk=\'1\']").click();true');
  await check(temp?'walk buttons enabled (TEMP free)':'walk buttons show 미정 and are disabled',temp?'!document.querySelector("[data-walkgo=\'1:600\']").disabled':'document.querySelector("[data-walkgo=\'1:600\']").disabled&&/미정/.test(document.querySelector("[data-walkgo=\'1:600\']").textContent)');
  if(temp){await ev('document.querySelector("[data-walkgo=\'1:600\']").click();true');await check('walker leaves the cafe floor','!!__game.state.walk&&!__game.world.shibas.some(x=>x.id===1)');
-  await ev('__game.state.walk.walkStartAt-=601e3;__game.step(.1);true');await check('walk over → back on the floor, settled','__game.state.walk===null&&__game.world.shibas.some(x=>x.id===1)');}
+  await ev('__game.state.walk.walkStartAt-=601e3;__game.step(.1);true');await check('walk over → back on the floor, settled','__game.state.walk===null&&__game.world.shibas.some(x=>x.id===1)');
+  // full floor (7 owned, 6 on the floor): the walker comes back and the stand-in goes back to reserve
+  await ev(`(()=>{const g=__game,st=g.state;while(st.owned.length<7)st.owned.push({id:st.nextId++,coat:'red',expr:'red_smile',lv:1});for(const o of st.owned)if(g.world.shibas.length<g.CFG.cafe.maxShibas&&!g.world.shibas.some(x=>x.id===o.id))g.S.addShiba(g.world,o);return true;})()`);
+  await ev('window.__wk=__game.world.shibas[0].id;__game.close();__game.open("shiba");document.querySelector(`[data-walk="${__wk}"]`).click();document.querySelector(`[data-walkgo="${__wk}:600"]`).click();true');
+  await check('full floor: walker out, a reserve shiba stands in','!!__game.state.walk&&!__game.world.shibas.some(x=>x.id===__wk)&&__game.world.shibas.length===__game.CFG.cafe.maxShibas');
+  await ev('window.__si=__game.world.standIn[__wk];__game.state.walk.walkStartAt-=601e3;__game.step(.1);true');
+  await check('full floor: walker back on the floor, stand-in back in reserve','__game.state.walk===null&&__game.world.shibas.some(x=>x.id===__wk)&&!__game.world.shibas.some(x=>x.id===__si)&&__game.world.shibas.length===__game.CFG.cafe.maxShibas');}
  await ev('__game.close();true');
  // D-04: card plays once and tap skips (feature switched on only inside this check)
  await ev('__game.CFG.FEATURES.promotionCard=true;const o=__game.state.owned[0];o.lv=10;__game.S.setLevel(__game.state,o,11,"levelup");true');
@@ -70,4 +79,6 @@ export default async function({ev,check,sleep,temp,reload}){
  await check(temp?'day 1 claimable (TEMP)':'nothing claimable (dayMode 미정)',temp?'document.querySelector("[data-ob=\'1\']").classList.contains("claimable")':'document.querySelectorAll(".obd.claimable").length===0');
  if(temp){await ev('window.__r0=__game.state.items.heartReset;document.querySelector("[data-ob=\'1\']").click();true');await check('day 1 → +1 ticket, claimed once','__game.state.items.heartReset===window.__r0+1&&document.querySelector("[data-ob=\'1\']").classList.contains("claimed")');}
  await ev('__game.close();true');
+ if(temp){await ev('__game.ui.tick();true');
+  await check('TEMP play wrote the :temp save and left the ordinary save untouched','localStorage.getItem(__game.S.BASE_SAVE_KEY+":temp")!==null&&sessionStorage.getItem("ord")!=="null"&&String(localStorage.getItem(__game.S.BASE_SAVE_KEY))===sessionStorage.getItem("ord")');}
 }

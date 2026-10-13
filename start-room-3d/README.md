@@ -5,7 +5,7 @@
 게임 로직(sim.js: 손님 착석→시바 2회 방문·하트→계산·퇴장, 방치/오프라인 수입, 저장 v2, 뽑기, 퀘스트, 동구 튜토리얼)은 유지. 이전 3D 판은 `index3d.html`/`main3d.js`로 보관.
 
 **handoff-v1 (2026-10-14):** 등급·레벨, 하트·리셋권, 병합, 온보딩, 산책, 언어, 테마, 힐링 뼈대. 미정 값은 `config.js`에서 `null`,
-문서가 허용한 임시 동작은 `CFG.TEMP`(전부 false), 제안값뿐인 기능은 `CFG.FEATURES`(전부 false). `?temp=1`로 열면 테스트 빌드처럼 TEMP를 모두 켬.
+문서가 허용한 임시 동작은 `CFG.TEMP`(전부 false), 제안값뿐인 기능은 `CFG.FEATURES`(전부 false). 정확히 `?temp=1`로 열 때만 테스트 빌드처럼 TEMP를 모두 켜고, 세이브는 별도 키(`shibaCafe.save.v2:temp`)에 저장해 일반 세이브를 건드리지 않음.
 자세한 목록: `shiba-cafe-docs/handoff-v1/impl-notes.md`. 테스트: `cd start-room-3d && npm test` (+ `npm run test:browser`, headless Chrome).
 
 캡처: `node start-room-3d/capture-game.mjs /workspace/shiba-cafe-docs/framework-v2` · 테스트: `node start-room-3d/tests/sim.test.mjs`

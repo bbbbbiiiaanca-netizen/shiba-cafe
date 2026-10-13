@@ -98,7 +98,7 @@ export function UI(ctx){const {state:s,CFG,S,SDK}=ctx;const $=id=>document.getEl
   $('mergeBtn').onclick=()=>{const r=S.merge(s,sel[0],sel[1]);if(!r)return;ctx.removeFromCafe(r.material.id);sel=[];ctx.save();SDK.sfx('fanfare');re();tick();};
   body().querySelectorAll('[data-walk]').forEach(b=>b.onclick=()=>{walkPick=walkPick===+b.dataset.walk?null:+b.dataset.walk;re();});
   body().querySelectorAll('[data-walkgo]').forEach(b=>b.onclick=()=>{const [id,sec]=b.dataset.walkgo.split(':').map(Number);if(S.startWalk(s,id,sec,Date.now())){ctx.removeFromCafe(id);walkPick=null;ctx.save();}re();tick();});
-  body().querySelectorAll('[data-walkstop]').forEach(b=>b.onclick=()=>{const id=S.stopWalk(s,Date.now());if(id!=null){ctx.addToCafe(s.owned.find(o=>o.id===id));ctx.save();}re();tick();});}
+  body().querySelectorAll('[data-walkstop]').forEach(b=>b.onclick=()=>{const id=S.stopWalk(s,Date.now());if(id!=null){ctx.returnToCafe(id);ctx.save();}re();tick();});}
  function open(n){if(n==='gacha'){close();showPull();return;}if(openName===n){close();return;}openName=n;const p=panels[n];$('ptitle').textContent=L(p.title);p._k='';p.render();$('panel').classList.add('on');document.body.classList.add('popen');document.querySelectorAll('.bar button').forEach(b=>b.classList.toggle('on',b.dataset.p===n));}
  function close(){openName=null;$('panel').classList.remove('on');document.body.classList.remove('popen');document.querySelectorAll('.bar button').forEach(b=>b.classList.remove('on'));}
  document.querySelectorAll('.bar button').forEach(b=>b.onclick=()=>open(b.dataset.p));for(const id of ['bagBtn','heartPlus'])if($(id))$(id).onclick=()=>open('bag');$('pclose').onclick=close;

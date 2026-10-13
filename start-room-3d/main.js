@@ -5,8 +5,8 @@ import {SDK} from './sdk-stubs.js';
 import {UI} from './ui.js';
 import * as HL from './healing.js';
 const Q=new URLSearchParams(location.search);
-// test build only: ?temp=1 switches on every CFG.TEMP placeholder (values the docs leave 미정). Never on by default.
-if(Q.has('temp'))for(const k of Object.keys(CFG.TEMP))CFG.TEMP[k]=true;
+// test build only: exactly ?temp=1 switches on every CFG.TEMP placeholder (values the docs leave 미정) and moves saves to a separate ':temp' key. Never on by default.
+S.applyBuildMode(location.search);
 const cv=document.getElementById('scene'),g=cv.getContext('2d');const DPR=Math.min(2,devicePixelRatio||1);
 let W=0,H=0;function resize(){W=cv.clientWidth;H=cv.clientHeight;cv.width=W*DPR;cv.height=H*DPR;}resize();addEventListener('resize',resize);
 const IMG={};const names=['donggu','shiba_red','shiba_sesame','shiba_kuro','shiba_white','cust_girl','cust_man','shelf','table','zabuton','lantern','counter','sign','tatami','stone_lantern','bonsai','sakura','pond','fence','gravel_path','stepping','flowers','teapot','teacup','dango','showcase','bell','menu_board','bed','toy_basket','ball','bone_cushion','cushion_pink','scroll','bonsai_pot','mini_lantern','windbell','maneki','tile_construction'];
@@ -66,7 +66,7 @@ function drawGround(){
 }
 // ---- game state ----
 if(Q.has('fresh'))localStorage.removeItem(CFG.saveKey);
-const loaded=S.load(localStorage,Date.now());const state=loaded.state;const world=S.newWorld(state,+(Q.get('seed')||7));
+const loaded=S.load(localStorage,Date.now());const state=loaded.state;const world=S.newWorld(state,+(Q.get('seed')||7));if(loaded.returned!=null)S.returnToFloor(world,state,loaded.returned); // walk settled while closed → back on the floor even when it is full
 // D-13 healing runtime (inert unless the CFG.FEATURES switches are on)
 const tod=HL.newTod(new Date(),!!state.settings.todLock);world.tod=tod.key;const obs=HL.newObserve();
 addEventListener('pointerdown',()=>HL.touch(obs),true);
@@ -82,7 +82,7 @@ function popAt(text,el){const b=el.getBoundingClientRect(),d=document.createElem
 function pop(text,x,z){const [px,py]=P(x,z,1.9);const d=document.createElement('div');d.className='pop';d.textContent=text;d.style.left=px+'px';d.style.top=py+'px';popLayer.appendChild(d);setTimeout(()=>d.remove(),1600);}
 let incomeFrac=0;
 function step(dt){const now=Date.now();S.settleHearts(state,now);S.markVisit(state,now);S.sleepRecover(state,dt);
- const wr=S.tickWalk(state,now);if(wr&&wr.returned!=null){const o=state.owned.find(o=>o.id===wr.returned);if(o)S.addShiba(world,o);} // no completion notice: the shiba is simply back in the cafe
+ const wr=S.tickWalk(state,now);if(wr&&wr.returned!=null)S.returnToFloor(world,state,wr.returned); // no completion notice: the shiba is simply back in the cafe (reclaims its slot from the stand-in)
  // D-13: time of day feeds the play rules (no chase at night) and, with FEATURES.healingTimeOfDay, the light + guest mix
  tod.locked=!!state.settings.todLock;HL.stepTod(tod,dt,new Date());world.tod=tod.key;
  S.tick(world,state,dt);
@@ -108,7 +108,7 @@ function draw(){g.setTransform(DPR,0,0,DPR,0,0);drawGround();const t=world.t;con
 const PLAY_ICON={chase:'💨',sniff:'👃',napLean:'💤',tug:'🪢',sitTogether:'💞'};
 // ---- gacha / panels ----
 const thumb=(coat,expr)=>`assets/${CFG.exprs[expr]?expr:coat+'_smile'}.png`;
-const ui=UI({state,world,CFG,S,SDK,thumb,loaded,applyTheme:()=>{},addToCafe:o=>S.addShiba(world,o),removeFromCafe:id=>{S.removeShiba(world,id);for(const o of S.activeOwned(state))if(world.shibas.length<CFG.cafe.maxShibas&&!world.shibas.some(x=>x.id===o.id))S.addShiba(world,o);},save:()=>S.save(localStorage,state,Date.now()),
+const ui=UI({state,world,CFG,S,SDK,thumb,loaded,applyTheme:()=>{},addToCafe:o=>S.addShiba(world,o),removeFromCafe:id=>S.leaveFloor(world,state,id),returnToCafe:id=>S.returnToFloor(world,state,id),save:()=>S.save(localStorage,state,Date.now()),
  journalHtml:L=>{if(!CFG.FEATURES.healingObserve)return '';const E=CFG.healing.observe.events,j=state.observeJournal||{};return `<h4>${L('observe.journal',{count:Object.keys(j).length,total:Object.keys(E).length})}</h4><p class="sub">${Object.entries(E).map(([k,e])=>j[k]?`${e.icon}×${j[k].count}`:'❔').join(' ')}</p>`;},
  settingsExtra:(L,onoff)=>CFG.FEATURES.healingTimeOfDay?`<div class="row"><b>${L('settings.todLock')}</b><button data-k="todLock">${onoff(!!state.settings.todLock)}</button></div>`:''});
 let manual=Q.has('still');let last=performance.now();
