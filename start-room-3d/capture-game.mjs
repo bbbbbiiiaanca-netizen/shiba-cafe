@@ -12,6 +12,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  const shot=async(p)=>{const {data}=await c('Page.captureScreenshot',{format:'png'});writeFileSync(p,Buffer.from(data,'base64'));};
  await c('Page.navigate',{url:'file://'+resolve('start-room-3d/index.html')+'?still=1&fresh=1&seed=7'});
  for(let i=0;i<300&&!(await ev('Boolean(window.__ready)'));i++)await sleep(100);
+ await ev('__game.state.settings.language="ko";__game.ui.tick();true'); // skip the first-run language screen (D-11)
  console.log(await ev('JSON.stringify(__game.step(.5))'));await shot(out+'/01-start.png');
  // loop: go through tutorial welcome then run the cafe; record 10fps frames
  await ev('document.getElementById("sayNext")?.click()');let f=0,petShot=false,payShot=false;

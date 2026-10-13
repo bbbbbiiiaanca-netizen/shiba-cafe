@@ -15,9 +15,9 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  const check=async(name,expr)=>{const v=await ev(expr);checks.push([v?'ok':'FAIL',name]);};
  const steps=(await import('./smoke-steps.mjs')).default;
  for(const [name,url] of [['default build',''],['test build (?temp=1)','&temp=1']]){
-  await c('Page.navigate',{url:'file://'+resolve(ROOT,'index.html')+'?still=1&fresh=1&seed=7'+url});await sleep(300);
-  for(let i=0;i<300&&!(await ev('Boolean(window.__ready)'));i++)await sleep(100);
-  await steps({ev,check:(n,x)=>check(`[${name}] ${n}`,x),sleep,temp:!!url});}
+  const go=async(fresh)=>{await c('Page.navigate',{url:'file://'+resolve(ROOT,'index.html')+'?still=1&seed=7'+(fresh?'&fresh=1':'')+url});await sleep(300);
+   for(let i=0;i<300&&!(await ev('Boolean(window.__ready)'));i++)await sleep(100);};
+  await go(true);await steps({ev,check:(n,x)=>check(`[${name}] ${n}`,x),sleep,temp:!!url,reload:()=>go(false)});}
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}
 for(const [k,n] of checks)console.log(k==='ok'?'  ok  ':'  FAIL',n);for(const e of errors)console.log('  ERROR',e);
 const fail=checks.filter(c=>c[0]!=='ok').length+errors.length;console.log(`${checks.length-checks.filter(c=>c[0]!=='ok').length}/${checks.length} smoke checks passed, ${errors.length} page errors`);process.exitCode=fail?1:0;

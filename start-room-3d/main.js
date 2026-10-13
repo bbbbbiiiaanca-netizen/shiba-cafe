@@ -55,7 +55,9 @@ function drawGround(){
  for(let i=0;i<nx;i++)for(let j=0;j<nz;j++){const x0=RX0+.15+i*dx,z0=RZ0+.15+j*dz;const a=P(x0,z0),b=P(x0+dx,z0),c=P(x0+dx,z0+dz),d=P(x0,z0+dz);
   const L=Math.min(a[0],d[0]),R=Math.max(b[0],c[0]),T=Math.min(a[1],b[1]),B=Math.max(c[1],d[1]);g.drawImage(im,L-(R-L)*.02,T-(B-T)*.03,(R-L)*1.04,(B-T)*1.12);}
  // walls (back-left x=RX0, back-right z=RZ0): cream plaster + wood beams, open front like a diorama
- const h=1.75;poly([P(RX0,RZ0),P(RX0,RZ1),P(RX0,RZ1,h),P(RX0,RZ0,h)],'#eedfc4');poly([P(RX0,RZ0),P(RX1,RZ0),P(RX1,RZ0,h),P(RX0,RZ0,h)],'#f5e8d0');
+ // D-12 temporary themes: colour only (walls + a floor tint) until the R-01/R-02 backgrounds exist; the basic theme keeps the catalog look
+ const th=S.currentTheme(state),plain=th.id==='basic';if(!plain)poly(quad(RX0,RZ0,RX1,RZ1),th.tatami+'66');
+ const h=1.75;poly([P(RX0,RZ0),P(RX0,RZ1),P(RX0,RZ1,h),P(RX0,RZ0,h)],plain?'#eedfc4':th.wall);poly([P(RX0,RZ0),P(RX1,RZ0),P(RX1,RZ0,h),P(RX0,RZ0,h)],plain?'#f5e8d0':th.light);
  g.strokeStyle='#6b4126';g.lineWidth=6*zoom;for(const y of [.05,h-.05]){g.beginPath();g.moveTo(...P(RX0,RZ1,y));g.lineTo(...P(RX0,RZ0,y));g.lineTo(...P(RX1,RZ0,y));g.stroke();}
  g.lineWidth=7*zoom;for(const x of [RX0,-2.0,.6,RX1]){g.beginPath();g.moveTo(...P(x,RZ0,0));g.lineTo(...P(x,RZ0,h));g.stroke();}for(const z of [RZ0,0,RZ1]){g.beginPath();g.moveTo(...P(RX0,z,0));g.lineTo(...P(RX0,z,h));g.stroke();}
  // wall decor: sign, scroll, wind bell

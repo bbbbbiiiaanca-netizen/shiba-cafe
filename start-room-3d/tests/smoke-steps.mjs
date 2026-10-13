@@ -1,5 +1,20 @@
 // Steps driven by smoke-browser.mjs. Each check is a JS expression evaluated in the page.
-export default async function({ev,check,sleep,temp}){
+export default async function({ev,check,sleep,temp,reload}){
+ // D-11 first run: vertical list, nothing pre-selected, OK disabled until a pick
+ await ev('__game.step(.2);true');
+ await check('language screen on first run, no default, OK disabled','!document.getElementById("lang").hidden&&document.querySelectorAll("#langList button").length===2&&!document.querySelector("#langList button.on")&&document.getElementById("langOk").disabled');
+ await ev('document.querySelector("[data-lang=en]").click();document.getElementById("langOk").click();true');await sleep(50);
+ await check('English applied to the main screen','document.getElementById("lang").hidden&&document.querySelector("[data-i18n=\'ui.nav.build.quest\']").textContent==="Quests"&&/Donggu|café/i.test(document.getElementById("qpill").textContent)');
+ await reload();await ev('__game.step(.2);true');
+ await check('language kept after restart','document.getElementById("lang").hidden&&document.querySelector("[data-i18n=\'ui.nav.build.shop\']").textContent==="Shop"');
+ await ev('__game.open("settings");document.querySelector("[data-setlang=ko]").click();window.__t0=performance.now();true');
+ await ev('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
+ await check('settings → 한국어 switches the main screen within 1 s','document.querySelector("[data-i18n=\'ui.nav.build.quest\']").textContent==="퀘스트"&&document.getElementById("ptitle").textContent==="설정"&&performance.now()-window.__t0<1000');
+ await ev('__game.close();true');
+ // D-12
+ await ev('__game.open("shop");true');
+ await check('3 themes; Fuji/bamboo show 가격 미정 and are disabled','document.querySelectorAll("[data-th]").length===3&&document.querySelector("[data-th=fuji]").disabled&&/가격 미정/.test(document.querySelector("[data-th=bamboo]").textContent)');
+ await ev('__game.close();true');
  await ev('__game.step(.5);true');
  await check('HUD renders hearts','document.getElementById("hearts").textContent==="0"');
  // D-01/D-02

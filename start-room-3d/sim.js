@@ -16,7 +16,7 @@ function baseState(now){
   owned:CFG.start.shibas.map((s,i)=>({id:i+1,...s,lv:startLevel('N')})),nextId:CFG.start.shibas.length+1,dex:CFG.start.shibas.map(dexKey),
   served:0,petted:0,upg:0,gachaPulls:0,tut:0,questsClaimed:[],theme:'basic',themesOwned:['basic'],
   items:{heartReset:0,capsule:0},heartRegenAt:now,promoQueue:[],onboarding:{visits:[],claimed:[]},walk:null,rescueQueue:[],
-  settings:{sound:true,music:true},lastSeen:now};
+  settings:{sound:true,music:true,language:null},lastSeen:now};
 }
 // Old saves (v1): `rarity` field N/R/SR + lv (lv started at 1 and grew by +1 per duplicate).
 // → keep the grade the player had (old top label → S), place the shiba at that band's first level plus the levels it had gained, capped at the band end.
@@ -28,7 +28,10 @@ export function migrate(s,now=Date.now()){
   s.dex=[...new Set((s.owned||[]).map(dexKey))];s.heartRegenAt=s.lastSeen??now;s.v=2;}
  return sanitize(s);}
 // invariants enforced on every load and save: no stored grade, level within 1..30
-export function sanitize(s){for(const o of s.owned||[]){if('rarity' in o)delete o.rarity;if('grade' in o)delete o.grade;o.lv=clampLevel(o.lv);}
+export function sanitize(s){
+ // D-12: themes on hold (sakura/summer) or unknown fall back to the basic theme; D-11: unknown language → ask again
+ const T=CFG.themes.map(t=>t.id);s.themesOwned=[...new Set(['basic',...(s.themesOwned||[]).filter(id=>T.includes(id))])];if(!T.includes(s.theme))s.theme='basic';
+ if(s.settings&&!CFG.languages.includes(s.settings.language))s.settings.language=null;for(const o of s.owned||[]){if('rarity' in o)delete o.rarity;if('grade' in o)delete o.grade;o.lv=clampLevel(o.lv);}
  s.dex=[...new Set([...(s.dex||[]),...(s.owned||[]).map(dexKey)])];return s;}
 // shibas out on a walk do not contribute (D-08); everyone else keeps working
 export function activeOwned(s){return s.owned.filter(o=>!isBusy(s,o.id));}
@@ -140,6 +143,12 @@ export function tickWalk(s,now=Date.now()){const W=s.walk;if(!W)return null;cons
 export function stopWalk(s,now=Date.now()){if(!s.walk||walkStopRule()!=='noRefund')return null;const id=s.walk.shibaId;s.walk=null;return id;} // TEMP rule: back at once, no reward / refund / rescue
 export function feedSnack(s,id){const v=CFG.walk.fatigue.snackRecover;if(!CFG.FEATURES.fatigue||v==null)return false;setFatigue(s,id,fatigueOf(s,id)-v);return true;}
 export function sleepRecover(s,dt){const v=CFG.walk.fatigue.sleepRecoverPerSec;if(!CFG.FEATURES.fatigue||v==null)return;for(const o of s.owned)if(o.fatigue>0&&!isBusy(s,o.id))setFatigue(s,o.id,o.fatigue-v*dt);}
+
+// ---------- themes (D-12) ----------
+export function selectTheme(s,id){const t=CFG.themes.find(t=>t.id===id);if(!t)return false;
+ if(!s.themesOwned.includes(id)){if(t.price==null||s.coins<t.price)return false;s.coins-=t.price;s.themesOwned.push(id);} // price null = 미정 → not buyable
+ s.theme=id;return true;}
+export const currentTheme=s=>CFG.themes.find(t=>t.id===s.theme)||CFG.themes[0];
 
 // ---------- quests / tutorial ----------
 export function questStatus(s){return CFG.quests.map(q=>({...q,done:q.goal(s),claimed:s.questsClaimed.includes(q.id)}));}

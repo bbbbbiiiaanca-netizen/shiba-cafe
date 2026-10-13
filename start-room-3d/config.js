@@ -21,7 +21,7 @@ export const CFG={
  // ── grades & levels (명세 1.6 ✅ 확정) ──
  grades:{bands:{N:[1,10],R:[11,20],S:[21,30]},maxLevel:30}, // grade is computed from level; start level of a pull = band start
  start:{coins:500,hearts:0,paws:3,shibas:[{coat:'red',expr:'red_smile'},{coat:'white',expr:'white_smile'}]},
- coats:{red:'적색',sesame:'참깨',kuro:'쿠로',white:'백'},
+ coats:{red:'적색',sesame:'참깨',kuro:'쿠로',white:'백시바'}, // display names come from i18n shiba.breed.<coat>
  // catalog p7-8 expressions (적색 9, 참깨·쿠로·백 3) — images assets/<id>.png
  exprs:{red_smile:'해맑은 미소',red_laugh:'함박웃음',red_yawn:'하품',red_wow:'깜짝',red_wink:'윙크',red_yum:'냠냠',red_pout:'삐침',red_love:'하트 눈',red_sleepy:'졸림',
   sesame_smile:'헤헤',sesame_wow:'깜짝',sesame_grin:'싱글',kuro_calm:'도도',kuro_wink:'윙크',kuro_laugh:'웃음',white_smile:'방긋',white_happy:'반가움',white_sweet:'다정'},
@@ -66,16 +66,21 @@ export const CFG={
   // grade has no stat effect yet (수익 배율 기준 미정, 질문 2-2)
   rates:{N:null,R:null,S:.02}},
  sfx:{click:{slot:'sfx-button-click',sec:.12},knob:{slot:'sfx-knob-turn',sec:.5},drop:{slot:'sfx-capsule-drop',sec:.6},reveal:{slot:'sfx-gacha-reveal',sec:10},fanfare:{slot:'sfx-success-fanfare',sec:1.2}}, // slots only: no audio files given yet
- themes:[{id:'basic',name:'기본 다다미',price:0,wall:'#e2cba6',tatami:'#d3c08e',light:'#ffe6c8'},
-  {id:'sakura',name:'벚꽃 테마',price:800,wall:'#f0d2cf',tatami:'#d9c6a0',light:'#ffe2dc'},
-  {id:'summer',name:'여름 축제',price:1500,wall:'#d8d2b4',tatami:'#cdc48c',light:'#fff0c0'}],
- quests:[{id:'serve5',text:'손님 5명 모시기',goal:s=>s.served>=5,reward:{coins:200}},
-  {id:'hearts20',text:'하트 20개 모으기',goal:s=>s.hearts>=20,reward:{paws:2}},
-  {id:'own4',text:'시바 4마리 모으기',goal:s=>s.owned.length>=4,reward:{coins:300}},
-  {id:'theme',text:'테마 하나 사기',goal:s=>s.themesOwned.length>=2,reward:{paws:3}}],
- tutorial:[
-  {say:'어서 와요! 저는 동구예요. 오늘부터 이 작은 카페를 같이 키워 봐요.',next:true},
-  {say:'곧 첫 손님이 와요. 손님은 자리에 앉아서 시바가 오길 기다려요. 시바가 두 번 놀러 가면 손님이 동전을 내고 가요.',done:s=>s.served>=1,reward:{coins:100}},
-  {say:'첫 손님 성공! 이제 아래 [시바들]에서 뽑기를 눌러 새 시바를 데려와요. 첫 뽑기는 무료예요.',done:s=>s.gachaPulls>=1,highlight:'shiba',needsGacha:true},
-  {say:'새 친구가 카페에 왔어요! 앞으로 할 일은 [퀘스트]에서 제가 알려 줄게요.',next:true}],
+ // D-12 테마: 다다미 기본 + 후지산 벽화 카페 + 대나무 회랑(명세 1.3, F p8). 벚꽃·여름축제는 ⏸️ 보류로 뺌(이전 세이브는 기본 테마로).
+ // 배경 그림 R-01·R-02 전까지 색만 바꾼 임시 테마(색은 자리표시용, 확정 아님). 가격 ❓미정 → null('가격 미정', 구매 불가).
+ themes:[{id:'basic',nameKey:'theme.tatami.name',price:0,wall:'#e2cba6',tatami:'#d3c08e',light:'#ffe6c8'},
+  {id:'fuji',nameKey:'theme.fuji.name',price:null,wall:'#cfdbe6',tatami:'#cdbf95',light:'#f4ecff'},   // TEMP 색: 벽화 그림(R-01) 전
+  {id:'bamboo',nameKey:'theme.bamboo.name',price:null,wall:'#cfdcb4',tatami:'#c9c48c',light:'#eef8dc'}], // TEMP 색: 대나무 그림(R-02) 전
+ quests:[{id:'serve5',goal:s=>s.served>=5,reward:{coins:200}}, // text: i18n quest.<id>
+  {id:'hearts20',goal:s=>s.hearts>=20,reward:{paws:2}},
+  {id:'own4',goal:s=>s.owned.length>=4,reward:{coins:300}},
+  {id:'theme',goal:s=>s.themesOwned.length>=2,reward:{paws:3}}],
+ tutorial:[ // lines: i18n tut.<index>
+  {next:true},
+  {done:s=>s.served>=1,reward:{coins:100}},
+  {done:s=>s.gachaPulls>=1,highlight:'shiba',needsGacha:true},
+  {next:true}],
+ // D-11 언어 ✅ 확정: 첫 실행 언어 선택(한국어·English), 설정에서 언제든 변경. 저장 키 settings.language (BCP-47).
+ // ❓미정(명세 1.8 질문, 질문 31): 기기 언어 기본값·로그인 전후·동구 등장·버튼 모양 → 핸드오프 임시 구현대로 세로 목록 + 기본 선택 없음, 기기 언어는 쓰지 않음.
+ languages:['ko','en'],
 };

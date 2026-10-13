@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {dirname,join} from 'node:path';
 import {CFG} from '../config.js';
 import * as S from '../sim.js';
+import {STR,makeT,LANGS} from '../i18n.js';
 const ROOT=join(dirname(fileURLToPath(import.meta.url)),'..');
 const mem=()=>({d:{},getItem(k){return this.d[k]??null},setItem(k,v){this.d[k]=v}});
 const results=[];
@@ -152,6 +153,28 @@ test('D-10 debug chance 1: rescue during the walk, batched on next launch; grade
   const seen={N:0,R:0,S:0},coats=new Set();const rr=S.rng(77);for(let i=0;i<3000;i++){const o=S.rescueShiba(rr);const g=S.gradeOf(o.lv);seen[g]++;coats.add(o.coat);
    const [a,b]=CFG.grades.bands[g];assert.ok(o.lv>=a&&o.lv<=b);}assert.ok(seen.N&&seen.R&&seen.S);assert.equal(coats.size,4);
   R.gradeWeights=null;assert.equal(S.rescueShiba(S.rng(1)),null,'grade odds 미정 → none');}finally{Object.assign(R,old);}});
+
+// ---------- D-11 ----------
+test('D-11 every L(key) used in ui.js exists in ko and en; ko/en key sets match',()=>{const ui=readFileSync(join(ROOT,'ui.js'),'utf8');
+ const keys=new Set([...ui.matchAll(/\bL\('([a-z0-9_.]+)'/g)].map(m=>m[1]).filter(k=>!k.endsWith('.'))); // prefix keys are expanded below
+ for(const r of ['undecided','mode','pick','busy','notSame','grade'])keys.add('merge.'+r);for(const r of ['walking','fatigue','costUndecided','hearts'])keys.add('walk.why.'+r);for(const k of readFileSync(join(ROOT,'index.html'),'utf8').matchAll(/data-i18n="([^"]+)"/g))keys.add(k[1]);
+ for(const q of CFG.quests)keys.add('quest.'+q.id);CFG.tutorial.forEach((_,i)=>keys.add('tut.'+i));for(const t of CFG.themes)keys.add(t.nameKey);for(const c of Object.keys(CFG.coats))keys.add('shiba.breed.'+c);
+ const missing=[...keys].filter(k=>!(k in STR.ko)||!(k in STR.en));assert.deepEqual(missing,[]);
+ assert.deepEqual(Object.keys(STR.ko).sort(),Object.keys(STR.en).filter(k=>!k.startsWith('expr.')).sort());
+ for(const e of Object.keys(CFG.exprs))assert.ok(STR.en['expr.'+e],e);});
+test('D-11 language: none on first run, saved as BCP-47, survives restart; fallback rules',()=>{assert.deepEqual(CFG.languages,LANGS);const m=mem();const st=S.newState(0);assert.equal(st.settings.language,null);
+ st.settings.language='en';S.save(m,st,0);assert.equal(S.load(m,1).state.settings.language,'en');
+ const raw=JSON.parse(m.getItem(CFG.saveKey));raw.settings.language='xx';m.setItem(CFG.saveKey,JSON.stringify(raw));assert.equal(S.load(m,2).state.settings.language,null,'unknown → ask again');
+ const t=makeT(()=>'en');assert.equal(t('booster.day',{count:3}),'Day 3');assert.equal(t('no.such.key'),'no.such.key');assert.equal(makeT(()=>'ko',CFG.exprs)('expr.red_smile'),'해맑은 미소');
+ assert.equal(makeT(()=>'en')('lang.name.ko'),'한국어');});
+
+// ---------- D-12 ----------
+test('D-12 theme list = tatami basic + Fuji + bamboo; prices null; basic free',()=>{assert.deepEqual(CFG.themes.map(t=>t.id),['basic','fuji','bamboo']);
+ assert.equal(CFG.themes[0].price,0);assert.equal(CFG.themes[1].price,null);assert.equal(CFG.themes[2].price,null);
+ const st=S.newState(0);st.coins=1e9;assert.equal(S.selectTheme(st,'fuji'),false);assert.equal(st.theme,'basic');assert.equal(st.coins,1e9);assert.ok(S.selectTheme(st,'basic'));});
+test('D-12 old save with sakura/summer loads without error on the basic theme',()=>{const m=mem();
+ m.setItem(CFG.saveKey,JSON.stringify({v:1,coins:5,hearts:0,paws:0,lastSeen:0,owned:[],nextId:1,theme:'summer',themesOwned:['basic','sakura','summer']}));
+ const {state}=S.load(m,10);assert.equal(state.theme,'basic');assert.deepEqual(state.themesOwned,['basic']);assert.equal(S.currentTheme(state).id,'basic');});
 
 // ---------- report ----------
 let fail=0;for(const [k,n,e] of results){console.log(k==='ok'?'  ok  ':'  FAIL',n);if(e){fail++;console.log('       ',e.message);}}
