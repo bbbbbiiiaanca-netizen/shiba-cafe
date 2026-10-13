@@ -13,6 +13,7 @@ button:disabled{background:#cdbba5;box-shadow:0 2px 0 #a8957f}
 .c{flex:1;display:flex;align-items:center;gap:4px;background:#fffaf0;border:2px solid #e3c9a3;border-radius:16px;padding:3px 4px 3px 7px;font-weight:800;font-size:13px;box-shadow:0 2px 3px rgba(90,50,20,.18)}
 .c span{flex:1;text-align:center}.c i{font-style:normal;width:18px;height:18px;border-radius:9px;background:#7a4a2e;color:#fff;font-size:13px;line-height:18px;text-align:center}
 #gear{position:absolute;right:8px;top:8px;background:#fffaf0;color:#4a2e1c;border:2px solid #e3c9a3;box-shadow:none;padding:2px 6px;font-size:14px;z-index:6}
+#bagBtn{position:absolute;left:8px;top:8px;background:#fffaf0;color:#4a2e1c;border:2px solid #e3c9a3;box-shadow:none;padding:2px 6px;font-size:14px;z-index:6}#heartPlus{cursor:pointer}.row .icon{font-size:30px;width:44px;text-align:center}
 #csign{position:absolute;left:12px;top:96px;z-index:4;background:linear-gradient(#8a5a36,#6b4126);color:#fff3dc;border:2px solid #4a2e1c;border-radius:8px;padding:5px 8px;font-weight:900;font-size:13px;text-align:center;line-height:1.2;box-shadow:0 3px 4px rgba(0,0,0,.25)}
 .arrow{position:absolute;top:50%;z-index:4;background:rgba(255,248,236,.85);color:#6b4126;box-shadow:none;border-radius:8px;padding:10px 5px;font-size:15px}#al{left:6px}#ar{right:6px}
 #hint{position:absolute;left:50%;bottom:100px;transform:translateX(-50%);z-index:4;background:rgba(74,46,28,.78);color:#fff3dc;border-radius:14px;padding:4px 12px;font-size:12px;font-weight:800;white-space:nowrap;transition:opacity .6s}
@@ -45,24 +46,36 @@ h4{margin:10px 0 2px}.big{display:block;width:100%;background:#5aa65a;box-shadow
 #gpull h2{margin:4px 0 6px;font-size:24px;color:#6a3f20}.mach{flex:1;min-height:0;max-width:92%;object-fit:cover;border-radius:24px;box-shadow:0 6px 16px rgba(90,50,20,.25)}
 .gpBtns{display:flex;gap:10px;align-self:stretch;margin:14px 14px 22px}.gpBtns button{flex:1;background:#5aa65a;box-shadow:0 3px 0 #3c7a3c;font-size:17px;padding:14px 0;border-radius:18px}.gpBtns button:disabled{background:#a9c2a2;box-shadow:none}
 .rc{border-radius:14px;padding:6px;background:#fff8ec;border:4px solid #ecd6b0;text-align:center;position:relative}.rc img{width:110px;height:110px;object-fit:contain;display:block;margin:0 auto}.rc b{display:block;font-size:15px}.rc i{font-style:normal;font-size:12px;color:#8a6a50}
-.rc.R{border-color:#6f9fd6;background:#eef4fb}.rc.SR{border:4px double #d4a437;background:linear-gradient(#fff6d8,#fbe6a6);box-shadow:0 0 0 2px #f3d27a}.rc em{position:absolute;top:-10px;left:0;right:0;color:#d4a437;font-style:normal;font-size:14px}
+.rc.N{border-color:#e4e4e4;background:#fff}.rc.R{border-color:#6f9fd6;background:#eef4fb}.rc.S{border:4px double #d4a437;background:linear-gradient(#fff6d8,#fbe6a6);box-shadow:0 0 0 2px #f3d27a}
 .rgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:8px}.rgrid .rc{padding:2px;border-width:3px}.rgrid .rc img{width:100%;height:auto;aspect-ratio:1}.rgrid .rc b{font-size:9px}.rgrid .rc i{font-size:8px}
+.row.sel{background:#ffe9b8;border-radius:10px}.row{flex-wrap:wrap}.walkopts{order:9;flex-basis:100%;display:flex;gap:6px}.walkopts button{flex:1;padding:6px 2px}.row .selk{color:#b8742a;font-weight:800;min-width:28px}
+#promo{position:fixed;inset:0;z-index:25;background:rgba(40,25,10,.6);display:flex;align-items:center;justify-content:center}
+#promoCard{width:200px;border:6px solid #e4e4e4;border-radius:18px;background:#fff8ec;padding:10px;text-align:center;position:relative}#promoCard img{width:100%;aspect-ratio:1;object-fit:contain;display:block}
+#promoBadge{position:absolute;top:-16px;left:50%;transform:translateX(-50%);background:#4a2e1c;color:#fff;border-radius:12px;padding:2px 12px;font-size:20px}#promoBadge.spark{box-shadow:0 0 14px 6px #ffe27a}#promoCard.joy img{animation:joy .5s infinite alternate}@keyframes joy{to{transform:translateY(-8px) rotate(3deg)}}
+.ob{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px}.obd{display:flex;flex-direction:column;align-items:center;background:#f6e6cf;color:#4a2e1c;box-shadow:none;padding:4px 2px;font-size:10px;min-height:58px}
+.obd b{font-size:11px}.obd span{font-size:11px;flex:1}.obd.claimable{background:#ffd98a;box-shadow:0 2px 0 #c9975a}.obd.claimed{opacity:.55}.obd:disabled{background:#f1e4d0}.obd.claimable:disabled{background:#ffd98a}
+#pullCap{width:auto;align-self:stretch;margin:0 14px 18px}
+#lang{position:fixed;inset:0;z-index:30;background:#f6e2c4;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:10px}#lang h2{text-align:center;color:#6a3f20;font-size:20px;margin:0}
+#langList,.langs{display:flex;flex-direction:column;gap:8px;align-self:stretch}#langList button,.langs button{background:#fff8ec;color:#4a2e1c;border:2px solid #e3c08a;box-shadow:none;padding:12px;font-size:17px}#langList button.on,.langs button.on{background:#ffd98a;border-color:#c9975a}#langOk{align-self:stretch}
+#obs{position:absolute;left:46%;top:44%;z-index:4;font-size:30px;background:rgba(255,250,235,.7);border-radius:50%;box-shadow:0 0 12px #fff3b0;padding:6px 9px;animation:hl .9s infinite alternate}
 #gcard>.rc{width:160px;margin:0 auto 8px}
 </style>
 <div id="frame">
 <canvas id="scene" aria-label="시바견 카페"></canvas>
-<div id="pops"></div>
+<div id="pops"></div><button id="obs" hidden aria-label="관찰"></button>
 <div class="top"><div id="qpill">카페를 발전시켜요!</div>
-<div class="cnt"><div class="c">🪙<span id="coins">0</span><i>+</i></div><div class="c">💗<span id="hearts">0</span><i>+</i></div><div class="c">🐾<span id="paws">0</span><i>+</i></div></div></div>
-<button id="gear" aria-label="설정">⚙️</button>
-<div id="csign">시바견<br>카페<br>🐾</div>
+<div class="cnt"><div class="c">🪙<span id="coins">0</span><i>+</i></div><div class="c">💗<span id="hearts">0</span><i id="heartPlus">+</i></div><div class="c">🐾<span id="paws">0</span><i>+</i></div></div></div>
+<button id="gear" aria-label="설정">⚙️</button><button id="bagBtn" aria-label="가방">🎒</button>
+<div id="csign" data-i18n="app.sign">시바견<br>카페<br>🐾</div>
 <button class="arrow" id="al">‹</button><button class="arrow" id="ar">›</button>
-<div id="hint">👈 옆으로 밀어서 카페 둘러보기 👉</div>
-<div class="talk" id="talk"><img src="assets/donggu.png" alt="동구"><div class="bub"><b>동구</b><p id="say"></p><div id="sayBtns"></div></div></div>
-<div id="panel"><h3 id="ptitle"></h3><button id="pclose">닫기</button><div id="pbody"></div></div>
-<div class="bar"><button data-p="quest"><b>📋</b>퀘스트<span id="qdot" hidden></span></button><button data-p="shop"><b>🏪</b>가게</button><button data-p="shiba"><b>🐕</b>시바들</button><button data-p="upgrade"><b>📦</b>업그레이드</button><button data-p="event"><b>🎁</b>이벤트</button></div>
+<div id="hint" data-i18n="app.hint">👈 옆으로 밀어서 카페 둘러보기 👉</div>
+<div class="talk" id="talk"><img src="assets/donggu.png" alt="동구"><div class="bub"><b data-i18n="char.dongu.name">동구</b><p id="say"></p><div id="sayBtns"></div></div></div>
+<div id="panel"><h3 id="ptitle"></h3><button id="pclose" data-i18n="app.close">닫기</button><div id="pbody"></div></div>
+<div class="bar"><button data-p="quest"><b>📋</b><span data-i18n="ui.nav.build.quest">퀘스트</span><span id="qdot" hidden></span></button><button data-p="shop"><b>🏪</b><span data-i18n="ui.nav.build.shop">가게</span></button><button data-p="shiba"><b>🐕</b><span data-i18n="ui.nav.build.shibas">시바들</span></button><button data-p="upgrade"><b>📦</b><span data-i18n="ui.nav.build.upgrade">업그레이드</span></button><button data-p="event"><b>🎁</b><span data-i18n="ui.nav.build.event">이벤트</span></button></div>
 </div>
 <div id="gpull"><div class="gpTop"><span class="pill">🐾 <span id="gpPaw">0</span></span><span style="flex:1"></span><button id="gpShop" class="ic" aria-label="상점">🏪</button><button id="gpSet" class="ic" aria-label="설정">⚙️</button><button id="gpClose" class="ic" aria-label="닫기">✕</button></div>
-<h2>오늘의 시바 친구</h2><img class="mach" src="media/gacha-machine.jpg" alt="시바 뽑기 기계"><div class="gpBtns"><button id="pull1"></button><button id="pull10"></button></div></div>
-<div id="gacha"><video id="gvid" src="media/gacha-reveal.mp4" playsinline preload="auto"></video><img id="revealImg" alt=""><button id="gskip">건너뛰기</button><div id="gcard" hidden></div></div>
+<h2 data-i18n="gacha.screen">오늘의 시바 친구</h2><img class="mach" src="media/gacha-machine.jpg" alt="시바 뽑기 기계"><p id="gpNote" class="sub" hidden data-i18n="gacha.ratesUndecided">뽑기 확률이 아직 정해지지 않았어요 (준비 중)</p><div class="gpBtns"><button id="pull1"></button><button id="pull10"></button></div><button id="pullCap" class="big" hidden></button></div>
+<div id="gacha"><video id="gvid" src="media/gacha-reveal.mp4" playsinline preload="auto"></video><img id="revealImg" alt=""><button id="gskip" data-i18n="gacha.skip">건너뛰기</button><div id="gcard" hidden></div></div>
+<div id="lang" hidden><h2 id="langTitle"></h2><div id="langList"></div><p id="langHint" class="sub"></p><button id="langOk" class="big" disabled>OK</button></div>
+<div id="promo" hidden><div id="promoCard"><img id="promoImg" alt=""><b id="promoBadge"></b></div></div>
 <script type="module" src="main.js"></script></html>
