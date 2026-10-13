@@ -30,6 +30,10 @@ export const CFG={
  customer:{speed:.9,spawnEvery:6,firstSpawn:1,waitBeforeVisit:1.5,visits:2,happyPause:1.2,payBase:40,payPerShiba:6,paws:1},
  visit:{climb:.9,pet:3.5,descend:.9,cooldown:3,heartsPerPet:1},
  cafe:{maxShibas:6},
+ // D-05 하트 ✅ 확정(명세 1.4): 자연 회복 상한 10, 30분당 1개, 10개 이상이면 회복 타이머 멈춤. 보상 하트는 상한 없이 쌓임.
+ hearts:{regenCap:10,regenEverySec:1800},
+ // D-06 하트 리셋권 ✅ 확정: 하트 < 10 일 때만 10개로 채움, 10 이상이면 사용 불가(소모 없음). 아이콘 I-01 전까지 이모지.
+ items:{heartReset:{icon:'🎟️',name:'하트 리셋권'}},
  upgrade:{base:300,grow:1.8,bonus:.25}, // 업그레이드: 방치 수입 +25%/단계
  idle:{perSec:.5,perShibaPerSec:.25},
  offline:{rate:.5,capHours:8,minSeconds:60},

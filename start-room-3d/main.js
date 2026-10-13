@@ -4,6 +4,8 @@ import * as S from './sim.js';
 import {SDK} from './sdk-stubs.js';
 import {UI} from './ui.js';
 const Q=new URLSearchParams(location.search);
+// test build only: ?temp=1 switches on every CFG.TEMP placeholder (values the docs leave 미정). Never on by default.
+if(Q.has('temp'))for(const k of Object.keys(CFG.TEMP))CFG.TEMP[k]=true;
 const cv=document.getElementById('scene'),g=cv.getContext('2d');const DPR=Math.min(2,devicePixelRatio||1);
 let W=0,H=0;function resize(){W=cv.clientWidth;H=cv.clientHeight;cv.width=W*DPR;cv.height=H*DPR;}resize();addEventListener('resize',resize);
 const IMG={};const names=['donggu','shiba_red','shiba_sesame','shiba_kuro','shiba_white','cust_girl','cust_man','shelf','table','zabuton','lantern','counter','sign','tatami','stone_lantern','bonsai','sakura','pond','fence','gravel_path','stepping','flowers','teapot','teacup','dango','showcase','bell','menu_board','bed','toy_basket','ball','bone_cushion','cushion_pink','scroll','bonsai_pot','mini_lantern','windbell','maneki','tile_construction'];
@@ -65,7 +67,7 @@ const loaded=S.load(localStorage,Date.now());const state=loaded.state;const worl
 const popLayer=document.getElementById('pops');
 function pop(text,x,z){const [px,py]=P(x,z,1.9);const d=document.createElement('div');d.className='pop';d.textContent=text;d.style.left=px+'px';d.style.top=py+'px';popLayer.appendChild(d);setTimeout(()=>d.remove(),1600);}
 let incomeFrac=0;
-function step(dt){S.tick(world,state,dt);incomeFrac+=S.incomePerSec(state)*dt;if(incomeFrac>=1){const n=Math.floor(incomeFrac);state.coins+=n;incomeFrac-=n;}
+function step(dt){S.settleHearts(state,Date.now());S.tick(world,state,dt);incomeFrac+=S.incomePerSec(state)*dt;if(incomeFrac>=1){const n=Math.floor(incomeFrac);state.coins+=n;incomeFrac-=n;}
  for(const e of world.events.splice(0)){if(e.type==='pay')pop(`+${e.coins}🪙 +${e.paws}🐾`,e.x,e.z);if(e.type==='pet')SDK.sfx('pet');}ui.tick();}
 const lastX=new Map();
 function draw(){g.setTransform(DPR,0,0,DPR,0,0);drawGround();const t=world.t;const L=[];
@@ -91,5 +93,5 @@ setInterval(()=>{if(!manual)S.save(localStorage,state,Date.now());},10000);
 addEventListener('visibilitychange',()=>{if(document.hidden)S.save(localStorage,state,Date.now());});
 document.getElementById('gear').onclick=()=>ui.open('settings');
 ready.then(()=>{draw();requestAnimationFrame(frame);window.__ready=true;});
-window.__game={state,world,CFG,step(sec){manual=true;for(let i=0;i<Math.round(sec*30);i++)step(1/30);draw();ui.tick();return {t:world.t,customers:world.customers.map(c=>c.phase),shibas:world.shibas.map(s=>s.phase)};},
+window.__game={state,world,CFG,ui,S,step(sec){manual=true;for(let i=0;i<Math.round(sec*30);i++)step(1/30);draw();ui.tick();return {t:world.t,customers:world.customers.map(c=>c.phase),shibas:world.shibas.map(s=>s.phase)};},
  draw,open:n=>ui.open(n),close:()=>ui.close(),gachaShow:(coat,expr,t,r)=>ui.gachaShow(coat,expr,t,r),setPan(p,z){pan=p;zoom=z||zoom;clampPan();draw();}};

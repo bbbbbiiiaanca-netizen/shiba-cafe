@@ -46,6 +46,28 @@ test('D-02 old save rarity is converted to a matching level',()=>{
  const st=S.migrate({v:1,owned:[{id:1,coat:'red',expr:'red_smile',lv:15,rarity:'R'},{id:2,coat:'red',expr:'red_wink',lv:1,rarity:'N'}]});
  assert.deepEqual(st.owned.map(o=>o.lv),[20,1]);assert.deepEqual(st.owned.map(o=>S.gradeOf(o.lv)),['R','N']);});
 
+// ---------- D-05 ----------
+const HOUR=3600e3,MIN=60e3;
+test('D-05 hearts 0 → app closed 5 h → 10 (no more)',()=>{const m=mem();const st=S.newState(0);st.hearts=0;S.save(m,st,0);
+ const {state}=S.load(m,5*HOUR);assert.equal(state.hearts,10);const again=S.load(m,50*HOUR).state;assert.equal(again.hearts,10);});
+test('D-05 regen is 1 per 30 min and stops at 10',()=>{const st=S.newState(0);st.hearts=3;st.heartRegenAt=0;
+ S.settleHearts(st,29*MIN);assert.equal(st.hearts,3);S.settleHearts(st,30*MIN);assert.equal(st.hearts,4);S.settleHearts(st,89*MIN);assert.equal(st.hearts,5);
+ S.settleHearts(st,100*HOUR);assert.equal(st.hearts,10);assert.equal(S.nextHeartInSec(st,100*HOUR),null);});
+test('D-05 hearts 15 stay 15 over time; rewards stack above 10',()=>{const st=S.newState(0);st.hearts=15;S.settleHearts(st,0);S.settleHearts(st,10*HOUR);assert.equal(st.hearts,15);
+ const st2=S.newState(0);st2.hearts=9;S.grant(st2,{hearts:5});assert.equal(st2.hearts,14);S.settleHearts(st2,10*HOUR);assert.equal(st2.hearts,14);});
+test('D-05 timer restarts when spending drops hearts below 10',()=>{const st=S.newState(0);st.hearts=12;S.settleHearts(st,0);
+ assert.ok(S.spendHearts(st,5,HOUR));assert.equal(st.hearts,7);S.settleHearts(st,HOUR+29*MIN);assert.equal(st.hearts,7);S.settleHearts(st,HOUR+30*MIN);assert.equal(st.hearts,8);});
+test('D-05 quest "하트 20개 모으기" still reachable (reward hearts are uncapped)',()=>{const st=S.newState(0);st.tut=99;st.hearts=10;S.grant(st,{hearts:10});S.settleHearts(st,HOUR);
+ assert.equal(st.hearts,20);assert.ok(S.claimQuest(st,'hearts20'));});
+
+// ---------- D-06 ----------
+test('D-06 hearts 3 → use reset → 10, one ticket consumed',()=>{const st=S.newState(0);st.hearts=3;st.items.heartReset=2;
+ assert.ok(S.canUseHeartReset(st));assert.ok(S.useHeartReset(st,0));assert.equal(st.hearts,10);assert.equal(st.items.heartReset,1);});
+test('D-06 hearts ≥ 10 → disabled, no change, no ticket used',()=>{for(const h of [10,15]){const st=S.newState(0);st.hearts=h;st.items.heartReset=1;
+ assert.equal(S.canUseHeartReset(st),false);assert.equal(S.useHeartReset(st,0),false);assert.equal(st.hearts,h);assert.equal(st.items.heartReset,1);}
+ const st=S.newState(0);st.hearts=0;st.items.heartReset=0;assert.equal(S.useHeartReset(st,0),false);assert.equal(st.hearts,0);});
+test('D-06 bag button is bound to canUseHeartReset (disabled attribute)',()=>{assert.match(readFileSync(join(ROOT,'ui.js'),'utf8'),/id="useReset" \$\{can\?'':'disabled'\}/);});
+
 // ---------- report ----------
 let fail=0;for(const [k,n,e] of results){console.log(k==='ok'?'  ok  ':'  FAIL',n);if(e){fail++;console.log('       ',e.message);}}
 console.log(`${results.length-fail}/${results.length} handoff tests passed`);if(fail)process.exit(1);

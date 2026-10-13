@@ -13,6 +13,7 @@ button:disabled{background:#cdbba5;box-shadow:0 2px 0 #a8957f}
 .c{flex:1;display:flex;align-items:center;gap:4px;background:#fffaf0;border:2px solid #e3c9a3;border-radius:16px;padding:3px 4px 3px 7px;font-weight:800;font-size:13px;box-shadow:0 2px 3px rgba(90,50,20,.18)}
 .c span{flex:1;text-align:center}.c i{font-style:normal;width:18px;height:18px;border-radius:9px;background:#7a4a2e;color:#fff;font-size:13px;line-height:18px;text-align:center}
 #gear{position:absolute;right:8px;top:8px;background:#fffaf0;color:#4a2e1c;border:2px solid #e3c9a3;box-shadow:none;padding:2px 6px;font-size:14px;z-index:6}
+#bagBtn{position:absolute;left:8px;top:8px;background:#fffaf0;color:#4a2e1c;border:2px solid #e3c9a3;box-shadow:none;padding:2px 6px;font-size:14px;z-index:6}#heartPlus{cursor:pointer}.row .icon{font-size:30px;width:44px;text-align:center}
 #csign{position:absolute;left:12px;top:96px;z-index:4;background:linear-gradient(#8a5a36,#6b4126);color:#fff3dc;border:2px solid #4a2e1c;border-radius:8px;padding:5px 8px;font-weight:900;font-size:13px;text-align:center;line-height:1.2;box-shadow:0 3px 4px rgba(0,0,0,.25)}
 .arrow{position:absolute;top:50%;z-index:4;background:rgba(255,248,236,.85);color:#6b4126;box-shadow:none;border-radius:8px;padding:10px 5px;font-size:15px}#al{left:6px}#ar{right:6px}
 #hint{position:absolute;left:50%;bottom:100px;transform:translateX(-50%);z-index:4;background:rgba(74,46,28,.78);color:#fff3dc;border-radius:14px;padding:4px 12px;font-size:12px;font-weight:800;white-space:nowrap;transition:opacity .6s}
@@ -53,8 +54,8 @@ h4{margin:10px 0 2px}.big{display:block;width:100%;background:#5aa65a;box-shadow
 <canvas id="scene" aria-label="시바견 카페"></canvas>
 <div id="pops"></div>
 <div class="top"><div id="qpill">카페를 발전시켜요!</div>
-<div class="cnt"><div class="c">🪙<span id="coins">0</span><i>+</i></div><div class="c">💗<span id="hearts">0</span><i>+</i></div><div class="c">🐾<span id="paws">0</span><i>+</i></div></div></div>
-<button id="gear" aria-label="설정">⚙️</button>
+<div class="cnt"><div class="c">🪙<span id="coins">0</span><i>+</i></div><div class="c">💗<span id="hearts">0</span><i id="heartPlus">+</i></div><div class="c">🐾<span id="paws">0</span><i>+</i></div></div></div>
+<button id="gear" aria-label="설정">⚙️</button><button id="bagBtn" aria-label="가방">🎒</button>
 <div id="csign">시바견<br>카페<br>🐾</div>
 <button class="arrow" id="al">‹</button><button class="arrow" id="ar">›</button>
 <div id="hint">👈 옆으로 밀어서 카페 둘러보기 👉</div>

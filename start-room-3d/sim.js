@@ -14,6 +14,7 @@ export function newState(now=Date.now()){
  return {v:CFG.saveVersion,coins:CFG.start.coins,hearts:CFG.start.hearts,paws:CFG.start.paws,
   owned:CFG.start.shibas.map((s,i)=>({id:i+1,...s,lv:startLevel('N')})),nextId:CFG.start.shibas.length+1,dex:CFG.start.shibas.map(dexKey),
   served:0,petted:0,upg:0,gachaPulls:0,tut:0,questsClaimed:[],theme:'basic',themesOwned:['basic'],
+  items:{heartReset:0},heartRegenAt:now,
   settings:{sound:true,music:true},lastSeen:now};
 }
 // Old saves (v1): `rarity` field N/R/SR + lv (lv started at 1 and grew by +1 per duplicate).
@@ -23,7 +24,7 @@ export function migrate(s,now=Date.now()){
  if(s.v===1){
   for(const o of s.owned||[]){const g=o.rarity===LEGACY_TOP_GRADE?'S':GRADES.includes(o.rarity)?o.rarity:'N';const [a,b]=CFG.grades.bands[g];
    o.lv=Math.min(b,a+Math.max(0,(Math.floor(o.lv)||1)-1));delete o.rarity;}
-  s.dex=[...new Set((s.owned||[]).map(dexKey))];s.v=2;}
+  s.dex=[...new Set((s.owned||[]).map(dexKey))];s.heartRegenAt=s.lastSeen??now;s.v=2;}
  return sanitize(s);}
 // invariants enforced on every load and save: no stored grade, level within 1..30
 export function sanitize(s){for(const o of s.owned||[]){if('rarity' in o)delete o.rarity;if('grade' in o)delete o.grade;o.lv=clampLevel(o.lv);}
@@ -35,9 +36,23 @@ export function offlineEarnings(s,now=Date.now()){const sec=Math.min((now-s.last
  if(!(sec>=CFG.offline.minSeconds))return {sec:Math.max(0,sec|0),coins:0};return {sec:sec|0,coins:Math.floor(sec*incomePerSec(s)*CFG.offline.rate)};}
 export function load(storage,now=Date.now()){let s=null;try{s=JSON.parse(storage.getItem(CFG.saveKey));}catch{}
  if(!s||!(s.v===1||s.v===CFG.saveVersion))return {state:newState(now),offline:{sec:0,coins:0},fresh:true};
- const d=newState(now);s=migrate({...d,...s,settings:{...d.settings,...s.settings}},now);const offline=offlineEarnings(s,now);s.coins+=offline.coins;s.lastSeen=now;return {state:s,offline,fresh:false};}
+ const d=newState(now);s=migrate({...d,...s,settings:{...d.settings,...s.settings},items:{...d.items,...s.items}},now);settleHearts(s,now);const offline=offlineEarnings(s,now);s.coins+=offline.coins;s.lastSeen=now;return {state:s,offline,fresh:false};}
 export function save(storage,s,now=Date.now()){s.lastSeen=now;sanitize(s);storage.setItem(CFG.saveKey,JSON.stringify(s));}
-export function grant(s,r={}){for(const k of ['coins','hearts','paws'])if(r[k])s[k]+=r[k];}
+// rewards are never capped (hearts from rewards may go above hearts.regenCap)
+export function grant(s,r={}){for(const k of ['coins','hearts','paws'])if(r[k])s[k]+=r[k];for(const k of Object.keys(CFG.items))if(r[k])s.items[k]=(s.items[k]||0)+r[k];}
+
+// ---------- hearts (D-05 / D-06) ----------
+// heartRegenAt = start of the current 30-min regen period. While hearts ≥ cap the timer is stopped (anchor follows `now`).
+// Called on load (covers time the app was closed) and every frame.
+export function settleHearts(s,now=Date.now()){const H=CFG.hearts,P=H.regenEverySec*1000;
+ if(!(s.heartRegenAt<=now))s.heartRegenAt=now; // missing anchor or clock moved backwards
+ if(s.hearts>=H.regenCap){s.heartRegenAt=now;return 0;}
+ const n=Math.floor((now-s.heartRegenAt)/P),add=Math.min(n,H.regenCap-s.hearts);s.hearts+=add;
+ if(s.hearts>=H.regenCap)s.heartRegenAt=now;else s.heartRegenAt+=n*P;return add;}
+export function nextHeartInSec(s,now=Date.now()){if(s.hearts>=CFG.hearts.regenCap)return null;return Math.max(0,Math.ceil((s.heartRegenAt+CFG.hearts.regenEverySec*1000-now)/1000));}
+export function spendHearts(s,n,now=Date.now()){settleHearts(s,now);if(s.hearts<n)return false;s.hearts-=n;return true;}
+export function canUseHeartReset(s){return (s.items.heartReset||0)>0&&s.hearts<CFG.hearts.regenCap;}
+export function useHeartReset(s,now=Date.now()){settleHearts(s,now);if(!canUseHeartReset(s))return false;s.items.heartReset--;s.hearts=CFG.hearts.regenCap;s.heartRegenAt=now;return true;}
 
 // ---------- gacha (D-01) ----------
 // S = CFG.gacha.rates.S (2%, 확정). N·R rates are null (미정) → no N/R split is invented; pulls are blocked unless the TEMP switch is on.

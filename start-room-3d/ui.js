@@ -30,6 +30,11 @@ export function UI(ctx){const {state:s,CFG,S,SDK}=ctx;const $=id=>document.getEl
   quest:{title:'동구의 퀘스트',live:true,render(){const qs=S.questStatus(s);let h=S.tutStep(s)?'<p class="sub">튜토리얼을 끝내면 열려요. 지금은 대사창의 동구 안내를 따라 주세요.</p>':'';
    for(const q of qs){const r=Object.entries(q.reward).map(([k,v])=>({coins:'🪙',paws:'🐾',hearts:'❤'}[k])+' '+v).join(' ');h+=`<div class="row"><b>${q.text}</b><i>${r}</i><button data-q="${q.id}" ${q.done&&!q.claimed&&!S.tutStep(s)?'':'disabled'}>${q.claimed?'완료':q.done?'받기':'진행 중'}</button></div>`;}
    const key=h;if(this._k===key)return;this._k=key;body().innerHTML=h;body().querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{S.claimQuest(s,b.dataset.q);ctx.save();this._k='';tick();});}},
+  // D-06 가방: 하트 리셋권 (하트 10개 이상이면 버튼 꺼짐, 눌러도 변화 없음)
+  bag:{title:'가방',live:true,render(){const H=CFG.hearts,n=s.items.heartReset||0,can=S.canUseHeartReset(s),nx=S.nextHeartInSec(s);
+   const h=`<div class="row"><span class="icon">${CFG.items.heartReset.icon}</span><b>${CFG.items.heartReset.name} ×${n}<br><i>하트가 ${H.regenCap}개 미만일 때 ${H.regenCap}개까지 채워요</i></b><button id="useReset" ${can?'':'disabled'}>사용</button></div>
+   <p class="sub">💗 ${fmt(s.hearts)} · ${nx==null?`${H.regenCap}개 이상이라 자연 회복 멈춤`:`다음 하트까지 ${Math.floor(nx/60)}:${String(nx%60).padStart(2,'0')} (30분마다 1개, ${H.regenCap}개까지)`}</p>`;
+   if(this._k===h)return;this._k=h;body().innerHTML=h;$('useReset').onclick=()=>{if(S.useHeartReset(s,Date.now())){SDK.sfx('click');ctx.save();}this._k='';tick();};}},
   settings:{title:'설정',render(){body().innerHTML=`<div class="row"><b>효과음</b><button data-k="sound">${s.settings.sound?'켜짐':'꺼짐'}</button></div><div class="row"><b>배경음</b><button data-k="music">${s.settings.music?'켜짐':'꺼짐'}</button></div>
    <div class="row"><b>Play Games 클라우드 저장</b><button id="cloud">저장</button></div><div class="row"><b>처음부터 다시</b><button id="reset">초기화</button></div><p class="sub" id="setMsg">이 기기에 자동 저장 중 (10초마다)</p>`;
    body().querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{s.settings[b.dataset.k]=!s.settings[b.dataset.k];ctx.save();this.render();});
@@ -39,13 +44,13 @@ export function UI(ctx){const {state:s,CFG,S,SDK}=ctx;const $=id=>document.getEl
  const body=()=>$('pbody');
  function open(n){if(n==='gacha'){close();showPull();return;}if(openName===n){close();return;}openName=n;const p=panels[n];$('ptitle').textContent=p.title;p._k='';p.render();$('panel').classList.add('on');document.body.classList.add('popen');document.querySelectorAll('.bar button').forEach(b=>b.classList.toggle('on',b.dataset.p===n));}
  function close(){openName=null;$('panel').classList.remove('on');document.body.classList.remove('popen');document.querySelectorAll('.bar button').forEach(b=>b.classList.remove('on'));}
- document.querySelectorAll('.bar button').forEach(b=>b.onclick=()=>open(b.dataset.p));$('pclose').onclick=close;
+ document.querySelectorAll('.bar button').forEach(b=>b.onclick=()=>open(b.dataset.p));for(const id of ['bagBtn','heartPlus'])if($(id))$(id).onclick=()=>open('bag');$('pclose').onclick=close;
  // ---- gacha flow: user's fixed video; at the burst the drawn shiba appears as a live 3D figure ----
  const vid=$('gvid'),gl=$('gacha');let cur=null,revealT0=0,batch=[];
  function showPull(){SDK.sfx('click');const free=CFG.gacha.firstFree&&s.gachaPulls===0;$('gpPaw').textContent=fmt(s.paws);
   $('pull1').textContent=free?'1회 뽑기 · 무료':`1회 뽑기 · 🐾${CFG.gacha.cost.paws}`;$('pull10').textContent=`10회 뽑기 · 🐾${CFG.gacha.cost10.paws}`;
   $('pull1').disabled=!S.canPull(s);$('pull10').disabled=!S.gachaReady()||s.paws<CFG.gacha.cost10.paws;
-  $('gpNote').hidden=S.gachaReady();$('gpull').classList.add('on');}
+  if($('gpNote'))$('gpNote').hidden=S.gachaReady();$('gpull').classList.add('on');}
  $('pull1').onclick=()=>startGacha(1);$('pull10').onclick=()=>startGacha(10);$('gpClose').onclick=()=>$('gpull').classList.remove('on');
  $('gpShop').onclick=()=>{$('gpull').classList.remove('on');open('shop');};$('gpSet').onclick=()=>{$('gpull').classList.remove('on');open('settings');};
  // result card: colour by grade (N 무색 · R 파랑 · S 금색), on-screen grade text is the initial only
