@@ -15,8 +15,11 @@ export default async function({ev,check,sleep,temp,reload}){
  await ev('__game.open("shop");true');
  await check('3 themes; Fuji/bamboo show 가격 미정 and are disabled','document.querySelectorAll("[data-th]").length===3&&document.querySelector("[data-th=fuji]").disabled&&/가격 미정/.test(document.querySelector("[data-th=bamboo]").textContent)');
  await ev('__game.close();true');
+ // the cafe floor must keep running (customers served, idle income accrues)
+ await ev('window.__c0=__game.state.coins;window.__s0=__game.state.served;__game.step(90);true');
+ await check('cafe loop runs: guests served and coins grow','__game.state.served>window.__s0&&__game.state.coins>window.__c0');
  await ev('__game.step(.5);true');
- await check('HUD renders hearts','document.getElementById("hearts").textContent==="0"');
+ await check('HUD renders hearts','document.getElementById("hearts").textContent===String(__game.state.hearts)');
  // D-01/D-02
  await ev('__game.open("gacha");true');await sleep(100);
  await check(temp?'gacha enabled with TEMP':'gacha blocked while N/R undecided',temp?'!document.getElementById("pull1").disabled':'document.getElementById("pull1").disabled&&!document.getElementById("gpNote").hidden');
