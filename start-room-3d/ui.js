@@ -20,7 +20,7 @@ export function UI(ctx){const {state:s,CFG,S,SDK}=ctx;const $=id=>document.getEl
  const panels={
   shiba:{title:'시바들',render(){const coats=Object.keys(CFG.coats),N=Object.keys(CFG.exprs).length;let h=`<button class="big" id="toPull">🎰 새 시바 뽑기</button><p class="sub">도감 ${s.dex.length} / ${N} · 카페에 최대 ${CFG.cafe.maxShibas}마리</p><div class="grid">`;
    for(const c of coats)for(const e of CFG.coatExprs(c)){const own=s.owned.filter(o=>o.coat===c&&o.expr===e).sort((a,b)=>b.lv-a.lv),o=own[0]||(s.dex.includes(c+'_'+e)?{lv:0}:null);h+=o?`<div class="card"><img src="${ctx.thumb(c,e)}"><b>${CFG.coats[c]}·${CFG.exprs[e]}</b><i>${o.lv?`${S.gradeOf(o.lv)} · Lv.${o.lv}${own.length>1?' ×'+own.length:''}`:'카페에 없음'}</i></div>`:`<div class="card off"><img src="${ctx.thumb(c,e)}"><b>${CFG.coats[c]}·???</b></div>`;}
-   body().innerHTML=h+'</div>';$('toPull').onclick=()=>open('gacha');}},
+   h+='</div>'+cafeList();body().innerHTML=h;$('toPull').onclick=()=>open('gacha');bindCafeList();}},
   upgrade:{title:'업그레이드',live:true,render(){const c=S.upgradeCost(s),lv=s.upg||0;const h=`<div class="row"><img src="assets/counter.png"><b>카운터 개선 Lv.${lv}<br><i>방치 수입 +${Math.round(CFG.upgrade.bonus*100)}%씩 · 지금 초당 ${S.incomePerSec(s).toFixed(2)}🪙</i></b><button id="upg" ${s.coins<c?'disabled':''}>🪙 ${c.toLocaleString('ko-KR')}</button></div><p class="sub">땅 확장(상하좌우)과 2층은 다음 단계예요. 카페 양옆의 점선 칸이 확장 자리예요.</p>`;if(this._k===h)return;this._k=h;body().innerHTML=h;$('upg').onclick=()=>{if(S.buyUpgrade(s)){ctx.save();this._k='';tick();}};}},
   event:{title:'이벤트',render(){body().innerHTML=`<p class="sub">계절 이벤트는 준비 중이에요 (카탈로그 14쪽 계절 소품 세트).</p><div class="row"><img src="assets/sakura.png"><b>벚꽃 축제<br><i>준비 중</i></b></div><div class="row"><img src="assets/lantern.png"><b>여름 축제 초롱<br><i>준비 중</i></b></div>`;}},
   shop:{title:'꾸미기 · 상점',render(){let h='<h4>인테리어 테마 (스텁: 벽·다다미·조명 색만 바뀜)</h4>';for(const t of CFG.themes){const own=s.themesOwned.includes(t.id);h+=`<div class="row"><span class="sw" style="background:${t.wall}"></span><span class="sw" style="background:${t.tatami}"></span><b>${t.name}</b><button data-th="${t.id}" ${!own&&s.coins<t.price?'disabled':''}>${s.theme===t.id?'사용 중':own?'사용':`🪙 ${t.price.toLocaleString('ko-KR')}`}</button></div>`;}
@@ -42,6 +42,18 @@ export function UI(ctx){const {state:s,CFG,S,SDK}=ctx;const $=id=>document.getEl
    $('reset').onclick=()=>{if(confirm('저장을 지우고 처음부터 시작할까요?')){localStorage.removeItem(CFG.saveKey);location.search='?fresh=1';}};}},
  };
  const body=()=>$('pbody');
+ // ---- D-03 카페 시바 목록 + 병합 (재료 → 대상). 같은 등급·같은 시바(merge.sameKey)일 때만 버튼이 켜짐 ----
+ let sel=[];const MERGE_WHY={undecided:'병합 기준이 아직 정해지지 않았어요 (준비 중)',mode:'자동 병합 방식은 아직 정해지지 않았어요',pick:'합칠 시바 둘을 골라요 (먼저 고른 쪽이 레벨이 올라요)',busy:'산책 중인 시바는 합칠 수 없어요',notSame:'같은 시바끼리만 합칠 수 있어요',grade:'같은 등급끼리만 합칠 수 있어요'};
+ const nameOf=o=>`${CFG.coats[o.coat]}·${CFG.exprs[o.expr]}`;
+ function cafeList(){sel=sel.filter(id=>s.owned.some(o=>o.id===id));const why=S.mergeCheck(s,sel[0],sel[1]);
+  let h=`<h4>카페 시바 ${s.owned.length}마리</h4>`;
+  for(const o of [...s.owned].sort((a,b)=>a.coat.localeCompare(b.coat)||a.expr.localeCompare(b.expr)||b.lv-a.lv)){const k=sel.indexOf(o.id);
+   h+=`<div class="row${k>=0?' sel':''}" data-sel="${o.id}"><img src="${ctx.thumb(o.coat,o.expr)}"><b>${nameOf(o)}<br><i>${S.gradeOf(o.lv)} · Lv.${o.lv}</i></b>${extraRow(o)}<i class="selk">${k===0?'대상':k===1?'재료':''}</i></div>`;}
+  const a=s.owned.find(o=>o.id===sel[0]),b=s.owned.find(o=>o.id===sel[1]);
+  h+=`<p class="sub" id="mergeWhy">${why?MERGE_WHY[why]:`${nameOf(a)} Lv.${a.lv} + Lv.${b.lv} → Lv.${Math.min(CFG.grades.maxLevel,a.lv+b.lv)}`}</p><button class="big" id="mergeBtn" ${why?'disabled':''}>병합</button>`;return h;}
+ let extraRow=o=>''; // walk controls are added by D-08
+ function bindCafeList(){body().querySelectorAll('[data-sel]').forEach(r=>r.onclick=e=>{if(e.target.closest('button'))return;const id=+r.dataset.sel;const k=sel.indexOf(id);if(k>=0)sel.splice(k,1);else{if(sel.length>=2)sel=[sel[0]];sel.push(id);}panels.shiba.render();});
+  $('mergeBtn').onclick=()=>{const r=S.merge(s,sel[0],sel[1]);if(!r)return;ctx.removeFromCafe(r.material.id);sel=[];ctx.save();SDK.sfx('fanfare');panels.shiba.render();tick();};}
  function open(n){if(n==='gacha'){close();showPull();return;}if(openName===n){close();return;}openName=n;const p=panels[n];$('ptitle').textContent=p.title;p._k='';p.render();$('panel').classList.add('on');document.body.classList.add('popen');document.querySelectorAll('.bar button').forEach(b=>b.classList.toggle('on',b.dataset.p===n));}
  function close(){openName=null;$('panel').classList.remove('on');document.body.classList.remove('popen');document.querySelectorAll('.bar button').forEach(b=>b.classList.remove('on'));}
  document.querySelectorAll('.bar button').forEach(b=>b.onclick=()=>open(b.dataset.p));for(const id of ['bagBtn','heartPlus'])if($(id))$(id).onclick=()=>open('bag');$('pclose').onclick=close;
@@ -65,7 +77,19 @@ export function UI(ctx){const {state:s,CFG,S,SDK}=ctx;const $=id=>document.getEl
   $('gok').onclick=()=>{for(const b of batch)ctx.addToCafe(b);gl.classList.remove('on');vid.pause();cur=null;tick();};}
  vid.addEventListener('timeupdate',()=>{if(cur&&vid.currentTime>=CFG.gacha.revealAt)reveal();});vid.addEventListener('ended',()=>{if(cur)reveal();});
  $('gskip').onclick=()=>{if(cur){vid.currentTime=Math.max(vid.currentTime,CFG.gacha.revealAt);reveal();}};
- function frame(){}
+ // ---- D-04 승급 대체 카드 연출 (FEATURES.promotionCard, 영상 promotion.videoAsset 미정) ----
+ let promo=null;const BORDER={N:'#e4e4e4',R:'#6f9fd6',S:'#d4a437'};
+ function frame(){const busy=gl.classList.contains('on')||$('gpull').classList.contains('on');
+  if(!promo&&!busy&&s.promoQueue&&s.promoQueue.length){const p=S.takePromotion(s);ctx.save();
+   if(CFG.FEATURES.promotionCard&&$('promo')){promo={...p,t0:performance.now()};const el=$('promo');el.hidden=false;$('promoImg').src=ctx.thumb(p.coat,p.expr);}}
+  if(!promo)return;const t=(performance.now()-promo.t0)/1000,ph=S.promoPhase(t),card=$('promoCard'),C=CFG.promotion.card;
+  card.style.transform=`scale(${ph.phase==='zoom'?1+.15*Math.sin(ph.k*Math.PI/2):1.15})`;
+  card.style.borderColor=ph.phase==='zoom'?BORDER[promo.from]:ph.phase==='border'?mix(BORDER[promo.from],BORDER[promo.to],ph.k):BORDER[promo.to];
+  $('promoBadge').textContent=ph.phase==='zoom'||ph.phase==='border'?promo.from:promo.to;$('promoBadge').classList.toggle('spark',ph.phase==='badge');
+  card.classList.toggle('joy',ph.phase==='expr');if(ph.phase==='done')endPromo();}
+ function endPromo(){promo=null;if($('promo'))$('promo').hidden=true;}
+ if($('promo'))$('promo').onclick=()=>{if(promo&&CFG.promotion.skippable)endPromo();};
+ const mix=(a,b,k)=>{const p=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));const A=p(a),B=p(b);return '#'+A.map((v,i)=>Math.round(v+(B[i]-v)*k).toString(16).padStart(2,'0')).join('');};
  // capture helper: show the reveal moment for a given figure at video time t
  async function gachaShow(coat,expr,t,grade){cur={coat,expr,lv:S.startLevel(grade||'R'),isNew:true};batch=[cur];close();showGacha();vid.muted=true;await new Promise(r=>{vid.addEventListener('seeked',r,{once:true});vid.currentTime=t;});vid.pause();if(t>=CFG.gacha.revealAt){reveal();const ri=$('revealImg');ri.style.animation='none';ri.style.opacity=1;ri.style.transform='translate(-50%,-50%) scale(1)';await new Promise(r=>ri.complete?r():ri.onload=r);}return true;}
- tick();return {tick,open,close,frame,gachaShow};}
+ tick();return {tick,open,close,frame,gachaShow,isPromo:()=>!!promo};}

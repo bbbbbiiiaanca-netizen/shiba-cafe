@@ -12,7 +12,8 @@ export const CFG={
  },
  // TEMP: placeholder behaviours the handoff allows "for checking only" (// TEMP 미정). All off; `?temp=1` turns them on in a test build.
  TEMP:{
-  gachaNonSAsN:false,  // D-01 N·R 확률 미정(명세 질문 2): 켜면 S가 아닌 결과를 모두 N으로 처리(R 확률을 지어내지 않음), 화면에 확률 표시 안 함
+  gachaNonSAsN:false,
+  mergeHandoffDefaults:false, // D-03 '같은 시바' 기준·자동/선택·병합 승급 연출 미정(질문 2-3 라·마·바): 켜면 핸드오프 임시값 sameKey 'coat+expr', mode 'manual', playPromotion false  // D-01 N·R 확률 미정(명세 질문 2): 켜면 S가 아닌 결과를 모두 N으로 처리(R 확률을 지어내지 않음), 화면에 확률 표시 안 함
  },
  // ── grades & levels (명세 1.6 ✅ 확정) ──
  grades:{bands:{N:[1,10],R:[11,20],S:[21,30]},maxLevel:30}, // grade is computed from level; start level of a pull = band start
@@ -30,6 +31,11 @@ export const CFG={
  customer:{speed:.9,spawnEvery:6,firstSpawn:1,waitBeforeVisit:1.5,visits:2,happyPause:1.2,payBase:40,payPerShiba:6,paws:1},
  visit:{climb:.9,pet:3.5,descend:.9,cooldown:3,heartsPerPet:1},
  cafe:{maxShibas:6},
+ // D-03 병합 ✅ 확정: 같은 등급끼리만 · 레벨 += 재료 레벨 · 30에서 멈춤 · 승급은 레벨에서 자동 · 재료는 카페 목록에서 빠지고 도감은 유지.
+ // ❓미정 → null: sameKey('같은 시바' 기준: 'coat+expr' | 'coat'), mode('manual' | 'auto'), playPromotion(병합 승급 때 연출 재생). null이면 병합 버튼은 '기준 미정'으로 꺼짐.
+ merge:{sameKey:null,mode:null,playPromotion:null},
+ // D-04 승급 연출: 필요는 ✅ 확정, 영상은 미정(videoAsset null). card = 영상 전 대체 카드 연출의 '제안' 수치(명세 1.6) → FEATURES.promotionCard 로 꺼 둠.
+ promotion:{enabled:true,skippable:true,videoAsset:null,card:{zoomSec:.3,borderSec:.5,exprSec:1,totalSec:2.5}},
  // D-05 하트 ✅ 확정(명세 1.4): 자연 회복 상한 10, 30분당 1개, 10개 이상이면 회복 타이머 멈춤. 보상 하트는 상한 없이 쌓임.
  hearts:{regenCap:10,regenEverySec:1800},
  // D-06 하트 리셋권 ✅ 확정: 하트 < 10 일 때만 10개로 채움, 10 이상이면 사용 불가(소모 없음). 아이콘 I-01 전까지 이모지.

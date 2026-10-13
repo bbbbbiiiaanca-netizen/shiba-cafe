@@ -48,6 +48,10 @@ h4{margin:10px 0 2px}.big{display:block;width:100%;background:#5aa65a;box-shadow
 .rc{border-radius:14px;padding:6px;background:#fff8ec;border:4px solid #ecd6b0;text-align:center;position:relative}.rc img{width:110px;height:110px;object-fit:contain;display:block;margin:0 auto}.rc b{display:block;font-size:15px}.rc i{font-style:normal;font-size:12px;color:#8a6a50}
 .rc.N{border-color:#e4e4e4;background:#fff}.rc.R{border-color:#6f9fd6;background:#eef4fb}.rc.S{border:4px double #d4a437;background:linear-gradient(#fff6d8,#fbe6a6);box-shadow:0 0 0 2px #f3d27a}
 .rgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:8px}.rgrid .rc{padding:2px;border-width:3px}.rgrid .rc img{width:100%;height:auto;aspect-ratio:1}.rgrid .rc b{font-size:9px}.rgrid .rc i{font-size:8px}
+.row.sel{background:#ffe9b8;border-radius:10px}.row .selk{color:#b8742a;font-weight:800;min-width:28px}
+#promo{position:fixed;inset:0;z-index:25;background:rgba(40,25,10,.6);display:flex;align-items:center;justify-content:center}
+#promoCard{width:200px;border:6px solid #e4e4e4;border-radius:18px;background:#fff8ec;padding:10px;text-align:center;position:relative}#promoCard img{width:100%;aspect-ratio:1;object-fit:contain;display:block}
+#promoBadge{position:absolute;top:-16px;left:50%;transform:translateX(-50%);background:#4a2e1c;color:#fff;border-radius:12px;padding:2px 12px;font-size:20px}#promoBadge.spark{box-shadow:0 0 14px 6px #ffe27a}#promoCard.joy img{animation:joy .5s infinite alternate}@keyframes joy{to{transform:translateY(-8px) rotate(3deg)}}
 #gcard>.rc{width:160px;margin:0 auto 8px}
 </style>
 <div id="frame">
@@ -66,4 +70,5 @@ h4{margin:10px 0 2px}.big{display:block;width:100%;background:#5aa65a;box-shadow
 <div id="gpull"><div class="gpTop"><span class="pill">🐾 <span id="gpPaw">0</span></span><span style="flex:1"></span><button id="gpShop" class="ic" aria-label="상점">🏪</button><button id="gpSet" class="ic" aria-label="설정">⚙️</button><button id="gpClose" class="ic" aria-label="닫기">✕</button></div>
 <h2>오늘의 시바 친구</h2><img class="mach" src="media/gacha-machine.jpg" alt="시바 뽑기 기계"><p id="gpNote" class="sub" hidden>뽑기 확률이 아직 정해지지 않았어요 (준비 중)</p><div class="gpBtns"><button id="pull1"></button><button id="pull10"></button></div></div>
 <div id="gacha"><video id="gvid" src="media/gacha-reveal.mp4" playsinline preload="auto"></video><img id="revealImg" alt=""><button id="gskip">건너뛰기</button><div id="gcard" hidden></div></div>
+<div id="promo" hidden><div id="promoCard"><img id="promoImg" alt=""><b id="promoBadge"></b></div></div>
 <script type="module" src="main.js"></script></html>

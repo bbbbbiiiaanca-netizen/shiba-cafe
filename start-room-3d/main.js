@@ -86,9 +86,9 @@ function draw(){g.setTransform(DPR,0,0,DPR,0,0);drawGround();const t=world.t;con
  L.sort((a,b)=>a.d-b.d);for(const o of L)o.f();}
 // ---- gacha / panels ----
 const thumb=(coat,expr)=>`assets/${CFG.exprs[expr]?expr:coat+'_smile'}.png`;
-const ui=UI({state,world,CFG,S,SDK,thumb,loaded,applyTheme:()=>{},addToCafe:o=>S.addShiba(world,o),save:()=>S.save(localStorage,state,Date.now())});
+const ui=UI({state,world,CFG,S,SDK,thumb,loaded,applyTheme:()=>{},addToCafe:o=>S.addShiba(world,o),removeFromCafe:id=>{S.removeShiba(world,id);for(const o of state.owned)if(world.shibas.length<CFG.cafe.maxShibas&&!world.shibas.some(x=>x.id===o.id))S.addShiba(world,o);},save:()=>S.save(localStorage,state,Date.now())});
 let manual=Q.has('still');let last=performance.now();
-function frame(now){const dt=Math.min(.1,(now-last)/1000);last=now;if(!manual){let left=dt;while(left>1e-6){const d=Math.min(1/30,left);step(d);left-=d;}}draw();requestAnimationFrame(frame);}
+function frame(now){ui.frame();const dt=Math.min(.1,(now-last)/1000);last=now;if(!manual){let left=dt;while(left>1e-6){const d=Math.min(1/30,left);step(d);left-=d;}}draw();requestAnimationFrame(frame);}
 setInterval(()=>{if(!manual)S.save(localStorage,state,Date.now());},10000);
 addEventListener('visibilitychange',()=>{if(document.hidden)S.save(localStorage,state,Date.now());});
 document.getElementById('gear').onclick=()=>ui.open('settings');

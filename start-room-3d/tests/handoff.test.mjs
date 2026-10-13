@@ -68,6 +68,32 @@ test('D-06 hearts ≥ 10 → disabled, no change, no ticket used',()=>{for(const
  const st=S.newState(0);st.hearts=0;st.items.heartReset=0;assert.equal(S.useHeartReset(st,0),false);assert.equal(st.hearts,0);});
 test('D-06 bag button is bound to canUseHeartReset (disabled attribute)',()=>{assert.match(readFileSync(join(ROOT,'ui.js'),'utf8'),/id="useReset" \$\{can\?'':'disabled'\}/);});
 
+// ---------- D-03 ----------
+const mk=(st,list)=>{st.owned=list.map((x,i)=>({id:100+i,coat:'red',expr:'red_smile',...x}));st.dex=[...new Set(st.owned.map(S.dexKey))];return st;};
+test('D-03 merge rule is undecided by default → merge disabled',()=>{assert.equal(CFG.merge.sameKey,null);assert.equal(CFG.merge.mode,null);assert.equal(CFG.merge.playPromotion,null);
+ const st=mk(S.newState(0),[{lv:10},{lv:5}]);assert.equal(S.mergeCheck(st,100,101),'undecided');assert.equal(S.merge(st,100,101),null);});
+test('D-03 N Lv10 + N Lv5 → R Lv15; afterwards N duplicates cannot merge into it',()=>{CFG.TEMP.mergeHandoffDefaults=true;
+ const st=mk(S.newState(0),[{lv:10},{lv:5},{lv:3}]);const r=S.merge(st,100,101);assert.equal(r.to,15);assert.equal(S.gradeOf(r.target.lv),'R');assert.ok(r.promoted);
+ assert.equal(S.mergeCheck(st,100,102),'grade');assert.equal(S.mergeCheck(st,102,100),'grade');});
+test('D-03 S Lv21 + S Lv21 → Lv30 (not 42)',()=>{CFG.TEMP.mergeHandoffDefaults=true;const st=mk(S.newState(0),[{lv:21},{lv:21}]);assert.equal(S.merge(st,100,101).to,30);});
+test('D-03 different grades or different shiba → disabled',()=>{CFG.TEMP.mergeHandoffDefaults=true;const st=mk(S.newState(0),[{lv:5},{lv:12},{lv:5,expr:'red_wink'}]);
+ assert.equal(S.mergeCheck(st,100,101),'grade');assert.equal(S.mergeCheck(st,100,102),'notSame');assert.equal(S.mergeCheck(st,100,100),'pick');});
+test('D-03 material leaves the cafe list, dex record stays',()=>{CFG.TEMP.mergeHandoffDefaults=true;const st=mk(S.newState(0),[{lv:2},{lv:2,expr:'red_wink'},{lv:4,expr:'red_wink'}]);
+ const w=S.newWorld(st,1);assert.equal(w.shibas.length,3);S.merge(st,102,101);S.removeShiba(w,101);
+ assert.deepEqual(st.owned.map(o=>o.id),[100,102]);assert.ok(st.dex.includes('red_red_wink'));assert.ok(!w.shibas.some(x=>x.id===101));assert.equal(st.owned[1].lv,6);});
+
+// ---------- D-04 ----------
+test('D-04 promotion queued once on 10→11 / 20→21 only when allowed; never for gacha',()=>{
+ const st=mk(S.newState(0),[{lv:10},{lv:20},{lv:5}]);
+ S.setLevel(st,st.owned[0],11,'levelup');S.setLevel(st,st.owned[1],21,'levelup');S.setLevel(st,st.owned[2],6,'levelup');
+ assert.deepEqual(st.promoQueue.map(p=>p.from+'>'+p.to),['N>R','R>S']);
+ assert.ok(S.takePromotion(st));assert.ok(S.takePromotion(st));assert.equal(S.takePromotion(st),null);
+ assert.equal(S.promotionShouldPlay('gacha'),false);
+ CFG.TEMP.mergeHandoffDefaults=true;const st2=mk(S.newState(0),[{lv:10},{lv:5}]);S.merge(st2,100,101);assert.equal(st2.promoQueue.length,0,'merge.playPromotion undecided → no replay');
+ assert.equal(CFG.promotion.videoAsset,null);assert.equal(CFG.FEATURES.promotionCard,false);});
+test('D-04 card timeline: 0.3 zoom → 0.5 border → badge → 1 s expression, ≈2.5 s total',()=>{
+ assert.equal(S.promoPhase(.1).phase,'zoom');assert.equal(S.promoPhase(.5).phase,'border');assert.equal(S.promoPhase(1).phase,'badge');assert.equal(S.promoPhase(2).phase,'expr');assert.equal(S.promoPhase(2.51).phase,'done');});
+
 // ---------- report ----------
 let fail=0;for(const [k,n,e] of results){console.log(k==='ok'?'  ok  ':'  FAIL',n);if(e){fail++;console.log('       ',e.message);}}
 console.log(`${results.length-fail}/${results.length} handoff tests passed`);if(fail)process.exit(1);

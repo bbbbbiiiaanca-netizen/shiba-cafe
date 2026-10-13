@@ -14,7 +14,7 @@ export function newState(now=Date.now()){
  return {v:CFG.saveVersion,coins:CFG.start.coins,hearts:CFG.start.hearts,paws:CFG.start.paws,
   owned:CFG.start.shibas.map((s,i)=>({id:i+1,...s,lv:startLevel('N')})),nextId:CFG.start.shibas.length+1,dex:CFG.start.shibas.map(dexKey),
   served:0,petted:0,upg:0,gachaPulls:0,tut:0,questsClaimed:[],theme:'basic',themesOwned:['basic'],
-  items:{heartReset:0},heartRegenAt:now,
+  items:{heartReset:0},heartRegenAt:now,promoQueue:[],
   settings:{sound:true,music:true},lastSeen:now};
 }
 // Old saves (v1): `rarity` field N/R/SR + lv (lv started at 1 and grew by +1 per duplicate).
@@ -68,6 +68,30 @@ export function pull(s,r){if(!canPull(s))return null;const free=CFG.gacha.firstF
  const o={id:s.nextId++,coat,expr,lv:startLevel(grade)};const isNew=!s.dex.includes(dexKey(o));const dup=s.owned.some(x=>dexKey(x)===dexKey(o));
  s.owned.push(o);if(isNew)s.dex.push(dexKey(o));return {...o,grade,isNew,dup,free};}
 
+// ---------- level changes, merge (D-03) and promotion (D-04) ----------
+// every level change goes through setLevel: clamps to 1..30 and queues a promotion when the computed grade changes
+export function setLevel(s,o,lv,source){const g0=gradeOf(o.lv);o.lv=clampLevel(lv);const g1=gradeOf(o.lv);
+ if(g0!==g1&&promotionShouldPlay(source))(s.promoQueue||(s.promoQueue=[])).push({id:o.id,coat:o.coat,expr:o.expr,from:g0,to:g1,lv:o.lv});return g0!==g1;}
+// shibas obtained directly from a pull never play it (they start at a band's first level, no level change happens)
+export function promotionShouldPlay(source){if(!CFG.promotion.enabled||source==='gacha')return false;if(source==='merge')return mergeRule()?.playPromotion===true;return true;}
+export function takePromotion(s){return (s.promoQueue||[]).shift()||null;} // dequeued once → plays once
+// fallback card timeline (제안값): zoom → border colour → badge swap + sparkle → expression; total ≈ totalSec
+export function promoPhase(t){const C=CFG.promotion.card,badge=Math.max(0,C.totalSec-C.zoomSec-C.borderSec-C.exprSec);
+ const seg=[['zoom',C.zoomSec],['border',C.borderSec],['badge',badge],['expr',C.exprSec]];for(const [p,d] of seg){if(t<d)return {phase:p,k:d?t/d:1};t-=d;}return {phase:'done',k:1};}
+export function mergeRule(){const M=CFG.merge;if(M.sameKey!=null&&M.mode!=null)return {sameKey:M.sameKey,mode:M.mode,playPromotion:M.playPromotion===true};
+ return CFG.TEMP.mergeHandoffDefaults?{sameKey:'coat+expr',mode:'manual',playPromotion:false}:null;}
+const SAME={'coat+expr':o=>o.coat+'_'+o.expr,coat:o=>o.coat};
+// null = can merge; otherwise a reason code for the UI
+export function mergeCheck(s,targetId,matId){const rule=mergeRule();if(!rule)return 'undecided';if(rule.mode!=='manual')return 'mode';
+ const a=s.owned.find(o=>o.id===targetId),b=s.owned.find(o=>o.id===matId);if(!a||!b||a===b)return 'pick';
+ if(isBusy(s,a.id)||isBusy(s,b.id))return 'busy';
+ if(!SAME[rule.sameKey]||SAME[rule.sameKey](a)!==SAME[rule.sameKey](b))return 'notSame';if(gradeOf(a.lv)!==gradeOf(b.lv))return 'grade';return null;}
+export const canMerge=(s,t,m)=>mergeCheck(s,t,m)===null;
+export function merge(s,targetId,matId){if(!canMerge(s,targetId,matId))return null;const a=s.owned.find(o=>o.id===targetId),i=s.owned.findIndex(o=>o.id===matId),b=s.owned[i];
+ const from=a.lv;const promoted=setLevel(s,a,a.lv+b.lv,'merge');s.owned.splice(i,1); // material leaves the cafe list; s.dex (도감) is untouched
+ return {target:a,material:b,from,to:a.lv,promoted};}
+export function isBusy(s,id){return false;} // replaced by walk state in D-08
+
 // ---------- quests / tutorial ----------
 export function questStatus(s){return CFG.quests.map(q=>({...q,done:q.goal(s),claimed:s.questsClaimed.includes(q.id)}));}
 export function claimQuest(s,id){const q=CFG.quests.find(q=>q.id===id);if(!q||!q.goal(s)||s.questsClaimed.includes(id))return false;s.questsClaimed.push(id);grant(s,q.reward);return true;}
@@ -82,6 +106,8 @@ function moveTo(p,t,v,dt){const d=dist(p,t);if(d<=v*dt){p.x=t.x;p.z=t.z;return t
 export function newWorld(s,seed=7){const r=rng(seed);const w={t:0,r,customers:[],shibas:[],nextCust:1,spawnT:CFG.customer.firstSpawn,tableBusy:CFG.tables.map(()=>null),events:[]};
  for(const o of s.owned.slice(0,CFG.cafe.maxShibas))addShiba(w,o);return w;}
 export function addShiba(w,o){if(w.shibas.length>=CFG.cafe.maxShibas)return null;const R=CFG.roam;const sh={id:o.id,coat:o.coat,expr:o.expr,phase:'idle',t:w.r()*2,x:R.x0+w.r()*(R.x1-R.x0),y:0,z:R.z0+w.r()*(R.z1-R.z0),cd:0,heading:0};w.shibas.push(sh);return sh;}
+export function removeShiba(w,id){const i=w.shibas.findIndex(x=>x.id===id);if(i<0)return false;const sh=w.shibas[i];w.shibas.splice(i,1);
+ const c=w.customers.find(c=>c.id===sh.cust);if(c){c.shiba=null;c.petting=false;c.t=0;}w.tableBusy=w.tableBusy.map(b=>b===id?null:b);return true;}
 function roamTarget(w){const R=CFG.roam;return {x:R.x0+w.r()*(R.x1-R.x0),z:R.z0+w.r()*(R.z1-R.z0)};}
 function topSpot(c){const tb=CFG.tables[c.seatDef.table];return {x:tb.x+(c.seatDef.face?.22:0),z:tb.z+(c.seatDef.face?0:.22)};}
 export function tick(w,s,dt){w.t+=dt;const C=CFG.customer,V=CFG.visit;
