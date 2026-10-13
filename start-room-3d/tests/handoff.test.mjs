@@ -6,6 +6,7 @@ import {dirname,join} from 'node:path';
 import {CFG} from '../config.js';
 import * as S from '../sim.js';
 import {STR,makeT,LANGS} from '../i18n.js';
+import * as H from '../healing.js';
 const ROOT=join(dirname(fileURLToPath(import.meta.url)),'..');
 const mem=()=>({d:{},getItem(k){return this.d[k]??null},setItem(k,v){this.d[k]=v}});
 const results=[];
@@ -175,6 +176,50 @@ test('D-12 theme list = tatami basic + Fuji + bamboo; prices null; basic free',(
 test('D-12 old save with sakura/summer loads without error on the basic theme',()=>{const m=mem();
  m.setItem(CFG.saveKey,JSON.stringify({v:1,coins:5,hearts:0,paws:0,lastSeen:0,owned:[],nextId:1,theme:'summer',themesOwned:['basic','sakura','summer']}));
  const {state}=S.load(m,10);assert.equal(state.theme,'basic');assert.deepEqual(state.themesOwned,['basic']);assert.equal(S.currentTheme(state).id,'basic');});
+
+// ---------- D-13 ----------
+const quietWorld=(st,seed)=>{const w=S.newWorld(st,seed);w.spawnT=1e12;return w;}; // no guests
+const firstPlay=(st,seed,tod='day',max=600)=>{const w=quietWorld(st,seed);w.tod=tod;for(let i=0;i<max*30;i++){S.tick(w,st,1/30);for(const e of w.events.splice(0))if(e.type==='playStart')return {t:w.t,e};}return null;};
+test('D-13 all three healing features are off by default and change nothing',()=>{assert.equal(CFG.FEATURES.healingPlay,false);assert.equal(CFG.FEATURES.healingTimeOfDay,false);assert.equal(CFG.FEATURES.healingObserve,false);
+ assert.equal(firstPlay(S.newState(0),1,'day',300),null);assert.deepEqual(H.customerMix('night'),{countMul:1,tipMul:1});
+ const O=H.newObserve();for(let i=0;i<1000;i++)assert.equal(H.stepObserve(O,1,{overlay:false,tod:'day',month:6,r:Math.random}),null);});
+test('D-13 1.7.1 no guests, ≥2 shibas → a play starts within 2 min on average',()=>{CFG.FEATURES.healingPlay=true;let sum=0,n=0;
+ for(let seed=1;seed<=40;seed++){const r=firstPlay(S.newState(0),seed);assert.ok(r,'seed '+seed);sum+=r.t;n++;}assert.ok(sum/n<=120,'mean '+(sum/n).toFixed(1)+'s');});
+test('D-13 1.7.1 one shiba → never plays, no error; night → never chase; config alone changes frequency',()=>{CFG.FEATURES.healingPlay=true;
+ const one=S.newState(0);one.owned=one.owned.slice(0,1);assert.equal(firstPlay(one,3,'day',600),null);
+ const st=S.newState(0);st.owned.push({id:9,coat:'sesame',expr:'sesame_smile',lv:1},{id:10,coat:'kuro',expr:'kuro_calm',lv:1});const w=quietWorld(st,5);w.tod='night';const types=new Set();
+ for(let i=0;i<30*3600;i++){S.tick(w,st,1/30);for(const e of w.events.splice(0))if(e.type==='playStart')types.add(e.play);}assert.ok(types.size>0);assert.ok(!types.has('chase'),[...types]);
+ const old=CFG.healing.play.pairChance;try{CFG.healing.play.pairChance=0;assert.equal(firstPlay(S.newState(0),2,'day',600),null);}finally{CFG.healing.play.pairChance=old;}});
+test('D-13 1.7.1 guests first: a playing shiba is pulled to the guest in the same frame, guests never wait on a play',()=>{CFG.FEATURES.healingPlay=true;
+ const st=S.newState(0);st.owned.push({id:9,coat:'sesame',expr:'sesame_smile',lv:1});const w=S.newWorld(st,4);let interrupts=0;const C=CFG.customer;
+ for(let i=0;i<30*1800;i++){const busy0=[...w.tableBusy];S.tick(w,st,1/30);for(const e of w.events.splice(0))if(e.type==='playInterrupt'){interrupts++;assert.equal(w.shibas.find(x=>x.id===e.id).phase,'toTable');}
+  for(const c of w.customers)if(c.phase==='wait'&&c.visits<C.visits&&!c.shiba&&c.t>=C.waitBeforeVisit+1/30&&!w.tableBusy[c.seatDef.table]&&!busy0[c.seatDef.table])
+   assert.ok(!w.shibas.some(x=>(x.phase==='play'||x.phase==='approach')&&x.cd<=-1/30),'guest waiting while a shiba plays');} // cd was ≤0 when guests were matched this frame
+ assert.ok(interrupts>0,'scenario exercised');
+ const st2=S.newState(0);st2.hearts=0;const w2=quietWorld(st2,1);while(!w2.shibas.some(x=>x.phase==='play'))S.tick(w2,st2,1/30);
+ const id=w2.shibas.find(x=>x.phase==='play').id;assert.equal(S.tapPlay(w2,st2,id),1);assert.equal(st2.hearts,1);assert.equal(w2.shibas.find(x=>x.id===id).phase,'play');});
+test('D-13 1.7.2 periods from local time, 20 s transition, lock keeps the period',()=>{const at=(h,m=0)=>new Date(2026,9,14,h,m);
+ assert.deepEqual([at(5,59),at(6),at(10,59),at(11),at(17),at(20,59),at(21),at(0)].map(H.timeOfDay),['night','morning','morning','day','evening','evening','night','night']);
+ const T=H.newTod(at(10,59));assert.equal(T.key,'morning');assert.equal(T.k,1,'launch snaps without transition');H.stepTod(T,1,at(11,0));assert.equal(T.key,'day');assert.equal(T.k,0);
+ H.stepTod(T,10,at(11,0));assert.ok(T.k>.45&&T.k<.55);H.stepTod(T,10,at(11,0));assert.equal(T.k,1);
+ const Lk=H.newTod(at(10,59),true);H.stepTod(Lk,61,at(12));assert.equal(Lk.key,'morning');});
+test('D-13 1.7.2 night guest mix: arrival interval ÷0.7, pay ×1.43 (product within ±5%); measured income ratio reported',()=>{CFG.FEATURES.healingTimeOfDay=true;
+ const M=H.customerMix('night');assert.ok(Math.abs(M.countMul*M.tipMul-1)<=.05);assert.deepEqual(H.customerMix('day'),{countMul:1,tipMul:1});
+ const run=tod=>{let total=0,spawned=0;for(let seed=1;seed<=6;seed++){const st=S.newState(0);const w=S.newWorld(st,seed);w.tod=tod;const c0=st.coins;for(let i=0;i<30*3600;i++)S.tick(w,st,1/30);total+=st.coins-c0;spawned+=w.nextCust-1;}return {total,spawned};};
+ const day=run('day'),night=run('night');
+ // KNOWN GAP (impl-notes): seats, not arrivals, limit guests in this build, so night income ≠ day ±5% with the proposal values.
+ console.log(`        [info] 1.7.2 night/day coins = ${(night.total/day.total).toFixed(3)}, guests night/day = ${(night.spawned/day.spawned).toFixed(3)} (criterion ±5% NOT met — needs decision)`);});
+test('D-13 1.7.3 idle 20 s → an event within ~1 min on average; touch / overlay reset; tod filter',()=>{CFG.FEATURES.healingObserve=true;const r=S.rng(11);let sum=0;
+ for(let k=0;k<200;k++){const O=H.newObserve();let t=0;while(O.phase!=='active'){H.stepObserve(O,.5,{overlay:false,tod:'day',month:6,r});t+=.5;}sum+=t-CFG.healing.observe.idleThresholdSec;}
+ assert.ok(sum/200<=60,'mean after idle '+(sum/200).toFixed(1));
+ const O=H.newObserve();for(let i=0;i<40;i++)H.stepObserve(O,1,{overlay:true,tod:'day',month:6,r:()=>0});assert.equal(O.phase,'hidden');
+ for(let i=0;i<19;i++)H.stepObserve(O,1,{overlay:false,tod:'day',month:6,r:()=>0});H.touch(O);for(let i=0;i<19;i++)H.stepObserve(O,1,{overlay:false,tod:'day',month:6,r:()=>0});assert.equal(O.phase,'hidden');
+ for(const tod of ['morning','day','evening','night'])for(const k of Object.keys(CFG.healing.observe.events)){const ok=H.eventAllowed(k,{tod,month:6,owns:[]});const E=CFG.healing.observe.events[k];if(ok)assert.ok(!E.tod||E.tod.includes(tod));}
+ assert.equal(H.eventAllowed('fireflies',{tod:'night',month:7}),false,'summer months undecided');assert.equal(H.eventAllowed('petals',{tod:'day',month:4,owns:[]}),false);});
+test('D-13 1.7.3 tap rewards + journal exactly once; daily cap → 0 reward but journal continues; no stamps',()=>{CFG.FEATURES.healingObserve=true;const st=S.newState(0);const c0=st.coins;
+ const show=ev=>{const O=H.newObserve();O.phase='active';O.ev=ev;return O;};const O=show('butterfly');const r1=H.tapObserve(O,st,0);assert.deepEqual(r1.got,{coins:5});assert.ok(r1.first);assert.equal(H.tapObserve(O,st,0),null);
+ assert.equal(st.coins,c0+5);for(let i=0;i<30;i++)H.tapObserve(show('sparrow'),st,1);assert.equal(st.coins,c0+100,'cap 100');const r=H.tapObserve(show('butterfly'),st,2);assert.deepEqual(r.got,{});assert.equal(st.observeJournal.butterfly.count,2);
+ assert.equal(H.tapObserve(show('butterfly'),st,86400e3*2).got.coins,5,'cap resets next day');const m=H.tapObserve(show('moonWindow'),st,3);assert.deepEqual(m.got,{});assert.ok(!('stamp' in st));});
 
 // ---------- report ----------
 let fail=0;for(const [k,n,e] of results){console.log(k==='ok'?'  ok  ':'  FAIL',n);if(e){fail++;console.log('       ',e.message);}}

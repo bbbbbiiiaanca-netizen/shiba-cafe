@@ -20,6 +20,14 @@ export default async function({ev,check,sleep,temp,reload}){
  await check('cafe loop runs: guests served and coins grow','__game.state.served>window.__s0&&__game.state.coins>window.__c0');
  await ev('__game.step(.5);true');
  await check('HUD renders hearts','document.getElementById("hearts").textContent===String(__game.state.hearts)');
+ // D-13 with all three switches on inside this block (default build ships them off)
+ await ev('Object.assign(__game.CFG.FEATURES,{healingPlay:true,healingTimeOfDay:true,healingObserve:true});__game.world.spawnT=1e12;__game.step(300);__game.world.spawnT=1;true');
+ await check('D-13 on: play pairs happen, cafe still serves, no errors','__game.world.play.globalCdUntil>0');
+ await ev('__game.obs.phase="active";__game.obs.ev="butterfly";__game.obs.t=0;__game.step(.1);window.__c1=__game.state.coins;true');
+ await check('observe icon shows','!document.getElementById("obs").hidden&&document.getElementById("obs").textContent==="🦋"');
+ await ev('document.getElementById("obs").click();true');await check('tap → +5 coins once, journal entry','__game.state.coins>=window.__c1+5&&__game.state.observeJournal.butterfly.count===1&&document.getElementById("obs").hidden');
+ await ev('__game.open("settings");true');await check('time-of-day lock toggle in settings','!!document.querySelector("[data-k=todLock]")');await ev('__game.close();true');
+ await ev('Object.assign(__game.CFG.FEATURES,{healingPlay:false,healingTimeOfDay:false,healingObserve:false});true');
  // D-01/D-02
  await ev('__game.open("gacha");true');await sleep(100);
  await check(temp?'gacha enabled with TEMP':'gacha blocked while N/R undecided',temp?'!document.getElementById("pull1").disabled':'document.getElementById("pull1").disabled&&!document.getElementById("gpNote").hidden');

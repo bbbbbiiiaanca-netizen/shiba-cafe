@@ -83,4 +83,21 @@ export const CFG={
  // D-11 언어 ✅ 확정: 첫 실행 언어 선택(한국어·English), 설정에서 언제든 변경. 저장 키 settings.language (BCP-47).
  // ❓미정(명세 1.8 질문, 질문 31): 기기 언어 기본값·로그인 전후·동구 등장·버튼 모양 → 핸드오프 임시 구현대로 세로 목록 + 기본 선택 없음, 기기 언어는 쓰지 않음.
  languages:['ko','en'],
+ // D-13 힐링 3종 — 방향 ✅ 확정, 아래 수치는 명세 1.7의 '제안값(미정)' 그대로. 그래서 FEATURES.healingPlay / healingTimeOfDay / healingObserve 로 모두 꺼 둠.
+ // 공통: 벌 없음, 손님 응대가 항상 먼저(놀이 중 손님 배정 → 같은 프레임에 중단).
+ healing:{
+  play:{checkIntervalSec:20,pairChance:.25,pairRadius:2.5,personalCooldownSec:90,globalCooldownSec:30,maxConcurrentPairs:1,heartOnTap:1,donguJoinChance:.15,approachMaxSec:4,
+   personality:{red:'cheerful',sesame:'playful',kuro:'proud',white:'smiley'}, // F p2 성격 (해맑·개구쟁이·도도·방긋) ✅
+   affinity:{cheerful:{cheerful:1,playful:1.5,proud:.8,smiley:1.3},playful:{playful:1.2,proud:.6,smiley:1},proud:{proud:.7,smiley:1.4},smiley:{smiley:1}}, // symmetric
+   prefer:{playful:{chase:1.5,tug:1.5},proud:{sitTogether:1.5,napLean:1.5}},
+   types:{chase:{dur:6,notAt:['night']},sniff:{dur:4},napLean:{dur:20,weightAt:{evening:2,night:2}},tug:{dur:6,needsToy:true},sitTogether:{dur:10}}},
+  timeOfDay:{boundaries:{morning:'06:00',day:'11:00',evening:'17:00',night:'21:00'},transitionSec:20,checkIntervalSec:60,lockToggle:false,
+   presets:{morning:{kelvin:5500,exposure:1},day:{kelvin:6000},evening:{kelvin:3500},night:{kelvin:2700,exposure:.75}},
+   customerMix:{night:{countMul:.7,tipMul:1.43}}},
+  observe:{idleThresholdSec:20,rollIntervalSec:15,rollChance:.35,tapWindowSec:8,cooldownSec:60,dailyRewardCap:{coins:100,stamp:5},
+   // reward null: 도장 지급은 ⏸️ 보류라 도장 보상(petals·fireflies·moonWindow)은 넣지 않음. fireflies '여름' 달 범위 미정 → months null = 나오지 않음.
+   // petals는 '정원 소품 보유' 조건 — 정원 소품 세트 아이템이 아직 없어 나오지 않음. 7종 완성 보상(인테리어 소품)은 아이템 체계가 없어 구현 안 함.
+   events:{butterfly:{w:30,icon:'🦋',reward:{coins:5},tod:['morning','day']},sparrow:{w:30,icon:'🐦',reward:{coins:5},tod:['morning']},
+    donguNap:{w:15,icon:'💤',reward:{hearts:1},tod:['day','evening']},petals:{w:10,icon:'🌸',reward:null,months:[3,4,5],needs:'gardenSet'},
+    fireflies:{w:5,icon:'✨',reward:null,tod:['night'],months:null},shibaDream:{w:15,icon:'💭',reward:{hearts:1},tod:['night']},moonWindow:{w:3,icon:'🌕',reward:null,tod:['night']}}}},
 };

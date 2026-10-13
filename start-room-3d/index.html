@@ -57,11 +57,12 @@ h4{margin:10px 0 2px}.big{display:block;width:100%;background:#5aa65a;box-shadow
 #pullCap{width:auto;align-self:stretch;margin:0 14px 18px}
 #lang{position:fixed;inset:0;z-index:30;background:#f6e2c4;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:10px}#lang h2{text-align:center;color:#6a3f20;font-size:20px;margin:0}
 #langList,.langs{display:flex;flex-direction:column;gap:8px;align-self:stretch}#langList button,.langs button{background:#fff8ec;color:#4a2e1c;border:2px solid #e3c08a;box-shadow:none;padding:12px;font-size:17px}#langList button.on,.langs button.on{background:#ffd98a;border-color:#c9975a}#langOk{align-self:stretch}
+#obs{position:absolute;left:46%;top:44%;z-index:4;font-size:30px;background:rgba(255,250,235,.7);border-radius:50%;box-shadow:0 0 12px #fff3b0;padding:6px 9px;animation:hl .9s infinite alternate}
 #gcard>.rc{width:160px;margin:0 auto 8px}
 </style>
 <div id="frame">
 <canvas id="scene" aria-label="시바견 카페"></canvas>
-<div id="pops"></div>
+<div id="pops"></div><button id="obs" hidden aria-label="관찰"></button>
 <div class="top"><div id="qpill">카페를 발전시켜요!</div>
 <div class="cnt"><div class="c">🪙<span id="coins">0</span><i>+</i></div><div class="c">💗<span id="hearts">0</span><i id="heartPlus">+</i></div><div class="c">🐾<span id="paws">0</span><i>+</i></div></div></div>
 <button id="gear" aria-label="설정">⚙️</button><button id="bagBtn" aria-label="가방">🎒</button>

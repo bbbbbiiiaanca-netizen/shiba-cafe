@@ -1,5 +1,6 @@
 // Pure game logic (no DOM / Three.js) so it can be unit-tested and stepped deterministically.
 import {CFG} from './config.js';
+import {customerMix} from './healing.js';
 export function rng(seed=1){let s=seed>>>0||1;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};}
 
 // ---------- grades & levels (D-02): grade is never stored, always computed from level ----------
@@ -16,7 +17,7 @@ function baseState(now){
   owned:CFG.start.shibas.map((s,i)=>({id:i+1,...s,lv:startLevel('N')})),nextId:CFG.start.shibas.length+1,dex:CFG.start.shibas.map(dexKey),
   served:0,petted:0,upg:0,gachaPulls:0,tut:0,questsClaimed:[],theme:'basic',themesOwned:['basic'],
   items:{heartReset:0,capsule:0},heartRegenAt:now,promoQueue:[],onboarding:{visits:[],claimed:[]},walk:null,rescueQueue:[],
-  settings:{sound:true,music:true,language:null},lastSeen:now};
+  settings:{sound:true,music:true,language:null,todLock:CFG.healing.timeOfDay.lockToggle},lastSeen:now};
 }
 // Old saves (v1): `rarity` field N/R/SR + lv (lv started at 1 and grew by +1 per duplicate).
 // → keep the grade the player had (old top label → S), place the shiba at that band's first level plus the levels it had gained, capped at the band end.
@@ -161,7 +162,8 @@ export function tutAdvance(s,force=false){const t=tutStep(s);if(!t)return false;
 // ---------- the cafe floor (runtime only, not saved) ----------
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 function moveTo(p,t,v,dt){const d=dist(p,t);if(d<=v*dt){p.x=t.x;p.z=t.z;return true;}p.x+=(t.x-p.x)/d*v*dt;p.z+=(t.z-p.z)/d*v*dt;return false;}
-export function newWorld(s,seed=7){const r=rng(seed);const w={t:0,r,customers:[],shibas:[],nextCust:1,spawnT:CFG.customer.firstSpawn,tableBusy:CFG.tables.map(()=>null),events:[]};
+export function newWorld(s,seed=7){const r=rng(seed);const w={t:0,r,customers:[],shibas:[],nextCust:1,spawnT:CFG.customer.firstSpawn,tableBusy:CFG.tables.map(()=>null),events:[],tod:'day',
+  play:{checkT:CFG.healing.play.checkIntervalSec,globalCdUntil:0,pairs:[]}};
  for(const o of activeOwned(s).slice(0,CFG.cafe.maxShibas))addShiba(w,o);return w;}
 export function addShiba(w,o){if(w.shibas.length>=CFG.cafe.maxShibas)return null;const R=CFG.roam;const sh={id:o.id,coat:o.coat,expr:o.expr,phase:'idle',t:w.r()*2,x:R.x0+w.r()*(R.x1-R.x0),y:0,z:R.z0+w.r()*(R.z1-R.z0),cd:0,heading:0};w.shibas.push(sh);return sh;}
 export function removeShiba(w,id){const i=w.shibas.findIndex(x=>x.id===id);if(i<0)return false;const sh=w.shibas[i];w.shibas.splice(i,1);
@@ -172,22 +174,23 @@ export function tick(w,s,dt){w.t+=dt;const C=CFG.customer,V=CFG.visit;
  // spawn: customers only come in when a seat is free
  w.spawnT-=dt;const used=new Set(w.customers.map(c=>c.seat));const free=CFG.seats.map((_,i)=>i).filter(i=>!used.has(i));
  if(w.spawnT<=0&&free.length){const seat=free[Math.floor(w.r()*free.length)],sd=CFG.seats[seat];
-  w.customers.push({id:w.nextCust++,kind:w.r()<.5?'boy':'girl',seat,seatDef:sd,phase:'enter',x:CFG.door.x,z:CFG.door.z,path:sd.via?[{x:CFG.door.x,z:CFG.aisleZ},{x:sd.via.x,z:CFG.aisleZ},{x:sd.via.x,z:sd.via.z},{x:sd.x,z:sd.z}]:[{x:CFG.door.x,z:CFG.aisleZ},{x:sd.x,z:CFG.aisleZ},{x:sd.x,z:sd.z}],t:0,visits:0,shiba:null,heading:Math.PI});w.spawnT=C.spawnEvery;}
+  w.customers.push({id:w.nextCust++,kind:w.r()<.5?'boy':'girl',seat,seatDef:sd,phase:'enter',x:CFG.door.x,z:CFG.door.z,path:sd.via?[{x:CFG.door.x,z:CFG.aisleZ},{x:sd.via.x,z:CFG.aisleZ},{x:sd.via.x,z:sd.via.z},{x:sd.x,z:sd.z}]:[{x:CFG.door.x,z:CFG.aisleZ},{x:sd.x,z:CFG.aisleZ},{x:sd.x,z:sd.z}],t:0,visits:0,shiba:null,heading:Math.PI});w.spawnT=C.spawnEvery/customerMix(w.tod).countMul;}
  for(const c of w.customers){c.t+=dt;
   if(c.phase==='enter'||c.phase==='leave'){const tgt=c.path[0];const px=c.x,pz=c.z;if(moveTo(c,tgt,C.speed,dt))c.path.shift();if(c.x!==px||c.z!==pz)c.heading=Math.atan2(c.x-px,c.z-pz);
    if(!c.path.length){if(c.phase==='enter'){c.phase='wait';c.t=0;c.heading=c.seatDef.face*Math.PI/2;}else c.gone=true;}}
   else if(c.phase==='wait'&&c.visits>=C.visits&&!c.shiba&&c.t>=C.happyPause){ // pay & go home
-   const coins=C.payBase+C.payPerShiba*Math.min(activeOwned(s).length,CFG.cafe.maxShibas);s.coins+=coins;s.paws+=C.paws;s.served++;
+   const coins=Math.round((C.payBase+C.payPerShiba*Math.min(activeOwned(s).length,CFG.cafe.maxShibas))*customerMix(w.tod).tipMul);s.coins+=coins;s.paws+=C.paws;s.served++;
    w.events.push({type:'pay',coins,paws:C.paws,x:c.x,z:c.z,id:c.id});c.phase='leave';c.path=[...(c.seatDef.via?[{x:c.seatDef.via.x,z:c.seatDef.via.z},{x:c.seatDef.via.x,z:CFG.aisleZ}]:[{x:c.x,z:CFG.aisleZ}]),{x:CFG.door.x,z:CFG.aisleZ},{x:CFG.door.x,z:CFG.door.z}];}
   else if(c.phase==='wait'&&c.visits<C.visits&&!c.shiba&&c.t>=C.waitBeforeVisit&&!w.tableBusy[c.seatDef.table]){ // call the nearest free shiba
-   let best=null,bd=1e9;for(const sh of w.shibas)if((sh.phase==='roam'||sh.phase==='idle')&&sh.cd<=0){const d=dist(sh,c);if(d<bd){bd=d;best=sh;}}
-   if(best){const top=topSpot(c);best.phase='toTable';best.cust=c.id;best.from={x:top.x,z:Math.max(CFG.roam.z0,CFG.tables[c.seatDef.table].z+.85)};best.top=top;best.tgt=best.from;c.shiba=best.id;w.tableBusy[c.seatDef.table]=best.id;}}}
+   // playing shibas count as free: guests always come first (1.7.1 — the pair is interrupted in this same frame)
+   let best=null,bd=1e9;for(const sh of w.shibas)if((sh.phase==='roam'||sh.phase==='idle'||sh.phase==='approach'||sh.phase==='play')&&sh.cd<=0){const d=dist(sh,c);if(d<bd){bd=d;best=sh;}}
+   if(best){if(best.phase==='approach'||best.phase==='play')interruptPlay(w,best);const top=topSpot(c);best.phase='toTable';best.cust=c.id;best.from={x:top.x,z:Math.max(CFG.roam.z0,CFG.tables[c.seatDef.table].z+.85)};best.top=top;best.tgt=best.from;c.shiba=best.id;w.tableBusy[c.seatDef.table]=best.id;}}}
  w.customers=w.customers.filter(c=>!c.gone);
  const tableH=.55;
  for(const sh of w.shibas){sh.t+=dt;sh.cd-=dt;const c=w.customers.find(c=>c.id===sh.cust);
   // D-09: a 100%-tired shiba only sleeps (no serving, no play) — only when FEATURES.fatigue is on
   if(CFG.FEATURES.fatigue){const sl=fatigueState(s,sh.id)==='sleep';if(sl&&(sh.phase==='idle'||sh.phase==='roam'))sh.phase='sleep';else if(!sl&&sh.phase==='sleep'){sh.phase='idle';sh.t=0;}}
-  if(sh.phase==='sleep'){}
+  if(sh.phase==='sleep'||sh.phase==='approach'||sh.phase==='play'){} // play phases are driven by stepPlay
   else if(sh.phase==='idle'){if(sh.t>0){sh.phase='roam';sh.tgt=roamTarget(w);}}
   else if(sh.phase==='roam'||sh.phase==='toTable'){const px=sh.x,pz=sh.z;const arrived=moveTo(sh,sh.tgt,CFG.roam.speed*(sh.phase==='toTable'?1.3:1),dt);if(sh.x!==px||sh.z!==pz)sh.heading=Math.atan2(sh.x-px,sh.z-pz);
    if(arrived){if(sh.phase==='roam'){sh.phase='idle';sh.t=-(CFG.roam.idleMin+w.r()*(CFG.roam.idleMax-CFG.roam.idleMin));}else{sh.phase='climb';sh.t=0;}}}
@@ -196,5 +199,32 @@ export function tick(w,s,dt){w.t+=dt;const C=CFG.customer,V=CFG.visit;
   else if(sh.phase==='pet'){sh.heading=c?-c.seatDef.face*Math.PI/2:0;if(sh.t>=V.pet){sh.phase='descend';sh.t=0;if(c)c.petting=false;}}
   else if(sh.phase==='descend'){const k=Math.min(1,sh.t/V.descend),e=k*k*(3-2*k);sh.x=sh.top.x+(sh.from.x-sh.top.x)*e;sh.z=sh.top.z+(sh.from.z-sh.top.z)*e;sh.y=tableH*(1-e)+Math.sin(k*Math.PI)*.22;sh.heading=0;
    if(k>=1){sh.y=0;sh.phase='idle';sh.t=-.5;sh.cd=V.cooldown;if(c){c.visits++;c.shiba=null;c.t=0;w.tableBusy[c.seatDef.table]=null;}else w.tableBusy=w.tableBusy.map(b=>b===sh.id?null:b);sh.cust=null;}}}
- // safety: free a table whose customer vanished
+ stepPlay(w,s,dt);
  return w;}
+
+// ---------- 1.7.1 시바끼리 놀기 (D-13, FEATURES.healingPlay) ----------
+// IDLE → APPROACH (walk to each other, ≤ approachMaxSec) → PLAY (type.dur) → COOLDOWN → IDLE. A guest assignment interrupts at once (half cooldown).
+const P=()=>CFG.healing.play;
+function affinity(a,b){const A=P().affinity,pa=P().personality[a.coat],pb=P().personality[b.coat];return A[pa]?.[pb]??A[pb]?.[pa]??1;}
+function playTypes(w,s,a,b){const out=[];for(const [k,T] of Object.entries(P().types)){if(T.notAt&&T.notAt.includes(w.tod))continue;if(T.needsToy&&!(s.items&&s.items.toy>0))continue;
+  if(k===a.lastPlayType||k===b.lastPlayType)continue;let wt=(T.weightAt&&T.weightAt[w.tod])||1;for(const sh of [a,b])wt*=P().prefer[P().personality[sh.coat]]?.[k]||1;out.push([k,wt]);}return out;}
+export function playIdle(w,s,sh){return (sh.phase==='idle'||sh.phase==='roam')&&sh.cd<=0&&w.t>=(sh.playCdUntil||0)&&canPlay(s,sh.id);}
+export function stepPlay(w,s,dt){if(!CFG.FEATURES.healingPlay)return;const G=w.play,C=P();
+ for(const pr of [...G.pairs]){const [a,b]=pr.ids.map(id=>w.shibas.find(x=>x.id===id));if(!a||!b||a.phase!==pr.phase&&!(pr.phase==='approach'&&a.phase==='play')){endPair(w,pr,1);continue;}
+  if(pr.phase==='approach'){let done=true;for(const [sh,tg] of [[a,pr.ta],[b,pr.tb]]){const px=sh.x,pz=sh.z;if(!moveTo(sh,tg,CFG.roam.speed,dt))done=false;if(sh.x!==px||sh.z!==pz)sh.heading=Math.atan2(sh.x-px,sh.z-pz);}
+   if(done||w.t-pr.t0>=C.approachMaxSec){pr.phase='play';pr.until=w.t+C.types[pr.type].dur;a.phase=b.phase='play';w.events.push({type:'playStart',ids:pr.ids,play:pr.type,dongu:pr.dongu});}}
+  else if(w.t>=pr.until)endPair(w,pr,1);}
+ G.checkT-=dt;if(G.checkT>0)return;G.checkT=C.checkIntervalSec;
+ if(G.pairs.length>=C.maxConcurrentPairs||w.t<G.globalCdUntil)return;
+ const free=w.shibas.filter(sh=>playIdle(w,s,sh)),cands=[];
+ for(let i=0;i<free.length;i++)for(let j=i+1;j<free.length;j++)if(dist(free[i],free[j])<=C.pairRadius)cands.push([free[i],free[j]]);
+ if(!cands.length)return; // a single shiba never plays
+ const [a,b]=cands[Math.floor(w.r()*cands.length)];if(!(w.r()<C.pairChance*affinity(a,b)))return;
+ const types=playTypes(w,s,a,b);if(!types.length)return;let x=w.r()*types.reduce((t,[,v])=>t+v,0),type=types[0][0];for(const [k,v] of types){if((x-=v)<0){type=k;break;}}
+ const mid={x:(a.x+b.x)/2,z:(a.z+b.z)/2},off=.28,dongu=(type==='sitTogether'||type==='napLean')&&w.r()<C.donguJoinChance;
+ G.pairs.push({ids:[a.id,b.id],type,phase:'approach',t0:w.t,ta:{x:mid.x-off,z:mid.z},tb:{x:mid.x+off,z:mid.z},dongu});a.phase=b.phase='approach';}
+function endPair(w,pr,cdMul){const C=P();w.play.pairs=w.play.pairs.filter(p=>p!==pr);w.play.globalCdUntil=w.t+C.globalCooldownSec*cdMul;
+ for(const id of pr.ids){const sh=w.shibas.find(x=>x.id===id);if(!sh)continue;sh.playCdUntil=w.t+C.personalCooldownSec*cdMul;sh.lastPlayType=pr.type;if(sh.phase==='approach'||sh.phase==='play'){sh.phase='idle';sh.t=0;}}}
+export function interruptPlay(w,sh){const pr=w.play.pairs.find(p=>p.ids.includes(sh.id));if(pr){endPair(w,pr,.5);w.events.push({type:'playInterrupt',id:sh.id});}}
+// tapping a playing shiba gives a small heart reward; the play goes on
+export function tapPlay(w,s,id){const sh=w.shibas.find(x=>x.id===id);if(!CFG.FEATURES.healingPlay||!sh||sh.phase!=='play')return 0;s.hearts+=P().heartOnTap;return P().heartOnTap;}
