@@ -1,1 +1,1 @@
-{"private":true,"type":"module"}
+{"private":true,"type":"module","scripts":{"test":"node tests/sim.test.mjs && node tests/timeline.test.mjs && node tests/handoff.test.mjs","test:browser":"node tests/smoke-browser.mjs"}}

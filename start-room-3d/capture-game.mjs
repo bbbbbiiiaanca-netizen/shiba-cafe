@@ -12,6 +12,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  const shot=async(p)=>{const {data}=await c('Page.captureScreenshot',{format:'png'});writeFileSync(p,Buffer.from(data,'base64'));};
  await c('Page.navigate',{url:'file://'+resolve('start-room-3d/index.html')+'?still=1&fresh=1&seed=7'});
  for(let i=0;i<300&&!(await ev('Boolean(window.__ready)'));i++)await sleep(100);
+ await ev('__game.state.settings.language="ko";__game.ui.tick();true'); // skip the first-run language screen (D-11)
  console.log(await ev('JSON.stringify(__game.step(.5))'));await shot(out+'/01-start.png');
  // loop: go through tutorial welcome then run the cafe; record 10fps frames
  await ev('document.getElementById("sayNext")?.click()');let f=0,petShot=false,payShot=false;
@@ -22,8 +23,8 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await shot(out+'/04-tutorial-gacha-step.png');
  await ev('__game.state.tut=99;__game.state.served=Math.max(1,__game.state.served);true');for(let i=0;i<600;i++){await ev('__game.step(.1);true');if(await ev('__game.world.customers.filter(c=>c.phase==="wait").length>=2&&!__game.world.customers.some(c=>c.phase!=="wait")&&__game.world.shibas.some(s=>s.phase==="pet"&&s.t>1)'))break;}await shot(out+'/main.png');
  await ev('__game.open("gacha")');await sleep(500);await shot(out+'/05-gacha-pull-screen.png');await ev('document.getElementById("gpull").classList.remove("on")');
- await ev('__game.gachaShow("kuro","kuro_calm",6.95,"SR")');await sleep(1200);await ev('true');await shot(out+'/gacha-reveal.png');
- await ev('document.getElementById("gok").click()');await ev('__game.state.owned.push({id:99,coat:"sesame",expr:"sesame_wow",lv:1,rarity:"N"},{id:98,coat:"kuro",expr:"kuro_laugh",lv:1,rarity:"R"})');
+ await ev('__game.gachaShow("kuro","kuro_calm",6.95,"S")');await sleep(1200);await ev('true');await shot(out+'/gacha-reveal.png');
+ await ev('document.getElementById("gok").click()');await ev('__game.state.owned.push({id:99,coat:"sesame",expr:"sesame_wow",lv:1},{id:98,coat:"kuro",expr:"kuro_laugh",lv:11})');
  await ev('__game.open("shiba")');await sleep(800);await shot(out+'/07-panel-shiba.png');
  await ev('__game.open("quest")');await sleep(500);await shot(out+'/08-panel-quest.png');
  await ev('__game.close()');await ev('__game.step(.1)');await sleep(400);await shot(out+'/09-after-gacha.png');

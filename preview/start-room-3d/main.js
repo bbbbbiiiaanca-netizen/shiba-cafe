@@ -3,7 +3,10 @@ import {CFG} from './config.js';
 import * as S from './sim.js';
 import {SDK} from './sdk-stubs.js';
 import {UI} from './ui.js';
+import * as HL from './healing.js';
 const Q=new URLSearchParams(location.search);
+// test build only: exactly ?temp=1 switches on every CFG.TEMP placeholder (values the docs leave 미정) and moves saves to a separate ':temp' key. Never on by default.
+S.applyBuildMode(location.search);
 const cv=document.getElementById('scene'),g=cv.getContext('2d');const DPR=Math.min(2,devicePixelRatio||1);
 let W=0,H=0;function resize(){W=cv.clientWidth;H=cv.clientHeight;cv.width=W*DPR;cv.height=H*DPR;}resize();addEventListener('resize',resize);
 const IMG={};const names=['donggu','shiba_red','shiba_sesame','shiba_kuro','shiba_white','cust_girl','cust_man','shelf','table','zabuton','lantern','counter','sign','tatami','stone_lantern','bonsai','sakura','pond','fence','gravel_path','stepping','flowers','teapot','teacup','dango','showcase','bell','menu_board','bed','toy_basket','ball','bone_cushion','cushion_pink','scroll','bonsai_pot','mini_lantern','windbell','maneki','tile_construction'];
@@ -53,7 +56,9 @@ function drawGround(){
  for(let i=0;i<nx;i++)for(let j=0;j<nz;j++){const x0=RX0+.15+i*dx,z0=RZ0+.15+j*dz;const a=P(x0,z0),b=P(x0+dx,z0),c=P(x0+dx,z0+dz),d=P(x0,z0+dz);
   const L=Math.min(a[0],d[0]),R=Math.max(b[0],c[0]),T=Math.min(a[1],b[1]),B=Math.max(c[1],d[1]);g.drawImage(im,L-(R-L)*.02,T-(B-T)*.03,(R-L)*1.04,(B-T)*1.12);}
  // walls (back-left x=RX0, back-right z=RZ0): cream plaster + wood beams, open front like a diorama
- const h=1.75;poly([P(RX0,RZ0),P(RX0,RZ1),P(RX0,RZ1,h),P(RX0,RZ0,h)],'#eedfc4');poly([P(RX0,RZ0),P(RX1,RZ0),P(RX1,RZ0,h),P(RX0,RZ0,h)],'#f5e8d0');
+ // D-12 temporary themes: colour only (walls + a floor tint) until the R-01/R-02 backgrounds exist; the basic theme keeps the catalog look
+ const th=S.currentTheme(state),plain=th.id==='basic';if(!plain)poly(quad(RX0,RZ0,RX1,RZ1),th.tatami+'66');
+ const h=1.75;poly([P(RX0,RZ0),P(RX0,RZ1),P(RX0,RZ1,h),P(RX0,RZ0,h)],plain?'#eedfc4':th.wall);poly([P(RX0,RZ0),P(RX1,RZ0),P(RX1,RZ0,h),P(RX0,RZ0,h)],plain?'#f5e8d0':th.light);
  g.strokeStyle='#6b4126';g.lineWidth=6*zoom;for(const y of [.05,h-.05]){g.beginPath();g.moveTo(...P(RX0,RZ1,y));g.lineTo(...P(RX0,RZ0,y));g.lineTo(...P(RX1,RZ0,y));g.stroke();}
  g.lineWidth=7*zoom;for(const x of [RX0,-2.0,.6,RX1]){g.beginPath();g.moveTo(...P(x,RZ0,0));g.lineTo(...P(x,RZ0,h));g.stroke();}for(const z of [RZ0,0,RZ1]){g.beginPath();g.moveTo(...P(RX0,z,0));g.lineTo(...P(RX0,z,h));g.stroke();}
  // wall decor: sign, scroll, wind bell
@@ -61,12 +66,28 @@ function drawGround(){
 }
 // ---- game state ----
 if(Q.has('fresh'))localStorage.removeItem(CFG.saveKey);
-const loaded=S.load(localStorage,Date.now());const state=loaded.state;const world=S.newWorld(state,+(Q.get('seed')||7));
+const loaded=S.load(localStorage,Date.now());const state=loaded.state;const world=S.newWorld(state,+(Q.get('seed')||7));if(loaded.returned!=null)S.returnToFloor(world,state,loaded.returned); // walk settled while closed → back on the floor even when it is full
+// D-13 healing runtime (inert unless the CFG.FEATURES switches are on)
+const tod=HL.newTod(new Date(),!!state.settings.todLock);world.tod=tod.key;const obs=HL.newObserve();
+addEventListener('pointerdown',()=>HL.touch(obs),true);
+const obsBtn=document.getElementById('obs');
+let obsK='';function showObs(){const k=obs.phase==='active'?obs.ev:'';if(!obsBtn||k===obsK)return;obsK=k;obsBtn.hidden=!k;if(k)obsBtn.textContent=CFG.healing.observe.events[k].icon;}
+if(obsBtn)obsBtn.onclick=()=>{const r=HL.tapObserve(obs,state,Date.now());showObs();if(r){const got=Object.entries(r.got).map(([k,v])=>`+${v}${{coins:'🪙',hearts:'💗'}[k]}`).join(' ');popAt(got||'✓',obsBtn);S.save(localStorage,state,Date.now());}};
+// tap a playing shiba → small heart reward, the play continues
+let down=null;cv.addEventListener('pointerdown',e=>{down=[e.clientX,e.clientY];});
+cv.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>8)return;down=null;const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+ for(const sh of world.shibas){if(sh.phase!=='play')continue;const [sx,sy]=P(sh.x,sh.z,.4);if(Math.hypot(sx-x,sy-y)<40){const n=S.tapPlay(world,state,sh.id);if(n)pop(`+${n}💗`,sh.x,sh.z);break;}}});
 const popLayer=document.getElementById('pops');
+function popAt(text,el){const b=el.getBoundingClientRect(),d=document.createElement('div');d.className='pop';d.textContent=text;d.style.left=(b.left+b.width/2)+'px';d.style.top=b.top+'px';popLayer.appendChild(d);setTimeout(()=>d.remove(),1600);}
 function pop(text,x,z){const [px,py]=P(x,z,1.9);const d=document.createElement('div');d.className='pop';d.textContent=text;d.style.left=px+'px';d.style.top=py+'px';popLayer.appendChild(d);setTimeout(()=>d.remove(),1600);}
 let incomeFrac=0;
-function step(dt){S.tick(world,state,dt);incomeFrac+=S.incomePerSec(state)*dt;if(incomeFrac>=1){const n=Math.floor(incomeFrac);state.coins+=n;incomeFrac-=n;}
- for(const e of world.events.splice(0)){if(e.type==='pay')pop(`+${e.coins}🪙 +${e.paws}🐾`,e.x,e.z);if(e.type==='pet')SDK.sfx('pet');}ui.tick();}
+function step(dt){const now=Date.now();S.settleHearts(state,now);S.markVisit(state,now);S.sleepRecover(state,dt);
+ const wr=S.tickWalk(state,now);if(wr&&wr.returned!=null)S.returnToFloor(world,state,wr.returned); // no completion notice: the shiba is simply back in the cafe (reclaims its slot from the stand-in)
+ // D-13: time of day feeds the play rules (no chase at night) and, with FEATURES.healingTimeOfDay, the light + guest mix
+ tod.locked=!!state.settings.todLock;HL.stepTod(tod,dt,new Date());world.tod=tod.key;
+ S.tick(world,state,dt);
+ HL.stepObserve(obs,dt,{overlay:ui.isOverlay(),tod:world.tod,month:new Date().getMonth()+1,owns:[],r:Math.random});showObs();incomeFrac+=S.incomePerSec(state)*dt;if(incomeFrac>=1){const n=Math.floor(incomeFrac);state.coins+=n;incomeFrac-=n;}
+ for(const e of world.events.splice(0)){if(e.type==='playStart')SDK.sfx('play');if(e.type==='pay')pop(`+${e.coins}🪙 +${e.paws}🐾`,e.x,e.z);if(e.type==='pet')SDK.sfx('pet');}ui.tick();}
 const lastX=new Map();
 function draw(){g.setTransform(DPR,0,0,DPR,0,0);drawGround();const t=world.t;const L=[];
  for(const p of [...props,...fences])L.push({d:p[1]+p[2],f:()=>{shadow(p[1],p[2],p[3]*.5);spr(p[0],p[1],p[2],p[3],p[4]||{});}});
@@ -80,16 +101,21 @@ function draw(){g.setTransform(DPR,0,0,DPR,0,0);drawGround();const t=world.t;con
   const onTable=sh.y>.01;const lift=sh.y/.55*.62;
   L.push({d:sh.x+sh.z+(onTable?.9:0),f:()=>{if(!onTable)shadow(sh.x,sh.z,.45);const hop=(sh.phase==='roam'||sh.phase==='toTable')?Math.abs(Math.sin(t*10+sh.id))*.05:0;
    spr(n,sh.x,sh.z,.82,{y:lift+hop,flip:fl});
+   if(sh.phase==='play'){const pr=world.play.pairs.find(p=>p.ids.includes(sh.id));if(pr&&pr.ids[0]===sh.id){const [hx,hy]=P(sh.x+.15,sh.z,1.35);g.font='20px sans-serif';g.textAlign='center';g.fillText(PLAY_ICON[pr.type]||'💞',hx,hy-Math.abs(Math.sin(t*3))*6);}}
    if(sh.phase==='pet'){const [hx,hy]=P(sh.x,sh.z,lift+1.25);for(let i=0;i<3;i++){const k=(t*.6+i/3)%1;heart(hx+(i-1)*18,hy-k*34,1.1+Math.sin(k*Math.PI)*.4,1-k*.7);}}}});}
- L.sort((a,b)=>a.d-b.d);for(const o of L)o.f();}
+ L.sort((a,b)=>a.d-b.d);for(const o of L)o.f();
+ if(CFG.FEATURES.healingTimeOfDay){const k=HL.currentLook(tod);g.fillStyle=`rgba(${k.r|0},${k.g|0},${k.b|0},${k.tintA})`;g.fillRect(0,0,W,H);if(k.dark>0){g.fillStyle=`rgba(20,25,60,${k.dark})`;g.fillRect(0,0,W,H);}}}
+const PLAY_ICON={chase:'💨',sniff:'👃',napLean:'💤',tug:'🪢',sitTogether:'💞'};
 // ---- gacha / panels ----
 const thumb=(coat,expr)=>`assets/${CFG.exprs[expr]?expr:coat+'_smile'}.png`;
-const ui=UI({state,world,CFG,S,SDK,thumb,loaded,applyTheme:()=>{},addToCafe:o=>S.addShiba(world,o),save:()=>S.save(localStorage,state,Date.now())});
+const ui=UI({state,world,CFG,S,SDK,thumb,loaded,applyTheme:()=>{},addToCafe:o=>S.addShiba(world,o),removeFromCafe:id=>S.leaveFloor(world,state,id),returnToCafe:id=>S.returnToFloor(world,state,id),save:()=>S.save(localStorage,state,Date.now()),
+ journalHtml:L=>{if(!CFG.FEATURES.healingObserve)return '';const E=CFG.healing.observe.events,j=state.observeJournal||{};return `<h4>${L('observe.journal',{count:Object.keys(j).length,total:Object.keys(E).length})}</h4><p class="sub">${Object.entries(E).map(([k,e])=>j[k]?`${e.icon}×${j[k].count}`:'❔').join(' ')}</p>`;},
+ settingsExtra:(L,onoff)=>CFG.FEATURES.healingTimeOfDay?`<div class="row"><b>${L('settings.todLock')}</b><button data-k="todLock">${onoff(!!state.settings.todLock)}</button></div>`:''});
 let manual=Q.has('still');let last=performance.now();
-function frame(now){const dt=Math.min(.1,(now-last)/1000);last=now;if(!manual){let left=dt;while(left>1e-6){const d=Math.min(1/30,left);step(d);left-=d;}}draw();requestAnimationFrame(frame);}
+function frame(now){ui.frame();const dt=Math.min(.1,(now-last)/1000);last=now;if(!manual){let left=dt;while(left>1e-6){const d=Math.min(1/30,left);step(d);left-=d;}}draw();requestAnimationFrame(frame);}
 setInterval(()=>{if(!manual)S.save(localStorage,state,Date.now());},10000);
 addEventListener('visibilitychange',()=>{if(document.hidden)S.save(localStorage,state,Date.now());});
 document.getElementById('gear').onclick=()=>ui.open('settings');
 ready.then(()=>{draw();requestAnimationFrame(frame);window.__ready=true;});
-window.__game={state,world,CFG,step(sec){manual=true;for(let i=0;i<Math.round(sec*30);i++)step(1/30);draw();ui.tick();return {t:world.t,customers:world.customers.map(c=>c.phase),shibas:world.shibas.map(s=>s.phase)};},
+window.__game={state,world,CFG,ui,S,HL,tod,obs,step(sec){manual=true;for(let i=0;i<Math.round(sec*30);i++)step(1/30);draw();ui.tick();return {t:world.t,customers:world.customers.map(c=>c.phase),shibas:world.shibas.map(s=>s.phase)};},
  draw,open:n=>ui.open(n),close:()=>ui.close(),gachaShow:(coat,expr,t,r)=>ui.gachaShow(coat,expr,t,r),setPan(p,z){pan=p;zoom=z||zoom;clampPan();draw();}};
