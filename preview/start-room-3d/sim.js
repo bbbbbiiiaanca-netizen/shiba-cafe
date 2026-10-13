@@ -6,10 +6,12 @@ export function rng(seed=1){let s=seed>>>0||1;return()=>{s=(s*1664525+1013904223
 export function newState(now=Date.now()){
  return {v:1,coins:CFG.start.coins,hearts:CFG.start.hearts,paws:CFG.start.paws,
   owned:CFG.start.shibas.map((s,i)=>({id:i+1,...s,lv:1,rarity:'N'})),nextId:CFG.start.shibas.length+1,
-  served:0,petted:0,gachaPulls:0,tut:0,questsClaimed:[],theme:'basic',themesOwned:['basic'],
+  served:0,petted:0,upg:0,gachaPulls:0,tut:0,questsClaimed:[],theme:'basic',themesOwned:['basic'],
   settings:{sound:true,music:true},lastSeen:now};
 }
-export function incomePerSec(s){return CFG.idle.perSec+CFG.idle.perShibaPerSec*Math.min(s.owned.length,CFG.cafe.maxShibas);}
+export function incomePerSec(s){return (CFG.idle.perSec+CFG.idle.perShibaPerSec*Math.min(s.owned.length,CFG.cafe.maxShibas))*(1+CFG.upgrade.bonus*(s.upg||0));}
+export function upgradeCost(s){return Math.round(CFG.upgrade.base*Math.pow(CFG.upgrade.grow,s.upg||0));}
+export function buyUpgrade(s){const c=upgradeCost(s);if(s.coins<c)return false;s.coins-=c;s.upg=(s.upg||0)+1;return true;}
 export function offlineEarnings(s,now=Date.now()){const sec=Math.min((now-s.lastSeen)/1000,CFG.offline.capHours*3600);
  if(!(sec>=CFG.offline.minSeconds))return {sec:Math.max(0,sec|0),coins:0};return {sec:sec|0,coins:Math.floor(sec*incomePerSec(s)*CFG.offline.rate)};}
 export function load(storage,now=Date.now()){let s=null;try{s=JSON.parse(storage.getItem(CFG.saveKey));}catch{}
@@ -21,7 +23,7 @@ export function grant(s,r={}){for(const k of ['coins','hearts','paws'])if(r[k])s
 // ---------- gacha ----------
 export function canPull(s){return (CFG.gacha.firstFree&&s.gachaPulls===0)||s.paws>=CFG.gacha.cost.paws;}
 export function pull(s,r){if(!canPull(s))return null;const free=CFG.gacha.firstFree&&s.gachaPulls===0;if(!free)s.paws-=CFG.gacha.cost.paws;
- const coats=Object.keys(CFG.coats),exprs=Object.keys(CFG.exprs);const coat=coats[Math.floor(r()*coats.length)],expr=exprs[Math.floor(r()*exprs.length)];
+ const coats=Object.keys(CFG.coats);const coat=coats[Math.floor(r()*coats.length)];const exprs=CFG.coatExprs(coat);const expr=exprs[Math.floor(r()*exprs.length)];
  let x=r()*CFG.gacha.rarity.reduce((a,b)=>a+b.w,0),rarity='N';for(const q of CFG.gacha.rarity){if((x-=q.w)<0){rarity=q.id;break;}}
  s.gachaPulls++;const dup=s.owned.find(o=>o.coat===coat&&o.expr===expr);
  if(dup){dup.lv++;return {...dup,dup:true,free};} // stub: duplicate = level +1
@@ -40,18 +42,18 @@ export function newWorld(s,seed=7){const r=rng(seed);const w={t:0,r,customers:[]
  for(const o of s.owned.slice(0,CFG.cafe.maxShibas))addShiba(w,o);return w;}
 export function addShiba(w,o){if(w.shibas.length>=CFG.cafe.maxShibas)return null;const R=CFG.roam;const sh={id:o.id,coat:o.coat,expr:o.expr,phase:'idle',t:w.r()*2,x:R.x0+w.r()*(R.x1-R.x0),y:0,z:R.z0+w.r()*(R.z1-R.z0),cd:0,heading:0};w.shibas.push(sh);return sh;}
 function roamTarget(w){const R=CFG.roam;return {x:R.x0+w.r()*(R.x1-R.x0),z:R.z0+w.r()*(R.z1-R.z0)};}
-function topSpot(c){const tb=CFG.tables[c.seatDef.table];return {x:tb.x+c.seatDef.face*-.28,z:tb.z+.05};}
+function topSpot(c){const tb=CFG.tables[c.seatDef.table];return {x:tb.x+(c.seatDef.face?.22:0),z:tb.z+(c.seatDef.face?0:.22)};}
 export function tick(w,s,dt){w.t+=dt;const C=CFG.customer,V=CFG.visit;
  // spawn: customers only come in when a seat is free
  w.spawnT-=dt;const used=new Set(w.customers.map(c=>c.seat));const free=CFG.seats.map((_,i)=>i).filter(i=>!used.has(i));
  if(w.spawnT<=0&&free.length){const seat=free[Math.floor(w.r()*free.length)],sd=CFG.seats[seat];
-  w.customers.push({id:w.nextCust++,kind:w.r()<.5?'boy':'girl',seat,seatDef:sd,phase:'enter',x:CFG.door.x,z:CFG.door.z,path:[{x:CFG.door.x,z:CFG.aisleZ},{x:sd.x,z:CFG.aisleZ},{x:sd.x,z:sd.z}],t:0,visits:0,shiba:null,heading:Math.PI});w.spawnT=C.spawnEvery;}
+  w.customers.push({id:w.nextCust++,kind:w.r()<.5?'boy':'girl',seat,seatDef:sd,phase:'enter',x:CFG.door.x,z:CFG.door.z,path:sd.via?[{x:CFG.door.x,z:CFG.aisleZ},{x:sd.via.x,z:CFG.aisleZ},{x:sd.via.x,z:sd.via.z},{x:sd.x,z:sd.z}]:[{x:CFG.door.x,z:CFG.aisleZ},{x:sd.x,z:CFG.aisleZ},{x:sd.x,z:sd.z}],t:0,visits:0,shiba:null,heading:Math.PI});w.spawnT=C.spawnEvery;}
  for(const c of w.customers){c.t+=dt;
   if(c.phase==='enter'||c.phase==='leave'){const tgt=c.path[0];const px=c.x,pz=c.z;if(moveTo(c,tgt,C.speed,dt))c.path.shift();if(c.x!==px||c.z!==pz)c.heading=Math.atan2(c.x-px,c.z-pz);
    if(!c.path.length){if(c.phase==='enter'){c.phase='wait';c.t=0;c.heading=c.seatDef.face*Math.PI/2;}else c.gone=true;}}
   else if(c.phase==='wait'&&c.visits>=C.visits&&!c.shiba&&c.t>=C.happyPause){ // pay & go home
    const coins=C.payBase+C.payPerShiba*Math.min(s.owned.length,CFG.cafe.maxShibas);s.coins+=coins;s.paws+=C.paws;s.served++;
-   w.events.push({type:'pay',coins,paws:C.paws,x:c.x,z:c.z,id:c.id});c.phase='leave';c.path=[{x:c.x,z:CFG.aisleZ},{x:CFG.door.x,z:CFG.aisleZ},{x:CFG.door.x,z:CFG.door.z}];}
+   w.events.push({type:'pay',coins,paws:C.paws,x:c.x,z:c.z,id:c.id});c.phase='leave';c.path=[...(c.seatDef.via?[{x:c.seatDef.via.x,z:c.seatDef.via.z},{x:c.seatDef.via.x,z:CFG.aisleZ}]:[{x:c.x,z:CFG.aisleZ}]),{x:CFG.door.x,z:CFG.aisleZ},{x:CFG.door.x,z:CFG.door.z}];}
   else if(c.phase==='wait'&&c.visits<C.visits&&!c.shiba&&c.t>=C.waitBeforeVisit&&!w.tableBusy[c.seatDef.table]){ // call the nearest free shiba
    let best=null,bd=1e9;for(const sh of w.shibas)if((sh.phase==='roam'||sh.phase==='idle')&&sh.cd<=0){const d=dist(sh,c);if(d<bd){bd=d;best=sh;}}
    if(best){const top=topSpot(c);best.phase='toTable';best.cust=c.id;best.from={x:top.x,z:Math.max(CFG.roam.z0,CFG.tables[c.seatDef.table].z+.85)};best.top=top;best.tgt=best.from;c.shiba=best.id;w.tableBusy[c.seatDef.table]=best.id;}}}

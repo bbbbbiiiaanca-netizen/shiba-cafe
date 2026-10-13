@@ -7,19 +7,22 @@ export function UI(ctx){const {state:s,CFG,S,SDK}=ctx;const $=id=>document.getEl
   const nb=$('sayNext');if(nb)nb.onclick=()=>{if(queue.length)queue.shift();else S.tutAdvance(s,true);lastSay='';tick();};
   const ab=$('sayAd');if(ab)ab.onclick=async()=>{const r=await SDK.ads.rewarded('offline2x');if(r.ok){S.grant(s,{coins:queue[0].ad});queue.shift();lastSay='';tick();}};}
  function tick(){$('coins').textContent=fmt(s.coins);$('hearts').textContent=fmt(s.hearts);$('paws').textContent=fmt(s.paws);
-  S.tutAdvance(s);const t=S.tutStep(s);document.querySelectorAll('.menu button').forEach(b=>b.classList.toggle('hl',!queue.length&&!!t&&t.highlight===b.dataset.p));
+  S.tutAdvance(s);const t=S.tutStep(s);document.querySelectorAll('.bar button').forEach(b=>b.classList.toggle('hl',!queue.length&&!!t&&t.highlight===b.dataset.p));
+  const qs=S.questStatus(s);const ready=qs.find(q=>q.done&&!q.claimed),todo=qs.find(q=>!q.claimed);
+  $('qpill').textContent=t?'동구의 안내를 따라 카페를 열어요!':ready?`퀘스트 완료: ${ready.text}`:todo?todo.text:'카페를 발전시켜요!';
+  $('talk').hidden=!(queue.length||t);
   if(queue.length){const q=queue[0];setSay(q.say,'받기',q.ad?'<button id="sayAd" class="ad">광고 보고 2배 (스텁)</button>':'');}
   else if(t)setSay(t.say,t.next?'다음 ▶':'');
-  else{const qs=S.questStatus(s);const ready=qs.find(q=>q.done&&!q.claimed),todo=qs.find(q=>!q.claimed);
-   setSay(ready?`퀘스트 "${ready.text}" 완료! [퀘스트]에서 보상을 받아요.`:todo?`오늘의 부탁: ${todo.text}. 손님이 오면 시바들이 알아서 놀러 가요.`:'모든 부탁을 끝냈어요! 고마워요.','');}
   $('qdot').hidden=!S.questStatus(s).some(q=>q.done&&!q.claimed);
   if(openName&&openName!=='gacha'&&panels[openName].live)panels[openName].render();}
  // ---- panels ----
  let openName=null;
  const panels={
-  shiba:{title:'시바 도감',render(){const coats=Object.keys(CFG.coats),ex=Object.keys(CFG.exprs);let h=`<p class="sub">${s.owned.length} / 20 · 카페에 최대 ${CFG.cafe.maxShibas}마리</p><div class="grid">`;
-   for(const c of coats)for(const e of ex){const o=s.owned.find(o=>o.coat===c&&o.expr===e);h+=o?`<div class="card"><img src="${ctx.thumb(c,e)}"><b>${CFG.coats[c]}·${CFG.exprs[e]}</b><i>${o.rarity} · Lv.${o.lv}</i></div>`:`<div class="card off"><div class="q">?</div><b>${CFG.coats[c]}·???</b></div>`;}
-   body().innerHTML=h+'</div>';}},
+  shiba:{title:'시바들',render(){const coats=Object.keys(CFG.coats),N=Object.keys(CFG.exprs).length;let h=`<button class="big" id="toPull">🎰 새 시바 뽑기</button><p class="sub">도감 ${s.owned.length} / ${N} · 카페에 최대 ${CFG.cafe.maxShibas}마리</p><div class="grid">`;
+   for(const c of coats)for(const e of CFG.coatExprs(c)){const o=s.owned.find(o=>o.coat===c&&o.expr===e);h+=o?`<div class="card"><img src="${ctx.thumb(c,e)}"><b>${CFG.coats[c]}·${CFG.exprs[e]}</b><i>${o.rarity} · Lv.${o.lv}</i></div>`:`<div class="card off"><img src="${ctx.thumb(c,e)}"><b>${CFG.coats[c]}·???</b></div>`;}
+   body().innerHTML=h+'</div>';$('toPull').onclick=()=>open('gacha');}},
+  upgrade:{title:'업그레이드',live:true,render(){const c=S.upgradeCost(s),lv=s.upg||0;const h=`<div class="row"><img src="assets/counter.png"><b>카운터 개선 Lv.${lv}<br><i>방치 수입 +${Math.round(CFG.upgrade.bonus*100)}%씩 · 지금 초당 ${S.incomePerSec(s).toFixed(2)}🪙</i></b><button id="upg" ${s.coins<c?'disabled':''}>🪙 ${c.toLocaleString('ko-KR')}</button></div><p class="sub">땅 확장(상하좌우)과 2층은 다음 단계예요. 카페 양옆의 점선 칸이 확장 자리예요.</p>`;if(this._k===h)return;this._k=h;body().innerHTML=h;$('upg').onclick=()=>{if(S.buyUpgrade(s)){ctx.save();this._k='';tick();}};}},
+  event:{title:'이벤트',render(){body().innerHTML=`<p class="sub">계절 이벤트는 준비 중이에요 (카탈로그 14쪽 계절 소품 세트).</p><div class="row"><img src="assets/sakura.png"><b>벚꽃 축제<br><i>준비 중</i></b></div><div class="row"><img src="assets/lantern.png"><b>여름 축제 초롱<br><i>준비 중</i></b></div>`;}},
   shop:{title:'꾸미기 · 상점',render(){let h='<h4>인테리어 테마 (스텁: 벽·다다미·조명 색만 바뀜)</h4>';for(const t of CFG.themes){const own=s.themesOwned.includes(t.id);h+=`<div class="row"><span class="sw" style="background:${t.wall}"></span><span class="sw" style="background:${t.tatami}"></span><b>${t.name}</b><button data-th="${t.id}" ${!own&&s.coins<t.price?'disabled':''}>${s.theme===t.id?'사용 중':own?'사용':`🪙 ${t.price.toLocaleString('ko-KR')}`}</button></div>`;}
    h+='<h4>발바닥 상점 (결제 스텁)</h4>';for(const p of SDK.iap.products)h+=`<div class="row"><b>${p.name}</b><button data-iap="${p.id}">${p.price}</button></div>`;h+='<p class="sub" id="shopMsg"></p>';body().innerHTML=h;
    body().querySelectorAll('[data-th]').forEach(b=>b.onclick=()=>{const t=CFG.themes.find(t=>t.id===b.dataset.th);if(!s.themesOwned.includes(t.id)){if(s.coins<t.price)return;s.coins-=t.price;s.themesOwned.push(t.id);}s.theme=t.id;ctx.applyTheme();ctx.save();tick();this.render();});
@@ -34,9 +37,9 @@ export function UI(ctx){const {state:s,CFG,S,SDK}=ctx;const $=id=>document.getEl
    $('reset').onclick=()=>{if(confirm('저장을 지우고 처음부터 시작할까요?')){localStorage.removeItem(CFG.saveKey);location.search='?fresh=1';}};}},
  };
  const body=()=>$('pbody');
- function open(n){if(n==='gacha'){close();showPull();return;}if(openName===n){close();return;}openName=n;const p=panels[n];$('ptitle').textContent=p.title;p._k='';p.render();$('panel').classList.add('on');document.body.classList.add('popen');document.querySelectorAll('.menu button').forEach(b=>b.classList.toggle('on',b.dataset.p===n));}
- function close(){openName=null;$('panel').classList.remove('on');document.body.classList.remove('popen');document.querySelectorAll('.menu button').forEach(b=>b.classList.remove('on'));}
- document.querySelectorAll('.menu button').forEach(b=>b.onclick=()=>open(b.dataset.p));$('pclose').onclick=close;
+ function open(n){if(n==='gacha'){close();showPull();return;}if(openName===n){close();return;}openName=n;const p=panels[n];$('ptitle').textContent=p.title;p._k='';p.render();$('panel').classList.add('on');document.body.classList.add('popen');document.querySelectorAll('.bar button').forEach(b=>b.classList.toggle('on',b.dataset.p===n));}
+ function close(){openName=null;$('panel').classList.remove('on');document.body.classList.remove('popen');document.querySelectorAll('.bar button').forEach(b=>b.classList.remove('on'));}
+ document.querySelectorAll('.bar button').forEach(b=>b.onclick=()=>open(b.dataset.p));$('pclose').onclick=close;
  // ---- gacha flow: user's fixed video; at the burst the drawn shiba appears as a live 3D figure ----
  const vid=$('gvid'),gl=$('gacha');let cur=null,revealT0=0,batch=[];
  function showPull(){SDK.sfx('click');const free=CFG.gacha.firstFree&&s.gachaPulls===0;$('gpPaw').textContent=fmt(s.paws);
@@ -47,14 +50,14 @@ export function UI(ctx){const {state:s,CFG,S,SDK}=ctx;const $=id=>document.getEl
  const RANK={N:0,R:1,SR:2};const cardHtml=o=>`<div class="rc ${o.rarity}">${o.rarity==='SR'?'<em>★ ★ ★</em>':''}<img src="${ctx.thumb(o.coat,o.expr)}"><b>${o.rarity==='SR'?'레어 ':''}${CFG.coats[o.coat]} · ${CFG.exprs[o.expr]}</b><i>${o.rarity}${o.dup?' · Lv.'+o.lv:' · NEW'}</i></div>`;
  function startGacha(n=1){batch=[];if(n===10){if(s.paws<CFG.gacha.cost10.paws)return;s.paws-=CFG.gacha.cost10.paws-CFG.gacha.cost.paws*10;for(let i=0;i<10;i++){const r=S.pull(s,Math.random);if(r)batch.push(r);}}else{const r=S.pull(s,Math.random);if(r)batch.push(r);}if(!batch.length)return;
   cur=batch.reduce((a,b)=>RANK[b.rarity]>RANK[a.rarity]?b:a);SDK.sfx('click');SDK.sfx('knob');SDK.sfx('reveal');$('gpull').classList.remove('on');ctx.save();close();showGacha();vid.currentTime=0;vid.muted=!s.settings.sound;vid.play().catch(()=>{vid.muted=true;vid.play();});}
- function showGacha(){gl.classList.add('on');$('gcard').hidden=true;$('reveal3d').style.opacity=0;revealT0=0;}
- function reveal(){if(revealT0)return;revealT0=performance.now();$('reveal3d').style.opacity=1;const c=$('gcard');c.hidden=false;
+ function showGacha(){gl.classList.add('on');$('gcard').hidden=true;$('revealImg').classList.remove('on');revealT0=0;}
+ function reveal(){if(revealT0)return;revealT0=performance.now();const ri=$('revealImg');ri.src=ctx.thumb(cur.coat,cur.expr);ri.classList.remove('on');void ri.offsetWidth;ri.classList.add('on');const c=$('gcard');c.hidden=false;
   SDK.sfx('fanfare');if(!batch.length)batch=[cur];
   c.innerHTML=(batch.length>1?`<div class="rgrid">${batch.map(cardHtml).join('')}</div>`:cardHtml(cur))+`<button id="gok">${batch.every(b=>b.dup)?'확인':'카페로 보내기'}</button>`;
   $('gok').onclick=()=>{for(const b of batch)if(!b.dup)ctx.addToCafe(b);gl.classList.remove('on');vid.pause();cur=null;tick();};}
  vid.addEventListener('timeupdate',()=>{if(cur&&vid.currentTime>=CFG.gacha.revealAt)reveal();});vid.addEventListener('ended',()=>{if(cur)reveal();});
  $('gskip').onclick=()=>{if(cur){vid.currentTime=Math.max(vid.currentTime,CFG.gacha.revealAt);reveal();}};
- function frame(now){if(revealT0&&cur){const k=Math.min(1,(now-revealT0)/450);const sc=k<1?1.15*(1-Math.pow(1-k,3))+Math.sin(k*Math.PI)*.2:1.15;const w=Math.min(innerWidth,420);ctx.renderFigure(cur.coat,cur.expr,w,w,Math.sin(now/700)*.35,Math.max(.01,sc));}}
+ function frame(){}
  // capture helper: show the reveal moment for a given figure at video time t
- async function gachaShow(coat,expr,t,rar){cur={coat,expr,rarity:rar||'R',lv:1,dup:false};batch=[cur];close();showGacha();vid.muted=true;await new Promise(r=>{vid.addEventListener('seeked',r,{once:true});vid.currentTime=t;});vid.pause();if(t>=CFG.gacha.revealAt){reveal();revealT0=performance.now()-1000;frame(performance.now());}return true;}
+ async function gachaShow(coat,expr,t,rar){cur={coat,expr,rarity:rar||'R',lv:1,dup:false};batch=[cur];close();showGacha();vid.muted=true;await new Promise(r=>{vid.addEventListener('seeked',r,{once:true});vid.currentTime=t;});vid.pause();if(t>=CFG.gacha.revealAt){reveal();const ri=$('revealImg');ri.style.animation='none';ri.style.opacity=1;ri.style.transform='translate(-50%,-50%) scale(1)';await new Promise(r=>ri.complete?r():ri.onload=r);}return true;}
  tick();return {tick,open,close,frame,gachaShow};}

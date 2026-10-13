@@ -1,3 +1,12 @@
+# 시바견 카페 — framework-v2 (카탈로그 기준)
+
+**2026-10-13 수인님 지시("왜 카탈로그대로 안하는거야?")로 「시바견 카페 에셋 카탈로그」(20쪽)가 유일한 시각 기준.**
+`index.html`/`main.js`는 카탈로그 원본 그림을 깨끗이 오려 낸 투명 PNG(`assets/`, 출처 쪽은 status.md)를 2D 아이소 장면에 배치한다. 화면 배치는 카탈로그 17쪽 세로 A(상단 퀘스트 알약+코인·하트·발바닥, 가운데 좌우 스와이프 카페, 하단 퀘스트·가게·시바들·업그레이드·이벤트).
+게임 로직(sim.js: 손님 착석→시바 2회 방문·하트→계산·퇴장, 방치/오프라인 수입, 저장 v2, 뽑기, 퀘스트, 동구 튜토리얼)은 유지. 이전 3D 판은 `index3d.html`/`main3d.js`로 보관.
+
+캡처: `node start-room-3d/capture-game.mjs /workspace/shiba-cafe-docs/framework-v2` · 테스트: `node start-room-3d/tests/sim.test.mjs`
+
+---
 # Shiba Cafe — start-room first check only
 
 Single Three.js scene; all room pieces, furnishings, humans, Shibas, speech bubble and hearts are scene geometry. Only lettering on the guide bubble/tags uses procedural canvas textures. No character images, downloaded models, network requests, install or CDN. Three.js r170 and license copied from `3d-demo/vendor/`.
