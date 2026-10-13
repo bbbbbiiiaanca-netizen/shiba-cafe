@@ -112,6 +112,47 @@ test('D-07 null days show 준비 중 (pending) and never error; day 3 gives its 
 test('D-07 capsule pull uses normal rates, consumes one capsule, needs gacha rates',()=>{const st=S.newState(0);st.items.capsule=2;st.gachaPulls=1;st.paws=0;
  assert.equal(S.pull(st,S.rng(2),{capsule:true}),null);CFG.TEMP.gachaNonSAsN=true;const o=S.pull(st,S.rng(2),{capsule:true});assert.ok(o);assert.equal(st.items.capsule,1);assert.equal(st.paws,0);});
 
+// ---------- D-08 ----------
+test('D-08 cost undecided → walk refused (미정); TEMP allows free walks in test builds',()=>{assert.equal(CFG.walk.heartCost,null);assert.deepEqual(CFG.walk.durationsSec,[600,1200,1800]);
+ const st=S.newState(0);assert.equal(S.walkCheck(st,1,600),'costUndecided');assert.equal(S.startWalk(st,1,600,0),null);
+ CFG.TEMP.walkFreeWhenCostNull=true;assert.equal(S.walkCheck(st,1,900),'duration');assert.ok(S.startWalk(st,1,600,0));assert.equal(S.walkCheck(st,2,600),'walking');});
+test('D-08 10-min walk, app closed, reopened after 11 min → shiba back in cafe, settled exactly once',()=>{CFG.TEMP.walkFreeWhenCostNull=true;
+ const m=mem();const st=S.newState(0);const h0=st.hearts;S.startWalk(st,1,600,0);assert.equal(S.walkProgress(st,300e3),.5);S.save(m,st,1000);
+ const {state}=S.load(m,11*MIN);assert.equal(state.walk,null);assert.ok(state.owned.some(o=>o.id===1));assert.equal(S.tickWalk(state,12*MIN),null,'no second settlement');
+ assert.ok(S.newWorld(state,1).shibas.some(x=>x.id===1),'back in the cafe');assert.equal(state.hearts,h0);
+ S.save(m,state,12*MIN);assert.equal(S.load(m,13*MIN).state.walk,null);});
+test('D-08 walking shiba leaves income & serving, the others keep working',()=>{CFG.TEMP.walkFreeWhenCostNull=true;const st=S.newState(0);const before=S.incomePerSec(st);
+ S.startWalk(st,1,1800,0);assert.ok(S.incomePerSec(st)<before);const w=S.newWorld(st,3);assert.deepEqual(w.shibas.map(x=>x.id),[2]);
+ w.spawnT=0;let pets=0;for(let i=0;i<30*90;i++){S.tick(w,st,1/30);for(const e of w.events.splice(0))if(e.type==='pet'){pets++;assert.equal(e.id,2);}}assert.ok(pets>0);});
+test('D-08 stop rule undecided → stop refused; TEMP: back at once, no reward/refund',()=>{CFG.TEMP.walkFreeWhenCostNull=true;const st=S.newState(0);S.startWalk(st,1,600,0);
+ assert.equal(S.stopWalk(st,1000),null);assert.ok(st.walk);CFG.TEMP.walkStopNoRefund=true;const h=st.hearts;assert.equal(S.stopWalk(st,1000),1);assert.equal(st.walk,null);assert.equal(st.hearts,h);});
+test('D-08 heart cost is charged when decided (test-only value injected)',()=>{const old=CFG.walk.heartCost;CFG.walk.heartCost={600:1,1200:2,1800:3};
+ try{const st=S.newState(0);st.hearts=2;assert.equal(S.walkCheck(st,1,1800),'hearts');assert.ok(S.startWalk(st,1,1200,0));assert.equal(st.hearts,0);}finally{CFG.walk.heartCost=old;}});
+
+// ---------- D-09 ----------
+test('D-09 off by default: fatigue has no effect',()=>{assert.equal(CFG.FEATURES.fatigue,false);const st=S.newState(0);S.setFatigue(st,1,1);
+ assert.equal(S.fatigueState(st,1),'normal');assert.ok(S.canPlay(st,1));CFG.TEMP.walkFreeWhenCostNull=true;assert.equal(S.walkCheck(st,1,600),null);
+ const w=S.newWorld(st,3);for(let i=0;i<300;i++)S.tick(w,st,1/30);assert.ok(w.shibas.every(x=>x.phase!=='sleep'));});
+test('D-09 debug: fatigue 100% → sleeping, walk & play disabled; values stay null',()=>{CFG.FEATURES.fatigue=true;CFG.TEMP.walkFreeWhenCostNull=true;
+ for(const v of Object.values(CFG.walk.fatigue))assert.equal(v,null);const st=S.newState(0);S.setFatigue(st,1,1);
+ assert.equal(S.fatigueState(st,1),'sleep');assert.equal(S.canPlay(st,1),false);assert.equal(S.walkCheck(st,1,600),'fatigue');
+ const w=S.newWorld(st,3);for(let i=0;i<60;i++)S.tick(w,st,1/30);assert.equal(w.shibas.find(x=>x.id===1).phase,'sleep');
+ assert.equal(S.feedSnack(st,1),false,'snack amount 미정');S.sleepRecover(st,3600);assert.equal(S.fatigueOf(st,1),1,'sleep rate 미정');
+ S.setFatigue(st,1,0);for(let i=0;i<5;i++)S.tick(w,st,1/30);assert.notEqual(w.shibas.find(x=>x.id===1).phase,'sleep');});
+
+// ---------- D-10 ----------
+test('D-10 off by default / chance null → never happens',()=>{CFG.TEMP.walkFreeWhenCostNull=true;assert.equal(CFG.FEATURES.rescue,false);assert.equal(CFG.walk.rescue.chance,null);
+ for(const on of [false,true]){CFG.FEATURES.rescue=on;const st=S.newState(0);const n=st.owned.length;for(let i=0;i<200;i++){S.startWalk(st,1,600,i*DAY,S.rng(i+1));S.tickWalk(st,i*DAY+601e3);}
+  assert.equal(st.owned.length,n);assert.equal(st.rescueQueue.length,0);}});
+test('D-10 debug chance 1: rescue during the walk, batched on next launch; grade then level-in-band, 4 coats',()=>{CFG.FEATURES.rescue=true;CFG.TEMP.walkFreeWhenCostNull=true;
+ const R=CFG.walk.rescue,old={...R};Object.assign(R,{chance:1,gradeWeights:{N:1,R:1,S:1},levelDist:'uniform'});
+ try{const st=S.newState(0);S.startWalk(st,1,1800,0,S.rng(3));const at=st.walk.rescue.at;assert.ok(at>=0&&at<=1800e3);
+  assert.equal(S.tickWalk(st,at-1),null);const r=S.tickWalk(st,at);assert.ok(r.rescued&&!r.returned,'shown while walking');assert.equal(st.rescueQueue.length,1);
+  const m=mem();const st2=S.newState(0);S.startWalk(st2,2,600,0,S.rng(8));S.save(m,st2,1);const L=S.load(m,700e3).state;assert.equal(L.rescueQueue.length,1);assert.equal(L.walk,null);
+  const seen={N:0,R:0,S:0},coats=new Set();const rr=S.rng(77);for(let i=0;i<3000;i++){const o=S.rescueShiba(rr);const g=S.gradeOf(o.lv);seen[g]++;coats.add(o.coat);
+   const [a,b]=CFG.grades.bands[g];assert.ok(o.lv>=a&&o.lv<=b);}assert.ok(seen.N&&seen.R&&seen.S);assert.equal(coats.size,4);
+  R.gradeWeights=null;assert.equal(S.rescueShiba(S.rng(1)),null,'grade odds 미정 → none');}finally{Object.assign(R,old);}});
+
 // ---------- report ----------
 let fail=0;for(const [k,n,e] of results){console.log(k==='ok'?'  ok  ':'  FAIL',n);if(e){fail++;console.log('       ',e.message);}}
 console.log(`${results.length-fail}/${results.length} handoff tests passed`);if(fail)process.exit(1);

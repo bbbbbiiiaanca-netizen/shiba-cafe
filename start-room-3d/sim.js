@@ -15,7 +15,7 @@ function baseState(now){
  return {v:CFG.saveVersion,coins:CFG.start.coins,hearts:CFG.start.hearts,paws:CFG.start.paws,
   owned:CFG.start.shibas.map((s,i)=>({id:i+1,...s,lv:startLevel('N')})),nextId:CFG.start.shibas.length+1,dex:CFG.start.shibas.map(dexKey),
   served:0,petted:0,upg:0,gachaPulls:0,tut:0,questsClaimed:[],theme:'basic',themesOwned:['basic'],
-  items:{heartReset:0,capsule:0},heartRegenAt:now,promoQueue:[],onboarding:{visits:[],claimed:[]},
+  items:{heartReset:0,capsule:0},heartRegenAt:now,promoQueue:[],onboarding:{visits:[],claimed:[]},walk:null,rescueQueue:[],
   settings:{sound:true,music:true},lastSeen:now};
 }
 // Old saves (v1): `rarity` field N/R/SR + lv (lv started at 1 and grew by +1 per duplicate).
@@ -30,14 +30,16 @@ export function migrate(s,now=Date.now()){
 // invariants enforced on every load and save: no stored grade, level within 1..30
 export function sanitize(s){for(const o of s.owned||[]){if('rarity' in o)delete o.rarity;if('grade' in o)delete o.grade;o.lv=clampLevel(o.lv);}
  s.dex=[...new Set([...(s.dex||[]),...(s.owned||[]).map(dexKey)])];return s;}
-export function incomePerSec(s){return (CFG.idle.perSec+CFG.idle.perShibaPerSec*Math.min(s.owned.length,CFG.cafe.maxShibas))*(1+CFG.upgrade.bonus*(s.upg||0));}
+// shibas out on a walk do not contribute (D-08); everyone else keeps working
+export function activeOwned(s){return s.owned.filter(o=>!isBusy(s,o.id));}
+export function incomePerSec(s){return (CFG.idle.perSec+CFG.idle.perShibaPerSec*Math.min(activeOwned(s).length,CFG.cafe.maxShibas))*(1+CFG.upgrade.bonus*(s.upg||0));}
 export function upgradeCost(s){return Math.round(CFG.upgrade.base*Math.pow(CFG.upgrade.grow,s.upg||0));}
 export function buyUpgrade(s){const c=upgradeCost(s);if(s.coins<c)return false;s.coins-=c;s.upg=(s.upg||0)+1;return true;}
 export function offlineEarnings(s,now=Date.now()){const sec=Math.min((now-s.lastSeen)/1000,CFG.offline.capHours*3600);
  if(!(sec>=CFG.offline.minSeconds))return {sec:Math.max(0,sec|0),coins:0};return {sec:sec|0,coins:Math.floor(sec*incomePerSec(s)*CFG.offline.rate)};}
 export function load(storage,now=Date.now()){let s=null;try{s=JSON.parse(storage.getItem(CFG.saveKey));}catch{}
  if(!s||!(s.v===1||s.v===CFG.saveVersion))return {state:newState(now),offline:{sec:0,coins:0},fresh:true};
- const d=baseState(now);s=migrate({...d,...s,onboarding:{...d.onboarding,...s.onboarding},settings:{...d.settings,...s.settings},items:{...d.items,...s.items}},now);settleHearts(s,now);markVisit(s,now);const offline=offlineEarnings(s,now);s.coins+=offline.coins;s.lastSeen=now;return {state:s,offline,fresh:false};}
+ const d=baseState(now);s=migrate({...d,...s,onboarding:{...d.onboarding,...s.onboarding},settings:{...d.settings,...s.settings},items:{...d.items,...s.items}},now);settleHearts(s,now);markVisit(s,now);const offline=offlineEarnings(s,now);tickWalk(s,now);s.coins+=offline.coins;s.lastSeen=now;return {state:s,offline,fresh:false};}
 export function save(storage,s,now=Date.now()){s.lastSeen=now;sanitize(s);storage.setItem(CFG.saveKey,JSON.stringify(s));}
 // rewards are never capped (hearts from rewards may go above hearts.regenCap)
 export function grant(s,r={}){for(const k of ['coins','hearts','paws'])if(r[k])s[k]+=r[k];for(const k of Object.keys(CFG.items))if(r[k])s.items[k]=(s.items[k]||0)+r[k];}
@@ -104,7 +106,40 @@ export const canMerge=(s,t,m)=>mergeCheck(s,t,m)===null;
 export function merge(s,targetId,matId){if(!canMerge(s,targetId,matId))return null;const a=s.owned.find(o=>o.id===targetId),i=s.owned.findIndex(o=>o.id===matId),b=s.owned[i];
  const from=a.lv;const promoted=setLevel(s,a,a.lv+b.lv,'merge');s.owned.splice(i,1); // material leaves the cafe list; s.dex (도감) is untouched
  return {target:a,material:b,from,to:a.lv,promoted};}
-export function isBusy(s,id){return false;} // replaced by walk state in D-08
+
+// ---------- walk (D-08), fatigue (D-09), rescue (D-10) ----------
+export function isBusy(s,id){return !!(s.walk&&s.walk.shibaId===id);}
+export function walkCost(sec){const c=CFG.walk.heartCost;return c==null||c[sec]==null?null:c[sec];} // null = 미정
+export function walkStopRule(){return CFG.walk.stopRule??(CFG.TEMP.walkStopNoRefund?'noRefund':null);}
+export function fatigueOf(s,id){const o=s.owned.find(o=>o.id===id);return o?(o.fatigue||0):0;}
+export function fatigueState(s,id){if(!CFG.FEATURES.fatigue)return 'normal';const f=fatigueOf(s,id),F=CFG.walk.fatigue;
+ if(f>=1)return 'sleep';if(F.tiredAt!=null&&f>=F.tiredAt)return 'tired';return 'normal';}
+export function setFatigue(s,id,v){const o=s.owned.find(o=>o.id===id);if(o)o.fatigue=Math.max(0,Math.min(1,v));} // debug / recovery
+export function canPlay(s,id){return !isBusy(s,id)&&fatigueState(s,id)!=='sleep';} // 1.7.1 놀이 (healing) uses this
+// null = ok, else reason code
+export function walkCheck(s,id,sec){if(s.walk)return 'walking';const o=s.owned.find(o=>o.id===id);if(!o)return 'pick';if(!CFG.walk.durationsSec.includes(sec))return 'duration';
+ if(CFG.FEATURES.fatigue&&(fatigueState(s,id)==='sleep'||fatigueOf(s,id)>=(CFG.walk.fatigue.max??1)))return 'fatigue';
+ const cost=walkCost(sec);if(cost==null)return CFG.TEMP.walkFreeWhenCostNull?null:'costUndecided';if(s.hearts<cost)return 'hearts';return null;}
+export function startWalk(s,id,sec,now=Date.now(),r=Math.random){if(walkCheck(s,id,sec))return null;const cost=walkCost(sec);if(cost)spendHearts(s,cost,now);
+ s.walk={shibaId:id,walkStartAt:now,walkDurationSec:sec,rescue:rollRescue(r,now,sec)};return s.walk;}
+export function walkProgress(s,now=Date.now()){if(!s.walk)return null;return Math.min(1,Math.max(0,(now-s.walk.walkStartAt)/(s.walk.walkDurationSec*1000)));}
+// rescue is decided at start (time inside the walk + which shiba), shown when that moment passes — or batched on the next launch
+function rollRescue(r,now,sec){const R=CFG.walk.rescue;if(!CFG.FEATURES.rescue||R.chance==null||!(r()<R.chance))return null;
+ const sh=rescueShiba(r);return sh?{at:now+r()*sec*1000,shiba:sh,done:false}:null;}
+export function rescueShiba(r){const R=CFG.walk.rescue;if(!R.gradeWeights||R.levelDist!=='uniform')return null; // grade odds / level distribution 미정 → no rescue
+ const tot=GRADES.reduce((a,g)=>a+(R.gradeWeights[g]||0),0);let x=r()*tot,grade='N';for(const g of GRADES){if((x-=R.gradeWeights[g]||0)<0){grade=g;break;}}
+ const [a,b]=CFG.grades.bands[grade],lv=a+Math.floor(r()*(b-a+1));const coats=Object.keys(CFG.coats),coat=coats[Math.floor(r()*coats.length)];
+ return {coat,expr:CFG.coatExprs(coat)[0],lv};} // expression is not specified → the coat's first (base) expression
+// called every frame and on load. Rescue then settlement; settlement clears s.walk so it can only happen once.
+export function tickWalk(s,now=Date.now()){const W=s.walk;if(!W)return null;const out={rescued:null,returned:null};
+ if(W.rescue&&!W.rescue.done&&now>=W.rescue.at){W.rescue.done=true;const o={id:s.nextId++,...W.rescue.shiba};s.owned.push(o);if(!s.dex.includes(dexKey(o)))s.dex.push(dexKey(o));s.rescueQueue.push(o.id);out.rescued=o;}
+ if(now>=W.walkStartAt+W.walkDurationSec*1000){s.walk=null;out.returned=W.shibaId;
+  const g=CFG.walk.fatigue.gainBySec;if(CFG.FEATURES.fatigue&&g&&g[W.walkDurationSec]!=null)setFatigue(s,W.shibaId,fatigueOf(s,W.shibaId)+g[W.walkDurationSec]);
+  if(CFG.walk.reward)grant(s,CFG.walk.reward[W.walkDurationSec]||{});} // 보상량 미정 → nothing granted while null
+ return out.rescued||out.returned?out:null;}
+export function stopWalk(s,now=Date.now()){if(!s.walk||walkStopRule()!=='noRefund')return null;const id=s.walk.shibaId;s.walk=null;return id;} // TEMP rule: back at once, no reward / refund / rescue
+export function feedSnack(s,id){const v=CFG.walk.fatigue.snackRecover;if(!CFG.FEATURES.fatigue||v==null)return false;setFatigue(s,id,fatigueOf(s,id)-v);return true;}
+export function sleepRecover(s,dt){const v=CFG.walk.fatigue.sleepRecoverPerSec;if(!CFG.FEATURES.fatigue||v==null)return;for(const o of s.owned)if(o.fatigue>0&&!isBusy(s,o.id))setFatigue(s,o.id,o.fatigue-v*dt);}
 
 // ---------- quests / tutorial ----------
 export function questStatus(s){return CFG.quests.map(q=>({...q,done:q.goal(s),claimed:s.questsClaimed.includes(q.id)}));}
@@ -118,7 +153,7 @@ export function tutAdvance(s,force=false){const t=tutStep(s);if(!t)return false;
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 function moveTo(p,t,v,dt){const d=dist(p,t);if(d<=v*dt){p.x=t.x;p.z=t.z;return true;}p.x+=(t.x-p.x)/d*v*dt;p.z+=(t.z-p.z)/d*v*dt;return false;}
 export function newWorld(s,seed=7){const r=rng(seed);const w={t:0,r,customers:[],shibas:[],nextCust:1,spawnT:CFG.customer.firstSpawn,tableBusy:CFG.tables.map(()=>null),events:[]};
- for(const o of s.owned.slice(0,CFG.cafe.maxShibas))addShiba(w,o);return w;}
+ for(const o of activeOwned(s).slice(0,CFG.cafe.maxShibas))addShiba(w,o);return w;}
 export function addShiba(w,o){if(w.shibas.length>=CFG.cafe.maxShibas)return null;const R=CFG.roam;const sh={id:o.id,coat:o.coat,expr:o.expr,phase:'idle',t:w.r()*2,x:R.x0+w.r()*(R.x1-R.x0),y:0,z:R.z0+w.r()*(R.z1-R.z0),cd:0,heading:0};w.shibas.push(sh);return sh;}
 export function removeShiba(w,id){const i=w.shibas.findIndex(x=>x.id===id);if(i<0)return false;const sh=w.shibas[i];w.shibas.splice(i,1);
  const c=w.customers.find(c=>c.id===sh.cust);if(c){c.shiba=null;c.petting=false;c.t=0;}w.tableBusy=w.tableBusy.map(b=>b===id?null:b);return true;}
@@ -133,7 +168,7 @@ export function tick(w,s,dt){w.t+=dt;const C=CFG.customer,V=CFG.visit;
   if(c.phase==='enter'||c.phase==='leave'){const tgt=c.path[0];const px=c.x,pz=c.z;if(moveTo(c,tgt,C.speed,dt))c.path.shift();if(c.x!==px||c.z!==pz)c.heading=Math.atan2(c.x-px,c.z-pz);
    if(!c.path.length){if(c.phase==='enter'){c.phase='wait';c.t=0;c.heading=c.seatDef.face*Math.PI/2;}else c.gone=true;}}
   else if(c.phase==='wait'&&c.visits>=C.visits&&!c.shiba&&c.t>=C.happyPause){ // pay & go home
-   const coins=C.payBase+C.payPerShiba*Math.min(s.owned.length,CFG.cafe.maxShibas);s.coins+=coins;s.paws+=C.paws;s.served++;
+   const coins=C.payBase+C.payPerShiba*Math.min(activeOwned(s).length,CFG.cafe.maxShibas);s.coins+=coins;s.paws+=C.paws;s.served++;
    w.events.push({type:'pay',coins,paws:C.paws,x:c.x,z:c.z,id:c.id});c.phase='leave';c.path=[...(c.seatDef.via?[{x:c.seatDef.via.x,z:c.seatDef.via.z},{x:c.seatDef.via.x,z:CFG.aisleZ}]:[{x:c.x,z:CFG.aisleZ}]),{x:CFG.door.x,z:CFG.aisleZ},{x:CFG.door.x,z:CFG.door.z}];}
   else if(c.phase==='wait'&&c.visits<C.visits&&!c.shiba&&c.t>=C.waitBeforeVisit&&!w.tableBusy[c.seatDef.table]){ // call the nearest free shiba
    let best=null,bd=1e9;for(const sh of w.shibas)if((sh.phase==='roam'||sh.phase==='idle')&&sh.cd<=0){const d=dist(sh,c);if(d<bd){bd=d;best=sh;}}
@@ -141,7 +176,10 @@ export function tick(w,s,dt){w.t+=dt;const C=CFG.customer,V=CFG.visit;
  w.customers=w.customers.filter(c=>!c.gone);
  const tableH=.55;
  for(const sh of w.shibas){sh.t+=dt;sh.cd-=dt;const c=w.customers.find(c=>c.id===sh.cust);
-  if(sh.phase==='idle'){if(sh.t>0){sh.phase='roam';sh.tgt=roamTarget(w);}}
+  // D-09: a 100%-tired shiba only sleeps (no serving, no play) — only when FEATURES.fatigue is on
+  if(CFG.FEATURES.fatigue){const sl=fatigueState(s,sh.id)==='sleep';if(sl&&(sh.phase==='idle'||sh.phase==='roam'))sh.phase='sleep';else if(!sl&&sh.phase==='sleep'){sh.phase='idle';sh.t=0;}}
+  if(sh.phase==='sleep'){}
+  else if(sh.phase==='idle'){if(sh.t>0){sh.phase='roam';sh.tgt=roamTarget(w);}}
   else if(sh.phase==='roam'||sh.phase==='toTable'){const px=sh.x,pz=sh.z;const arrived=moveTo(sh,sh.tgt,CFG.roam.speed*(sh.phase==='toTable'?1.3:1),dt);if(sh.x!==px||sh.z!==pz)sh.heading=Math.atan2(sh.x-px,sh.z-pz);
    if(arrived){if(sh.phase==='roam'){sh.phase='idle';sh.t=-(CFG.roam.idleMin+w.r()*(CFG.roam.idleMax-CFG.roam.idleMin));}else{sh.phase='climb';sh.t=0;}}}
   else if(sh.phase==='climb'){const k=Math.min(1,sh.t/V.climb),e=k*k*(3-2*k);sh.x=sh.from.x+(sh.top.x-sh.from.x)*e;sh.z=sh.from.z+(sh.top.z-sh.from.z)*e;sh.y=tableH*e+Math.sin(k*Math.PI)*.25;sh.heading=Math.PI;

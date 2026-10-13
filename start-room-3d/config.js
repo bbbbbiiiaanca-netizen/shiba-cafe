@@ -14,7 +14,9 @@ export const CFG={
  TEMP:{
   gachaNonSAsN:false,
   onboardingLoginDays:false, // D-07 날짜 진행 방식(onboarding.dayMode) 미정(보상표 Q5 일반 출석과의 관계·Q6 빠뜨린 날): 켜면 '접속한 날짜 수 = 진행 일차'로 임시 진행
-  mergeHandoffDefaults:false, // D-03 '같은 시바' 기준·자동/선택·병합 승급 연출 미정(질문 2-3 라·마·바): 켜면 핸드오프 임시값 sameKey 'coat+expr', mode 'manual', playPromotion false  // D-01 N·R 확률 미정(명세 질문 2): 켜면 S가 아닌 결과를 모두 N으로 처리(R 확률을 지어내지 않음), 화면에 확률 표시 안 함
+  mergeHandoffDefaults:false,
+  walkFreeWhenCostNull:false, // D-08 산책 하트 소모량 미정(질문 9): 켜면 테스트 빌드에서만 무료로 보낼 수 있음
+  walkStopNoRefund:false,     // D-08 멈췄을 때 규칙 미정(질문 11): 켜면 '즉시 복귀, 보상·환불 없음' // D-03 '같은 시바' 기준·자동/선택·병합 승급 연출 미정(질문 2-3 라·마·바): 켜면 핸드오프 임시값 sameKey 'coat+expr', mode 'manual', playPromotion false  // D-01 N·R 확률 미정(명세 질문 2): 켜면 S가 아닌 결과를 모두 N으로 처리(R 확률을 지어내지 않음), 화면에 확률 표시 안 함
  },
  // ── grades & levels (명세 1.6 ✅ 확정) ──
  grades:{bands:{N:[1,10],R:[11,20],S:[21,30]},maxLevel:30}, // grade is computed from level; start level of a pull = band start
@@ -37,6 +39,16 @@ export const CFG={
  merge:{sameKey:null,mode:null,playPromotion:null},
  // D-04 승급 연출: 필요는 ✅ 확정, 영상은 미정(videoAsset null). card = 영상 전 대체 카드 연출의 '제안' 수치(명세 1.6) → FEATURES.promotionCard 로 꺼 둠.
  promotion:{enabled:true,skippable:true,videoAsset:null,card:{zoomSec:.3,borderSec:.5,exprSec:1,totalSec:2.5}},
+ // D-08 산책 ✅ 확정: 10/20/30분 선택(walkDurationSec 600/1200/1800) · 실시간·백그라운드 진행(walkStartAt) · 다음 실행 때 한 번만 정산 · 완료 알림 없음 ·
+ //   도중 멈추기 가능 · 산책 중에도 카페 운영(산책 간 시바의 기여만 빠짐) · 비용은 하트(시간 비례).
+ // ❓미정 → null: heartCost(질문 9, 넣을 때 {600:…,1200:…,1800:…}), reward(보상량), stopRule(멈췄을 때, 질문 11). 누가 가는지(질문 10) 미정 → 뼈대는 시바 1마리를 골라 보내는 것만.
+ walk:{durationsSec:[600,1200,1800],heartCost:null,reward:null,stopRule:null,
+  // D-09 피로도 (FEATURES.fatigue): 확정 = 산책할수록 쌓임, 최대치면 산책 시작 불가, 100%면 놀기·산책 불가·잠만 잠, 회복은 수면·간식(수면이 더 빠름). 수치 전부 미정(질문 12) → null.
+  //   fatigue is stored per shiba as a 0..1 ratio (1 = 100%). max: 산책 시작 불가 기준(null → 100%), tiredAt: '피곤' 경계, gainBySec: {600:…} 산책 1회 증가량, sleepRecoverPerSec / snackRecover: 회복량.
+  fatigue:{max:null,tiredAt:null,gainBySec:null,sleepRecoverPerSec:null,snackRecover:null},
+  // D-10 미아 시바 구조 (FEATURES.rescue): 확정 = 등급 먼저 무작위 → 그 구간에서 레벨 무작위, 견종 기본 4종 무작위, 산책 중 장면, 닫혀 있던 동안 일어난 건 다음 실행 때 몰아서.
+  //   ❓미정 → null: chance(산책 1회당 확률, null = 발생 0, 질문 19), gradeWeights({N,R,S}, 질문 18), levelDist('uniform' 등, 질문 18). 절차·거절·중복·하루 제한(질문 20·22·23)은 구현 안 함.
+  rescue:{chance:null,gradeWeights:null,levelDist:null}},
  // D-05 하트 ✅ 확정(명세 1.4): 자연 회복 상한 10, 30분당 1개, 10개 이상이면 회복 타이머 멈춤. 보상 하트는 상한 없이 쌓임.
  hearts:{regenCap:10,regenEverySec:1800},
  // D-06 하트 리셋권 ✅ 확정: 하트 < 10 일 때만 10개로 채움, 10 이상이면 사용 불가(소모 없음). 아이콘 I-01 전까지 이모지.

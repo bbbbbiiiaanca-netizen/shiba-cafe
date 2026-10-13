@@ -10,6 +10,8 @@ export function UI(ctx){const {state:s,CFG,S,SDK}=ctx;const $=id=>document.getEl
   S.tutAdvance(s);const t=S.tutStep(s);document.querySelectorAll('.bar button').forEach(b=>b.classList.toggle('hl',!queue.length&&!!t&&t.highlight===b.dataset.p));
   const qs=S.questStatus(s);const ready=qs.find(q=>q.done&&!q.claimed),todo=qs.find(q=>!q.claimed);
   $('qpill').textContent=t?'동구의 안내를 따라 카페를 열어요!':ready?`퀘스트 완료: ${ready.text}`:todo?todo.text:'카페를 발전시켜요!';
+  if(s.rescueQueue&&s.rescueQueue.length){const got=s.rescueQueue.splice(0).map(id=>s.owned.find(o=>o.id===id)).filter(Boolean);for(const o of got)ctx.addToCafe(o);ctx.save();
+   queue.push({say:`산책 중에 길 잃은 시바를 구조했어요! ${got.map(o=>`${CFG.coats[o.coat]} ${S.gradeOf(o.lv)} Lv.${o.lv}`).join(', ')}`});} // D-10: batched when several happened while closed
   $('talk').hidden=!(queue.length||t);
   if(queue.length){const q=queue[0];setSay(q.say,'받기',q.ad?'<button id="sayAd" class="ad">광고 보고 2배 (스텁)</button>':'');}
   else if(t)setSay(S.tutCanSkip(t)?t.say+' (뽑기 확률이 아직 정해지지 않아 지금은 건너뛰어요.)':t.say,(t.next||S.tutCanSkip(t))?'다음 ▶':'');
@@ -18,9 +20,9 @@ export function UI(ctx){const {state:s,CFG,S,SDK}=ctx;const $=id=>document.getEl
  // ---- panels ----
  let openName=null;
  const panels={
-  shiba:{title:'시바들',render(){const coats=Object.keys(CFG.coats),N=Object.keys(CFG.exprs).length;let h=`<button class="big" id="toPull">🎰 새 시바 뽑기</button><p class="sub">도감 ${s.dex.length} / ${N} · 카페에 최대 ${CFG.cafe.maxShibas}마리</p><div class="grid">`;
+  shiba:{title:'시바들',live:true,render(){const coats=Object.keys(CFG.coats),N=Object.keys(CFG.exprs).length;let h=`<button class="big" id="toPull">🎰 새 시바 뽑기</button><p class="sub">도감 ${s.dex.length} / ${N} · 카페에 최대 ${CFG.cafe.maxShibas}마리</p><div class="grid">`;
    for(const c of coats)for(const e of CFG.coatExprs(c)){const own=s.owned.filter(o=>o.coat===c&&o.expr===e).sort((a,b)=>b.lv-a.lv),o=own[0]||(s.dex.includes(c+'_'+e)?{lv:0}:null);h+=o?`<div class="card"><img src="${ctx.thumb(c,e)}"><b>${CFG.coats[c]}·${CFG.exprs[e]}</b><i>${o.lv?`${S.gradeOf(o.lv)} · Lv.${o.lv}${own.length>1?' ×'+own.length:''}`:'카페에 없음'}</i></div>`:`<div class="card off"><img src="${ctx.thumb(c,e)}"><b>${CFG.coats[c]}·???</b></div>`;}
-   h+='</div>'+cafeList();body().innerHTML=h;$('toPull').onclick=()=>open('gacha');bindCafeList();}},
+   h+='</div>'+cafeList();if(this._k===h)return;this._k=h;body().innerHTML=h;$('toPull').onclick=()=>open('gacha');bindCafeList();}},
   upgrade:{title:'업그레이드',live:true,render(){const c=S.upgradeCost(s),lv=s.upg||0;const h=`<div class="row"><img src="assets/counter.png"><b>카운터 개선 Lv.${lv}<br><i>방치 수입 +${Math.round(CFG.upgrade.bonus*100)}%씩 · 지금 초당 ${S.incomePerSec(s).toFixed(2)}🪙</i></b><button id="upg" ${s.coins<c?'disabled':''}>🪙 ${c.toLocaleString('ko-KR')}</button></div><p class="sub">땅 확장(상하좌우)과 2층은 다음 단계예요. 카페 양옆의 점선 칸이 확장 자리예요.</p>`;if(this._k===h)return;this._k=h;body().innerHTML=h;$('upg').onclick=()=>{if(S.buyUpgrade(s)){ctx.save();this._k='';tick();}};}},
   event:{title:'이벤트',live:true,render(){const cur=S.onboardingDay(s);
    let h=`<h4>새 사장님 응원 28일</h4><p class="sub">${cur==null?'날짜 진행 방식이 아직 정해지지 않았어요 (준비 중) · 보상 목록만 미리 보여요':`${cur}일째`}</p><div class="ob">`;
@@ -58,9 +60,20 @@ export function UI(ctx){const {state:s,CFG,S,SDK}=ctx;const $=id=>document.getEl
    h+=`<div class="row${k>=0?' sel':''}" data-sel="${o.id}"><img src="${ctx.thumb(o.coat,o.expr)}"><b>${nameOf(o)}<br><i>${S.gradeOf(o.lv)} · Lv.${o.lv}</i></b>${extraRow(o)}<i class="selk">${k===0?'대상':k===1?'재료':''}</i></div>`;}
   const a=s.owned.find(o=>o.id===sel[0]),b=s.owned.find(o=>o.id===sel[1]);
   h+=`<p class="sub" id="mergeWhy">${why?MERGE_WHY[why]:`${nameOf(a)} Lv.${a.lv} + Lv.${b.lv} → Lv.${Math.min(CFG.grades.maxLevel,a.lv+b.lv)}`}</p><button class="big" id="mergeBtn" ${why?'disabled':''}>병합</button>`;return h;}
- let extraRow=o=>''; // walk controls are added by D-08
- function bindCafeList(){body().querySelectorAll('[data-sel]').forEach(r=>r.onclick=e=>{if(e.target.closest('button'))return;const id=+r.dataset.sel;const k=sel.indexOf(id);if(k>=0)sel.splice(k,1);else{if(sel.length>=2)sel=[sel[0]];sel.push(id);}panels.shiba.render();});
-  $('mergeBtn').onclick=()=>{const r=S.merge(s,sel[0],sel[1]);if(!r)return;ctx.removeFromCafe(r.material.id);sel=[];ctx.save();SDK.sfx('fanfare');panels.shiba.render();tick();};}
+ // ---- D-08 산책 (비용 미정이면 '미정' 표시, 테스트 빌드에서만 무료) · D-09 피로 상태 표시(기능 꺼짐이면 안 보임) ----
+ let walkPick=null;const mmss=t=>`${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')}`;
+ const WALK_WHY={walking:'다른 시바가 산책 중',fatigue:'너무 지쳐서 쉬어야 해요',costUndecided:'하트 소모량 미정',hearts:'하트가 모자라요'};
+ function extraRow(o){const fs=S.fatigueState(s,o.id),fz=fs==='sleep'?'<i>💤</i>':fs==='tired'?'<i>조금 지쳤어요</i>':'';
+  if(S.isBusy(s,o.id)){const W=s.walk,left=W.walkDurationSec-(Date.now()-W.walkStartAt)/1000;const stop=S.walkStopRule();
+   return `<i>🦮 산책 중 ${mmss(Math.max(0,left))}</i><button data-walkstop="${o.id}" ${stop?'':'disabled'}>${stop?'멈추기':'멈추기(규칙 미정)'}</button>`;}
+  if(walkPick!==o.id)return fz+`<button data-walk="${o.id}" ${S.walkCheck(s,o.id,CFG.walk.durationsSec[0])==='walking'||fs==='sleep'?'disabled':''}>🦮 산책</button>`;
+  return fz+CFG.walk.durationsSec.map(sec=>{const c=S.walkCost(sec),why=S.walkCheck(s,o.id,sec);return `<button data-walkgo="${o.id}:${sec}" ${why?'disabled':''} title="${why?WALK_WHY[why]||why:''}">${sec/60}분 · 💗${c==null?'미정':c}</button>`;}).join('');}
+ function bindCafeList(){body().querySelectorAll('[data-sel]').forEach(r=>r.onclick=e=>{if(e.target.closest('button'))return;const id=+r.dataset.sel;const k=sel.indexOf(id);if(k>=0)sel.splice(k,1);else{if(sel.length>=2)sel=[sel[0]];sel.push(id);}panels.shiba._k='';panels.shiba.render();});
+  $('mergeBtn').onclick=()=>{const r=S.merge(s,sel[0],sel[1]);if(!r)return;ctx.removeFromCafe(r.material.id);sel=[];ctx.save();SDK.sfx('fanfare');panels.shiba._k='';panels.shiba.render();tick();};
+  // D-08 산책 버튼
+  body().querySelectorAll('[data-walk]').forEach(b=>b.onclick=()=>{walkPick=walkPick===+b.dataset.walk?null:+b.dataset.walk;panels.shiba._k='';panels.shiba.render();});
+  body().querySelectorAll('[data-walkgo]').forEach(b=>b.onclick=()=>{const [id,sec]=b.dataset.walkgo.split(':').map(Number);if(S.startWalk(s,id,sec,Date.now())){ctx.removeFromCafe(id);walkPick=null;ctx.save();}panels.shiba._k='';panels.shiba.render();tick();});
+  body().querySelectorAll('[data-walkstop]').forEach(b=>b.onclick=()=>{const id=S.stopWalk(s,Date.now());if(id!=null){ctx.addToCafe(s.owned.find(o=>o.id===id));ctx.save();}panels.shiba._k='';panels.shiba.render();tick();});}
  function open(n){if(n==='gacha'){close();showPull();return;}if(openName===n){close();return;}openName=n;const p=panels[n];$('ptitle').textContent=p.title;p._k='';p.render();$('panel').classList.add('on');document.body.classList.add('popen');document.querySelectorAll('.bar button').forEach(b=>b.classList.toggle('on',b.dataset.p===n));}
  function close(){openName=null;$('panel').classList.remove('on');document.body.classList.remove('popen');document.querySelectorAll('.bar button').forEach(b=>b.classList.remove('on'));}
  document.querySelectorAll('.bar button').forEach(b=>b.onclick=()=>open(b.dataset.p));for(const id of ['bagBtn','heartPlus'])if($(id))$(id).onclick=()=>open('bag');$('pclose').onclick=close;

@@ -27,6 +27,12 @@ export default async function({ev,check,sleep,temp}){
   await ev('document.querySelector("[data-sel=\'501\']").click();document.querySelector("[data-sel=\'503\']").click();true');
   await check('then N duplicate → merge blocked','document.getElementById("mergeBtn").disabled');}
  await ev('__game.close();true');
+ // D-08
+ await ev('__game.open("shiba");document.querySelector("[data-walk=\'1\']").click();true');
+ await check(temp?'walk buttons enabled (TEMP free)':'walk buttons show 미정 and are disabled',temp?'!document.querySelector("[data-walkgo=\'1:600\']").disabled':'document.querySelector("[data-walkgo=\'1:600\']").disabled&&/미정/.test(document.querySelector("[data-walkgo=\'1:600\']").textContent)');
+ if(temp){await ev('document.querySelector("[data-walkgo=\'1:600\']").click();true');await check('walker leaves the cafe floor','!!__game.state.walk&&!__game.world.shibas.some(x=>x.id===1)');
+  await ev('__game.state.walk.walkStartAt-=601e3;__game.step(.1);true');await check('walk over → back on the floor, settled','__game.state.walk===null&&__game.world.shibas.some(x=>x.id===1)');}
+ await ev('__game.close();true');
  // D-04: card plays once and tap skips (feature switched on only inside this check)
  await ev('__game.CFG.FEATURES.promotionCard=true;const o=__game.state.owned[0];o.lv=10;__game.S.setLevel(__game.state,o,11,"levelup");true');
  await ev('__game.ui.frame();true');await check('promotion card shown','!document.getElementById("promo").hidden&&__game.state.promoQueue.length===0');
