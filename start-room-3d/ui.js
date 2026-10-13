@@ -92,7 +92,7 @@ export function UI(ctx){const {state:s,CFG,S,SDK}=ctx;const $=id=>document.getEl
   if(S.isBusy(s,o.id)){const W=s.walk,left=W.walkDurationSec-(Date.now()-W.walkStartAt)/1000;const stop=S.walkStopRule();
    return `<i>${L('walk.going',{time:mmss(Math.max(0,left))})}</i><button data-walkstop="${o.id}" ${stop?'':'disabled'}>${stop?L('walk.stop'):L('walk.stopUndecided')}</button>`;}
   if(walkPick!==o.id)return fz+`<button data-walk="${o.id}" ${S.walkCheck(s,o.id,CFG.walk.durationsSec[0])==='walking'||fs==='sleep'?'disabled':''}>🦮 ${L('care.walk')}</button>`;
-  return fz+CFG.walk.durationsSec.map(sec=>{const c=S.walkCost(sec),why=S.walkCheck(s,o.id,sec);return `<button data-walkgo="${o.id}:${sec}" ${why?'disabled':''} title="${why?L('walk.why.'+why):''}">${L('walk.min',{count:sec/60})} · 💗${c==null?L('app.undecided'):c}</button>`;}).join('');}
+  return fz+'<span class="walkopts">'+CFG.walk.durationsSec.map(sec=>{const c=S.walkCost(sec),why=S.walkCheck(s,o.id,sec);return `<button data-walkgo="${o.id}:${sec}" ${why?'disabled':''} title="${why?L('walk.why.'+why):''}">${L('walk.min',{count:sec/60})} · 💗${c==null?L('app.undecided'):c}</button>`;}).join('')+'</span>';}
  function bindCafeList(){const re=()=>{panels.shiba._k='';panels.shiba.render();};
   body().querySelectorAll('[data-sel]').forEach(r=>r.onclick=e=>{if(e.target.closest('button'))return;const id=+r.dataset.sel;const k=sel.indexOf(id);if(k>=0)sel.splice(k,1);else{if(sel.length>=2)sel=[sel[0]];sel.push(id);}re();});
   $('mergeBtn').onclick=()=>{const r=S.merge(s,sel[0],sel[1]);if(!r)return;ctx.removeFromCafe(r.material.id);sel=[];ctx.save();SDK.sfx('fanfare');re();tick();};
