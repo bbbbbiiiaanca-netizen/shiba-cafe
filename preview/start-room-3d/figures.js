@@ -8,7 +8,8 @@ const C=(a,b,r,col,k=.06)=>({t:'c',a,b,r,col:new T.Color(col),k});
 function dPrim(p,x,y,z){if(p.t==='e'){const [cx,cy,cz]=p.c,[rx,ry,rz]=p.r;const X=(x-cx)/rx,Y=(y-cy)/ry,Z=(z-cz)/rz;const k0=Math.hypot(X,Y,Z),k1=Math.hypot(X/rx,Y/ry,Z/rz);return k0*(k0-1)/Math.max(k1,1e-6);}
  const [ax,ay,az]=p.a,[bx,by,bz]=p.b;const px=x-ax,py=y-ay,pz=z-az,qx=bx-ax,qy=by-ay,qz=bz-az;const h=Math.max(0,Math.min(1,(px*qx+py*qy+pz*qz)/(qx*qx+qy*qy+qz*qz)));return Math.hypot(px-qx*h,py-qy*h,pz-qz*h)-p.r;}
 function sdf(P,x,y,z){let d=1e9;for(const p of P){const e=dPrim(p,x,y,z);const k=p.k;const h=Math.max(k-Math.abs(d-e),0)/k;d=Math.min(d,e)-h*h*k*.25;}return d;}
-export function figure(P,res=60){let lo=[1e9,1e9,1e9],hi=[-1e9,-1e9,-1e9];for(const p of P){const pts=p.t==='e'?[p.c.map((v,i)=>v-p.r[i]),p.c.map((v,i)=>v+p.r[i])]:[p.a.map((v,i)=>Math.min(v,p.b[i])-p.r),p.a.map((v,i)=>Math.max(v,p.b[i])+p.r)];for(let i=0;i<3;i++){lo[i]=Math.min(lo[i],pts[0][i]-.05);hi[i]=Math.max(hi[i],pts[1][i]+.05);}}
+const GEO=new Map();
+export function figure(P,res=60){const key=res+JSON.stringify(P.map(p=>[p.t,p.c,p.r,p.a,p.b,p.k,p.col.getHex()]));if(GEO.has(key)){const m=new T.Mesh(GEO.get(key),clay);m.castShadow=m.receiveShadow=true;m.userData.P=P;return m;}let lo=[1e9,1e9,1e9],hi=[-1e9,-1e9,-1e9];for(const p of P){const pts=p.t==='e'?[p.c.map((v,i)=>v-p.r[i]),p.c.map((v,i)=>v+p.r[i])]:[p.a.map((v,i)=>Math.min(v,p.b[i])-p.r),p.a.map((v,i)=>Math.max(v,p.b[i])+p.r)];for(let i=0;i<3;i++){lo[i]=Math.min(lo[i],pts[0][i]-.05);hi[i]=Math.max(hi[i],pts[1][i]+.05);}}
  const ctr=lo.map((v,i)=>(v+hi[i])/2),half=Math.max(...hi.map((v,i)=>(v-lo[i])/2))*1.08;
  const mc=new MarchingCubes(res,clay,false,false,120000);mc.isolation=0;const S=mc.size,hs=S/2;
  for(let z=0;z<S;z++)for(let y=0;y<S;y++)for(let x=0;x<S;x++){const wx=ctr[0]+(x-hs)/hs*half,wy=ctr[1]+(y-hs)/hs*half,wz=ctr[2]+(z-hs)/hs*half;mc.field[x+y*S+z*S*S]=-sdf(P,wx,wy,wz)*40;}
@@ -19,7 +20,7 @@ export function figure(P,res=60){let lo=[1e9,1e9,1e9],hi=[-1e9,-1e9,-1e9];for(co
   col[i*3]=cc.r/w;col[i*3+1]=cc.g/w;col[i*3+2]=cc.b/w;}
  const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(pos,3));g.setAttribute('normal',new T.BufferAttribute(nor,3));g.setAttribute('color',new T.BufferAttribute(col,3));
 {const N=new T.Vector3();for(let i=0;i<n;i++){N.set(nor[i*3],nor[i*3+1],nor[i*3+2]);if(!(N.length()>.1))N.set(0,1,0);N.normalize();nor.set([N.x,N.y,N.z],i*3);}}
- const m=new T.Mesh(g,clay);m.castShadow=m.receiveShadow=true;m.userData.P=P;return m;}
+ GEO.set(key,g);const m=new T.Mesh(g,clay);m.castShadow=m.receiveShadow=true;m.userData.P=P;return m;}
 // Face paint: small flattened ovals laid onto the surface found by marching the SDF from the front.
 const dm=new Map();const dmat=c=>{if(!dm.has(c))dm.set(c,new T.MeshStandardMaterial({color:c,roughness:.85,metalness:0}));return dm.get(c);};
 const sph=new T.SphereGeometry(1,20,14);
@@ -28,25 +29,42 @@ export function decal(parent,P,x,y,sx,sy,color,lift=.002,depth=.012,zFrom=1){let
  const m=new T.Mesh(sph,dmat(color));m.scale.set(sx,sy,depth);m.position.set(x,y,z).addScaledVector(n,lift);m.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),n);parent.add(m);return m;}
 export function smile(parent,P,x,y,w,color,arc=Math.PI*.8){let z=1;for(let i=0;i<400&&sdf(P,x,y,z)>.0005;i++)z-=Math.min(.03,Math.max(sdf(P,x,y,z)*.8,.0008));
  const m=new T.Mesh(new T.TorusGeometry(w,w*.22,8,20,arc),dmat(color));m.rotation.z=Math.PI+(Math.PI-arc)/2;m.position.set(x,y+w*.5,z-.004);parent.add(m);return m;}
+export function arc(parent,P,x,y,w,color,up=false,arcA=Math.PI*.8,th=.22){let z=1;for(let i=0;i<400&&sdf(P,x,y,z)>.0005;i++)z-=Math.min(.03,Math.max(sdf(P,x,y,z)*.8,.0008));
+ const m=new T.Mesh(new T.TorusGeometry(w,w*th,8,20,arcA),dmat(color));m.rotation.z=(up?0:Math.PI)+(Math.PI-arcA)/2;m.position.set(x,y+(up?-w*.5:w*.5),z-.004);parent.add(m);return m;}
 function patternTex(kind){const c=document.createElement('canvas');c.width=c.height=256;const a=c.getContext('2d');
  if(kind==='asanoha'){a.fillStyle='#c4483c';a.fillRect(0,0,256,256);a.strokeStyle='#fbefe0';a.lineWidth=5;const s=64,h=s*Math.sqrt(3)/2;for(let r=-1;r<6;r++)for(let q=-1;q<6;q++){const cx=q*s+(r%2?s/2:0),cy=r*h;for(let i=0;i<6;i++){const an=i*Math.PI/3+Math.PI/6;a.beginPath();a.moveTo(cx,cy);a.lineTo(cx+Math.cos(an)*s*.58,cy+Math.sin(an)*s*.58);a.stroke();}a.beginPath();for(let i=0;i<=6;i++){const an=i*Math.PI/3+Math.PI/6;a.lineTo(cx+Math.cos(an)*s*.58,cy+Math.sin(an)*s*.58);}a.stroke();}}
+ else if(kind==='seigaiha'){a.fillStyle='#2e3f6e';a.fillRect(0,0,256,256);a.strokeStyle='#f3efe6';a.lineWidth=4;for(let r=0;r<9;r++)for(let q=-1;q<6;q++){const cx=q*64+(r%2?32:0),cy=r*32;for(const rr of [28,19,10]){a.beginPath();a.arc(cx,cy,rr,Math.PI,0);a.stroke();}}}
+ else if(kind==='ichimatsu'){for(let y=0;y<8;y++)for(let x=0;x<8;x++){a.fillStyle=(x+y)%2?'#2f6b45':'#22201e';a.fillRect(x*32,y*32,32,32);}}
  else {a.fillStyle='#e8bb4a';a.fillRect(0,0,256,256);for(const [cx,cy] of [[48,52],[176,40],[112,128],[40,200],[200,180],[128,240],[240,100]]){for(let i=0;i<5;i++){const an=i*Math.PI*2/5-Math.PI/2;a.fillStyle='#f6a6b6';a.beginPath();a.ellipse(cx+Math.cos(an)*15,cy+Math.sin(an)*15,12,9,an,0,7);a.fill();}a.fillStyle='#fff3d8';a.beginPath();a.arc(cx,cy,6,0,7);a.fill();}}
  const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=8;return t;}
-const PAT={asanoha:patternTex('asanoha'),sakura:patternTex('sakura')};
-export const COATS={red:{fur:'#c98d58',cream:'#f6e8d3',band:'asanoha',bandCol:'#c4483c'},white:{fur:'#f1e8dc',cream:'#faf4ea',band:'sakura',bandCol:'#e8bb4a'}};
+const PAT={asanoha:patternTex('asanoha'),sakura:patternTex('sakura'),seigaiha:patternTex('seigaiha'),ichimatsu:patternTex('ichimatsu')};
+export const COATS={red:{fur:'#c98d58',cream:'#f6e8d3',band:'asanoha',bandCol:'#c4483c'},sesame:{fur:'#b8936a',top:'#6f5440',cream:'#f3e6d2',band:'seigaiha',bandCol:'#2e3f6e'},kuro:{fur:'#3b322c',cream:'#f1e4cf',points:'#c98d58',band:'ichimatsu',bandCol:'#2f6b45'},white:{fur:'#f1e8dc',cream:'#faf4ea',band:'sakura',bandCol:'#e8bb4a'}};
+export const EXPRS=['smile','joy','expect','tired','pout'];
 const INK='#3b2519',BLUSH='#eea08e';
-export function dog(donggu=false,coat='red'){const K=COATS[coat],F=K.fur,W=K.cream,g=new T.Group();
+export function dog(donggu=false,coat='red',expr='smile'){const K=COATS[coat],F=K.fur,W=K.cream,g=new T.Group();
  const P=[E([0,.28,-.05],[.24,.25,.23],F,.08),E([0,.33,.12],[.15,.17,.1],W,.06)];
  for(const s of [-1,1]){P.push(E([s*.15,.14,-.08],[.14,.13,.16],F,.07),C([s*.095,.3,.11],[s*.1,.07,.15],.07,F,.05),E([s*.1,.045,.19],[.08,.045,.085],W,.04),
   E([s*.16,.84,.05],[.085,.07,.06],F,.06),C([s*.165,.86,.045],[s*.2,.94,.03],.045,F,.05),E([s*.12,.58,.22],[.13,.095,.09],W,.05));}
  P.push(E([0,.66,.07],[.29,.25,.25],F,.09),E([0,.58,.27],[.11,.075,.08],W,.05));
+ if(K.top)P.push(E([0,.78,-.02],[.2,.1,.18],K.top,.05),E([0,.36,-.12],[.17,.1,.15],K.top,.05));
  const tailPts=[];for(let i=0;i<=6;i++){const a=i/6*Math.PI*1.7;tailPts.push([.03+Math.cos(a)*.11,.42+Math.sin(a)*.11,-.3]);}
  for(let i=0;i<6;i++)P.push(C(tailPts[i],tailPts[i+1],.06,i>3?W:F,.04));
  const body=figure(P);g.add(body);
- for(const s of [-1,1]){decal(g,P,s*.105,.675,.042,.052,INK,.002,.02);decal(g,P,s*.105+.014,.693,.012,.012,'#fffaf0',.012,.006);
-  decal(g,P,s*.11,.75,.03,.018,W,.001,.01);decal(g,P,s*.185,.6,.045,.026,BLUSH,.001,.008);
+ const lid=F;
+ for(const s of [-1,1]){
+  if(expr==='joy'){arc(g,P,s*.105,.69,.032,INK,true,Math.PI*.8,.28);}
+  else if(expr==='tired'){decal(g,P,s*.105,.67,.04,.009,INK,.002,.012);}
+  else{const big=expr==='expect'?1.25:1;decal(g,P,s*.105,.675,.042*big,.052*big,INK,.002,.02);decal(g,P,s*.105+.014,.693,.012*big,.012*big,'#fffaf0',.012,.006);
+   if(expr==='expect')decal(g,P,s*.105-.012,.66,.007,.007,'#fffaf0',.012,.004);
+   if(expr==='pout')decal(g,P,s*.105,.705,.05,.026,lid,.014,.012);}
+  decal(g,P,s*.11,.75,.03,.018,K.points||W,.001,.01);decal(g,P,s*.185,.6,.045,.026,BLUSH,.001,.008);
   const inner=decal(g,P,s*.17,.87,.03,.045,'#efb7a0',.001,.01,.2);}
- decal(g,P,0,.618,.042,.03,INK,.003,.022);smile(g,P,0,.565,.035,INK);decal(g,P,0,.535,.022,.022,'#e88a86',.003,.01);
+ decal(g,P,0,.618,.042,.03,INK,.003,.022);
+ if(expr==='joy'){decal(g,P,0,.55,.04,.03,'#8a3b33',.003,.012);decal(g,P,0,.535,.026,.018,'#e88a86',.006,.01);}
+ else if(expr==='expect'){decal(g,P,0,.55,.022,.026,'#8a3b33',.003,.012);}
+ else if(expr==='tired'){decal(g,P,0,.565,.02,.007,INK,.003,.01);}
+ else if(expr==='pout'){arc(g,P,0,.555,.026,INK,true,Math.PI*.7);}
+ else{smile(g,P,0,.565,.035,INK);decal(g,P,0,.535,.022,.022,'#e88a86',.003,.01);}
  // tail as separate animated pivot = the whole figure tilts slightly; keep a dummy group for timeline
  const tail=new T.Group();g.add(tail);const head=new T.Group();g.add(head);
  if(donggu){const col=new T.Mesh(new T.TorusGeometry(.17,.028,12,32),dmat('#2f8a83'));col.rotation.x=Math.PI/2-.35;col.position.set(0,.47,.08);col.scale.set(1,1.05,1);g.add(col);
@@ -60,7 +78,7 @@ export function dog(donggu=false,coat='red'){const K=COATS[coat],F=K.fur,W=K.cre
   const p=geo.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i)+.47;let z=.6;for(let k=0;k<200&&sdf(P,x,y,z)>.0005;k++)z-=Math.min(.03,Math.max(sdf(P,x,y,z)*.8,.0008));z=Math.max(z,-.1);p.setXYZ(i,x,y,z+.012+Math.max(0,-p.getY(i))*.05);}geo.computeVertexNormals();
   const bib=new T.Mesh(geo,new T.MeshStandardMaterial({map:PAT[K.band],roughness:.95,side:T.DoubleSide}));bib.castShadow=true;g.add(bib);
   for(const s of [-1,1])decal(g,P,s*.2,.47,.035,.03,K.bandCol,.01,.03,.4);}
- return {g,head,tail,body};}
+ return {g,head,tail,body,coat,expr};}
 export function human(kind){const owner=kind==='owner',girl=kind==='girl',g=new T.Group();const skin='#f2cfac',hair=girl?'#4a2f22':'#3d2a20';
  const shirt=owner?'#9c6b45':girl?'#7d9a72':'#d9c49a',pants=owner?'#6a5240':girl?'#8a9e74':'#8a9b6a';
  const P=[];const hy=owner?1.0:.8;
