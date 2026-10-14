@@ -5,6 +5,7 @@ import {createIsoMap} from './isomap.js';
 import {CFG,pressureAt,isUnset} from './config.js';
 import * as S from './sim.js';
 import {makeT,LANGS} from './i18n.js';
+import {TABS,DEFAULT_TAB,tabBadges} from './tabs.js';
 
 const Q=new URLSearchParams(location.search);
 const temp=Q.get('temp')==='1'; // capture/test roster never writes a production save
@@ -16,7 +17,7 @@ const clock={offset:0,now(){return Date.now()+this.offset;}};
 const L0=temp&&Q.get('fresh')?{state:S.newState(clock.now())}:S.load(localStorage,clock.now(),r);let s=L0.state,w=S.newWorld(s,r);
 if(temp&&Q.get('rows')){const rows=Number(Q.get('rows'));if(Number.isSafeInteger(rows)&&rows>=0)s.space.unlockedRows=rows;}
 const L=makeT(()=>s.settings.language);
-const ui={nav:'cafe',panel:null,arg:null,sel:null,modals:[],toastT:0,walkPick:null,walkAlba:new Set(),trainPick:{}};
+const ui={seen:{menuDone:false},knownMenus:null,nav:'cafe',panel:null,arg:null,sel:null,modals:[],toastT:0,walkPick:null,walkAlba:new Set(),trainPick:{}};
 
 // ───────── images (assets/drive, MAP.md) ─────────
 const IMG={shiba:b=>`assets/drive/shiba-${b}.png`,dongu:'assets/drive/dongu.webp',four:'assets/drive/shiba-four.webp',
@@ -55,22 +56,31 @@ function renderHUD(){const now=clock.now();$('coins').textContent=fmt(s.coins);$
 let sceneSig='';
 const iso=createIsoMap($('isomap'),{onChange:()=>{S.syncRoutes(s,w);persist();},onExpand:()=>toast('상점 준비 중이에요'),onBlocked:()=>toast('다른 가구와 겹치거나 방 밖으로 나갈 수 없어요.'),onEditChange:()=>{mainTab='furniture';menuSig='';renderMainMenu();}});
 function renderScene(){iso.draw(s,w);renderMainMenu();}
-let menuSig='',mainTab=iso.edit?'furniture':'menu';
+let menuSig='',mainTab=iso.edit?'furniture':DEFAULT_TAB;
+// §16-1 tab row: built once from TABS; icons only from existing images, red dots from tabBadges (real state).
+$('mainTabs').innerHTML=TABS.map(t=>`<button data-main-tab="${t.id}" class="${t.main?'main':''}" aria-label="${t.label}"><i class="tab-dot" aria-hidden="true" hidden></i><span class="tab-ico${t.icon==='shiba'?' portrait':''}">${t.icon==='shiba'?'<img alt="" draggable="false">':t.icon?img(t.icon):''}</span><span class="tab-label">${t.label}</span></button>`).join('');
+function renderTabs(now){
+ // a development finished (any path: tick, fast-forward, instant finish) while 가게 관리 was not open → dot until it is opened
+ if(ui.knownMenus!=null&&s.menus.length>ui.knownMenus&&mainTab!=='manage')ui.seen.menuDone=true;ui.knownMenus=s.menus.length;
+ const b=tabBadges(s,now,ui.seen),pic=document.querySelector('[data-main-tab=shiba] .tab-ico img'),src=IMG.shiba(s.shibas[0]?.breed||CFG.breeds[0]);if(pic&&pic.getAttribute('src')!==src)pic.src=src;
+ document.querySelectorAll('[data-main-tab]').forEach(e=>{const on=!!b[e.dataset.mainTab],t=TABS.find(x=>x.id===e.dataset.mainTab);e.classList.toggle('active',e.dataset.mainTab===mainTab);e.querySelector('.tab-dot').hidden=!on;e.dataset.badge=on?'1':'0';e.setAttribute('aria-label',t.label+(on?' · 알림':''));});}
 function renderMainMenu(){
- document.querySelectorAll('[data-main-tab]').forEach(b=>b.classList.toggle('active',b.dataset.mainTab===mainTab));
+ const now=clock.now();renderTabs(now);
  $('paws').textContent=fmt(s.shibas.reduce((n,sh)=>n+(sh.paws||0),0));$('paws').parentElement.title='발바닥 '+$('paws').textContent;
- const now=clock.now(),sig=JSON.stringify([mainTab,s,w.custs.map(c=>[c.phase,c.request]),w.queue.length,w.recent,ui.accType,iso.edit,s.settings.language,Math.floor(now/1000)]);
+ const sig=JSON.stringify([mainTab,ui.seen.menuDone,s,w.custs.map(c=>[c.phase,c.request]),w.queue.length,w.recent,ui.accType,iso.edit,s.settings.language,Math.floor(now/1000)]);
  if(sig===menuSig)return;menuSig=sig;
- const headers={menu:['메뉴 개발','새로운 맛을 준비해요'],shiba:['시바','돌봄 · 레벨업 · 산책'],furniture:['가구','보유 가구 · 배치'],store:['가게','반다나 · 액세서리 · 가방']};const [title,hint]=headers[mainTab];document.querySelector('.menu-heading').innerHTML=title+' <small>'+hint+'</small>'+ (mainTab==='menu'?`<div data-customer-status style="font-size:11px;font-weight:normal">손님 · 착석 ${w.custs.filter(c=>c.phase==='seated').length} / 대기 ${w.queue.length} · 이동 ${w.custs.filter(c=>c.phase!=='seated').length}<br>${w.custs.some(c=>c.phase==='seated')?'요구 · 시바 만나기 / 재주 보기 · ':''}${w.recent.map(x=>`${x.order} · ${x.pending?'결제 미정':'+'+f2(x.coins)+' 멍코인'}`).join(' / ')}</div>`:'');
- $('menuList').classList.toggle('tab-list',mainTab!=='menu');
- if(mainTab!=='menu'){const content=mainTab==='shiba'?P.shibas().html:mainTab==='store'?P.shop().html:`<button data-edit-toggle aria-pressed="${iso.edit}">${iso.edit?'편집 끝':'배치 편집'}</button><section class="furniture-section" aria-labelledby="furniture-heading"><h3 id="furniture-heading">가구</h3><div class="furniture-grid">${CFG.furniture.items.filter(({id})=>s.placement.slots.some(slot=>slot.type===({'tea-table':'table',zabuton:'cushion'}[id]||id))).map(({id,name})=>`<article class="furniture-card" data-furniture-card="${id}"><img class="furniture-icon" src="assets/drive/ui/ui-icon-${id}.png" alt=""><strong>${name}</strong></article>`).join('')}</div></section>`;const scroll=$('menuList').scrollTop;$('menuList').innerHTML=content;$('menuList').scrollTop=scroll;if(mainTab==='furniture'&&iso.edit)$('menuList').prepend(iso.actions);$('menuList').querySelector('[data-edit-toggle]')?.addEventListener('click',()=>{iso.setEdit(!iso.edit);});return;}
+ const headers={manage:['가게 관리','메뉴 개발 · 카페'],shiba:['시바','돌봄 · 레벨업 · 산책'],alba:['알바','데이케어 · 산책 · 훈련사 · 매니저'],mission:['미션','준비 중'],furniture:['가구','보유 가구 · 배치'],shop:['상점','반다나 · 액세서리 · 가방']};const [title,hint]=headers[mainTab];document.querySelector('.menu-heading').innerHTML=title+' <small>'+hint+'</small>'+ (mainTab==='manage'?`<div data-customer-status style="font-size:11px;font-weight:normal">손님 · 착석 ${w.custs.filter(c=>c.phase==='seated').length} / 대기 ${w.queue.length} · 이동 ${w.custs.filter(c=>c.phase!=='seated').length}<br>${w.custs.some(c=>c.phase==='seated')?'요구 · 시바 만나기 / 재주 보기 · ':''}${w.recent.map(x=>`${x.order} · ${x.pending?'결제 미정':'+'+f2(x.coins)+' 멍코인'}`).join(' / ')}</div>`:'');
+ $('menuList').classList.toggle('tab-list',mainTab!=='manage');
+ if(mainTab!=='manage'){const content=mainTab==='shiba'?P.shibas().html:mainTab==='shop'?P.shop().html:mainTab==='alba'?P.alba().html:mainTab==='mission'?'<div class="preparing" data-mission>준비 중</div>':`<button data-edit-toggle aria-pressed="${iso.edit}">${iso.edit?'편집 끝':'배치 편집'}</button><section class="furniture-section" aria-labelledby="furniture-heading"><h3 id="furniture-heading">가구</h3><div class="furniture-grid">${CFG.furniture.items.filter(({id})=>s.placement.slots.some(slot=>slot.type===({'tea-table':'table',zabuton:'cushion'}[id]||id))).map(({id,name})=>`<article class="furniture-card" data-furniture-card="${id}"><img class="furniture-icon" src="assets/drive/ui/ui-icon-${id}.png" alt=""><strong>${name}</strong></article>`).join('')}</div></section>`;const scroll=$('menuList').scrollTop;$('menuList').innerHTML=content;$('menuList').scrollTop=scroll;if(mainTab==='furniture'&&iso.edit)$('menuList').prepend(iso.actions);$('menuList').querySelector('[data-edit-toggle]')?.addEventListener('click',()=>{iso.setEdit(!iso.edit);});return;}
  const items=[CFG.menu.coffee,...CFG.menu.items].sort((a,b)=>a.id.localeCompare(b.id));
  const value=n=>n==null?'미정':fmt(n);
- $('menuList').innerHTML=items.map(m=>{const basic=m.id===CFG.menu.coffee.id,locked=!basic&&s.cafe.level<m.unlockLevel,dev=s.menuDev?.id===m.id,owned=s.menus.includes(m.id);
+ $('menuList').innerHTML=manageTop()+items.map(m=>{const basic=m.id===CFG.menu.coffee.id,locked=!basic&&s.cafe.level<m.unlockLevel,dev=s.menuDev?.id===m.id,owned=s.menus.includes(m.id);
  return `<article class="menu-card ${locked?'locked':''}" data-main-menu="${m.id}"><img src="assets/drive/${m.img}" alt="${L('menu.'+m.id)}"><div class="menu-info"><small>${m.id}</small><strong>${L('menu.'+m.id)}</strong><span>가격 ${value(m.price)} 멍코인</span>${basic?'':`<span>개발 시간 ${hm(m.devSec)}</span>`}${dev?`<span>개발 중 · ${tfmt((s.menuDev.until-now)/1000)}</span>`:''}</div><div class="menu-action">${basic?'<b>기본 메뉴</b>':locked?`<img class="lock" src="assets/drive/ui/ui-lock.png" alt="잠금"><b>Lv ${m.unlockLevel} 해금</b>`:dev?`<button class="instant" data-act="skip" data-type="menu" data-id="" ${S.skipCheck(s,{type:'menu'},now)?'disabled':''}>💎 즉시 완료 ${S.skipCost(S.skipLeftSec(s,{type:'menu'},now))}</button>`:owned?'<b>개발 완료</b>':`<button data-act="dev" data-id="${m.id}" ${S.menuCheck(s,m.id)?'disabled':''}>개발 ${value(m.devCost)} 멍코인</button>`}</div></article>`;
  }).join('');
 }
-document.querySelectorAll('[data-main-tab]').forEach(b=>b.addEventListener('click',()=>{close();mainTab=b.dataset.mainTab;menuSig='';document.querySelectorAll('[data-main-tab]').forEach(x=>x.classList.toggle('active',x===b));close();renderMainMenu();}));
+document.querySelectorAll('[data-main-tab]').forEach(b=>b.addEventListener('click',()=>{close();mainTab=b.dataset.mainTab;if(mainTab==='manage')ui.seen.menuDone=false;menuSig='';renderMainMenu();}));
+// 가게 관리 top: §16-2 popups (메뉴 개발 · 업그레이드), §15 ledger, café level (moved from the old 가게 tab).
+function manageTop(){return `<div class="manage-top" data-manage-top><div class="card"><div class="btns"><button data-act="listOpen" data-list="menu">메뉴 개발</button><button class="sec" data-act="listOpen" data-list="upgrade">업그레이드</button>${CFG.ledger.openFromStore?'<button class="sec" data-act="ledger">손익계산서</button>':''}</div></div>${cafeCard()}</div>`;}
 function handleEvents(){for(const e of w.events.splice(0)){
  if(e.type==='menuDone')toast(L('toast.menuDone',{name:L('menu.'+e.id)}));
  if(e.type==='order')toast(`${L('menu.'+e.order)} 주문`);
@@ -153,6 +163,11 @@ P.walk=()=>{const now=clock.now();let h='';const W=s.walk;
   ${s.shibas.filter(o=>(o.cd.walk||0)>now).map(o=>`<div class="li"><span class="grow note">${nameOf(o)} · ${L('app.cooldown',{t:tfmt((o.cd.walk-now)/1000)})}</span>${skipBtn({type:'walk',id:o.id})}</div>`).join('')}
   <button data-act="albaWalk" ${ac?'disabled':''}>${L('walk.albaGo',{cost:fmt(A.cost)})}</button></div>`;
  return {title:L('walk.title'),html:h};};
+// §16-1 알바 tab: existing helpers (갱신 99·118·123·125-1). Hiring happens in the §16-2 popup or the existing care/walk screens.
+P.alba=()=>{const now=clock.now(),G=CFG.alba.manager;let h=`<div class="card" data-alba><button data-act="listOpen" data-list="alba">알바 고르기</button><div class="note">${L('shop.manager')} · ${S.managerActive(s,now)?L('hud.manager',{t:tfmt((s.cafe.managerUntil-now)/1000)}):s.cafe.level<G.unlock?L('app.locked',{lv:G.unlock}):'대기'}</div></div>`;
+ const cds=s.shibas.flatMap(sh=>['daycare','walk','trainer'].filter(k=>(sh.cd[k]||0)>now).map(k=>`<div class="li"><span class="grow note">${nameOf(sh)} · ${ALBA_NAME(k)} ${L('app.cooldown',{t:tfmt((sh.cd[k]-now)/1000)})}</span>${skipBtn({type:k,id:sh.id})}</div>`));
+ return {title:'알바',html:h+`<div class="card"><h3>쿨타임</h3>${cds.join('')||'<div class="note">쿨타임 중인 시바가 없어요.</div>'}</div>`};};
+const ALBA_NAME=k=>L({daycare:'care.daycare',walk:'walk.alba',trainer:'care.trainer',manager:'shop.manager'}[k]);
 const hm=sec=>{const h=Math.floor(sec/3600),m=Math.round(sec%3600/60);return h&&m?L('app.hm',{h,m}):h?L('app.h',{h}):L('app.m',{m});};
 // 갱신 136: 개발 중인 메뉴 1개 — 남은 시간, 진행 막대, 바로 완료(135-2)
 function devCard(now){const D=s.menuDev;if(!D)return `<div class="note">${L('shop.devIdle')}</div>`;const m=S.menuItem(D.id),left=(D.until-now)/1000;
@@ -163,10 +178,8 @@ function gachaCard(){const G=CFG.gacha;return `<div class="card" data-gacha><h3>
 function cafeCard(){const C=s.cafe,need=S.cafeNeed(C.level);return `<div class="card" data-cafe-level><h3>카페 Lv ${C.level}</h3><div class="note">경험치 ${fmt(C.exp)} / ${C.level>=CFG.cafe.maxLevel?'최고 레벨':need==null?'미정':fmt(need)} · 평판 ${Math.round(C.rep)}</div>${bar(need==null?0:C.exp/need)}<div class="note">경험치를 모으면 자동 레벨업 · 배치 가능 ${S.slotsOf(s)}마리</div></div>`;}
 function shopSlots(){return `<div class="card" data-shop-slots><h3>시바 액세서리 칸</h3>${s.shibas.map(sh=>`<div class="li"><div class="pt">${img(IMG.shiba(sh.breed))}</div><div class="grow"><b>${nameOf(sh)}</b><div class="note">${sh.accUnlocked?'칸 열림 · '+(sh.acc?accName(sh.acc):'빈 칸'):'칸 잠김'}</div><div class="btns">${sh.accUnlocked?`<button class="sec" data-act="care" data-id="${sh.id}">돌봄 · 액세서리</button>`:`<button data-act="accUnlock" data-id="${sh.id}" data-via="paws" ${S.accUnlockCheck(s,sh.id,'paws')?'disabled':''}>발바닥 ${fmt(CFG.accessory.unlockPaws)}</button><button data-act="accUnlock" data-id="${sh.id}" data-via="dia" ${S.accUnlockCheck(s,sh.id,'dia')?'disabled':''}>${fmt(CFG.accessory.unlockDia)}💎</button>`}</div></div></div>`).join('')}</div>`;}
 function inventoryCard(){const items=S.bandanaItems().filter(it=>S.accOwned(s,it.id)>0);return `<div class="card" data-inventory><h3>액세서리 가방</h3>${items.length?items.map(it=>`<div class="li">${bandHtml(it.id)}<div class="grow"><b>${accName(it.id)}</b><div class="note">보유 ${S.accOwned(s,it.id)} · 착용 ${S.accWorn(s,it.id)} · 가방 ${s.accInv[it.id]||0}</div>${s.shibas.map(sh=>`<button class="sec" data-act="${sh.acc===it.id?'unequip':'equip'}" data-id="${sh.id}" data-item="${it.id}" ${sh.acc===it.id?'':S.equipCheck(s,sh.id,it.id)?'disabled':''}>${nameOf(sh)} · ${sh.acc===it.id?'벗기기':sh.accUnlocked?'착용':'칸 잠김'}</button>`).join('')}</div></div>`).join(''):'<div class="note">보유한 액세서리가 없어요.</div>'}</div>`;}
-P.shop=()=>{const now=clock.now();let h=(CFG.ledger.openFromStore?`<div class="card"><button data-act="ledger">손익계산서</button></div>`:"")+cafeCard();
- const G=CFG.alba.manager,mc=S.albaCheck(s,'manager',[],now);
- h+=`<div class="card"><h3>${L('shop.manager')}</h3><div class="note">${L('shop.managerNote')}</div><button data-act="manager" ${mc?'disabled':''}>${s.cafe.level<G.unlock?L('app.locked',{lv:G.unlock}):S.managerActive(s,now)?L('hud.manager',{t:tfmt((s.cafe.managerUntil-now)/1000)}):L('shop.hire',{cost:fmt(G.cost)})}</button></div>
-  ${accShop()}${shopSlots()}${inventoryCard()}<div class="card"><h3>${L('shop.bag')}</h3><div class="li"><span class="ico reset" style="width:34px;height:34px"></span><div class="grow nm">${L('shop.heartReset',{n:s.items.heartReset})}</div><button data-act="heartReset" ${S.canUseHeartReset(s)?'':'disabled'}>${L('shop.use')}</button></div>
+// §16-1 상점 tab: the old 가게 tab minus café level/ledger (→ 가게 관리) and manager (→ 알바). Only the bandana purchase works.
+P.shop=()=>{let h=`${accShop()}${shopSlots()}${inventoryCard()}<div class="card"><h3>${L('shop.bag')}</h3><div class="li"><span class="ico reset" style="width:34px;height:34px"></span><div class="grow nm">${L('shop.heartReset',{n:s.items.heartReset})}</div><button data-act="heartReset" ${S.canUseHeartReset(s)?'':'disabled'}>${L('shop.use')}</button></div>
    <div class="li">${slot(L('app.missingImg'),34,34)}<div class="grow nm">${L('shop.capsule',{n:s.items.capsule})}</div></div>
    <div class="li">${img(IMG.potion)}<div class="grow nm">${L('dia.potionBig')} ×${s.items.potionBig} · ${L('dia.potionSmall')} ×${s.items.potionSmall}</div></div></div>
   ${gachaCard()}
@@ -193,10 +206,36 @@ function open(name,arg=null){ui.panel=name;ui.arg=arg;ui.nav=['shibas','care'].i
 function close(){ui.panel=null;$('pbody').innerHTML='';panelSig='';ui.nav='cafe';renderPanel();navState();}
 function navState(){document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('on',b.dataset.nav===ui.nav));}
 
+// ───────── §16-2 list popup ─────────
+// Row: {key, face (existing image path or null → empty slot), portrait, name, effect, price (config value; null → '미정' disabled),
+//  unit 'coin'|'dia', label (button text instead of price), disabled, act, data}. Prices come from CFG only.
+const LP={};
+const priceText=(p,unit)=>p==null?L('app.unset'):fmt(p)+(unit==='dia'?' 다이아':' 멍');
+LP.alba=()=>{const now=clock.now();const fx={daycare:A=>`놀아주기와 같음 · 친밀도 ×${A.intimacyMul} · 쿨타임 ${hm(A.cooldownSec)}`,walk:A=>L('walk.albaNote',{n:A.maxShibas}),trainer:A=>`하트 없이 훈련 1회 · 항상 성공 · 쿨타임 ${hm(A.cooldownSec)}`,manager:()=>L('shop.managerNote')};
+ return {title:'알바 고르기',rows:['daycare','walk','trainer','manager'].map(k=>{const A=CFG.alba[k],locked=!isUnset(A.unlock)&&s.cafe.level<A.unlock,active=k==='manager'&&S.managerActive(s,now);
+  const gate=isUnset(A.cost)||isUnset(A.unlock)||locked||active||isUnset(s.coins)||s.coins<A.cost||(k==='manager'&&!!S.albaCheck(s,'manager',[],now));
+  return {key:k,face:null,name:ALBA_NAME(k),effect:(locked?L('app.locked',{lv:A.unlock})+' · ':active?L('hud.manager',{t:tfmt((s.cafe.managerUntil-now)/1000)})+' · ':'')+fx[k](A),price:A.cost,unit:'coin',disabled:gate,
+   act:k==='manager'?'manager':k==='walk'?'albaWalkOpen':'listOpen',data:k==='manager'||k==='walk'?{}:{list:'albaShiba',kind:k}};})};};
+// second level for per-shiba helpers: 데이케어 hires here; 훈련사 needs a trick → that shiba's care screen (existing trainer buttons).
+LP.albaShiba=kind=>{const now=clock.now(),A=CFG.alba[kind];return {title:ALBA_NAME(kind),rows:s.shibas.map(sh=>{const c=kind==='trainer'?(CFG.tricks.some(t=>!S.albaCheck(s,kind,[sh.id],now,t.id))?null:S.albaCheck(s,kind,[sh.id],now,CFG.tricks[0].id)):S.albaCheck(s,kind,[sh.id],now),cd=(sh.cd[kind]||0)-now;
+ return {key:'shiba-'+sh.id,face:IMG.shiba(sh.breed),portrait:true,name:nameOf(sh)+' · '+L('app.lv',{lv:sh.level}),effect:cd>0?L('app.cooldown',{t:tfmt(cd/1000)}):statusText(sh,S.statusOf(s,sh)),price:A.cost,unit:'coin',disabled:!!c,
+  act:kind==='daycare'?'daycare':'albaTrainerOpen',data:{id:sh.id}};})};};
+LP.menu=()=>{const now=clock.now();return {title:L('shop.menu'),rows:CFG.menu.items.map(m=>{const c=S.menuCheck(s,m.id),dev=s.menuDev?.id===m.id,owned=s.menus.includes(m.id),locked=!isUnset(m.unlockLevel)&&s.cafe.level<m.unlockLevel;
+ const effect=`판매가 ${priceText(m.price,'coin')} · ${dev?'개발 중 '+tfmt((s.menuDev.until-now)/1000):'개발 '+(isUnset(m.devSec)?L('app.unset'):hm(m.devSec))}${locked?' · '+L('app.locked',{lv:m.unlockLevel}):''}`;
+ if(dev){const left=S.skipLeftSec(s,{type:'menu'},now);return {key:m.id,face:'assets/drive/'+m.img,name:L('menu.'+m.id),effect,price:S.skipCost(left),unit:'dia',label:'즉시 완료 '+fmt(S.skipCost(left))+' 다이아',disabled:!!S.skipCheck(s,{type:'menu'},now),act:'skip',data:{type:'menu',id:''}};}
+ return {key:m.id,face:'assets/drive/'+m.img,name:L('menu.'+m.id),effect,price:m.devCost,unit:'coin',label:owned?'개발 완료':null,disabled:!!c,act:'dev',data:{id:m.id}};})};};
+// 가게 관리 업그레이드: the game has no purchasable café upgrade yet (café level is automatic, expansion/2층/칸 prices are UNSET) → 준비 중.
+LP.upgrade=()=>({title:'가게 관리',rows:[],empty:'준비 중'});
+function listPopupHtml(m){const v=LP[m.list](m.arg);
+ const row=x=>`<article class="lp-card" data-lp-row="${x.key}"><span class="lp-face${x.portrait?' portrait':''}">${x.face?img(x.face):''}</span><div class="lp-text"><strong>${x.name}</strong><small>${x.effect}</small></div><button class="lp-price" data-act="${x.act}" ${Object.entries(x.data||{}).map(([k,val])=>`data-${k}="${val}"`).join(' ')} ${x.price==null||x.disabled?'disabled':''}>${x.price==null?L('app.unset'):x.label||priceText(x.price,x.unit)}</button></article>`;
+ return `<div class="lp-ribbon"><h2>${v.title}</h2></div><button class="lp-close" data-act="modalOk" aria-label="닫기">×</button><div class="lp-list" data-list-popup="${m.list}">${v.rows.length?v.rows.map(row).join(''):`<div class="lp-empty">${v.empty||L('app.unset')}</div>`}</div>`;}
+
 // ───────── modals ─────────
 let modalSig='';let observedCafeLevel=s.cafe.level;
 function renderModal(){const m=ui.modals[0]||(!s.settings.language?{kind:'lang'}:!s.started?{kind:'start'}:s.rescues.length?{kind:'rescue',x:s.rescues[0]}:null);
- if(!m){$('modal').hidden=true;modalSig='';return;}const sig=JSON.stringify([m.kind,m.x,m.kind==='ledger'?[m.day,S.ledgerStatement(s,clock.now(),m.day)]:null,ui.langPick,ui.startPick,s.settings.language,s.coins>=(m.kind==='rescue'?S.hospitalCost(s,'rescueBath'):0)]);if(sig===modalSig)return;modalSig=sig;
+ if(!m){$('modal').hidden=true;modalSig='';return;}
+ $('mbox').classList.toggle('list-popup',m.kind==='list');
+ if(m.kind==='list'){const h=listPopupHtml(m);if(h===modalSig&&!$('modal').hidden)return;const sc=$('mbox').querySelector('.lp-list')?.scrollTop||0,same=$('mbox').dataset.list===m.list+(m.arg||'');modalSig=h;$('mbox').classList.remove('ledger-paper');$('mbox').innerHTML=h;$('mbox').dataset.list=m.list+(m.arg||'');if(same)$('mbox').querySelector('.lp-list').scrollTop=sc;$('modal').hidden=false;return;}const sig=JSON.stringify([m.kind,m.x,m.kind==='ledger'?[m.day,S.ledgerStatement(s,clock.now(),m.day)]:null,ui.langPick,ui.startPick,s.settings.language,s.coins>=(m.kind==='rescue'?S.hospitalCost(s,'rescueBath'):0)]);if(sig===modalSig)return;modalSig=sig;delete $('mbox').dataset.list;
  let h='';
  $('mbox').classList.toggle('ledger-paper',m.kind==='ledger');
  if(m.kind==='ledger'){
@@ -226,6 +265,9 @@ if(L0.offline&&(L0.offline.sec>=60||L0.reopened))ui.modals.push({kind:'offline',
 
 // ───────── actions ─────────
 const act={
+ listOpen:d=>{if(d.list==='menu')ui.seen.menuDone=false;ui.modals.unshift({kind:'list',list:d.list,arg:d.kind||null});},
+ albaWalkOpen:()=>{ui.modals=ui.modals.filter(m=>m.kind!=='list');open('walk');},
+ albaTrainerOpen:d=>{ui.modals=ui.modals.filter(m=>m.kind!=='list');open('care',+d.id);},
  close,resourceShop:()=>toast('상점 준비 중이에요'),income:()=>{if(CFG.ledger.openFromPill)ui.modals.unshift({kind:'ledger',day:0});},ledger:()=>ui.modals.unshift({kind:'ledger',day:0}),ledgerDay:d=>{ui.modals[0].day=+d.day;},care:d=>open('care',+d.id),
  place:d=>{if(!S.setPlaced(s,+d.id,d.on==='1'))why(S.placeCheck(s,+d.id));},
  dongu:()=>{s.dongu.placed=!s.dongu.placed;},

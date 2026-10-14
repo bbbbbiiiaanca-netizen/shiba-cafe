@@ -154,7 +154,7 @@ export function train(s,id,trick,r=Math.random,now=Date.now()){if(trainCheck(s,i
  const p=trainChance(sh),ok=r()<p;const up=ok?addTrickRep(s,sh,trick,now):false;return {ok,p,up,level:sh.tricks[trick],exp:sh.trickExp[trick]};}
 
 // ───────────────────────── 알바 (갱신 99·118·123·125) ─────────────────────────
-export function albaCheck(s,kind,ids=[],now=Date.now(),trick=null){const A=CFG.alba[kind];if(!A)return 'kind';if(s.cafe.level<A.unlock)return 'locked';if(isUnset(s.coins)||s.coins<A.cost)return 'coins';
+export function albaCheck(s,kind,ids=[],now=Date.now(),trick=null){const A=CFG.alba[kind];if(!A)return 'kind';if(isUnset(A.cost)||isUnset(A.unlock))return 'unset';if(s.cafe.level<A.unlock)return 'locked';if(isUnset(s.coins)||s.coins<A.cost)return 'coins';
  if(kind==='manager')return now<s.cafe.managerUntil?'active':null;
  if(!ids.length)return 'pick';if(kind==='walk'?ids.length>A.maxShibas:ids.length!==1)return 'count';
  for(const id of ids){const sh=byId(s,id);if(!sh)return 'pick';if((sh.cd[kind]||0)>now)return 'cooldown';const st=statusOf(s,sh);if(st!=='ok')return st;}

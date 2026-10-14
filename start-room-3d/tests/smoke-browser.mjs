@@ -37,23 +37,23 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await check('§15: yesterday flip',`document.querySelector('[data-act=ledgerDay][data-day="-1"]').getAttribute('aria-pressed')==='true'&&document.querySelector('[data-ledger-category=sales]').textContent.includes('0')`);
  await ev(`document.querySelector('[data-act=ledgerDay][data-day="0"]').click();true`);
  await check('§15: today flip',`document.querySelector('[data-ledger-category=sales]').textContent.includes('12')`);
- await ev(`document.querySelector('#mbox [data-act=modalOk]').click();document.querySelector('[data-main-tab=store]').click();document.querySelector('#menuList [data-act=ledger]').click();true`);
- await check('§15: store opens ledger with red parenthesized expenses and bold net',`!document.getElementById('modal').hidden&&document.querySelector('.ledger-row.expense').textContent.includes('(')&&document.querySelector('.ledger-net strong').textContent==='순이익'`);
+ await ev(`document.querySelector('#mbox [data-act=modalOk]').click();document.querySelector('[data-main-tab=manage]').click();document.querySelector('#menuList [data-act=ledger]').click();true`);
+ await check('§15/§16: 가게 관리 opens ledger with red parenthesized expenses and bold net',`!document.getElementById('modal').hidden&&document.querySelector('.ledger-row.expense').textContent.includes('(')&&document.querySelector('.ledger-net strong').textContent==='순이익'`);
  await ev(`document.querySelector('#mbox [data-act=modalOk]').click();true`);
- for(const [tab,title] of [['menu','메뉴 개발'],['shiba','시바'],['furniture','가구'],['store','가게']]){await ev(`document.querySelector('[data-main-tab=${tab}]').click();true`);await check('Unit 2 '+tab+' header',`document.querySelector('.menu-heading').firstChild.textContent.trim()===${JSON.stringify(title)}`);}
+ for(const [tab,title] of [['manage','가게 관리'],['shiba','시바'],['alba','알바'],['mission','미션'],['furniture','가구'],['shop','상점']]){await ev(`document.querySelector('[data-main-tab=${tab}]').click();true`);await check('Unit 2 '+tab+' header',`document.querySelector('.menu-heading').firstChild.textContent.trim()===${JSON.stringify(title)}`);}
  await ev('document.querySelector("[data-main-tab=shiba]").click();__game.state.shibas[0].paws=420;__game.refresh();document.querySelector("#menuList [data-act=levelUp]").click();true');
  await check('level-up confirmation leaves paws intact','__game.state.shibas[0].level===21&&__game.state.shibas[0].paws===420&&!document.getElementById("modal").hidden');
  await ev('document.querySelector("[data-act=modalOk]").click();true');
  await check('cancel spends nothing','__game.state.shibas[0].paws===420');
  await ev('document.querySelector("#menuList [data-act=levelUp]").click();document.querySelector("[data-act=confirmYes]").click();true');
  await check('confirmed level-up consumes personal paws and shows result','__game.state.shibas[0].level===22&&__game.state.shibas[0].paws===0&&/레벨업 완료/.test(document.getElementById("mbox").textContent)');
- await ev('document.querySelector("[data-act=modalOk]").click();document.querySelector("[data-main-tab=store]").click();__game.state.coins=5000;__game.refresh();document.querySelector("[data-act=buyAcc][data-item=bandana-triangle-cell2]").click();true');
+ await ev('document.querySelector("[data-act=modalOk]").click();document.querySelector("[data-main-tab=shop]").click();__game.state.coins=5000;__game.refresh();document.querySelector("[data-act=buyAcc][data-item=bandana-triangle-cell2]").click();true');
  await check('shop primary action buys into inventory','__game.state.coins===0&&__game.state.accInv["bandana-triangle-cell2"]===1&&/가방 1/.test(document.querySelector("[data-inventory]").textContent)');
  await ev('document.querySelector("[data-inventory] [data-act=equip][data-item=bandana-triangle-cell2]").click();true');
  await check('inventory equips one copy','__game.state.shibas[0].acc==="bandana-triangle-cell2"&&__game.state.accInv["bandana-triangle-cell2"]===0');
  await ev('document.querySelector("[data-inventory] [data-act=unequip][data-item=bandana-triangle-cell2]").click();true');
  await check('inventory unequips back to bag','__game.state.shibas[0].acc===null&&__game.state.accInv["bandana-triangle-cell2"]===1');
- await ev('__game.state.cafe.level=1;__game.refresh();__game.state.cafe.exp=__game.S.cafeNeed(1)-1;__game.S.addCafeExp(__game.state,1);__game.refresh();true');
+ await ev('__game.state.cafe.level=1;__game.refresh();__game.state.cafe.exp=__game.S.cafeNeed(1)-1;__game.S.addCafeExp(__game.state,1);__game.refresh();document.querySelector("[data-main-tab=manage]").click();true');
  await check('cafe experience threshold advances level with feedback','__game.state.cafe.level===2&&/카페 Lv 2/.test(document.querySelector("[data-cafe-level]").textContent)&&/레벨업/.test(document.getElementById("toast").textContent)');
  await go(true,'&temp=1&rows=18');
  await ev('__game.state.settings.language="ko";__game.state.started=true;__game.ui.modals=[];__game.refresh();document.querySelector("[data-main-tab=furniture]").click();true');
@@ -65,16 +65,16 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await check('Unit 3 mouse drag scrolls map','__game.iso.scroll>0&&__game.iso.scroll<=__game.iso.maxScroll');
  await ev('__game.iso.scrollTo(Number.MAX_SAFE_INTEGER);true');
  await check('Unit 3 scroll clamps and reaches locked row','__game.iso.scroll===__game.iso.maxScroll&&__game.iso.markers.find(m=>m.kind==="row").y<document.getElementById("isomap").clientHeight');
- await ev('document.querySelector("[data-main-tab=menu]").click();true');
+ await ev('document.querySelector("[data-main-tab=manage]").click();true');
  await ev("__game.state.space.unlockedRows=0;__game.iso.scrollTo(0);__game.refresh();true");await sleep(200);
  const expansionPoint=await ev('(()=>{const m=__game.iso.markers.find(m=>m.kind==="row"),r=document.getElementById("isomap").getBoundingClientRect();return {x:r.left+m.buttonX,y:r.top+m.buttonY};})()');
  for(const type of ['mousePressed','mouseReleased'])await c('Input.dispatchMouseEvent',{type,...expansionPoint,button:'left',buttons:type==='mousePressed'?1:0,clickCount:1});
- await check('expansion + shows shop pending toast without changing tab',`document.getElementById('toast').textContent==='상점 준비 중이에요'&&__game.ui.toastT>0&&document.querySelector('[data-main-tab=menu]').classList.contains('active')&&!document.querySelector('[data-space-card]')`);
+ await check('expansion + shows shop pending toast without changing tab',`document.getElementById('toast').textContent==='상점 준비 중이에요'&&__game.ui.toastT>0&&document.querySelector('[data-main-tab=manage]').classList.contains('active')&&!document.querySelector('[data-space-card]')`);
  await go(false);
  await ev('document.querySelector("[data-main-tab=furniture]").click();document.querySelector("[data-edit-toggle]").click();true');
  await check('toggle enters edit in furniture panel','__game.iso.edit && __game.iso.gridCells===36 && document.querySelector("[data-main-tab=furniture]").classList.contains("active")');
  await check('action bar is inside bottom panel, clear of map',`(()=>{const bar=document.querySelector('.furniture-actions'),map=document.getElementById('isomap').getBoundingClientRect();return document.getElementById('menuList').contains(bar)&&!document.getElementById('scene').contains(bar)&&bar.getBoundingClientRect().top>=map.bottom&&!bar.hidden&&bar.querySelector('[data-furniture-flip]').disabled;})()`);
- await ev('document.querySelector("[data-main-tab=menu]").click();__game.iso.setEdit(true);true');
+ await ev('document.querySelector("[data-main-tab=manage]").click();__game.iso.setEdit(true);true');
  await check('programmatic edit activation switches to furniture','document.querySelector("[data-main-tab=furniture]").classList.contains("active")');
  await ev('new Promise(r=>setTimeout(r,300))');
  // Find an opaque sprite pixel, then drive actual pointer events through CDP.
@@ -105,12 +105,12 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
 
  // Unit 4 checks use TEMP staging and explicit pending-value fixtures; no production save.
  await go(true,'&temp=1');
- await ev(`(()=>{const g=__game;g.state.settings.language='ko';g.S.chooseStart(g.state,'red','',()=>.99,g.clock.now());g.state.coins=0;g.state.shibas[0].g={full:100,dirt:0,fatigue:0,happy:100,boredom:0};g.world.navigation={entrance:[5,5]};g.CFG.navigation.cellStepSec=1;g.CFG.income.levelAggregation=xs=>xs.length?xs[0]:1;for(let i=0;i<70;i++)g.step(1);g.refresh();document.querySelector('[data-main-tab=menu]').click();return true;})()`);
+ await ev(`(()=>{const g=__game;g.state.settings.language='ko';g.S.chooseStart(g.state,'red','',()=>.99,g.clock.now());g.state.coins=0;g.state.shibas[0].g={full:100,dirt:0,fatigue:0,happy:100,boredom:0};g.world.navigation={entrance:[5,5]};g.CFG.navigation.cellStepSec=1;g.CFG.income.levelAggregation=xs=>xs.length?xs[0]:1;for(let i=0;i<70;i++)g.step(1);g.refresh();document.querySelector('[data-main-tab=manage]').click();return true;})()`);
  await check('Unit 4 customer strip exposes seated/waiting and recent payment','/손님.*착석.*대기/.test(document.querySelector("[data-customer-status]").textContent)&&/멍코인/.test(document.querySelector("[data-customer-status]").textContent)');
  await check('Unit 4 invisible characters expose whole cells for testing','__game.characterPositions.length>0&&__game.characterPositions.every(c=>!c.cell||c.cell.every(Number.isInteger))&&!document.querySelector("[data-cust]")');
  await ev(`(()=>{const g=__game,c=g.world.custs.find(c=>c.phase==='seated');if(!c)throw Error('no seated fixture guest');window.u4Guest=c;window.u4VisitTime=c.t;g.iso.setEdit(true);g.state.placement.slots.find(x=>x.id===c.seatFurniture).origin=[5,3];g.S.syncRoutes(g.state,g.world);g.refresh();return true;})()`);
  await check('Unit 4 edit reseats guest without restarting visit','window.u4Guest.cell.join(",")==="5,3"&&window.u4Guest.t===window.u4VisitTime&&document.querySelector("[data-main-tab=furniture]").classList.contains("active")');
- await ev('__game.CFG.income.levelAggregation=null;__game.world.spawnT=1e12;for(let i=0;i<40;i++)__game.step(1);document.querySelector("[data-main-tab=menu]").click();true');
+ await ev('__game.CFG.income.levelAggregation=null;__game.world.spawnT=1e12;for(let i=0;i<40;i++)__game.step(1);document.querySelector("[data-main-tab=manage]").click();true');
  await check('Unit 4 null payment feedback is explicit','__game.world.lastPay.total===null&&document.querySelector("[data-customer-status]").textContent.includes("결제 미정")');
 
  // Unit 5: deterministic unsaved table image + all menu actions stay inside cards.
@@ -120,6 +120,52 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await check('Unit 5 all menu buttons fit inside card border','[...document.querySelectorAll(".menu-card button")].length>0&&[...document.querySelectorAll(".menu-card button")].every(b=>{const r=b.getBoundingClientRect(),c=b.closest(".menu-card").getBoundingClientRect();return r.left>=c.left&&r.right<=c.right&&r.top>=c.top&&r.bottom<=c.bottom;})');
  await check('Unit 5 diamond action is inside bottom area and 70 percent width','(()=>{const b=document.querySelector(".menu-card .instant"),r=b.getBoundingClientRect(),c=b.closest(".menu-card").getBoundingClientRect();return r.top>c.top+c.height*.6&&r.width<c.width*.75;})()');
  await check('Unit 5 no character art placeholders are drawn','Object.values(__game.world.sh).every(c=>!c.cell||c.cell.every(Number.isInteger))&&!document.querySelector("[data-cust]")');
+
+ // §16-1 bottom tab row + §16-2 list popup (TEMP, unsaved).
+ await go(true,'&temp=1&still=1');
+ await ev(`(()=>{const g=__game;g.state.settings.language='ko';g.S.chooseStart(g.state,'red','',()=>.99,g.clock.now());g.ui.modals=[];g.refresh();return true;})()`);
+ await check('§16-1: exactly one tab row, six unique tabs on one line at the very bottom, list content above it',`(()=>{const rows=document.querySelectorAll('.main-tabs'),bs=[...document.querySelectorAll('[data-main-tab]')],r=rows[0].getBoundingClientRect(),list=document.getElementById('menuList').getBoundingClientRect();return rows.length===1&&bs.length===6&&new Set(bs.map(b=>b.querySelector('.tab-label').textContent)).size===6&&bs.every(b=>rows[0].contains(b)&&Math.abs(b.getBoundingClientRect().bottom-bs[0].getBoundingClientRect().bottom)<1)&&Math.abs(r.bottom-innerHeight)<1&&list.bottom<=r.top+1&&rows[0].scrollWidth<=rows[0].clientWidth;})()`);
+ await check('§16-1: labels 가게 관리·시바·알바·미션·가구·상점; main (가게 관리) is larger; old 메뉴/가게 tabs gone',`(()=>{const L=[...document.querySelectorAll('[data-main-tab] .tab-label')].map(e=>e.textContent),m=document.querySelector('[data-main-tab].main'),o=document.querySelector('[data-main-tab=shiba]');return ['가게 관리','시바','알바','미션','가구','상점'].every(x=>L.includes(x))&&!L.includes('메뉴')&&!L.includes('가게')&&document.querySelectorAll('[data-main-tab].main').length===1&&m.dataset.mainTab==='manage'&&m.getBoundingClientRect().height>o.getBoundingClientRect().height&&m.querySelector('.tab-ico').getBoundingClientRect().width>o.querySelector('.tab-ico').getBoundingClientRect().width;})()`);
+ await check('§16-1: tab icons are existing images or empty (no drawn shapes); top bar keeps only the settings button on the right',`[...document.querySelectorAll('.main-tabs .tab-ico')].every(e=>e.children.length===0||(e.children.length===1&&e.firstElementChild.tagName==='IMG'&&e.firstElementChild.complete&&e.firstElementChild.naturalWidth>0))&&!document.querySelector('[data-main-tab=alba] .tab-ico img,[data-main-tab=mission] .tab-ico img,[data-main-tab=shop] .tab-ico img')&&document.querySelectorAll('#hud .cafe-status button').length===1&&!!document.querySelector('#hud .cafe-status .gear[data-nav=settings]')`);
+ const dots=`Object.fromEntries([...document.querySelectorAll('[data-main-tab]')].map(b=>[b.dataset.mainTab,!b.querySelector('.tab-dot').hidden]))`;
+ await check('§16-1: no red dot when nothing is actionable (coins UNSET)',`__game.state.coins===null&&Object.values(${dots}).every(v=>!v)`);
+ await ev('__game.state.cafe.level=2;__game.state.coins=8500;__game.refresh();true');
+ await check('§16-1: red dot on 가게 관리 when a menu can be developed',`(${dots}).manage&&!(${dots}).alba&&!(${dots}).shiba&&getComputedStyle(document.querySelector('[data-main-tab=manage] .tab-dot')).backgroundColor!=='rgba(0, 0, 0, 0)'`);
+ await ev('document.querySelector("[data-main-tab=manage]").click();document.querySelector("[data-act=dev][data-id=M-02]").click();true');
+ await check('§16-1: dot clears while the only development runs',`__game.state.menuDev?.id==='M-02'&&!(${dots}).manage`);
+ await ev('document.querySelector("[data-main-tab=shiba]").click();__game.advance(1801e3);__game.refresh();true');
+ await check('§16-1: finished development lights 가게 관리 until it is opened',`__game.state.menus.includes('M-02')&&(${dots}).manage`);
+ await ev('document.querySelector("[data-main-tab=manage]").click();true');
+ await check('§16-1: opening 가게 관리 clears the finished-development dot',`!(${dots}).manage`);
+ await ev('__game.state.shibas[0].paws=__game.S.pawsToNext(__game.state.shibas[0].level);__game.state.cafe.level=10;__game.state.coins=8000;__game.refresh();true');
+ await check('§16-1: red dots for shiba level-up and an available 알바 come from state',`(${dots}).shiba&&(${dots}).alba&&!(${dots}).mission&&!(${dots}).shop`);
+ await ev('document.querySelector("[data-main-tab=mission]").click();true');
+ await check('§16-1: 미션 is a 준비 중 stub',`document.querySelector('[data-mission]').textContent==='준비 중'`);
+ await ev('document.querySelector("[data-main-tab=shiba]").click();document.querySelector("#menuList [data-act=care]").click();true');
+ await check('§16-1: full panels stop above the tab row so tabs stay usable',`!document.getElementById('panel').hidden&&document.getElementById('panel').getBoundingClientRect().bottom<=document.querySelector('.main-tabs').getBoundingClientRect().top+1`);
+ await ev('document.querySelector("[data-main-tab=alba]").click();document.querySelector("[data-act=listOpen][data-list=alba]").click();true');
+ await check('§16-2: 알바 고르기 popup: cream window, ribbon title, close X top-right, 4 one-line cards with face slot · name+effect · green price',`(()=>{const box=document.getElementById('mbox'),b=box.getBoundingClientRect(),x=box.querySelector('.lp-close').getBoundingClientRect(),rows=[...box.querySelectorAll('.lp-card')];return !document.getElementById('modal').hidden&&box.classList.contains('list-popup')&&box.querySelector('.lp-ribbon h2').textContent==='알바 고르기'&&x.right>=b.right-20&&x.top<=b.top+10&&rows.length===4&&rows.every(r=>{const f=r.querySelector('.lp-face'),p=r.querySelector('.lp-price'),t=r.querySelector('.lp-text');return f&&f.children.length===0&&t.querySelector('strong').textContent&&t.querySelector('small').textContent&&p&&f.getBoundingClientRect().right<=t.getBoundingClientRect().left&&t.getBoundingClientRect().right<=p.getBoundingClientRect().left;})&&getComputedStyle(rows[0].querySelector('.lp-price')).backgroundColor==='rgb(123, 192, 67)';})()`);
+ await check('§16-2: alba prices come from config',`['daycare','walk','trainer','manager'].every(k=>document.querySelector('[data-lp-row='+k+'] .lp-price').textContent.replace(/,/g,'').includes(String(__game.CFG.alba[k].cost)))&&document.querySelector('[data-lp-row=manager] .lp-price').disabled&&!document.querySelector('[data-lp-row=daycare] .lp-price').disabled`);
+ await ev('document.querySelector("[data-lp-row=daycare] .lp-price").click();true');
+ await check('§16-2: same popup lists shibas with their portrait for 데이케어',`document.querySelector('#mbox .lp-ribbon h2').textContent==='데이케어 알바'&&document.querySelectorAll('#mbox .lp-card').length===__game.state.shibas.length&&document.querySelector('#mbox .lp-face img').src.includes('shiba-red.png')`);
+ await ev('document.querySelector("#mbox .lp-card .lp-price").click();true');
+ await check('§16-2: daycare hire uses the existing action (cost, cooldown)',`__game.state.coins===0&&__game.state.shibas[0].cd.daycare>__game.clock.now()&&document.querySelector('#mbox .lp-price').disabled`);
+ await ev('document.querySelector("#mbox .lp-close").click();true');
+ await check('§16-2: X closes the second level back to 알바 고르기',`document.querySelector('#mbox .lp-ribbon h2').textContent==='알바 고르기'`);
+ await ev('document.querySelector("#mbox .lp-close").click();true');
+ await check('§16-2: X closes the popup',`document.getElementById('modal').hidden`);
+ await ev('window.u16Cost=__game.CFG.alba.manager.cost;__game.CFG.alba.manager.cost=null;__game.state.cafe.level=50;__game.state.coins=1e9;__game.refresh();document.querySelector("[data-act=listOpen][data-list=alba]").click();true');
+ await check('§16-2: null price shows 미정 and is disabled',`(()=>{const b=document.querySelector('[data-lp-row=manager] .lp-price');return b.textContent==='미정'&&b.disabled;})()`);
+ await ev('document.querySelector("[data-lp-row=manager] .lp-price").click();__game.CFG.alba.manager.cost=window.u16Cost;true');
+ await check('§16-2: clicking a null-price button does nothing',`__game.state.coins===1e9&&!__game.S.managerActive(__game.state,__game.clock.now())`);
+ await ev('document.querySelector("#mbox .lp-close").click();document.querySelector("[data-main-tab=manage]").click();document.querySelector("[data-act=listOpen][data-list=menu]").click();true');
+ await check('§16-2: 메뉴 개발 popup has 13 menus with confirmed images and config prices',`(()=>{const rows=[...document.querySelectorAll('#mbox .lp-card')];return rows.length===13&&rows.every(r=>r.querySelector('.lp-face img'))&&document.querySelector('[data-lp-row=M-04] .lp-price').textContent.replace(/,/g,'').includes(String(__game.S.menuItem('M-04').devCost))&&document.querySelector('[data-lp-row=M-02] .lp-price').textContent==='개발 완료';})()`);
+ await ev('(()=>{const l=document.querySelector("#mbox .lp-list");l.scrollTop=300;__game.refresh();return true;})()');
+ await check('§16-2: long list scrolls inside the window and keeps its position on refresh',`(()=>{const l=document.querySelector('#mbox .lp-list'),b=document.getElementById('mbox').getBoundingClientRect();return l.scrollHeight>l.clientHeight&&l.scrollTop>0&&getComputedStyle(l).overflowY==='auto'&&b.bottom<=innerHeight&&b.top>=0;})()`);
+ await ev('document.querySelector("[data-lp-row=M-05] .lp-price").click();true');
+ await check('§16-2: popup develop uses the existing action (8,500 → M-05 cost check)',`__game.state.menuDev?.id==='M-05'&&/즉시 완료/.test(document.querySelector('[data-lp-row=M-05] .lp-price').textContent)`);
+ await ev('document.querySelector("#mbox .lp-close").click();document.querySelector("[data-act=listOpen][data-list=upgrade]").click();true');
+ await check('§16-2: 가게 관리 upgrade popup is a 준비 중 stub (no upgrades in the game)',`document.querySelector('#mbox .lp-empty').textContent==='준비 중'&&!document.querySelector('#mbox .lp-card')`);
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}
 for(const [k,n] of checks)console.log(k==='ok'?'  ok  ':'  FAIL',n);for(const e of errors)console.log('  ERROR',e);
 const fail=checks.filter(c=>c[0]!=='ok').length+errors.length;console.log(`${checks.length-checks.filter(c=>c[0]!=='ok').length}/${checks.length} smoke checks passed, ${errors.length} page errors`);process.exitCode=fail?1:0;

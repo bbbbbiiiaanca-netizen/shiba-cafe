@@ -388,3 +388,43 @@ Validation for §14: `npm test` passed all existing suites; `node --check` passe
 - CSS paper modal with yesterday/today, red parenthesized expense amounts, bold net and 멍코인 unit; HUD pill and 가게 button are configurable starting entry points; + keeps its existing toast.
 - `npm test` includes real transaction/category, rollover/cap, offline tick and save/load coverage. Browser smoke steps added for both entry points and day flipping.
 - DPR2 staged capture command: `node capture-main-screen.mjs --u15` writes `main-screen-u15-ledger.png` and `main-screen-u15-ledger-state.txt` (STAGED, ?temp=1, nonzero flows). Chrome cannot launch in this sandbox; browser smoke/capture are prepared but not executed here, and no synthetic screenshot is substituted.
+
+## §16 tabs
+Source: interior spec §16-1 (수인님 확정 2026-10-14), layout after `refs/ref_하단탭_참고.png` (layout only, no art taken). One icon tab row at the very bottom (`tabs.js` `TABS`, `.main-tabs`); the list panel content sits above it, and full panels (care/walk/settings) stop at the row so it stays usable. The old top list-panel tab row (메뉴/시바/가구/가게) is gone. No right-side column. Top right keeps only the small 설정 button (the 평판 pill is status text, not a button).
+
+| Tab (order) | Icon (existing image) | Contents | Came from |
+|---|---|---|---|
+| 시바 | first owned shiba's portrait `shiba-<breed>.png` | shiba list, care, level-up, walk | old 시바 tab |
+| 알바 | — (text) | 알바 고르기 popup button, manager status, helper cooldowns + finish-now | manager card from old 가게 tab; helpers from care/walk |
+| **가게 관리** (main, 3rd slot, bigger + raised) | `M-01-iced-americano_512.png` | 메뉴 개발 popup, 업그레이드 popup (준비 중), 손익계산서, café level card, customer strip, the existing 14-card menu grid | old 메뉴 tab + café level/ledger from old 가게 tab |
+| 미션 | — (text) | `준비 중` stub | new |
+| 가구 | `ui/ui-icon-tea-table.png` | unchanged (edit toggle, owned furniture) | old 가구 tab |
+| 상점 | — (text) | bandana shop (only working purchase), accessory slots, accessory bag, item bag, gacha (disabled), 다이아 상품 (disabled) | old 가게 tab |
+
+- Default tab = 가게 관리. Ids changed: `menu`→`manage`, `store`→`shop`; new `alba`, `mission`. `CFG.ledger.openFromStore` now gates the 손익계산서 button in 가게 관리 (key name kept).
+- **Red dots** (CSS) only from real state (`tabBadges` in `tabs.js`): 가게 관리 = a menu can be developed right now (`menuCheck` passes, nothing in development) or a development finished while 가게 관리 was not open (cleared on opening the tab or the 메뉴 개발 popup); 시바 = a shiba is injured/sick or can pay its next level-up; 알바 = some helper can be hired right now (same checks as `hireAlba`). 미션·가구·상점 never show a dot. With UNSET starting coins no dot appears.
+- Six tabs have no exact centre; the main item takes the 3rd slot (see question 1).
+- `sim.albaCheck` now returns `'unset'` for a null helper cost/unlock (before, `coins < null` was false, so a null price would have been hireable).
+
+## §16-2 list popup
+`#mbox.list-popup` + `listPopupHtml` (`main.js`): centred cream window, CSS ribbon title, red round close X top-right, one-line cards (left face image or empty slot, name + short effect, right green price button), list scrolls inside the window (scroll position kept across the 1 s refresh). Prices come only from CFG; null → `미정`, disabled. Uses:
+- **알바 고르기**: 데이케어 / 산책 알바 / 훈련사 / 매니저 with config costs, unlock levels and effects (99·118·123·125-1). 매니저 hires directly. 데이케어 opens the same popup listing shibas (portrait faces) and hires per shiba. 산책 알바 opens the existing walk screen (multi-pick, up to 4). 훈련사 lists shibas and opens that shiba's care screen, because a trick must be picked there (existing trainer buttons).
+- **메뉴 개발**: the 13 developable menus (confirmed menu images, 134/134-1/136): sale price, dev time, unlock level; button = dev cost → existing `dev`; while developing → `즉시 완료 N 다이아` (135-2); developed → `개발 완료`. The menu grid in 가게 관리 still offers the same actions.
+- **가게 관리 업그레이드**: no purchasable café upgrade exists (café level is automatic; expansion/2층/paid slot prices are UNSET) → popup shows `준비 중`.
+
+## §16 art requests
+- Tab icons: 알바, 미션, 상점 (text labels now); optionally a dedicated 가게 관리 icon (now the M-01 drink) and 시바 tab icon (now the portrait).
+- 알바 faces for the popup: 데이케어 알바, 산책 알바, 훈련사, 매니저 (empty face slots now).
+- Coin / diamond icon for the green price buttons (text `멍` / `다이아` now; same missing 멍코인 icon as §14).
+- Optional: ribbon, window frame, close-X and green button art to replace the CSS chrome.
+
+## §16 questions
+1. Six tabs (시바·알바·가게 관리·미션·가구·상점) have no exact centre. Keep six with 가게 관리 as the bigger 3rd item, or drop to five (e.g. 시바 inside 가게 관리 or 알바) so the main item is centred? And which item is "main": 가게 관리 (now) or 미션 (as in the reference)?
+2. Should the 가게 관리 tab keep the 14-card menu grid next to the 메뉴 개발 popup, or should the popup be the only menu-development screen?
+3. What are the 가게 관리 upgrades (items, effects, prices)? None exist in spec-v3, so the popup is `준비 중`.
+4. 산책 알바 hires up to 4 shibas for one price and 훈련사 needs a trick choice; the popup hands off to the existing walk/care screens. OK, or should those choices move into the popup?
+5. Which events should light a red dot beyond the three used (developable/finished menu, shiba injured/sick/level-up, helper available)? E.g. walk returned, rescue waiting, heart reset usable.
+
+Validation: `npm test` passes (adds `tests/unit16.test.mjs`). Chrome ran in this sandbox this time: `npm run test:browser` → 116/116 checks, 0 page errors (adds §16 row/dots/popup/scroll/null-price checks; tab ids updated). `capture-main-screen.mjs --u16` writes `main-screen-u16-tabs.png`, `main-screen-u16-popup-alba.png`, `main-screen-u16-popup-menu.png` (+ `main-screen-u16-state.txt`), DPR2; the default run also produces them; `--u14`/`--u15` and all earlier outputs still run. Images were checked in a scratch dir only, not written to `/workspace/shiba-cafe-docs/spec-v3-build/`.
+
+Changed files: tabs.js (new), main.js, index.html, sim.js (albaCheck null guard), package.json, tests/unit16.test.mjs (new), tests/smoke-browser.mjs, tests/smoke-steps.mjs, capture-main-screen.mjs, SPEC-V3-NOTES.md.

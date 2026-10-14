@@ -28,8 +28,24 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev(`(()=>{const g=__game;g.state.cafe.level=5;g.state.coins=30000;g.state.dia=30;for(let i=0;i<250;i++)g.step(.1);g.world.custs=g.world.custs.slice(0,2);g.S.developMenu(g.state,'M-02',g.clock.now());g.refresh();return true;})()`);
  await sleep(1600);
  };
+ // §16: bottom tab row with real-state red dots, 알바 고르기 and 메뉴 개발 list popups (DPR2, unsaved TEMP staging).
+ const u16=async()=>{
+  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+  await ev(`(()=>{const g=__game,sh=g.state.shibas[0];g.state.cafe.level=10;sh.paws=g.S.pawsToNext(sh.level);g.refresh();return true;})()`);
+  await click('[data-main-tab=manage]');
+  if(!(await ev(`document.querySelectorAll('.main-tabs').length===1&&!document.querySelector('[data-main-tab=shiba] .tab-dot').hidden&&!document.querySelector('[data-main-tab=alba] .tab-dot').hidden`)))throw Error('§16 tab dots missing');
+  await shot('main-screen-u16-tabs.png');
+  await click('[data-main-tab=alba]');await click('[data-act=listOpen][data-list=alba]');
+  if(!(await ev(`document.querySelectorAll('#mbox .lp-card').length===4`)))throw Error('§16 alba popup missing');
+  await shot('main-screen-u16-popup-alba.png');
+  await click('#mbox .lp-close');await click('[data-main-tab=manage]');await click('[data-act=listOpen][data-list=menu]');
+  if(!(await ev(`document.querySelectorAll('#mbox .lp-card').length===13`)))throw Error('§16 menu popup missing');
+  await shot('main-screen-u16-popup-menu.png');
+  writeFileSync(join(out,'main-screen-u16-state.txt'),'STAGED, unsaved ?temp=1 fixture. 390×844 CSS px, DPR2. Café Lv10, M-02 developing, 21,500 coins, 30 diamonds, starter paws = next level-up cost (시바 dot), daycare affordable (알바 dot). tabs: 가게 관리 active; popup-alba: 알바 고르기; popup-menu: 메뉴 개발 (13 menus).\n');
+ };
+ if(process.argv.includes('--u16')){await u16();if(errors.length)throw Error(errors.join('\n'));}
  // Capture only §14 with --u14; preserve prior approved artifacts.
- if(process.argv.includes('--u15')){
+ else if(process.argv.includes('--u15')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
   await ev(`(()=>{const g=__game,n=g.clock.now();g.state.cafe.level=30;g.state.coins=300000;g.S.recordPayment(g.state,{pending:false,base:120,total:240},n);g.S.recordPayment(g.state,{pending:false,base:80,total:160},n-g.CFG.ledger.periodMs);g.S.recordPayment(g.state,{pending:false,base:60,total:90},n,{offline:true});g.S.hireAlba(g.state,'manager',[],n);g.state.shibas[0].status='sick';g.S.sendToHospital(g.state,g.state.shibas[0].id,n);g.S.buyAcc(g.state,g.S.bandanaItems()[0].id,n);g.refresh();return true;})()`);
   await click('#hud [data-act=income]');
@@ -37,13 +53,13 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await click('[data-act=ledgerDay][data-day="-1"]');
   if(!(await ev(`document.querySelector('[data-ledger-category=sales]').textContent.includes('80')`)))throw Error('yesterday missing');
   await click('[data-act=ledgerDay][data-day="0"]');await click('#mbox [data-act=modalOk]');
-  await click('[data-main-tab=store]');await click('#menuList [data-act=ledger]');
+  await click('[data-main-tab=manage]');await click('#menuList [data-act=ledger]');
   await shot('main-screen-u15-ledger.png');
   writeFileSync(join(out,'main-screen-u15-ledger-state.txt'),'STAGED, unsaved ?temp=1 fixture. 390×844 CSS px, DPR2. Today: sales 120, meeting extra 120, offline 90, manager wages 60000, hospital sick fee, M-02 development 8500 (normal stage), one bandana purchase. Yesterday: sales 80 + meeting extra 80. Smoke: pill opens, yesterday/today flip, close, store button opens.\n');
   if(errors.length)throw Error(errors.join('\n'));
  }else if(process.argv.includes('--u14')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
-  await click('[data-main-tab=menu]');await shot('main-screen-u14-topbar.png');
+  await click('[data-main-tab=manage]');await shot('main-screen-u14-topbar.png');
   if(errors.length)throw Error(errors.join('\n'));
   console.log('§14: 390×844, DPR2, 메뉴 tab → '+join(out,'main-screen-u14-topbar.png'));
  }else{
@@ -60,20 +76,20 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await shot('main-screen-v7-edit.png');
  // Unit 2 captures are separate from the reproducible v7 stages above.
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
- for(const tab of ['menu','shiba','furniture','store']){await click(`[data-main-tab=${tab}]`);await shot('main-screen-u2-'+(tab==='store'?'shop':tab)+'.png');}
+ for(const tab of ['manage','shiba','furniture','shop']){await click(`[data-main-tab=${tab}]`);await shot('main-screen-u2-'+(tab==='manage'?'menu':tab)+'.png');}
  await click('[data-main-tab=shiba]');await ev('__game.state.shibas[0].paws=__game.S.pawsToNext(__game.state.shibas[0].level);__game.refresh();true');
  await click('#menuList [data-act=levelUp]');await shot('main-screen-u2-levelup.png');
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
  await click('[data-main-tab=furniture]');await ev('document.getElementById("menuList").scrollTop=0;true');await shot('main-screen-u3-inventory.png');
- await click('[data-main-tab=menu]');
+ await click('[data-main-tab=manage]');
  await ev('__game.iso.scrollTo(__game.iso.maxScroll);true');await shot('main-screen-u3-locked-row.png');
  const expansionPoint=await ev('(()=>{const m=__game.iso.markers.find(m=>m.kind==="row"),r=document.getElementById("isomap").getBoundingClientRect();return {x:r.left+m.buttonX,y:r.top+m.buttonY};})()');
  for(const type of ['mousePressed','mouseReleased'])await c('Input.dispatchMouseEvent',{type,...expansionPoint,button:'left',buttons:type==='mousePressed'?1:0,clickCount:1});
- if(!(await ev(`document.getElementById('toast').textContent==='상점 준비 중이에요'&&document.querySelector('[data-main-tab=menu]').classList.contains('active')&&!document.querySelector('[data-space-card]')`)))throw Error('Expansion + did not show pending shop toast');
+ if(!(await ev(`document.getElementById('toast').textContent==='상점 준비 중이에요'&&document.querySelector('[data-main-tab=manage]').classList.contains('active')&&!document.querySelector('[data-space-card]')`)))throw Error('Expansion + did not show pending shop toast');
  const unit3=['locked-row','inventory'].map(name=>readFileSync(join(out,'main-screen-u3-'+name+'.png')));
  if(unit3[0].equals(unit3[1]))throw Error('Unit 3 captures must be distinct');
  // Unit 4 fixture supplies undecided navigation/payment values only in unsaved TEMP mode.
- await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});await click('[data-main-tab=menu]');
+ await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});await click('[data-main-tab=manage]');
  await ev(`(()=>{const g=__game;g.world.navigation={entrance:[5,5]};g.CFG.navigation.cellStepSec=1;g.CFG.income.levelAggregation=xs=>xs.length?xs[0]:1;g.state.menus=['M-02'];for(const sh of g.state.shibas)Object.assign(sh.g,{full:100,dirt:0,fatigue:0,happy:100,boredom:0});g.world.spawnT=0;for(let i=0;i<80;i++){g.S.tick(g.state,g.world,1,g.clock.now()+i*1000);if(g.world.events.some(e=>e.type==='leave'))break;}window.u4Payments=g.world.events.filter(e=>e.type==='leave');g.world.events=g.world.events.filter(e=>e.type==='order');g.step(0);return true;})()`);
  if(!(await ev('document.getElementById("toast").textContent.includes("주문")')))throw Error('Unit 4 order feedback missing');
  await shot('main-screen-u4-order.png',{keepToast:true});
@@ -85,10 +101,11 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  // Unit 5 new DPR2 artifacts. Table item uses actual sit/order rules in TEMP.
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
  await shot('main-screen-u5-grass.png');
- await click('[data-main-tab=menu]');await ev('document.getElementById("menuList").scrollTop=0;true');await shot('main-screen-u5-menu.png');
+ await click('[data-main-tab=manage]');await ev('document.getElementById("menuList").scrollTop=0;true');await shot('main-screen-u5-menu.png');
  await ev(`(()=>{const g=__game;g.world.custs=[];g.world.queue=[];g.world.sh={};g.world.events=[];g.world.spawnT=0;g.world.r=()=>.99;for(let i=0;i<200;i++){g.step(.1);if(g.world.custs.some(c=>c.phase==='seated'))break;}g.refresh();return true;})()`);
  if(!(await ev('__game.world.custs.some(c=>c.phase==="seated"&&c.itemSlot&&c.order.kind==="coffee")')))throw Error('Unit 5 staged drink missing table slot');
  await shot('main-screen-u5-table-item.png');
+ await u16();
  writeFileSync(join(out,'main-screen-v7-state.txt'),'Same normal staging as v6; edit: counter origin [0,1], dir1, footprint (0,1)-(0,2); stairs unchanged; 가구 tab active with action bar in bottom panel. 390x844, normal DPR1/DPR2, edit DPR2.\n');
  console.log('Staged capture: cafe level 5, M-02 developing; coins 21,500, diamonds 30; 390x844 CSS px, DPR 1 and 2.');
  }

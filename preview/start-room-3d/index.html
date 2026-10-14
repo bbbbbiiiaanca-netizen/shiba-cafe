@@ -108,6 +108,38 @@ button[data-act=levelUp]{background:url(assets/drive/ui/ui-btn-levelup-yellow.pn
 #hud button:focus-visible{outline:2px solid #ffd77b;outline-offset:2px}
 #scene{height:calc(55% - 20px)}
 
+/* §16-1: one icon tab row at the very bottom (layout after refs/ref_하단탭_참고.png, CSS chrome only). List content sits above it. */
+:root{--tabH:64px}
+#mainMenu{position:relative}
+.main-tabs{order:9;flex:none;height:var(--tabH);display:grid;grid-template-columns:repeat(6,minmax(0,1fr));align-items:end;gap:0;padding:0 4px 5px;border:0;border-top:2px solid #b98a55;background:#e9c58c;box-shadow:0 -2px 8px #5a3a1a22;z-index:12}
+.main-tabs button{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;height:54px;padding:0 1px;background:none;border-radius:12px;box-shadow:none;color:#6b4426;font-size:10px;line-height:1.1;min-width:0}
+.main-tabs button.active{background:#fff3da;background-image:none;color:#4a2e1c}
+.main-tabs .tab-ico{display:block;width:30px;height:30px;flex:none}
+.main-tabs .tab-ico img{width:100%;height:100%;object-fit:contain;display:block}
+.main-tabs .tab-ico.portrait img{object-fit:cover;object-position:50% 30%;border-radius:50%}
+.main-tabs .tab-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.main-tabs button.main{height:66px;margin-top:-14px;background:#f6dfb3;border:2px solid #b98a55;border-radius:18px 18px 12px 12px;font-size:11px}
+.main-tabs button.main.active{background:#fff3da}
+.main-tabs button.main .tab-ico{width:40px;height:40px}
+.main-tabs .tab-dot{position:absolute;top:2px;right:8px;width:10px;height:10px;border-radius:50%;background:#e2483d;border:2px solid #fff}
+#panel{bottom:var(--tabH)}
+#menuList:not(.tab-list){grid-auto-rows:auto}#menuList:not(.tab-list) .menu-card{height:180px}
+.manage-top{grid-column:1/-1;display:flex;flex-direction:column;gap:6px}.manage-top .btns button{flex:1}
+/* §16-2 list popup: cream window, CSS ribbon title, close X, one-line cards (face · name+effect · green price). */
+#mbox.list-popup{position:relative;overflow:visible;background:#fff6e2;border:3px solid #e2c38f;border-radius:22px;padding:34px 12px 14px;gap:0;max-height:86%}
+.lp-ribbon{position:absolute;left:50%;top:-18px;transform:translateX(-50%);width:76%;height:42px;display:flex;align-items:center;justify-content:center;background:#8cc63f;border:3px solid #5f9a2a;border-radius:10px;z-index:1}
+.lp-ribbon:before,.lp-ribbon:after{content:'';position:absolute;top:10px;width:22px;height:32px;background:#6fae2f;z-index:-1}
+.lp-ribbon:before{left:-18px;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,40% 50%)}.lp-ribbon:after{right:-18px;clip-path:polygon(0 0,100% 0,60% 50%,100% 100%,0 100%)}
+#mbox .lp-ribbon h2{margin:0;font-size:17px;color:#2f5a12}
+.lp-close{position:absolute;right:-10px;top:-14px;width:36px;height:36px;padding:0;border-radius:50%;background:#e2483d;border:3px solid #fff;box-shadow:0 2px 0 #9c3129;font-size:20px;line-height:28px;z-index:2}
+.lp-list{display:flex;flex-direction:column;gap:7px;overflow-y:auto;max-height:min(60vh,520px);padding:2px}
+.lp-card{display:flex;align-items:center;gap:8px;min-height:64px;padding:6px 8px;background:#fdebc8;border:2px solid #efd3a2;border-radius:12px;flex:none}
+.lp-face{width:50px;height:50px;flex:none;display:block}.lp-face img{width:100%;height:100%;object-fit:contain;display:block}.lp-face.portrait img{object-fit:cover;object-position:50% 30%;border-radius:10px}
+.lp-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.lp-text strong{font-size:13px}.lp-text small{font-size:10px;color:#8a6a4a;line-height:1.25}
+.lp-price{flex:none;width:92px;min-height:38px;padding:4px;background:#7bc043;border:2px solid #4f8f24;box-shadow:0 3px 0 #3f7a1b;border-radius:10px;font-size:11px;line-height:1.15;word-break:keep-all}
+.lp-price:disabled{background:#cfc4b2;border-color:#b3a28c;box-shadow:0 3px 0 #a99883}
+.lp-empty{padding:40px 10px;text-align:center;color:#ad9777;font-weight:800}
+
 </style>
 <div id="app">
  <div id="hud" aria-label="카페 자원">
@@ -120,7 +152,7 @@ button[data-act=levelUp]{background:url(assets/drive/ui/ui-btn-levelup-yellow.pn
   <div class="row cafe-status"><div class="cafe-progress"><span id="lvl"></span><div class="bar" id="cafeExp" role="progressbar" aria-label="카페 경험치"><i id="expBar"></i></div></div><span id="rep"></span><span id="mgr" hidden></span><small id="heartT" hidden></small><button class="gear" data-nav="settings" aria-label="설정">설정</button></div>
  </div>
  <div id="scene"><canvas id="isomap" aria-label="다다미 카페 지도 · 드래그하여 이동"></canvas><div id="closed" hidden></div></div>
- <section id="mainMenu"><div class="main-tabs"><button data-main-tab="menu" class="active">메뉴</button><button data-main-tab="shiba">시바</button><button data-main-tab="furniture">가구</button><button data-main-tab="store">가게</button></div><div class="menu-heading">메뉴 개발 <small>새로운 맛을 준비해요</small></div><div id="menuList"></div></section>
+ <section id="mainMenu"><div class="menu-heading">가게 관리 <small>메뉴 개발 · 카페</small></div><div id="menuList"></div><nav class="main-tabs" id="mainTabs" aria-label="메뉴"></nav></section>
  <div id="panel" hidden><div id="phead"><h2 id="ptitle"></h2><button class="sec" data-act="close" data-i18n="app.close"></button></div><div id="pbody"></div></div>
  <div id="modal" hidden><div id="mbox"></div></div>
  <div id="toast" style="opacity:0"></div>
