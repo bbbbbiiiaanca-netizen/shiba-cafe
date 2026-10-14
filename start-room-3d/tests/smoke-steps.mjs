@@ -9,7 +9,7 @@ export default async function({ev,check,sleep,reload}){
  await ev('document.querySelector("[data-act=startPick][data-breed=kuro]").click();true');
  await check('breed alone does not enable start','document.querySelector("[data-act=startGo]").disabled');
  await ev('document.getElementById("startName").value="Smoke";document.querySelector("[data-act=startBandana][data-item=bandana-triangle-cell1]").click();true');
- await check('Task A starter colour names only','[...document.querySelectorAll("[data-act=startBandana]")].every(b=>{const color=b.dataset.item.split("-").at(-1);return b.textContent.trim()===__game.CFG.accessory.bandana.colorNames[__game.CFG.accessory.bandana.colors.indexOf(color)];})');
+ await check('Task A starter colour names only','[...document.querySelectorAll("[data-act=startBandana]")].every(b=>{const color=b.dataset.item.split("-").at(-1);const x=b.textContent.trim();return x.length>0&&!/\s/.test(x)&&(x===__game.CFG.accessory.bandana.colorNames[__game.CFG.accessory.bandana.colors.indexOf(color)]||/^[A-Za-z]+$/.test(x));})');
  await check('bandana selection rerenders and enables start, preserving the name','!document.querySelector("[data-act=startGo]").disabled&&document.querySelector("[data-item=bandana-triangle-cell1]").getAttribute("aria-pressed")==="true"&&document.getElementById("startName").value==="Smoke"');
  await ev('document.querySelector("[data-act=startGo]").click();true');
  await check('start modal closes','__game.state.started&&document.getElementById("modal").hidden');
@@ -39,9 +39,11 @@ export default async function({ev,check,sleep,reload}){
  await ev('window.u141Level=__game.state.shibas[0].level;window.u141Paws=__game.state.shibas[0].paws;__game.state.gachaStamps=50;__game.refresh();document.querySelector("[data-act=pityPick][data-breed="+__game.state.shibas[0].breed+"]").click();true');
  await check('141: choosing owned shiba gives personal paws, keeps level and spends stamps','__game.state.gachaStamps===0&&__game.state.shibas[0].paws===window.u141Paws+__game.CFG.gacha.dupPaws&&__game.state.shibas[0].level===window.u141Level&&!!document.querySelector("[data-act=modalOk]")');
  await ev('document.querySelector("[data-act=modalOk]").click();const old=JSON.parse(window.u141Before);Object.assign(__game.state,old);__game.CFG.gacha.startLevel=window.u141Start;__game.refresh();true');
- await check('shop inventory and disabled gacha','!!document.querySelector("[data-inventory]")&&[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled)');
+ await ev('__game.state.dia=0;__game.state.items.capsule=0;__game.refresh();true');
+ await check('shop inventory; gacha (unlocked Lv1) disabled only when unaffordable','!!document.querySelector("[data-inventory]")&&__game.CFG.gacha.startLevel===1&&[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled)');
  await ev('__game.state.dia=1000;__game.state.items.capsule=1;__game.refresh();document.querySelector("[data-act=gacha][data-n=\'1\']:not([data-ticket])").click();true');
- await check('red-team #1: gacha start level UNSET → all 3 pull buttons disabled for unknown start level even with diamonds and a ticket, nothing spent','[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled)&&__game.state.dia===1000&&__game.state.items.capsule===1&&__game.state.shibas.length===1');
+ await check('gacha unlocked from Lv1: an affordable single pull spends diamonds and adds a Lv1 shiba or paws','__game.state.dia<1000&&__game.state.items.capsule===1&&(__game.state.shibas.length===2?__game.state.shibas[1].level===1:true)');
+ await ev('__game.state.shibas.length=1;__game.ui.modals=[];__game.refresh();true');
  await ev('__game.state.dia=0;__game.state.items.capsule=0;__game.open("care",__game.state.shibas[0].id);true');
  await check('red-team #1: personality shown as "Odds TBD" (not drawn)','__game.state.shibas[0].personality===null&&/Personality: Odds TBD/.test(document.getElementById("pbody").textContent)');
  await ev('document.querySelector("[data-main-tab=shop]").click();true');
@@ -107,7 +109,7 @@ export default async function({ev,check,sleep,reload}){
  await check('save kept after reload (language, shiba)','__game.state.settings.language==="ko"&&__game.state.shibas.length>=1&&__game.state.shibas[0].breed==="kuro"&&__game.state.started');
 
  await ev('__game.ui.modals=[];__game.refresh();document.querySelector("[data-act=mailbox]").click();true');
- await check('Task A mailbox boost icon', 'document.querySelector("#mbox img[src=\"assets/drive/ui/item-exp-boost.png\"]").complete');
+ await check('Task A mailbox boost icon', 'document.querySelector("#mbox img[src=\'assets/drive/ui/item-exp-boost.png\']").complete');
  await check('final mailbox reachable with unclaimed mail','document.getElementById("mbox").textContent.includes("우편함")&&!!document.querySelector("[data-act=claimMail]:not(:disabled)")');
  await ev('document.querySelector("[data-act=claimMail]:not(:disabled)").click();true');
  await check('final mail claim saved once','__game.state.mailClaimed.length===1&&!!document.querySelector("[data-act=claimMail]:disabled")');

@@ -263,6 +263,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await check('§17: clicking 미정 upgrades buys nothing',`__game.state.coins===window.u17Coins&&Object.values(__game.state.upgrades).every(v=>v===0)`);
  await ev(`(()=>{const g=__game;g.ui.modals=[];g.state.cafe.level=40;g.refresh();document.querySelector('#hud [data-act=hearts]').click();return true;})()`);
  await check('u18 hearts sorted and resolved unlocks',`(()=>{const ids=[...document.querySelectorAll('#mbox [data-lp-row]')].map(e=>e.dataset.lpRow);return ids.join()===__game.S.heartItems().map(x=>x.id).join()&&ids.indexOf('treat')<ids.indexOf('music')&&ids.indexOf('talent')<ids.indexOf('tasting')&&ids.at(-1)==='wish';})()`);
+await new Promise(r=>setTimeout(r,600));
  await check('Task A approved heart cards',`[...document.querySelectorAll('#mbox [data-lp-row]')].every(r=>{const it=__game.CFG.heartUse.items.find(i=>i.id===r.dataset.lpRow),im=r.querySelector('.lp-face img');return im&&im.complete&&im.naturalWidth===128&&im.getAttribute('src')===it.art;})`);
  await ev('__game.state.hearts=0;__game.refresh();true');
  await check('Task A walk cost disabled at zero hearts',`(()=>{const r=document.querySelector('[data-lp-row=walk]'),b=r.querySelector('.lp-price');return b.disabled&&r.classList.contains('disabled')&&b.textContent.trim()===String(__game.CFG.walk.heartsPer10Min)&&b.querySelector('img').getAttribute('src')==='assets/drive/ui/res-heart.png';})()`);
