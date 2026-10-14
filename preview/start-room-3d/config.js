@@ -34,6 +34,12 @@ export const CFG={
  hearts:{regenCap:10,regenEverySec:1800}, // 1.4 / 갱신 28·31: 30분당 1개, 10개까지 자연 회복; 보상 하트는 무제한 적립
  heartReset:{fillTo:10}, // 1.4 / 갱신 32: 10개 미만일 때만 10개까지, 10개 이상이면 사용 불가(소모 없음)
 
+ expansion:{rowCost:U}, // UNSET: interior §1 / spec v3 §1.3 land row cost
+ themes:[
+  {id:'tatami',name:'다다미',locked:false,unlockCost:null,art:'assets/drive/room-tatami-noline.png'}, // §1.3 default
+  {id:'fuji',name:'후지산 벽화 카페',locked:true,unlockCost:U,art:null}, // §1.3 / interior §6 cost and art UNSET
+  {id:'bamboo',name:'대나무 회랑',locked:true,unlockCost:U,art:null} // §1.3 / interior §6 cost and art UNSET
+ ],
  furniture:{items:[{id:'tea-table',name:'찻상',price:U},{id:'zabuton',name:'방석',price:U},{id:'counter',name:'카운터',price:U},{id:'stairs',name:'계단',price:U}]}, // UNSET: 1.3 / F p6·9 furniture prices
  // ── 카페 ──
  cafe:{maxLevel:50, // 갱신 73

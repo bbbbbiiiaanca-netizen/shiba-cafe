@@ -1,6 +1,6 @@
 // Spec v3 game core — pure logic (no DOM), deterministic with an injected RNG so tests can replay it.
 // Times: `now` is epoch ms; `dt` is seconds. Every number comes from CFG (config.js); UNSET (null) values disable what depends on them.
-import {defaultPlacement,restorePlacement} from './map-data.js';
+import {defaultPlacement,restorePlacement,restoreSpace,zonesForSpace} from './map-data.js';
 import {CFG,pressureAt,isUnset} from './config.js';
 
 export function rng(seed=1){let a=seed>>>0||1;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
@@ -16,7 +16,7 @@ const H=3600e3;
 // ───────────────────────── state ─────────────────────────
 export function newState(now=Date.now()){
  return {v:CFG.saveVersion,started:false,coins:CFG.start.coins,coinFrac:0,hearts:CFG.start.hearts,heartRegenAt:now,dia:CFG.start.dia,
-  placement:defaultPlacement(),
+  placement:defaultPlacement(),space:restoreSpace(null),
   items:{heartReset:0,capsule:0,potionBig:0,potionSmall:0,cooldownTicket:0},
   cafe:{level:1,exp:0,rep:CFG.rep.start,stains:0,stainAcc:0,badStainAcc:0,driftAcc:0,closed:false,closedAt:null,managerUntil:0,managerCleanAcc:0,boostUntil:0},
   shibas:[],nextId:1,dongu:{placed:true},walk:null,rescues:[],walkResults:[],menus:[],menuDev:null,accInv:{},lastAbandonAt:null,
@@ -338,7 +338,8 @@ export function save(storage,s,now=Date.now()){s.lastSeen=now;storage.setItem(CF
 export function load(storage,now=Date.now(),r=Math.random){let s=null;try{s=JSON.parse(storage.getItem(CFG.saveKey));}catch{}
  if(!s||s.v!==CFG.saveVersion)return {state:newState(now),fresh:true,offline:null,reopened:null};
  const d=newState(now);s={...d,...s,items:{...d.items,...s.items},cafe:{...d.cafe,...s.cafe},stats:{...d.stats,...s.stats},settings:{...d.settings,...s.settings}};
- s.placement=restorePlacement(s.placement);
+ s.space=restoreSpace(s.space);s.placement=restorePlacement(s.placement,zonesForSpace(s.space)[0]);
+ if(s.cafe.floor===2&&!s.space.floor2Unlocked)s.cafe.floor=1;
  s.menus=(s.menus||[]).filter(id=>menuItem(id));if(s.menuDev&&!menuItem(s.menuDev.id))s.menuDev=null;
  // older v3 saves: bandana ids named after guessed colours → neutral sheet-cell ids (same position)
  const B=CFG.accessory.bandana,cellId=id=>{const m=/^bandana-(\w+)-(\w+)$/.exec(id||'');const i=m?B.legacyColorIds.indexOf(m[2]):-1;return i<0?id:`bandana-${m[1]}-${B.colors[i]}`;};
@@ -354,3 +355,24 @@ export const regularsCheck=()=>isUnset(CFG.stub.regulars.population)?'unset':'st
 export function usePotion(s,id,kind,gauge,now=Date.now()){const sh=byId(s,id),k=kind==='big'?'potionBig':'potionSmall';if(!sh||!(s.items[k]>0))return false;
  if(kind==='big'){Object.assign(sh.g,CFG.gaugeFull);}else{if(!CFG.gauges.includes(gauge))return false;sh.g[gauge]=CFG.gaugeFull[gauge];}
  s.items[k]--;updateZero(sh,now);return true;} // 116 보완: 지능·재주·친밀도·레벨에는 영향 없음
+
+// Unit 3: all unlock transactions are gated by the actual configured cost.
+export function spaceUnlockCheck(s,kind,id){
+ const space=s.space,theme=CFG.themes.find(t=>t.id===id);
+ if(!['row','floor2','theme'].includes(kind)||kind==='theme'&&!theme)return 'invalid';
+ if(kind==='floor2'&&space.floor2Unlocked||kind==='theme'&&(!theme.locked||space.themes.includes(id)))return 'owned';
+ const cost=kind==='row'?CFG.expansion.rowCost:kind==='floor2'?CFG.cafe.expansion2FCost:theme.unlockCost;
+ if(!Number.isFinite(cost)||cost<=0)return 'unset';
+ if(!Number.isFinite(s.coins)||s.coins<cost)return 'coins';
+ return null;
+}
+export function unlockSpace(s,kind,id){
+ if(spaceUnlockCheck(s,kind,id))return false;
+ const cost=kind==='row'?CFG.expansion.rowCost:kind==='floor2'?CFG.cafe.expansion2FCost:CFG.themes.find(t=>t.id===id).unlockCost;
+ s.coins-=cost;
+ if(kind==='row')s.space.unlockedRows++;
+ else if(kind==='floor2')s.space.floor2Unlocked=true;
+ else s.space.themes.push(id);
+ return true;
+}
+export function switchFloor(s,floor){if(floor!==1&&floor!==2||floor===2&&!s.space.floor2Unlocked)return false;s.cafe.floor=floor;return true;}

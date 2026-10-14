@@ -270,3 +270,24 @@ Default new game: choose exactly one of the four breeds at Lv21 (90·109; sit/wa
 Changed files: config.js, sim.js, main.js, capture-main-screen.mjs, tests/spec-v3.test.mjs, SPEC-V3-NOTES.md. No Chrome execution in this sandbox.
 
 Validation: `npm test` passed (94/94 spec tests plus timeline/map/edit suites); JavaScript syntax checks passed. `diff -r --exclude=node_modules start-room-3d preview/start-room-3d` verified the deletion-aware mirror.
+
+## Unit 3 implementation
+
+Sources: interior specification §§1,3,4,6,8,9; spec-v3 §1.3, update 56 (single floor → second floor, cost undecided). The named themes are only 다다미 (default), 후지산 벽화 카페 and 대나무 회랑 (§1.3).
+
+- `space.unlockedRows`, `floor2Unlocked`, unlocked theme ids persist and migrate; expanded placement restores against extended row bounds. Unlock transactions check configured positive costs, balance and ownership, deduct coins and persist through the UI. Null costs show 미정, disabled; no free unlock or production price introduced.
+- Floor 2 zone is connected to A/stairs with an upward screen offset and no room image. Initially only the approved UI_자물쇠 and label above stairs render. Floor selector stays in 가구; locked 2층 is disabled.
+- Next locked row uses only `tiles/tile-floor-locked.png` per cell and `tiles/marker-expand-land.png`, anchor [64,72]. Expanded rows remain data only: no floor fill or grid art is invented. Existing furniture can be dragged into these bounds. The camera clamps vertical wheel/mouse/touch drag and tracks the isometric row slope to keep lower rows reachable. Empty-map drag also scrolls during edit.
+- 가구 has expansion, 2층 and two named theme cards, using confirmed Drive UI card/lock assets. Themes have null art and costs; default tatami art is retained. No theme bonus invented.
+- Temporary fixture `?temp=1&fresh=1&rows=18` creates extra unlocked row data without changing production storage. Rows are a test fixture, not an unlock bypass in normal gameplay.
+- `npm test` covers null/insufficient cost refusal, configured transactions (explicit test-only costs), row additions/bounds, expanded furniture save/load, floor lock/switch, theme ownership and migration. Browser smoke adds cards, drag scroll and clamp with temporary rows. Capture adds `main-screen-u3-furniture.png`, `main-screen-u3-locked-row.png`, `main-screen-u3-2f.png`, all DPR2, to `/workspace/shiba-cafe-docs/spec-v3-build/`.
+- Chrome was not launched; browser checks and screenshot generation await the user's Chrome host (`npm run test:browser`, `node capture-main-screen.mjs`).
+
+## Unit 3 open questions
+
+1. What is the cost per unlocked land row? `expansion.rowCost = null`; interior §1 and spec-v3 §1.3 define expansion, but no amount or cost progression.
+2. What is the very expensive 2층 unlock cost? `cafe.expansion2FCost = null`; interior §9 and spec-v3 update 56 explicitly leave the price undecided. No level requirement invented.
+3. What are the expensive theme unlock costs and supplied art? `themes[fuji/bamboo].unlockCost = null`, `art = null`; interior §6 and spec-v3 §1.3. Theme set bonus values/rules remain undecided.
+4. When will expanded-row room art and stacked 2층 room/roof/railing art be supplied? Interior §§3,4,9. Expanded rows are data only and 2층 has no room rendering. The upward offset is layout metadata pending supplied art anchors.
+
+Changed files: config.js, map-data.js, sim.js, isomap.js, main.js, index.html, package.json, tests/unit3.test.mjs, tests/smoke-browser.mjs, capture-main-screen.mjs, SPEC-V3-NOTES.md. Mirrored deletion-aware excluding node_modules to preview/start-room-3d; no commit/push.

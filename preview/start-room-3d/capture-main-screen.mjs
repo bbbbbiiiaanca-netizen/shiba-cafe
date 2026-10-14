@@ -44,6 +44,10 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  for(const tab of ['menu','shiba','furniture','store']){await click(`[data-main-tab=${tab}]`);await shot('main-screen-u2-'+(tab==='store'?'shop':tab)+'.png');}
  await click('[data-main-tab=shiba]');await ev('__game.state.shibas[0].paws=__game.S.pawsToNext(__game.state.shibas[0].level);__game.refresh();true');
  await click('#menuList [data-act=levelUp]');await shot('main-screen-u2-levelup.png');
+ await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+ await click('[data-main-tab=furniture]');await shot('main-screen-u3-furniture.png');
+ await ev('__game.iso.scrollTo(__game.iso.maxScroll);true');await shot('main-screen-u3-locked-row.png');
+ await ev('__game.iso.scrollTo(0);true');await shot('main-screen-u3-2f.png');
  writeFileSync(join(out,'main-screen-v7-state.txt'),'Same normal staging as v6; edit: counter origin [0,1], dir1, footprint (0,1)-(0,2); stairs unchanged; 가구 tab active with action bar in bottom panel. 390x844, normal DPR1/DPR2, edit DPR2.\n');
  console.log('Staged capture: cafe level 5, M-02 developing; coins 21,500, diamonds 30; 390x844 CSS px, DPR 1 and 2.');
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}

@@ -37,6 +37,15 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await check('inventory unequips back to bag','__game.state.shibas[0].acc===null&&__game.state.accInv["bandana-triangle-cell2"]===1');
  await ev('__game.state.cafe.level=1;__game.refresh();__game.state.cafe.exp=__game.S.cafeNeed(1)-1;__game.S.addCafeExp(__game.state,1);__game.refresh();true');
  await check('cafe experience threshold advances level with feedback','__game.state.cafe.level===2&&/카페 Lv 2/.test(document.querySelector("[data-cafe-level]").textContent)&&/레벨업/.test(document.getElementById("toast").textContent)');
+ await go(true,'&temp=1&rows=18');
+ await ev('__game.state.settings.language="ko";__game.state.started=true;__game.ui.modals=[];__game.refresh();document.querySelector("[data-main-tab=furniture]").click();true');
+ await check('Unit 3 cards and disabled null costs',`document.querySelectorAll('[data-space-card]').length===4&&[...document.querySelectorAll('[data-act=spaceUnlock]')].every(b=>b.disabled&&b.textContent==='미정')&&document.querySelector('[data-act=floor][data-floor="2"]').disabled`);
+ await check('Unit 3 temp rows extend scroll range','__game.state.space.unlockedRows===18&&__game.iso.maxScroll>0&&__game.iso.markers.some(m=>m.kind==="floor2")');
+ const mapRect=await ev('(()=>{const r=document.getElementById("isomap").getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()');
+ for(const [type,dy] of [['mousePressed',0],['mouseMoved',-100],['mouseReleased',-100]])await c('Input.dispatchMouseEvent',{type,x:mapRect.x,y:mapRect.y+dy,button:'left',buttons:type==='mouseReleased'?0:1,clickCount:1});
+ await check('Unit 3 mouse drag scrolls map','__game.iso.scroll>0&&__game.iso.scroll<=__game.iso.maxScroll');
+ await ev('__game.iso.scrollTo(Number.MAX_SAFE_INTEGER);true');
+ await check('Unit 3 scroll clamps and reaches locked row','__game.iso.scroll===__game.iso.maxScroll&&__game.iso.markers.find(m=>m.kind==="row").y<document.getElementById("isomap").clientHeight');
  await go(false);
  await ev('document.querySelector("[data-main-tab=furniture]").click();document.querySelector("[data-edit-toggle]").click();true');
  await check('toggle enters edit in furniture panel','__game.iso.edit && __game.iso.gridCells===36 && document.querySelector("[data-main-tab=furniture]").classList.contains("active")');

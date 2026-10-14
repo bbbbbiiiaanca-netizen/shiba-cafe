@@ -1,3 +1,4 @@
+import {CFG} from './config.js';
 // Image pixels are the shared coordinate system for room art and sprite anchors.
 // Previous anchors: v2 given table (74,73), cushion (68,52), counter (114,142), stairs (111,177); v5 measured+scaled. v6 uses 그림이 v4 sprites at scale 1.
 // 그림이 will provide back views; unavailable until the art is supplied.
@@ -20,7 +21,7 @@ export const MAP={zones:[{
   {id:'cushion-front',type:'cushion',origin:[3,3],dir:0},
   {id:'stairs',type:'stairs',origin:[4,0],dir:0,connects:[1,2]}
  ]
-}]};
+},{id:'B',image:null,origin:{x:429,y:181},cols:6,rows:6,cell:{w:128,h:64},locked:true,unlockCost:null,floor:2,screenOffset:{x:0,y:-615},connects:{zone:'A',slot:'stairs'},slots:[]}]};
 // Placement positions are derived solely from whole-cell footprints.
 export function footprintCentre(item){
  const cells=footprintCells(item);return cells.reduce((p,[i,j])=>[p[0]+i/cells.length,p[1]+j/cells.length],[0,0]);
@@ -53,10 +54,17 @@ export function validPlacement(item,slots,zone=MAP.zones[0]){
  return cells.every(([i,j])=>i>=0&&j>=0&&i<zone.cols&&j<zone.rows&&!occupied.has(`${i},${j}`));
 }
 export function defaultPlacement(){return {v:1,slots:structuredClone(MAP.zones[0].slots)};}
-export function restorePlacement(saved){
+export function restorePlacement(saved,zone=MAP.zones[0]){
  const fallback=defaultPlacement();
  if(!saved||saved.v!==1||!Array.isArray(saved.slots)||saved.slots.length!==fallback.slots.length)return fallback;
  if(saved.slots.some(s=>!s||!Array.isArray(s.origin)||s.origin.length!==2||!s.origin.every(Number.isInteger)||!SPRITES[s.type]||!availableDirs(s.type).includes(s.dir))||new Set(saved.slots.map(s=>s.id)).size!==fallback.slots.length)return fallback;
  const slots=fallback.slots.map(d=>{const s=saved.slots.find(s=>s.id===d.id&&s.type===d.type);return s?{...d,origin:s.origin,dir:s.dir}:d;});
- return slots.every(s=>validPlacement(s,slots))?{v:1,slots}:fallback;
+ return slots.every(s=>validPlacement(s,slots,zone))?{v:1,slots}:fallback;
 }
+
+// Rows are data only until approved expanded-room art is supplied.
+export function restoreSpace(saved){
+ const unlockedRows=Number.isSafeInteger(saved?.unlockedRows)&&saved.unlockedRows>=0?saved.unlockedRows:0;
+ return {unlockedRows,floor2Unlocked:saved?.floor2Unlocked===true,themes:[...new Set([...CFG.themes.filter(t=>!t.locked).map(t=>t.id),...(Array.isArray(saved?.themes)?saved.themes.filter(id=>CFG.themes.some(t=>t.id===id)):[])])]};
+}
+export function zonesForSpace(space){const data=restoreSpace(space);return MAP.zones.map(z=>({...z,rows:z.rows+(z.floor===1?data.unlockedRows:0),locked:z.floor===2?!data.floor2Unlocked:z.locked}));}
