@@ -47,7 +47,7 @@ export const CFG={
   slots:5, // confirmed by user 2026-10-15: top bar shows 5 heart slots; hearts above 5 → 5 full + '+N'
   regenEverySec:1800}, // 1.4 / 갱신 28·31: 30분당 1개; 보상 하트는 상한을 넘어 무제한 적립
  // §17-9: all numeric values below are starting value 2026-10-15, pending user confirm.
- heartUse:{affinity:{min:0,max:100,start:0,guestMul:null},walkAffinity:1,
+ heartUse:{incomeRatePerSec:null,affinity:{min:0,max:100,start:0,guestMul:null},walkAffinity:1,
   ads:{grant:1,burst:3,cooldownSec:1800,daily:10},buy:{hearts:5,dia:50},visit:{daily:3,hearts:1},invite:{daily:1,hearts:2},
   items:[
    {id:'call',name:'손님 부르기',level:0,cost:1,sec:600,guests:1.5,line:'손님 더 많이'},
@@ -58,14 +58,14 @@ export const CFG={
    {id:'praise',name:'칭찬해 주기',level:5,cost:1,sec:1800,satisfaction:1.5,line:'손님 만족 증가'},
    {id:'brush',name:'빗질·마사지',level:8,cost:1,shiba:true,sec:1800,affinity:null,fatigue:null,cleanliness:null,shibaMul:1.2,line:'시바 효과 증가'},
    {id:'music',name:'가게 음악',level:12,cost:1,sec:1800,stay:null,extraOrders:1,line:'머무르며 추가 주문'},
-   {id:'blanket',name:'낮잠 이불',level:16,cost:1,happy:null,recovery:null,line:'행복 · 피로 회복'},
-   {id:'recommend',name:'오늘의 추천 메뉴',level:20,cost:1,sec:3600,sales:null,price:null,menu:true,line:'추천 메뉴 고르기'},
+   {id:'blanket',name:'낮잠 이불',level:16,cost:1,sec:3600,happy:10,recovery:2,line:'행복 · 피로 회복'},
+   {id:'recommend',name:'오늘의 추천 메뉴',level:20,cost:1,sec:3600,sales:1.3,price:1.1,menu:true,line:'추천 메뉴 고르기'},
    {id:'tasting',name:'메뉴 시식회',level:25,cost:2,sec:600,price:1.2,line:'메뉴 판매가 증가'},
-   {id:'cookie',name:'행운 쿠키',level:30,cost:1,daily:3,rewards:{coins:null,paws:null,item:null},odds:null,line:'행운의 선물 미정'},
+   {id:'cookie',name:'행운 쿠키',level:30,cost:1,daily:3,minutes:15,rewards:{coins:null,paws:1,item:'heartReset'},odds:null,line:'행운의 선물 미정'},
    {id:'special',name:'특별 손님 초대',level:35,cost:3,guestsCount:3,tip:null,guestOdds:null,line:'특별 손님 초대'},
-   {id:'talent',name:'시바 장기자랑',level:null,cost:2,tip:null,line:'관람 손님 팁'},
-   {id:'treat',name:'간식 손님 대접',level:null,cost:1,line:'모두 완전 만족'},
-   {id:'wish',name:'소원상자',level:null,cost:3,daily:1,choices:5,items:null,line:'다음 접속 선물'}
+   {id:'talent',name:'시바 장기자랑',level:22,cost:2,minutes:30,tip:null,line:'관람 손님 팁'},
+   {id:'treat',name:'간식 손님 대접',level:10,cost:1,line:'모두 완전 만족'},
+   {id:'wish',name:'소원상자',level:40,cost:3,daily:1,choices:5,items:null,line:'다음 접속 선물'}
   ].map(x=>({...x,art:null}))},
  heartReset:{fillTo:10}, // 1.4 / 갱신 32: 10개 미만일 때만 10개까지, 10개 이상이면 사용 불가(소모 없음)
 
@@ -108,9 +108,8 @@ export const CFG={
 
  // ── 가게 관리 업그레이드 (§16 question 3 answer 2026-10-14) ──
  // price: UNSET → '미정', purchase disabled. maxLevel: UNSET → no known cap (purchase is still gated by price).
- // effect = per purchased level. seat/queue +1 come from the item names; interval/price magnitudes are UNSET (no effect while null).
+ // effect = per purchased level. queue +1 comes from the item name; interval/price magnitudes are UNSET (no effect while null).
  upgrades:{
-  seat:{price:U,maxLevel:U,effect:1}, // starting value 2026-10-14, pending user confirm: 좌석 추가 → 최대 손님 +1 per level · UNSET price/max level
   interval:{price:U,maxLevel:U,effect:U}, // UNSET: 손님 오는 간격 단축 — effect (interval multiplier per level), price, max level
   price:{price:U,maxLevel:U,effect:U}, // UNSET: 메뉴 판매가 인상 — effect (sale price multiplier per level), price, max level
   queue:{price:U,maxLevel:U,effect:1}}, // starting value 2026-10-14, pending user confirm: 대기 줄 연장 → +1 queue cell per level · UNSET price/max level
@@ -257,7 +256,8 @@ export const CFG={
  dongu:{takesSlot:false,earns:false,canWalk:false,canAbandon:false},
 
  // ── 시바뽑기 (갱신 137: 132-3의 200다이아 대체) ──
- gacha:{priceDia:100,tenDia:900,tenCount:10, // 갱신 137: 1회 100다이아(1,000원), 10연차 900다이아(9,000원)
+ // starting value 2026-10-15, pending user confirm: gacha unlock Lv1.
+ gacha:{unlock:1,priceDia:100,tenDia:900,tenCount:10, // 갱신 137: 1회 100다이아(1,000원), 10연차 900다이아(9,000원)
   startLevel:U, // UNSET: 질문 9(바) '뽑기로 나온 시바의 시작 레벨' (137은 '랜덤 레벨 아님'만, 138의 Lv1→30 계산은 추론) → 뽑기 비활성 (갱신 141 확률은 확정, 시작 레벨만 미정)
   dupPaws:GACHA_TABLE.dupToPaw, // 갱신 137·81: 이미 가진 견종이 또 나오면 발바닥 10개 (레벨업 재료)
   priceCoins:U, // UNSET: 갱신 57 멍코인 뽑기 가격 → 멍코인 뽑기 없음

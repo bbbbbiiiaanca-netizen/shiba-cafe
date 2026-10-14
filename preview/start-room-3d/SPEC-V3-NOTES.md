@@ -462,7 +462,7 @@ Supersedes the contradictory parts of '§16 tabs' and '§16-2 list popup' above 
 10. **Answered, user 2026-10-15:** keep the price button hidden (no change). Original question: Locked list cards (§17-4) show name + `Lv{N} 해금` only — the price button is hidden too (shown in the tap detail). OK, or keep a disabled price button?
 
 ### §17 art requests
-- 미션 button icon (top bar); faces for the 4 upgrade rows (empty face slots now).
+- 미션 button icon (top bar); faces for the 3 current upgrade rows (empty face slots now).
 - Optional: 알바 faces (4) for the 알바 고르기 cards (still empty slots); a 하트 리셋권 icon (still the `icons-final-check.jpg` sheet tile).
 
 Validation: `npm test` passes all 10 suites (adds `tests/unit17.test.mjs`: starting values, early-game reputation by level, null-price gating, test-priced purchase/ledger/maxLevel, seat/queue hooks and null interval/price hooks, save/load, walk-result/rescue dots). `tests/smoke-steps.mjs` and `tests/smoke-browser.mjs` updated (five tabs in order with centred main item, 미션 top-right stub, popup-only menu development incl. finish-now and last-row scroll, upgrade popup 4 × 미정 disabled and click-does-nothing, 가게 관리 status without grid, walk-result/rescue dots and acknowledge). **Not run here**: the user runs browser tests. `capture-main-screen.mjs --u17` writes `main-screen-u17-tabs.png`, `main-screen-u17-manage.png`, `main-screen-u17-upgrades.png` (+ `main-screen-u17-state.txt`) at DPR2; the default run includes them. `main-screen-u2-menu.png` / `main-screen-u5-menu.png` now show the 가게 관리 status screen (no grid).
@@ -556,16 +556,16 @@ Changed files: config.js, sim.js (`spaceUnlockCheck` level gate), package.json (
 - **Starting values removed from the list:** `hearts.regenCap 5`, `feedback.heartIfRequestMet`, `feedback.heartIfMetShiba`. **No new starting values.**
 - **Tests.** `unit17`: 7 icons incl. emo-angry + MAP.md sha; cap 10 / 5 slots / overflow / reset 10; no upgrade ledger line (also when bought); meet-only guest → `requestMet:false`; heart rule in `floatsFor`; angry icon set at coin size. `spec-v3`: cap/slots. Browser smoke (`npm run test:browser`, run here): 142/142, 0 page errors — 5 slots at 2/5/8/10/13 hearts (`+3` with countdown, `+5`/`+8` without), 빠직 drawn and gone after 1 s, meet-only → coin only, request met → coin + heart.
 - **Capture.** `capture-main-screen.mjs --u17c` (run here) → `/workspace/shiba-cafe-docs/spec-v3-build/main-screen-u17-float-angry.png` (real queue timeout, 빠직 held at 25 % of its rise) and `main-screen-u17-float.png` (real request-met guest, coin + heart) + `main-screen-u17c-state.txt`, DPR2, `?temp=1` staging. `--u17b` shares the same float helper (now waits for a request-met guest) but was not re-run.
-- **Question.** 빠직 is drawn at the coin size (30); the heart float is 26. Should all three floats share one size?
+- **Resolved u18.** All three floats share 30 CSS px.
 
 
 ## §17-7 · §17-8 (2026-10-15)
 - Interior §17 read in full; handoff-v1/spec-v3.md consulted. 1-cell 가벽 uses cell occupancy (edge occupancy is unspecified). Shares furniture drag, front directions/rotation, removal and persisted placement. No wall sprite is drawn: `SPRITES.wall.file/anchor/back = null`; edit grid footprint only, also used for pointer selection.
 - Every edit (including other furniture) preserves previously reachable unoccupied floor and seat cells, every current seat, and a walkable approach to each counter. Entrance blocked or disconnected → `입구가 막혔어요!`, with no placement mutation. Removal opens cells. Upper floor has no entrance or editable slots yet; this validation applies to the existing editable ground floor.
-- Only manager has staff map state (`world.manager`, idle/walking, furniture-aware routes, existing guest cell-step speed); expiry/closed café removes it. Other helpers continue effects only, with no character entry. Manager sprite/anchor/shadow/directions are null; `?temp=1` adds a text debug output for state/cell.
+- Only manager has staff map state (`world.manager`, idle/walking, furniture-aware routes, existing guest cell-step speed); expiry/closed café removes it. Other helpers continue effects only, with no character entry. Historical state, superseded by u18: approved manager frames/anchor are integrated; no debug text is created.
 - Starting values: no new numerical gameplay values. 1-cell footprint is user requested. Direct entrance occupancy remains prohibited (interior §17-7 starting value 2026-10-15, pending user confirm). Manager reuses existing `CFG.navigation.cellStepSec`, with no new speed or pause duration.
 - Questions: confirm cell occupancy vs edge occupancy; wall inventory count and price (`PARTITION.count/price = null`); how are walls acquired? Until confirmed, edit mode allows layout placement without a purchase, price, inventory grant or deduction (no stock number is asserted). Should the manager patrol free floor or visit particular work stations, and at what speed/pause duration? Should preserving all existing reachable floor be the final rule?
-- Art requests: transparent 1-cell partition PNG matching 128×64 isometric floor contact, front and back views for four directions, anchor and shadow metadata. Manager walking frames (four directions), floor-contact anchor and shadow; other helpers need list portraits only, no map motion.
+- Art requests: transparent 1-cell partition PNG matching 128×64 isometric floor contact, front and back views for four directions, anchor and shadow metadata. Approved manager frames/anchor are now supplied (u18); separate shadow art remains null; other helpers need list portraits only, no map motion.
 - Capture: `node capture-main-screen.mjs --u17d` writes `main-screen-u17-walls-edit.png`, `main-screen-u17-walls-blocked.png`, `main-screen-u17-manager.png` at existing 390×844 CSS / DPR2 to `/workspace/shiba-cafe-docs/spec-v3-build/`. Uses unsaved TEMP stage; manager is hired through existing API with configured unlock/cost. Smoke and capture scripts updated; Chrome deliberately not run in sandbox.
 
 
@@ -594,7 +594,7 @@ Changed files: config.js, sim.js (`spaceUnlockCheck` level gate), package.json (
 
 ## Review fixes — 2026-10-15
 
-- Normal view (including `?temp=1`) no longer creates the manager navigation label. Only explicit `?debug=1` enables that output. Manager sprite/anchor remain null and the manager remains invisible. Removed the `refresh()` level-change toast that left “카페 Lv … · 레벨업!” over the back wall; café level/experience still update in the HUD and management card.
+- Normal view (including `?temp=1`) no longer creates the manager navigation label. Superseded by u18: no query enables debug text; approved manager sprites are now visible while hired. Removed the `refresh()` level-change toast that left “카페 Lv … · 레벨업!” over the back wall; café level/experience still update in the HUD and management card.
 - Coin/heart/빠직 snapshot the emitting guest's current event cell and carry its guest ID. Rendering uses `floatOrigin()` with the same `cellToScreen`, zone view, expansion, pan and scroll as furniture. Captures group by guest ID rather than age (simultaneous guests can share an age). Renderer unit tests assert the actual icon draw coordinates equal that cell's screen point + head offset at nonzero pan/scroll. Payment/queue event tests retain coverage of current cell snapshots.
 - Disabled Shiba level-up buttons use the same disabled background/text/shadow as the existing insufficient-heart care buttons, overriding the yellow button image. The existing insufficient-paws check still disables the action. Browser smoke checks compare computed disabled styles.
 - Expansion tatami now uses `assets/drive/tiles/tatami-room-crop.png`: a direct central-cell crop of approved `room-tatami-noline.png`, with the existing approved tile's alpha silhouette. `python3 crop-room-tatami.py` reproduces it. Crop geometry is derived from the specified cell (3,3), centre (429,405), 128×64; no colour filter, painting, edges or borders were added. The original approved tile is preserved.
@@ -605,7 +605,7 @@ Starting values: **none added**. Existing head offset, float sizes, rise and lif
 
 Questions: the final sprite head anchor remains **null** pending guest art. What head anchor should the guest sprite use? No new economy/timing decisions are needed for these fixes.
 
-Art requests: 그림이 to draw matching floor-plate edge/corner pieces for expanded tatami (flat land without a plate border is accepted meanwhile); manager sprite/anchor and guest sprites with foot/head anchors remain pending. No substitute characters or plate shapes are drawn.
+Art requests (updated u18): guest sprites with foot/head anchors remain pending. Approved plate edges and manager frames/anchor have been supplied and integrated; those requests are closed.
 
 Validation: `npm test` passes. Chrome smoke/capture scripts updated and syntax checked only; intentionally not launched in this sandbox. User runs `npm run test:browser`, `node capture-main-screen.mjs --rf`, and `node capture-main-screen.mjs --u12` on the Chrome-capable host.
 
@@ -663,3 +663,41 @@ Questions: guest sprite head anchor remains null pending art; what is the approv
 Art requests: existing guest sprite with foot/head anchors remains pending. No substitute art or shapes added.
 
 No git commit or push; all edits and capture outputs are under `start-room-3d/`.
+
+## u18 — approved plate edges, manager service and resolved values (2026-10-15)
+
+- Original PNGs unchanged; all rows from `/workspace/prompts/s/maprows2.txt` appended verbatim to MAP.md under the requested heading. Sheet retained for reference only. Expanded land has approved left/down-left and right/down-right exterior plate pieces, a single bottom corner, top-vertex anchor (64,0), beneath all furniture/characters. Base room and expanded floor use the same cell projection and rim alignment. Floor-plate edges art request **closed**.
+- Hired manager starts at a reachable counter-adjacent cell, finds a reachable free cell adjacent to a table with seated guests, waits, returns to the counter and repeats. Paths revalidate against furniture and one-cell walls. With no guests the manager idles at the counter; expiry removes it. Uses the furniture/shiba depth key, so rear positions are occluded. No debug text under any query. Other characters with null art remain invisible.
+- Frame direction comes from projected screen delta (+i down-right, +j down-left, −i up-left, −j up-right). All four walk frames used; idle back-left uses stand-dl, back-right uses stand-dr. Per-frame opaque heights were measured from original PNG alpha bounds (152–158px); render scale = target screen height / measured opaque height, preserving supplied foot anchor (64,166). No code art or shadow substitute.
+- Removed 좌석 upgrade from config, summary, popup and effects. Migration retains only current upgrade keys, discarding old seat level. Physical seating remains solely placed chairs/cushions; existing café guest pressure cap is unchanged.
+- Walls occupy one cell (question resolved). Inventory count is total owned minus placed. Inventory placement consumes availability, removal returns it; no art means invisible wall in normal view. Additional purchases use the furniture ledger category and persist. Placement keeps entrance and reachable seats/counter accessible.
+- All three floats use 30 CSS px, independent of map zoom. Gacha unlock config is Lv1. Heart list sorts by level; treat Lv10, talent Lv22, wish Lv40 resolve the old unlock questions.
+
+All changed tuning below is **starting value 2026-10-15, pending user confirm** (also commented in source):
+
+| Setting | Starting value |
+| --- | --- |
+| Manager visible opaque height / walk cycle / table wait | 150 CSS px / 8 fps, 4 supplied frames / 3 seconds |
+| Floats | coin / heart / 빠직 each 30 CSS px |
+| Partition inventory / price | 3 free; 50,000멍 per extra wall; one cell |
+| Gacha unlock | Lv1 |
+| Music | 30 minutes, +1 additional order per guest (existing implementation retained) |
+| Blanket | all owned shibas happiness +10; 1 hour fatigue recovery ×2 |
+| Recommended menu | 1 hour, menu selection weight ×1.3; that menu price ×1.1 only |
+| Tasting | 10 minutes, all menu prices ×1.2 (retained) |
+| Cookie | 15 minutes of current coin income, or 1 personal paw, or one existing heartReset item |
+| Talent | 30 minutes of current coin income; Lv22 |
+| Treat / wish unlock | Lv10 / Lv40 |
+
+Questions and remaining null values:
+- Confirm the starting values above? Blanket targets all owned shibas; should it target only placed shibas? Sleep's base fatigue recovery rate remains `null`; blanket multiplies a known rate only and does not invent a recovery amount.
+- Back-facing idle uses the nearest front stand frame; is that acceptable, or will back-facing stand art be supplied?
+- What is “current income rate”: expected café rate, or measured earnings over which interval? `heartUse.incomeRatePerSec=null` (coins/second) until defined. Talent and cookie coin rewards cannot be priced from a guessed rate. What probabilities should cookie's three outcomes use? `cookie.odds=null`; cookie/talent spending is disabled when these required values are unknown, preserving hearts. Once configured, reward formulas and ledger credits are implemented and unit tested.
+- Cookie paws currently go to the supplied shiba ID, else the first owned shiba, as authorized fallback; should the player choose before drawing or after a paw result? Small-item starting choice is existing `heartReset`; confirm that identity. No new item IDs introduced.
+- Wish's five contents/next-login delivery, special guest identities/odds/tips, brush affinity/fatigue/cleanliness, music stay extension and affinity-100 multiplier remain null. Prior questions for blanket amounts, recommendation multipliers, cookie reward magnitudes, talent tip formula and treat/talent/wish unlock levels are **resolved by this task**; their old null entries above are historical.
+
+Art requests: one-cell partition front/back PNGs with anchors; guest sprites with foot/head anchors; heart-action card icons. Manager walk/stand and floor-plate edges are supplied, no longer requested. Back-facing manager idle art is optional pending the question above; separate shadow metadata remains null.
+
+Validation: `npm test` in `start-room-3d/` includes u18 economy, wall purchase/ledger, scoped menu pricing, blanket recovery multiplier, manager service/return, frame directions and actual renderer draw/occlusion tests. Browser smoke and capture scripts updated and syntax checked only; **not launched** in this sandbox.
+
+User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-screen-u18-edges.png`, `main-screen-u18-manager-1.png`, `main-screen-u18-manager-2.png`, `main-screen-u18-manager-3.png`, `main-screen-u18-hearts.png`, `main-screen-u18-walls-inv.png` to `/workspace/shiba-cafe-docs/spec-v3-build/`. Unsaved TEMP staging: three expansions, manager walking service route (rear occlusion included), Lv40 sorted heart list, wall card with count 3 and buy button. No capture files written in this task. No commit/push; changes restricted to start-room-3d/.

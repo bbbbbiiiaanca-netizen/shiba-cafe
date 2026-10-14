@@ -6,8 +6,8 @@ const minute=60e3;
 const fresh=()=>{const s=S.newState(0);S.chooseStart(s,'red','',S.rng(1),0);return s;};
 const item=id=>CFG.heartUse.items.find(x=>x.id===id);
 {
- const list=S.heartItems();assert.equal(list.length,16);assert.deepEqual(list.slice(0,5).map(x=>x.level),[0,0,0,0,0]);assert.deepEqual(list.slice(-3).map(x=>x.level),[null,null,null]);assert.ok(list.every(x=>x.art===null));
- for(const it of list){const s=fresh(),sh=s.shibas[0];s.cafe.level=CFG.cafe.maxLevel;s.hearts=CFG.hearts.regenCap;s.menus=['M-02'];const ok=S.useHeartItem(s,it.id,it.shiba?sh.id:null,0,it.menu?'M-02':null);assert.equal(ok,it.level!==null&&it.id!=='walk',it.id);assert.equal(s.hearts,CFG.hearts.regenCap-(ok?it.cost:0),it.id);}
+ const list=S.heartItems();assert.equal(list.length,16);assert.deepEqual(list.slice(0,5).map(x=>x.level),[0,0,0,0,0]);assert.deepEqual(list.slice(-3).map(x=>x.level),[30,35,40]);assert.ok(list.every(x=>x.art===null));
+ for(const it of list){const s=fresh(),sh=s.shibas[0];s.cafe.level=CFG.cafe.maxLevel;s.hearts=CFG.hearts.regenCap;s.menus=['M-02'];const ok=S.useHeartItem(s,it.id,it.shiba?sh.id:null,0,it.menu?'M-02':null);assert.equal(ok,it.level!==null&&!['walk','cookie','talent'].includes(it.id),it.id);assert.equal(s.hearts,CFG.hearts.regenCap-(ok?it.cost:0),it.id);}
 }
 {
  const s=fresh(),sh=s.shibas[0];assert.equal(sh.affinity,0);Object.assign(sh.g,{happy:50,fatigue:50});
@@ -34,15 +34,14 @@ const item=id=>CFG.heartUse.items.find(x=>x.id===id);
 {
  const s=fresh(),sh=s.shibas[0];Object.assign(sh.g,CFG.gaugeFull);assert.ok(S.startWalk(s,sh.id,CFG.walk.durationsSec[0],0));S.tickWalk(s,CFG.walk.durationsSec[0]*1000,()=>1);assert.equal(sh.affinity,CFG.heartUse.walkAffinity);
  s.cafe.level=CFG.cafe.maxLevel;s.hearts=CFG.hearts.regenCap;
- for(let i=0;i<item('cookie').daily;i++)assert.ok(S.useHeartItem(s,'cookie',null,0));assert.equal(S.heartUseCheck(s,'cookie',null,0),'daily');
- assert.equal(item('cookie').odds,null);assert.ok(Object.values(item('cookie').rewards).every(x=>x===null));assert.equal(CFG.heartUse.affinity.guestMul,null);
- s.menus=['M-02'];assert.equal(S.heartUseCheck(s,'recommend',null,0),'menu');assert.ok(S.useHeartItem(s,'recommend',null,0,'M-02'));assert.equal(S.heartMultiplier(s,'price',0),1);
+ assert.equal(S.heartUseCheck(s,'cookie',null,0),'unset');assert.equal(item('cookie').odds,null);assert.equal(item('cookie').rewards.paws,1);assert.equal(item('cookie').rewards.item,'heartReset');assert.equal(CFG.heartUse.affinity.guestMul,null);
+ s.menus=['M-02'];assert.equal(S.heartUseCheck(s,'recommend',null,0),'menu');assert.ok(S.useHeartItem(s,'recommend',null,0,'M-02'));assert.equal(S.heartMultiplier(s,'price',0),1.1);
  assert.ok(S.useHeartItem(s,'tasting',null,0));const agg=CFG.income.levelAggregation;CFG.income.levelAggregation=()=>1;try{assert.equal(S.payFor(s,[],{price:10},0).base,12);assert.equal(S.payFor(s,[],{price:10},10*minute).base,10);}finally{CFG.income.levelAggregation=agg;}
  const old=s.coins,w=S.newWorld(s);assert.ok(S.useHeartItem(s,'special',null,0,null,w));assert.equal(w.custs.length,0);assert.equal(s.coins,old,'unknown tip and reward amounts never invented');
 }
 {
  const s=fresh();s.cafe.level=CFG.cafe.maxLevel;
- for(const id of ['music','blanket','recommend','brush']){const it=item(id);for(const key of id==='music'?['stay']:id==='blanket'?['happy','recovery']:id==='recommend'?['sales','price']:['affinity','fatigue','cleanliness'])assert.equal(it[key],null);}
+ for(const id of ['music','blanket','recommend','brush']){const it=item(id);for(const key of id==='music'?['stay']:id==='blanket'?[]:id==='recommend'?[]:['affinity','fatigue','cleanliness'])assert.equal(it[key],null);}
  assert.ok(S.useHeartItem(s,'music',null,0));assert.equal(S.activeHeartEffects(s,0)[0].id,'music');assert.equal(item('music').extraOrders,1);assert.equal(S.activeHeartEffects(s,item('music').sec*1000).length,0);
  const source=readFileSync(new URL('../main.js',import.meta.url),'utf8'),html=readFileSync(new URL('../index.html',import.meta.url),'utf8'),capture=readFileSync(new URL('../capture-main-screen.mjs',import.meta.url),'utf8');
  assert.match(html,/data-act="hearts"/);assert.match(source,/heartStub:\(\)=>toast\('준비 중'\)/);assert.match(source,/LP.heartShiba/);assert.match(source,/v.footer/);

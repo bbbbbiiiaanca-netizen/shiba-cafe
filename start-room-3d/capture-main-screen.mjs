@@ -1,5 +1,5 @@
 // Main cafe capture using capture-spec-v3.mjs Chrome CDP pipe approach, portrait 390×844.
-// Usage (from the repo root or start-room-3d/): node start-room-3d/capture-main-screen.mjs [OUTDIR] [--u179 | --u12 | --rf]
+// Usage (from the repo root or start-room-3d/): node start-room-3d/capture-main-screen.mjs [OUTDIR] [--u18 | --u179 | --u12 | --rf]
 // Default OUTDIR: /workspace/shiba-cafe-docs/spec-v3-build
 import {spawn} from 'node:child_process';import {mkdirSync,writeFileSync,readFileSync,rmSync} from 'node:fs';import {resolve,dirname,join} from 'node:path';import {fileURLToPath} from 'node:url';
 const ROOT=dirname(fileURLToPath(import.meta.url));
@@ -43,7 +43,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await shot('main-screen-u16-popup-menu.png');
   writeFileSync(join(out,'main-screen-u16-state.txt'),'STAGED, unsaved ?temp=1 fixture. 390×844 CSS px, DPR2. Café Lv10, M-02 developing, coins ≥ daycare price (CFG.alba.daycare.cost), 30 diamonds, starter paws = next level-up cost (시바 dot), daycare affordable (알바 dot). tabs: 가게 관리 active; popup-alba: 알바 고르기; popup-menu: 메뉴 개발 (13 menus).\n');
  };
- // §17: five-tab row (가게 관리 centre, 미션 top right), 가게 관리 status screen, 업그레이드 popup (4 kinds, prices 미정) — DPR2, unsaved TEMP staging.
+ // §17: five-tab row (가게 관리 centre, 미션 top right), 가게 관리 status screen, 업그레이드 popup (3 kinds, prices 미정) — DPR2, unsaved TEMP staging.
  const u17=async()=>{
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
   await ev(`(()=>{const g=__game,sh=g.state.shibas[0];g.state.cafe.level=10;g.state.coins=Math.max(g.state.coins,g.CFG.alba.daycare.cost);sh.paws=g.S.pawsToNext(sh.level);g.refresh();return true;})()`);
@@ -53,9 +53,9 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   if(!(await ev(`!document.querySelector('[data-main-menu],.menu-card')&&!!document.querySelector('#menuList [data-cafe-level]')&&!!document.querySelector('#menuList [data-act=listOpen][data-list=upgrade]')`)))throw Error('§17 manage screen missing');
   await ev('document.getElementById("menuList").scrollTop=0;true');await shot('main-screen-u17-manage.png');
   await click('#menuList [data-act=listOpen][data-list=upgrade]');
-  if(!(await ev(`document.querySelectorAll('#mbox .lp-card').length===4&&[...document.querySelectorAll('#mbox .lp-price')].every(b=>b.disabled&&b.textContent==='미정')`)))throw Error('§17 upgrade popup missing');
+  if(!(await ev(`document.querySelectorAll('#mbox .lp-card').length===3&&[...document.querySelectorAll('#mbox .lp-price')].every(b=>b.disabled&&b.textContent==='미정')`)))throw Error('§17 upgrade popup missing');
   await shot('main-screen-u17-upgrades.png');
-  writeFileSync(join(out,'main-screen-u17-state.txt'),'STAGED, unsaved ?temp=1 fixture. 390×844 CSS px, DPR2. Café Lv10, M-02 developing, coins ≥ daycare price (CFG.alba.daycare.cost), 30 diamonds, starter paws = next level-up cost (시바 dot), daycare affordable (알바 dot). tabs: 5 tabs, 가게 관리 centre + active, 미션 button top right; manage: café status + 메뉴 개발/업그레이드/손익계산서; upgrades: 4 kinds, prices 미정 (disabled).\n');
+  writeFileSync(join(out,'main-screen-u17-state.txt'),'STAGED, unsaved ?temp=1 fixture. 390×844 CSS px, DPR2. Café Lv10, M-02 developing, coins ≥ daycare price (CFG.alba.daycare.cost), 30 diamonds, starter paws = next level-up cost (시바 dot), daycare affordable (알바 dot). tabs: 5 tabs, 가게 관리 centre + active, 미션 button top right; manage: café status + 메뉴 개발/업그레이드/손익계산서; upgrades: 3 kinds, prices 미정 (disabled).\n');
  };
  // §17-1…17-6: heart slots + countdown, ledger lines, short list cards, 가게 관리 summary, payment floats, tab row — DPR2, unsaved TEMP staging.
  const u17b=async()=>{
@@ -155,7 +155,20 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.alba.manager.unlock;g.state.coins=g.CFG.alba.manager.cost;g.S.hireAlba(g.state,'manager',[],g.clock.now());g.step(g.CFG.navigation.cellStepSec);g.refresh();if(!g.world.manager||document.getElementById('manager-debug'))throw Error('manager fixture');return true;})()`);
   await shot('main-screen-rf-manager.png');
  };
- if(process.argv.includes('--u179')){
+ if(process.argv.includes('--u18')){
+  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+  await ev(`(()=>{const g=__game;g.debugExpand(3);g.world.custs=[];g.world.queue=[];g.world.manager=null;g.refresh();return true;})()`);
+  await ev(`Promise.all(['left','right','corner'].map(part=>{const im=new Image();im.src='assets/drive/tiles/plate-edge-'+part+'.png';return im.decode();})).then(()=>true)`);
+  await shot('main-screen-u18-edges.png');
+  await ev(`(()=>{const g=__game;g.state.cafe.managerUntil=g.clock.now()+g.CFG.alba.manager.hireSec*1000;g.state.placement.slots.find(x=>x.id==='table').origin=[3,4];g.state.placement.slots.find(x=>x.id==='cushion-back').origin=[2,4];g.state.placement.slots.find(x=>x.id==='cushion-front').origin=[4,4];g.world.custs=[{id:g.world.nextCust++,phase:'seated',cell:[2,4],t:g.CFG.cafe.stayingSec,met:[]}];g.S.tickManager(g.state,g.world,0,true,g.CFG.navigation.cellStepSec);g.refresh();return true;})()`);
+  const seen=new Set(),facings=new Set();for(let n=0;n<300&&seen.size<3;n++){
+   const pos=await ev(`(()=>{const g=__game;g.S.tickManager(g.state,g.world,g.CFG.navigation.cellStepSec,true,g.CFG.navigation.cellStepSec);g.refresh();const m=g.world.manager;return m.phase==='walking'?m.cell.join(',')+':'+m.facing:null;})()`);
+   if(pos&&!seen.has(pos)&&(seen.size!==1||!facings.has(pos.split(':')[1]))){seen.add(pos);facings.add(pos.split(':')[1]);await shot('main-screen-u18-manager-'+seen.size+'.png');}
+  }if(seen.size!==3)throw Error('u18 manager needs three distinct walking positions/directions');
+  await ev(`(()=>{const g=__game;g.state.cafe.level=40;g.ui.modals=[];g.refresh();return true;})()`);await click('#hud [data-act=hearts]');await shot('main-screen-u18-hearts.png');
+  await click('#mbox .lp-close');await ev('__game.state.wallOwned=3;__game.iso.setEdit(false);__game.refresh();true');await click('[data-main-tab=furniture]');await shot('main-screen-u18-walls-inv.png');
+ }
+ else if(process.argv.includes('--u179')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
   await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.heartUse.items.find(x=>x.id==='praise').level;g.state.hearts=g.CFG.hearts.regenCap;g.S.useHeartItem(g.state,'call',null,g.clock.now());g.refresh();return true;})()`);
   await click('#hud [data-act=hearts]');await shot('main-screen-u179-hearts.png');

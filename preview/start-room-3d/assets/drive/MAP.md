@@ -184,3 +184,30 @@ Shown as: top-bar resource pills (coin, heart slots full/empty, diamond, paw), p
 | `ui/res-diamond.png` | `이미지/interior/UI_재화_다이아.png` | `148mziE9fLPJ9QZK18ZZTmV1k4RBQpIzh` | `fbda3773816ab1afbf9be54323e1a7b8a31ced900e1b7029a3a2f53baf7fdb64` |
 | `ui/res-paw.png` | `이미지/interior/UI_재화_발바닥.png` | `1YmTwuvjr8hP8O3I2InseFHEAA_maXmrN` | `e921b24c0640b1534c36f0229099af17e367cf6c0b5bd8708adcccc21c04e856` |
 | `ui/emo-angry.png` | `이미지/interior/UI_감정_빠직.png` | `1QsESC0UaHiiSMDX15Jde-OG5hVPA82JM` | `4226a6572ada44b0c1b89d5e2d184ec63cef9532186a3fbf566401b2d1e503a7` |
+
+## 그림이 floor-plate edges + 매니저 (2026-10-15)
+
+| file | Drive original | Drive id | sha256 |
+| --- | --- | --- | --- |
+| tiles/plate-edge-left.png | interior/타일_바닥판테두리_왼쪽.png | 1JC-e16DoIZsjbMfKY4ELyPSvSKJwzfgj | 57997f9397935d138de504cbf1b8c14ce6f3f05c2f3fb70f7955b6b8330d5286 |
+| tiles/plate-edge-right.png | interior/타일_바닥판테두리_오른쪽.png | 1GcKTIUKFLCljwj4A0xjUbCCqvF3V1eIv | 8cdcb907051dd2d1d39d6b9a851f9edd76691eab2f4c0056fe1aa66b393a36fe |
+| tiles/plate-edge-corner.png | interior/타일_바닥판테두리_모서리.png | 1doZEYoxTVUvHWfvoimOXEl7Q2cxgVjbr | f10f040db912a23aaae6176e7cf68c9da58ff44faaaa737befb346ecb752907c |
+| chars/manager/manager-sheet.png | interior/알바_매니저_시트.png | 1gyYwc_1w7CeVY24zNyzC8OVMP1-JxMmP | 73812a953f3a5581760d51e2a1d8f7ab2f1ad74d5532d077f50946d05649ff4a |
+| chars/manager/manager-stand-dl.png | interior/알바_매니저_서기_왼쪽아래.png | 1Qdvkaqdt66oHscCuY2IblYwW_xCLtiC0 | 9e6f15f6ab934bd8db3048b16f672b860dea3fb22dd4d39501b1e014e69eb64c |
+| chars/manager/manager-stand-dr.png | interior/알바_매니저_서기_오른쪽아래.png | 1saOKO3eYthJRubJjzF3Q8ZWstfkUvaJ0 | 6741737dea86c814baf21b388a98b813e36aac547d6b4b458272f3430868ba61 |
+| chars/manager/manager-walk-back-ur-1.png | interior/알바_매니저_걷기_뒤_오른쪽위_1.png | 1u9S9ukifb_wcmYbMXKyDmgwzSQ9Ijiwa | a668ce62d7e7813d11917d79f26719dab4e39ad3de84034ec98c73c0c4ef657f |
+| chars/manager/manager-walk-back-ur-2.png | interior/알바_매니저_걷기_뒤_오른쪽위_2.png | 1ViM1eoBPFAui5R03O35QKVfikriwwHjN | 8c7676fbf9465aca10779de7bda882c9047efb14602b09c8029cb19536c05621 |
+| chars/manager/manager-walk-back-ur-3.png | interior/알바_매니저_걷기_뒤_오른쪽위_3.png | 18moD28gJGwSiiGlDnPa_YMlYFdWCUDE2 | ed8cfb55fb0ef146539b5356e89aebfe29bacb27769ae4e0d818c94f6d723b99 |
+| chars/manager/manager-walk-back-ur-4.png | interior/알바_매니저_걷기_뒤_오른쪽위_4.png | 1pk5KCG4Sa8AiczPc7ln8V37A3B17VSMY | e738f4ebcb59631c176d78c926345aed8ddc73dcb033161c37b1f91147af90a3 |
+| chars/manager/manager-walk-back-ul-1.png | interior/알바_매니저_걷기_뒤_왼쪽위_1.png | 1Zb7Sho_w2Za2bm_-ZO9dpM7-1Tpg4SKB | f04cf5d420c0ae74d166a4d1377c0deb3da57029cc20e1e185c9eab9028fcfce |
+| chars/manager/manager-walk-back-ul-2.png | interior/알바_매니저_걷기_뒤_왼쪽위_2.png | 1OyFjJwVT_SLNKJ7ihiuddGOhjCiuTZIt | f3e0ea737e0aa82df1b23ec7c94ba37b02586fcbb8f3f9573d0db62e3f4abef2 |
+| chars/manager/manager-walk-back-ul-3.png | interior/알바_매니저_걷기_뒤_왼쪽위_3.png | 1sc3bjQY70WtNkLTgR_y0LPXgVAqJACMC | d5b75c5a4a2b0af3fb5ce1f9f19a369d36ffc22d0b658610175c0da1465eae7c |
+| chars/manager/manager-walk-back-ul-4.png | interior/알바_매니저_걷기_뒤_왼쪽위_4.png | 1PisVYxkFMgtwUmbpQ8jcPlZIpaPk8dCs | 0c86b8a1397888feeb05650eaad869f54c7a2547f6078e8917cf3f3c9a72ac0f |
+| chars/manager/manager-walk-front-dl-1.png | interior/알바_매니저_걷기_앞_왼쪽아래_1.png | 18wdelvkFuL9E5LqUZV7KdpGcsvDZngf0 | 6112f0d7bd68de041d05aa20545c32fc100ee48d80482e26d3ef271cc323a50b |
+| chars/manager/manager-walk-front-dl-2.png | interior/알바_매니저_걷기_앞_왼쪽아래_2.png | 1hmh21XJAwCFlhg4Am1L6Fw7_yXpoSHe9 | 35f5865f8fbdf2041d248116b5d92fd7371d8ac3f9c3f8c3885165afe1b2c128 |
+| chars/manager/manager-walk-front-dl-3.png | interior/알바_매니저_걷기_앞_왼쪽아래_3.png | 1utpQvk0icad-4PKoYrr7ji-_OCw8ZWL4 | ee97ba781a91c0bb98a6bd5b37f71ae0c6953d46cf56567201355274c6ed22ae |
+| chars/manager/manager-walk-front-dl-4.png | interior/알바_매니저_걷기_앞_왼쪽아래_4.png | 1s_K3yrd4Mn6GpV5H3jfkbcbEWZJOuQrj | 29322461e6affbbb5a47ba9004b44b3248e9bab5aa72434ce6567c2e5063f3c0 |
+| chars/manager/manager-walk-front-dr-1.png | interior/알바_매니저_걷기_앞_오른쪽아래_1.png | 1eo8iqpajCwqMUuQgzev5qQQqNmNKIA6d | 41665971949377cbc970433e5a5cb5e5f63b7912cbe89a0b130b0b6344785b3e |
+| chars/manager/manager-walk-front-dr-2.png | interior/알바_매니저_걷기_앞_오른쪽아래_2.png | 1xoKLMyWwHxCrH0dy4CYcJ5TH5KDE5yYE | bbc04697a0c4411eda03becf745101a05ae0ca1ba69aae400fb7342836b0c165 |
+| chars/manager/manager-walk-front-dr-3.png | interior/알바_매니저_걷기_앞_오른쪽아래_3.png | 1ZbYchC3BpV2DXp3wygKIdY_eoAFSxbym | 762af46d40d93a5d7ea668448d4c63e3889572d7d50bf4bd0197f59c52b1ca2b |
+| chars/manager/manager-walk-front-dr-4.png | interior/알바_매니저_걷기_앞_오른쪽아래_4.png | 1kGUW4MPNJmPhP4t_HwwR5NmGiXd4R2E1 | c489527b842372dcedb566478285ca1b644bc1475ef4c82cfaf1052a9d039e40 |

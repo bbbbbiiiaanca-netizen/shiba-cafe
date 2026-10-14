@@ -87,7 +87,7 @@ for(const kind of ['coin','heart','angry']){
  const view=expandIso.hits.find(h=>h.id==='table').view,zone=expandIso.hits.find(h=>h.id==='table').zone;
  const foot=cellToScreen(...f.cell,view,zone),origin=floatOrigin(f,view,zone);
  assert.deepEqual(origin,{x:foot.x+FLOAT_LAYOUT.headOffset[0]*view.scale,y:foot.y+FLOAT_LAYOUT.headOffset[1]*view.scale});
- const draw=draws.find(d=>d.file===FLOAT_ICONS[kind]),size=FLOAT_LAYOUT.iconPx[kind]*view.scale;
+ const draw=draws.find(d=>d.file===FLOAT_ICONS[kind]),size=FLOAT_LAYOUT.iconPx[kind];
  assert.deepEqual(draw.args,[origin.x-size/2,origin.y-size,size,size]);
 }
 // Fractional pan bounds must be reached by overshooting with real pointer input.
@@ -104,3 +104,15 @@ events.pointerdown(pointer(200,150));
 const reverse=pointer(200+Math.ceil(distance)+canvas.clientWidth,150+Math.ceil(expandIso.maxScroll)+canvas.clientHeight);
 events.pointermove(reverse);events.pointerup(reverse);
 assert.equal(expandIso.panX,expandIso.panBounds.minX);assert.equal(expandIso.scroll,0);
+
+// u18 actual render calls: approved edges under furniture; manager occluded by the same depth ordering.
+state.space.unlockedRows=3;draws.length=0;
+iso.draw(state,{manager:{role:'manager',cell:[2,2],phase:'walking',facing:2,anim:0}});
+const edgeDraws=draws.filter(d=>d.file.includes('/plate-edge-'));
+assert.ok(edgeDraws.some(d=>d.file.endsWith('left.png'))&&edgeDraws.some(d=>d.file.endsWith('right.png'))&&edgeDraws.some(d=>d.file.endsWith('corner.png')));
+assert.ok(draws.findLastIndex(d=>d.file.includes('/plate-edge-'))<draws.findIndex(d=>d.file.includes('/furn-')));
+const managerIndex=draws.findIndex(d=>d.file.includes('manager-walk-back-ul-1.png'));
+assert.ok(managerIndex>=0&&managerIndex<draws.findIndex(d=>d.file.includes('furn-tea-table')));
+assert.equal(draws.some(d=>d.file.includes('manager-sheet')),false);
+draws.length=0;iso.draw(state,{});assert.equal(draws.some(d=>d.file.includes('/chars/manager/')),false);
+console.log('u18 approved plate edges and manager render/occlusion passed');

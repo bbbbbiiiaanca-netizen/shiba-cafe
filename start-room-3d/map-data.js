@@ -2,7 +2,7 @@ import {CFG} from './config.js';
 // Image pixels are the shared coordinate system for room art and sprite anchors.
 // Previous anchors: v2 given table (74,73), cushion (68,52), counter (114,142), stairs (111,177); v5 measured+scaled. v6 uses 그림이 v4 sprites at scale 1.
 // 그림이 will provide back views; unavailable until the art is supplied.
-export const PARTITION={count:null,price:null}; // §17-7: inventory quantity and price await user confirmation
+export const PARTITION={count:3,price:50000}; // starting value 2026-10-15, pending user confirm
 export const SPRITES={
  wall:{file:null,anchor:null,scale:1,back:null,footprint:{cells:1,axis:null}}, // user: one-cell units; no wall art
  // 그림이 v4 sprites, original size (scale 1). anchor = centre of floor-contact footprint, sprite px (given by 그림이).
@@ -18,7 +18,7 @@ export const MAP_MARKERS={
  expansion:{file:'assets/drive/tiles/marker-expand-land.png',anchor:[64,72]},
  floor2:{file:'assets/drive/ui/ui-lock.png',anchor:[32,32]}
 };
-export const CHAR_SPRITES={shiba:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]},guest:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]},manager:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]},dongu:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]}}; // foot-shadow anchors await supplied art
+export const CHAR_SPRITES={shiba:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]},guest:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]},manager:{file:'assets/drive/chars/manager/manager-stand-dr.png',anchor:[64,166],footShadow:null,directions:['front-dr','front-dl','back-ul','back-ur']},dongu:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]}}; // foot-shadow anchors await supplied art
 export function characterDepthEntries(world){return [...(world?.custs||[]),...(world?.queue||[]),...(world?.manager?[world.manager]:[]),...Object.values(world?.sh||{})].filter(c=>c.cell).map(c=>({character:c,origin:c.cell,cells:[c.cell]}));}
 export const ROOM_BG='assets/drive/room-tatami-noline.png';
 export const MAP={zones:[{
@@ -95,7 +95,7 @@ export const tableItemSize=zone=>zone.cell.w*TABLE_ITEM_LAYOUT.cellWidthFrac;
 // interior §17-5·17-6 floats (layout only, image px × map scale). Guests are invisible (CHAR_SPRITES.guest.file null), so the head
 // is the foot cell centre + headOffset — starting value 2026-10-14, pending user confirm (replace with the sprite's head point when guest art lands).
 // risePx: how far a float drifts up over CFG.feedback.floatSec; iconPx: drawn icon size (128-px 그림이 icons scaled down). Starting values 2026-10-14, pending user confirm.
-export const FLOAT_LAYOUT={headOffset:[0,-90],risePx:40,iconPx:{coin:30,heart:26,angry:30},stagger:[-12,12]}; // angry = coin size (user 2026-10-15: same size as the payment floats) · stagger: x offsets when coin+heart float together
+export const FLOAT_LAYOUT={headOffset:[0,-90],risePx:40,iconPx:{coin:30,heart:30,angry:30},stagger:[-12,12]}; // starting value 2026-10-15, pending user confirm: all floats 30 CSS px; angry = coin size (user 2026-10-15: same size as the payment floats) · stagger: x offsets when coin+heart float together
 // icon per float kind (그림이 UI icons, MAP.md); null = no art → the float event still runs but nothing is drawn
 export const FLOAT_ICONS={coin:'assets/drive/ui/res-coin.png',heart:'assets/drive/ui/res-heart.png',angry:'assets/drive/ui/emo-angry.png'};
 export function tableItemEntries(world){return (world?.custs||[]).filter(c=>c.phase==='seated'&&c.itemSlot&&c.order).map(c=>({tableItem:c,origin:c.itemSlot.cell,cells:[c.itemSlot.cell]}));}
@@ -105,3 +105,11 @@ export function floatOrigin(f,view,zone=MAP.zones[0]){
  const p=cellToScreen(...f.cell,view,zone);
  return {x:p.x+FLOAT_LAYOUT.headOffset[0]*view.scale,y:p.y+FLOAT_LAYOUT.headOffset[1]*view.scale};
 }
+
+// starting value 2026-10-15, pending user confirm: opaque height ~150px, walk 8fps, table visit 3s.
+export const MANAGER={height:150,fps:8,visitSec:3,anchor:[64,166]};
+export function managerFrame(m){const names=['front-dr','front-dl','back-ul','back-ur'];const dir=names[m.facing||0];return 'assets/drive/chars/manager/manager-'+(m.phase==='walking'?'walk-'+dir+'-'+(Math.floor((m.anim||0)*MANAGER.fps)%4+1):'stand-'+(dir.endsWith('dl')||dir.endsWith('ul')?'dl':'dr'))+'.png';}
+export function plateEdges(z){if(z.cols===MAP.zones[0].cols&&z.rows===MAP.zones[0].rows)return [];const edges=[];for(let j=0;j<z.rows-1;j++)edges.push({cell:[z.cols-1,j],part:'right'});for(let i=0;i<z.cols-1;i++)edges.push({cell:[i,z.rows-1],part:'left'});edges.push({cell:[z.cols-1,z.rows-1],part:'corner'});return edges;}
+
+// Measured alpha bounding boxes of the unmodified approved frames.
+export const MANAGER_OPAQUE_HEIGHT={"manager-stand-dl.png": 158, "manager-stand-dr.png": 158, "manager-walk-back-ur-1.png": 158, "manager-walk-back-ur-2.png": 157, "manager-walk-back-ur-3.png": 158, "manager-walk-back-ur-4.png": 158, "manager-walk-back-ul-1.png": 158, "manager-walk-back-ul-2.png": 157, "manager-walk-back-ul-3.png": 158, "manager-walk-back-ul-4.png": 158, "manager-walk-front-dl-1.png": 153, "manager-walk-front-dl-2.png": 152, "manager-walk-front-dl-3.png": 152, "manager-walk-front-dl-4.png": 154, "manager-walk-front-dr-1.png": 153, "manager-walk-front-dr-2.png": 152, "manager-walk-front-dr-3.png": 152, "manager-walk-front-dr-4.png": 154};

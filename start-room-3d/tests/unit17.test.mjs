@@ -16,18 +16,18 @@ test('§17 early game: an unmet guest costs no reputation below Lv5, −1 from L
   for(const sh of s.shibas)sh.placed=false;S.tick(s,w,.1,now+100);const e=w.events.find(e=>e.type==='leave');assert.equal(e.outcome,'disappointed');assert.equal(s.cafe.rep,rep,'Lv'+lv);}});
 
 test('§17 upgrades: four kinds, null prices disabled (미정), seat/queue +1, interval/price effects null',()=>{
- assert.deepEqual(Object.keys(CFG.upgrades),['seat','interval','price','queue']);
+ assert.deepEqual(Object.keys(CFG.upgrades),['interval','price','queue']);
  for(const k of Object.keys(CFG.upgrades))assert.equal(CFG.upgrades[k].price,null,k);
- assert.equal(CFG.upgrades.seat.effect,1);assert.equal(CFG.upgrades.queue.effect,1);assert.equal(CFG.upgrades.interval.effect,null);assert.equal(CFG.upgrades.price.effect,null);
- const s=fresh();s.coins=1e9;assert.deepEqual(s.upgrades,{seat:0,interval:0,price:0,queue:0});
+ assert.equal(CFG.upgrades.queue.effect,1);assert.equal(CFG.upgrades.interval.effect,null);assert.equal(CFG.upgrades.price.effect,null);
+ const s=fresh();s.coins=1e9;assert.deepEqual(s.upgrades,{interval:0,price:0,queue:0});
  for(const k of Object.keys(CFG.upgrades)){assert.equal(S.upgradeCheck(s,k),'unset');assert.equal(S.buyUpgrade(s,k,now),false);}
- assert.equal(s.coins,1e9);assert.deepEqual(s.upgrades,{seat:0,interval:0,price:0,queue:0});assert.equal(S.upgradeCheck(s,'nope'),'kind');});
+ assert.equal(s.coins,1e9);assert.deepEqual(s.upgrades,{interval:0,price:0,queue:0});assert.equal(S.upgradeCheck(s,'nope'),'kind');});
 
 test('§17 upgrades: with a test price, buying charges coins (no ledger line), raises the level; maxLevel caps',()=>{
- withCfg(CFG.upgrades.seat,{price:100,maxLevel:2},()=>{const s=fresh();s.coins=150;const cap=S.capOf(s);
-  assert.ok(S.buyUpgrade(s,'seat',now));assert.equal(s.coins,50);assert.equal(S.upgradeLevel(s,'seat'),1);assert.equal(S.capOf(s),cap+1,'max guests +1');
-  assert.ok(!S.ledgerStatement(s,now).lines.some(x=>x.id==='upgrade'),'가게 업그레이드 is not a ledger line');assert.equal(S.ledgerStatement(s,now).net,0);assert.equal(S.upgradeCheck(s,'seat'),'coins');
-  s.coins=1000;assert.ok(S.buyUpgrade(s,'seat',now));assert.equal(S.upgradeCheck(s,'seat'),'max');assert.equal(S.capOf(s),cap+2);});});
+ withCfg(CFG.upgrades.queue,{price:100,maxLevel:2},()=>{const s=fresh();s.coins=150;const cap=S.queueCells(s,S.newWorld(s)).length;
+  assert.ok(S.buyUpgrade(s,'queue',now));assert.equal(s.coins,50);assert.equal(S.upgradeLevel(s,'queue'),1);assert.equal(S.queueCells(s,S.newWorld(s)).length,cap+1,'max guests +1');
+  assert.ok(!S.ledgerStatement(s,now).lines.some(x=>x.id==='upgrade'),'가게 업그레이드 is not a ledger line');assert.equal(S.ledgerStatement(s,now).net,0);assert.equal(S.upgradeCheck(s,'queue'),'coins');
+  s.coins=1000;assert.ok(S.buyUpgrade(s,'queue',now));assert.equal(S.upgradeCheck(s,'queue'),'max');assert.equal(S.queueCells(s,S.newWorld(s)).length,cap+2);});});
 
 test('§17 upgrade hooks: queue +1 cell continues the grass line; null interval/price effects leave the game unchanged',()=>{
  const s=fresh();s.coins=0;const w=S.newWorld(s,S.rng(1));assert.equal(S.queueCells(s,w).length,CFG.navigation.queueCells);
@@ -38,8 +38,8 @@ test('§17 upgrade hooks: queue +1 cell continues the grass line; null interval/
  withCfg(CFG.upgrades.price,{effect:2},()=>assert.equal(S.payFor(t,[],{price:3},now).base,24));}); // hook applies once an effect is configured
 
 test('§17 upgrades survive save/load (older saves get level 0)',()=>{const mem=new Map(),st={getItem:k=>mem.get(k)??null,setItem:(k,v)=>mem.set(k,v)};
- const s=fresh();s.upgrades.seat=2;S.save(st,s,now);assert.equal(S.load(st,now).state.upgrades.seat,2);
- const old=JSON.parse(mem.get(CFG.saveKey));delete old.upgrades;mem.set(CFG.saveKey,JSON.stringify(old));assert.deepEqual(S.load(st,now).state.upgrades,{seat:0,interval:0,price:0,queue:0});});
+ const s=fresh();s.upgrades.seat=2;S.save(st,s,now);assert.equal(S.load(st,now).state.upgrades.seat,undefined);
+ const old=JSON.parse(mem.get(CFG.saveKey));delete old.upgrades;mem.set(CFG.saveKey,JSON.stringify(old));assert.deepEqual(S.load(st,now).state.upgrades,{interval:0,price:0,queue:0});});
 
 test('§17 red dots: 시바 lights for a waiting walk result (real state); 미션 has no tab',()=>{
  let s=fresh();assert.equal(tabBadges(s,now).shiba,false);assert.ok(!('mission' in tabBadges(s,now)));

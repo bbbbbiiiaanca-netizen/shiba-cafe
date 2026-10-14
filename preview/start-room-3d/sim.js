@@ -1,8 +1,8 @@
 import {tickManager,linkTable,faceCell,layout,seatSlots,pathfind,routeTo,moveCell,syncRoutes} from './navigation.js';
-export {seatSlots,syncRoutes,pathfind};
+export {tickManager,seatSlots,syncRoutes,pathfind};
 // Spec v3 game core — pure logic (no DOM), deterministic with an injected RNG so tests can replay it.
 // Times: `now` is epoch ms; `dt` is seconds. Every number comes from CFG (config.js); UNSET (null) values disable what depends on them.
-import {defaultPlacement,restorePlacement,restoreSpace,zonesForSpace,FLOOR_ART} from './map-data.js';
+import {defaultPlacement,restorePlacement,restoreSpace,zonesForSpace,FLOOR_ART,PARTITION,footprintCells} from './map-data.js';
 import {CFG,GACHA_TABLE,pressureAt,isUnset} from './config.js';
 
 export function rng(seed=1){let a=seed>>>0||1;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
@@ -108,7 +108,8 @@ export const cafeNeed=lv=>lv>=CFG.cafe.maxLevel?null:CFG.cafe.expToNext[lv-1];
 export function addCafeExp(s,n){if(!(n>0))return 0;const C=s.cafe;let up=0;if(C.level>=CFG.cafe.maxLevel)return 0;C.exp+=n;
  for(let need=cafeNeed(C.level);need!=null&&C.exp>=need;need=cafeNeed(C.level)){C.exp-=need;C.level++;up++;}if(C.level>=CFG.cafe.maxLevel)C.exp=0;return up;}
 export const slotsOf=s=>Math.min(CFG.cafe.maxPlaced,pressureAt(s.cafe.level).slots);
-export const capOf=s=>pressureAt(s.cafe.level).cap+upgradeAdd(s,'seat'); // 좌석 추가 upgrade: +effect guests per level
+export const capOf=s=>pressureAt(s.cafe.level).cap; // actual seats come only from placed chairs/cushions
+
 export function arrivalMul(rep){for(const [at,m] of CFG.rep.arrivalMul)if(rep>=at)return m;return CFG.rep.arrivalMul.at(-1)[1];}
 export const arrivalInterval=s=>3600/(CFG.cafe.customersPerHourPerCap*capOf(s))*arrivalMul(s.cafe.rep)*upgradeMul(s,'interval')/heartMultiplier(s,'guests',s.heartUseNow??s.lastSeen);
 export function satisfiedGain(rep,base=CFG.rep.satisfied){for(const [at,m] of CFG.rep.damp)if(rep>=at)return base*m;return base;}
@@ -222,7 +223,7 @@ export function tickWalk(s,now=Date.now(),r=Math.random){const W=s.walk;if(!W)re
 // n = 1 (100다이아 또는 뽑기권 1장) or 10 (900다이아). 견종 4종; 이미 가진 견종이면 그 견종의 가장 먼저 온 시바에게 발바닥 10개.
 export const gachaPrice=n=>n===CFG.gacha.tenCount?CFG.gacha.tenDia:n===1?CFG.gacha.priceDia:null;
 export const gachaOddsSet=()=>!isUnset(CFG.gacha.breedOdds);
-export function gachaCheck(s,n=1,{ticket=false}={}){if(!s.started)return 'pick';if(!gachaOddsSet())return 'odds';if(isUnset(CFG.gacha.startLevel))return 'unset'; // UNSET 질문 9(바) 확률표·시작 레벨 → 뽑기 비활성
+export function gachaCheck(s,n=1,{ticket=false}={}){if(s.cafe.level<CFG.gacha.unlock)return 'locked';if(!s.started)return 'pick';if(!gachaOddsSet())return 'odds';if(isUnset(CFG.gacha.startLevel))return 'unset'; // UNSET 질문 9(바) 확률표·시작 레벨 → 뽑기 비활성
  if(ticket){if(n!==1)return 'count';if(!(s.items.capsule>0))return 'ticket';}
  else{const p=gachaPrice(n);if(p==null)return 'count';if(s.dia<p)return 'dia';}
  if(s.shibas.length>=CFG.cafe.maxOwned&&CFG.breeds.some(b=>!s.shibas.some(o=>o.breed===b)))return 'owned';return null;}
@@ -259,24 +260,24 @@ const coffeeOrder=p=>({id:CFG.menu.coffee.id,kind:'coffee',price:CFG.menu.coffee
 // 갱신 134 order rules; instant on sit: answer 똑또기 2026-10-14.
 //  고급 음료(3멍) needs ≥1 developed normal drink, 고급 디저트(5멍) ≥1 normal dessert — otherwise that slot becomes the default coffee;
 //  a 고급 디저트 becomes a premium (8멍) with 30% when ≥1 premium is developed. The picture is a random developed item of that kind.
-export function chooseOrder(s,satisfied,r){const M=CFG.menu,p=premiumChance(s.cafe.rep,satisfied,normalDeveloped(s));
+export function chooseOrder(s,satisfied,r,now=Date.now()){const M=CFG.menu,p=premiumChance(s.cafe.rep,satisfied,normalDeveloped(s));
  if(!(r()<p))return coffeeOrder(p);
  const [wd,ws]=M.drinkToDessert,kind=r()*(wd+ws)<wd?'drink':'dessert';const list=developed(s,kind);
  if(!list.length)return {...coffeeOrder(p),slot:kind};
  if(kind==='dessert'){const prem=developed(s,'premium');if(prem.length&&r()<M.premiumUpgradeChance){const m=pick(r,prem);return {id:m.id,kind:'premium',price:m.price,img:m.img,p,slot:kind};}}
- const m=pick(r,list);return {id:m.id,kind,price:m.price,img:m.img,p,slot:kind};}
+ const effects=activeHeartEffects(s,now);const weights=list.map(m=>effects.filter(e=>e.menuId===m.id).reduce((n,e)=>n*(CFG.heartUse.items.find(x=>x.id===e.id)?.sales??1),1));const index=pickWeighted(r,list.map((_,i)=>i),weights),m=list[index];return {id:m.id,kind,price:m.price,img:m.img,p,slot:kind};}
 // confirmed 수인님 2026-10-14: max meeting effect; no-meeting starting x1 pending confirm.
 export function payFor(s,met,order,now=Date.now()){
  const aggregate=CFG.income.levelAggregation,item=itemIncomeMul(s,now);
  const effects=met.map(id=>byId(s,id)).filter(Boolean).map(o=>isUnset(levelEffect(o.level))?null:levelEffect(o.level)*heartMultiplier(s,'shibaMul',now,o.id));
  const lvMul=typeof aggregate==='function'&&effects.every(Number.isFinite)?aggregate(effects):null;
- const base=order.price*upgradeMul(s,'price')*heartMultiplier(s,'price',now); // 메뉴 판매가 인상 upgrade (effect UNSET → ×1)
+ const base=order.price*upgradeMul(s,'price')*activeHeartEffects(s,now).filter(e=>!e.menuId||e.menuId===order.id).reduce((m,e)=>m*(CFG.heartUse.items.find(x=>x.id===e.id)?.price??1),1); // 메뉴 판매가 인상 upgrade (effect UNSET → ×1)
  const pending=!Number.isFinite(lvMul)||!Number.isFinite(base)||!Number.isFinite(item);return {base,lvMul:pending?null:lvMul,item,total:pending?null:base*lvMul*item,pending};}
 
 // ───────────────────────── 가게 관리 업그레이드 (§16 answer 2026-10-14) ─────────────────────────
 // Levels live in s.upgrades. A null price disables buying; a null effect has no effect (hooks below return the neutral value).
 export const upgradeLevel=(s,kind)=>s.upgrades?.[kind]||0;
-const upgradeAdd=(s,kind)=>{const e=CFG.upgrades[kind]?.effect;return Number.isFinite(e)?e*upgradeLevel(s,kind):0;}; // seat · queue: +effect per level
+const upgradeAdd=(s,kind)=>{const e=CFG.upgrades[kind]?.effect;return Number.isFinite(e)?e*upgradeLevel(s,kind):0;}; // queue: +effect per level
 const upgradeMul=(s,kind)=>{const e=CFG.upgrades[kind]?.effect;return Number.isFinite(e)?e**upgradeLevel(s,kind):1;}; // interval · price: ×effect per level (form pending confirm)
 export function upgradeCheck(s,kind){const U=CFG.upgrades[kind];if(!U)return 'kind';if(!Number.isFinite(U.price))return 'unset';
  if(Number.isFinite(U.maxLevel)&&upgradeLevel(s,kind)>=U.maxLevel)return 'max';if(isUnset(s.coins)||s.coins<U.price)return 'coins';return null;}
@@ -332,7 +333,7 @@ function leave(s,w,c,ctx){const V=CFG.visit,E=CFG.cafeExp;let outcome,repD=0,exp
  else if(managerActive(s,ctx.now)&&managerCanFulfil(s,c)&&w.r()<CFG.requests.managerChance){outcome='satisfied';byManager=true;repD=satisfiedGain(s.cafe.rep,CFG.rep.satisfied*CFG.requests.managerRepMul);exp=0;}
  else if(!isUnset(c.score)&&c.score<V.scoreDisappointedBelow){outcome='disappointed';repD=!c.met.length&&s.cafe.level<CFG.rep.unmetFreeBelowLevel?0:CFG.rep.disappointed;exp=E.custDisappointed;} // starting value 2026-10-14: unmet guests cost no reputation below café Lv5
  else{outcome='normal';repD=CFG.rep.normal;exp=E.custNormal;}
- const order=c.order||chooseOrder(s,outcome==='satisfied',w.r);const pay=payFor(s,c.met,order,ctx.now);recordPayment(s,pay,ctx.now,ctx);for(const effect of activeHeartEffects(s,ctx.now)){const extra=CFG.heartUse.items.find(x=>x.id===effect.id)?.extraOrders??0;for(let i=0;i<extra;i++){const extraOrder=chooseOrder(s,outcome==='satisfied',w.r),extraPay=payFor(s,c.met,extraOrder,ctx.now);recordPayment(s,extraPay,ctx.now,ctx);if(Number.isFinite(pay.total)&&Number.isFinite(extraPay.total)){pay.total+=extraPay.total;pay.base+=extraPay.base;}else{pay.pending=true;pay.total=null;}w.events.push({type:'order',id:c.id,order:extraOrder.id,orderImg:extraOrder.img,cell:c.cell&&[...c.cell]},{type:'serve',id:c.id,order:extraOrder.id});}}
+ const order=c.order||chooseOrder(s,outcome==='satisfied',w.r,ctx.now);const pay=payFor(s,c.met,order,ctx.now);recordPayment(s,pay,ctx.now,ctx);for(const effect of activeHeartEffects(s,ctx.now)){const extra=CFG.heartUse.items.find(x=>x.id===effect.id)?.extraOrders??0;for(let i=0;i<extra;i++){const extraOrder=chooseOrder(s,outcome==='satisfied',w.r,ctx.now),extraPay=payFor(s,c.met,extraOrder,ctx.now);recordPayment(s,extraPay,ctx.now,ctx);if(Number.isFinite(pay.total)&&Number.isFinite(extraPay.total)){pay.total+=extraPay.total;pay.base+=extraPay.base;}else{pay.pending=true;pay.total=null;}w.events.push({type:'order',id:c.id,order:extraOrder.id,orderImg:extraOrder.img,cell:c.cell&&[...c.cell]},{type:'serve',id:c.id,order:extraOrder.id});}}
  s.stats.served++;s.stats[outcome]++;addCafeExp(s,exp);w.lastPay={...pay,order:order.id,orderImg:order.img,outcome,met:[...c.met]};
  w.events.push({type:'leave',id:c.id,outcome,coins:pay.total,order:order.id,orderImg:order.img,byManager,requestMet:outcome==='satisfied',metShiba:c.met.length>0,seat:c.seat,cell:c.cell&&[...c.cell]});
  w.recent.push({id:c.id,order:order.id,coins:pay.total,pending:pay.pending});w.recent=w.recent.slice(-3);c.phase='exiting';routeTo(s,w,c,layout(s,w).entrance);if(repD)addRep(s,repD,{...ctx,world:w});}
@@ -357,7 +358,7 @@ export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};settleLedger(s,now);syn
  for(const c of [...w.queue]){c.t-=dt;if(c.t<0){w.queue=w.queue.filter(x=>x!==c);s.stats.angry++;w.events.push({type:'angry',id:c.id,cell:c.cell&&[...c.cell]});addRep(s,CFG.navigation.queueReputation,{...ctx,world:w});if(C.closed)return w;}} // answer 똑또기 2026-10-14: timeout leaves, reputation unchanged
  for(const c of [...w.custs]){
   if(c.phase==='exiting'){if(moveCell(c,dt,CFG.navigation.cellStepSec)){w.custs=w.custs.filter(x=>x!==c);w.events.push({type:'exit',id:c.id});}continue;}
-  if(c.phase==='entering'){if(moveCell(c,dt,CFG.navigation.cellStepSec)){c.phase='seated';c.activity='eat';c.eatRemaining=behaviour(w).eatSec;c.order=chooseOrder(s,false,w.r);linkTable(s,w,c);w.events.push({type:'seat',id:c.id},{type:'order',id:c.id,order:c.order.id,orderImg:c.order.img,cell:[...c.cell]},{type:'serve',id:c.id,order:c.order.id});}continue;}
+  if(c.phase==='entering'){if(moveCell(c,dt,CFG.navigation.cellStepSec)){c.phase='seated';c.activity='eat';c.eatRemaining=behaviour(w).eatSec;c.order=chooseOrder(s,false,w.r,now);linkTable(s,w,c);w.events.push({type:'seat',id:c.id},{type:'order',id:c.id,order:c.order.id,orderImg:c.order.img,cell:[...c.cell]},{type:'serve',id:c.id,order:c.order.id});}continue;}
   const eating=c.activity==='eat'&&Number.isFinite(c.eatRemaining);if(eating){c.eatRemaining-=dt;if(c.eatRemaining<=0)c.activity='interact';}c.t-=dt;
   // starting value 똑또기 2026-10-14: the visit may run past stayingSec while eating (finite eatSec) or playing; eatSec null keeps the plain 30 s visit
   if(c.t<=0&&(c.activity==='play'||c.activity==='eat'&&Number.isFinite(c.eatRemaining)))continue;
@@ -392,7 +393,7 @@ export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};settleLedger(s,now);syn
 // 갱신 105: a roaming shiba (not with a guest) can be brought straight to a chosen guest → normal 7-second meeting
 export function deliverCheck(s,w,shibaId,custId){const sh=w.sh[shibaId];if(!sh)return 'notWorking';if(sh.phase==='meet'||sh.phase==='approach')return 'busy';const c=w.custs.find(c=>c.id===custId);if(!c||c.phase!=='seated')return 'cust';if(c.with!=null)return 'custBusy';return null;}
 export function deliver(s,w,shibaId,custId,now=Date.now()){if(deliverCheck(s,w,shibaId,custId))return false;return approach(s,w,w.sh[shibaId],w.custs.find(c=>c.id===custId));}
-function decayGauges(s,dt,closed,now){const D=CFG.decayPerHour;for(const sh of s.shibas){const placed=sh.placed&&!closed;
+function decayGauges(s,dt,closed,now){const D=CFG.decayPerHour;for(const sh of s.shibas){const placed=sh.placed&&!closed;if(!placed)recoverFatigue(s,sh,dt,now);
  for(const k of CFG.gauges){if(closed&&k!=='full')continue;const rate=D[k];if(isUnset(sh.g[k])||isUnset(rate)||sh.status==='hospital')continue;
   let m=placed?1:CFG.homeDecayMul;if(k==='dirt'&&placed){if(s.cafe.stains>=CFG.stains.badAt)m*=CFG.stains.badDirtMul;else if(s.cafe.stains>=CFG.stains.warnAt)m*=CFG.stains.warnDirtMul;}
   const sign=k==='dirt'||k==='fatigue'||k==='boredom'?1:-1;sh.g[k]=clamp(sh.g[k]+sign*rate*m*dt/3600,0,100);}updateZero(sh,closed?s.cafe.closedAt:now);}}
@@ -412,7 +413,7 @@ export function save(storage,s,now=Date.now()){settleLedger(s,now);s.lastSeen=no
 // v3 uses its own save key; v1/v2 saves (grades, old currencies) are left untouched and not migrated (spec v3 abolished their model).
 export function load(storage,now=Date.now(),r=Math.random){let s=null;try{s=JSON.parse(storage.getItem(CFG.saveKey));}catch{}
  if(!s||s.v!==CFG.saveVersion)return {state:newState(now),fresh:true,offline:null,reopened:null};
- const d=newState(now);s={...d,...s,items:{...d.items,...s.items},cafe:{...d.cafe,...s.cafe},upgrades:{...d.upgrades,...s.upgrades},stats:{...d.stats,...s.stats},settings:{...d.settings,...s.settings}};
+ const d=newState(now);s={...d,...s,items:{...d.items,...s.items},cafe:{...d.cafe,...s.cafe},upgrades:Object.fromEntries(Object.keys(CFG.upgrades).map(k=>[k,s.upgrades?.[k]||0])),stats:{...d.stats,...s.stats},settings:{...d.settings,...s.settings}};
  s.space=restoreSpace(s.space);s.placement=restorePlacement(s.placement,zonesForSpace(s.space)[0]);
  if(s.cafe.floor===2&&!s.space.floor2Unlocked)s.cafe.floor=1;
  s.menus=(s.menus||[]).filter(id=>menuItem(id));if(s.menuDev&&!menuItem(s.menuDev.id))s.menuDev=null;
@@ -478,14 +479,25 @@ export function activeHeartEffects(s,now=Date.now()){const h=heartState(s);h.eff
 export function heartMultiplier(s,key,now=Date.now(),id=null){return activeHeartEffects(s,now).filter(e=>id==null||e.shibaId===id).reduce((m,e)=>m*(CFG.heartUse.items.find(x=>x.id===e.id)?.[key]??1),1);}
 export function heartUnlocks(s){const h=heartState(s),items=heartItems().filter(x=>x.level>h.seenLevel&&x.level<=s.cafe.level);h.seenLevel=Math.max(h.seenLevel,s.cafe.level);return items;}
 export function heartUseCheck(s,id,shibaId=null,now=Date.now(),menuId=null){const it=heartItems().find(x=>x.id===id);if(!it)return 'pick';if(it.level==null||s.cafe.level<it.level)return 'locked';if(id==='walk')return 'walk';
+ if(id==='cookie'&&(!it.odds||!['coins','paws','item'].every(k=>Number.isFinite(it.odds[k])&&it.odds[k]>=0)||!Object.values(it.odds).some(n=>n>0)||!Number.isFinite(currentIncomeRate(s,now))))return 'unset';if(id==='talent'&&!Number.isFinite(currentIncomeRate(s,now)))return 'unset';
  if(it.shiba&&!byId(s,shibaId))return 'pick';if(it.menu&&!s.menus.includes(menuId))return 'menu';
  const d=heartDay(s,now),key=id+':'+(it.shiba?shibaId:'all');if(it.daily&&(d.uses[key]||0)>=it.daily)return 'daily';settleHearts(s,now);return s.hearts<it.cost?'hearts':null;}
 export function useHeartItem(s,id,shibaId=null,now=Date.now(),menuId=null,w=null){if(heartUseCheck(s,id,shibaId,now,menuId))return false;const it=heartItems().find(x=>x.id===id),sh=byId(s,shibaId),d=heartDay(s,now);spendHearts(s,it.cost,now);const key=id+':'+(it.shiba?shibaId:'all');d.uses[key]=(d.uses[key]||0)+1;
  if(sh){addAffinity(sh,it.affinity);const delta={};for(const k of ['happy','fatigue'])if(Number.isFinite(it[k]))delta[k]=it[k];changeGauges(s,sh,delta,now);}
  if(it.sec){const h=heartState(s);h.effects=h.effects.filter(e=>e.id!==id||e.shibaId!==shibaId);h.effects.push({id,shibaId,menuId,until:now+it.sec*1000});}
  if(id==='special'&&w&&it.guestOdds!=null)for(let i=0;i<it.guestsCount;i++)spawn(s,w,now); // UNSET guest identity odds: no guessed normal visitors or random weights.
+ if(id==='cookie'){const kind=pickWeighted(w?.r||Math.random,['coins','paws','item'],it.odds);if(kind==='coins'){const amount=currentIncomeRate(s,now)*it.minutes*60;addCoins(s,amount);recordLedger(s,'other',amount,now);}else if(kind==='paws'){const target=sh||s.shibas[0];if(target)addPaws(target,it.rewards.paws);}else if(it.rewards.item)s.items[it.rewards.item]=(s.items[it.rewards.item]||0)+1;}
+ if(id==='talent'){const amount=currentIncomeRate(s,now)*it.minutes*60;addCoins(s,amount);recordLedger(s,'other',amount,now);}
+ if(id==='blanket')for(const target of s.shibas)changeGauges(s,target,{happy:it.happy},now);
  if(id==='treat'&&w)for(const c of w.custs)if(c.phase==='seated')c.fulfilled=true;
  return true;}
 export function heartAdStatus(s,now=Date.now()){const d=heartDay(s,now);return {left:Math.max(0,Math.ceil((d.adUntil-now)/1000)),remaining:Math.max(0,CFG.heartUse.ads.daily-d.ads)};}
 export function claimHeartAd(s,now=Date.now()){const a=heartAdStatus(s,now);if(a.left||!a.remaining)return false;const d=heartDay(s,now),c=CFG.heartUse.ads;s.hearts+=c.grant;d.ads++;if(d.ads>=c.burst)d.adUntil=now+c.cooldownSec*1000;return true;}
 export function buyHearts(s){const b=CFG.heartUse.buy;if(s.dia<b.dia)return false;s.dia-=b.dia;s.hearts+=b.hearts;return true;}
+
+// starting value 2026-10-15, pending user confirm: 3 free, additional partitions 50,000 coins.
+export function buyWall(s,now=Date.now()){if(!Number.isFinite(s.coins)||s.coins<PARTITION.price)return false;s.coins-=PARTITION.price;s.wallOwned=(s.wallOwned??PARTITION.count)+1;recordLedger(s,'furniture',PARTITION.price,now);return true;}
+
+// Current income rate basis is unspecified; never guess an earning rate. Coins per second.
+export const currentIncomeRate=(s,now)=>CFG.heartUse.incomeRatePerSec;
+export function recoverFatigue(s,sh,dt,now){const rate=CFG.care.sleep.fatiguePerHour;if(Number.isFinite(rate)&&Number.isFinite(sh.g.fatigue))sh.g.fatigue=Math.max(0,sh.g.fatigue-rate*heartMultiplier(s,'recovery',now)*dt/3600);}

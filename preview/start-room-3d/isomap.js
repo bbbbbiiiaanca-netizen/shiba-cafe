@@ -1,11 +1,11 @@
 import {preservesEntrance} from './navigation.js';
-import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion} from './map-data.js';
+import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
  let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,panX=0,panBounds={minX:0,maxX:0},drag=null,last,selected=null,hits=[],gridCells=0,maxScroll=0,markers=[];
  const bar=document.createElement('div');bar.hidden=true;bar.className='furniture-actions';bar.setAttribute('aria-label','가구 편집');
- bar.innerHTML='<button data-furniture-flip>좌우 반전</button><button data-furniture-rotate>회전</button><button data-wall-add>가벽 배치</button><button data-wall-remove>가벽 제거</button><button data-furniture-done>완료/선택 해제</button>';
+ bar.innerHTML='<button data-furniture-flip>좌우 반전</button><button data-furniture-rotate>회전</button><button data-wall-add hidden>가벽 배치</button><button data-wall-remove>가벽 제거</button><button data-furniture-done>완료/선택 해제</button>';
  function syncBar(){bar.hidden=!edit;for(const button of bar.querySelectorAll('button'))button.disabled=button.hasAttribute('data-wall-add')?false:button.hasAttribute('data-wall-remove')?current()?.type!=='wall':!selected;}
  const slots=()=>last?.[0].placement.slots||MAP.zones[0].slots;
  const current=()=>slots().find(s=>s.id===selected);
@@ -16,7 +16,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
   if(!preservesEntrance(zone,before,after)){onBlocked('입구가 막혔어요!');return false;}
   if(!validPlacement(candidate,before,zone)){onBlocked();return false;}return true;
  }
- function placeWall(origin){if(!edit||!last)return false;const zone=zonesForSpace(last[0].space)[0];
+ function placeWall(origin){if(!edit||!last)return false;if((last[0].wallOwned??PARTITION.count)<=slots().filter(x=>x.type==='wall').length)return false;const zone=zonesForSpace(last[0].space)[0];
   const candidate={id:'wall-'+crypto.randomUUID(),type:'wall',origin:[...origin],dir:0};
   if(!accept(candidate,zone))return false;slots().push(candidate);selected=candidate.id;onChange();repaint();return true;
  }
@@ -81,8 +81,10 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
      ctx.beginPath();ctx.moveTo(p.x,p.y-hh);ctx.lineTo(p.x+hw,p.y);ctx.lineTo(p.x,p.y+hh);ctx.lineTo(p.x-hw,p.y);ctx.closePath();ctx.stroke();
     }
    }
+   for(const edge of plateEdges(z)){const p=cellToScreen(...edge.cell,view,z);stamp('assets/drive/tiles/plate-edge-'+edge.part+'.png',{x:p.x,y:p.y-z.cell.h*scale/2},[64,0]);}
    [...placed,...(z.id==='A'?[...characterDepthEntries(world),...tableItemEntries(world)]:[])].map(s=>drag?.item&&drag.item===s.id?{...s,origin:drag.candidate}:s).sort(compareDepth).forEach(s=>{
     if(s.tableItem){const c=s.tableItem,p=cellToScreen(...s.origin,view,z),im=load('assets/drive/'+c.order.img),size=tableItemSize(z);if(im.complete&&im.naturalWidth){const fit=size/Math.max(im.naturalWidth,im.naturalHeight)*scale;ctx.drawImage(im,p.x+c.itemSlot.offset[0]*scale-im.naturalWidth*fit/2,p.y+c.itemSlot.offset[1]*scale-im.naturalHeight*fit,im.naturalWidth*fit,im.naturalHeight*fit);}return;}
+    if(s.character?.role==='manager'){const m=s.character,im=load(managerFrame(m)),p=cellToScreen(...s.origin,view,z);if(im.complete&&im.naturalWidth){const fit=MANAGER.height/MANAGER_OPAQUE_HEIGHT[managerFrame(m).split('/').at(-1)];ctx.drawImage(im,p.x-MANAGER.anchor[0]*fit,p.y-MANAGER.anchor[1]*fit,im.naturalWidth*fit,im.naturalHeight*fit);}return;}
     if(s.character){const meta=CHAR_SPRITES[s.character.role==='manager'?'manager':s.character.kind?'guest':'shiba'];if(meta.file&&meta.anchor)stamp(meta.file,cellToScreen(...s.origin,view,z),meta.anchor);return;}
     const base=SPRITES[s.type];if(!base)return;
     if(!base.file){if(edit){const p=cellToScreen(...s.origin,view,z);hits.push({id:s.id,x:p.x-z.cell.w*scale/2,y:p.y-z.cell.h*scale/2,w:z.cell.w*scale,h:z.cell.h*scale,footprint:true,view,zone:z});}return;}const sprite=s.dir>=2?base.back:base;if(!sprite)return;
@@ -103,7 +105,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
     }
     // §17-5·17-6: icon floats rise from the guest's head and fade (age advanced by main.js); kinds with a null icon draw nothing
     for(const f of world.floats||[]){const file=FLOAT_ICONS[f.kind];if(!file||!f.cell)continue;const im=load(file);if(!(im.complete&&im.naturalWidth))continue;
-     const k=Math.min(1,Math.max(0,f.age/f.dur)),p=floatOrigin(f,view,z),size=FLOAT_LAYOUT.iconPx[f.kind]*scale,F=FLOAT_LAYOUT;
+     const k=Math.min(1,Math.max(0,f.age/f.dur)),p=floatOrigin(f,view,z),size=FLOAT_LAYOUT.iconPx[f.kind],F=FLOAT_LAYOUT;
      const x=p.x+(f.dx||0)*scale,y=p.y-F.risePx*scale*k;
      ctx.save();ctx.globalAlpha=k<.4?1:1-(k-.4)/.6;ctx.drawImage(im,x-size/2,y-size,size,size);ctx.restore();}
    }

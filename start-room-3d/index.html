@@ -75,6 +75,8 @@ button[data-act=levelUp]{background:url(assets/drive/ui/ui-btn-levelup-yellow.pn
 .furniture-section{flex-shrink:0;min-width:0}.furniture-section h3{margin:2px 0 6px;font-size:12px}
 .furniture-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .furniture-card{aspect-ratio:1;min-width:0;overflow:hidden;display:grid;grid-template-rows:minmax(0,1fr) auto;justify-items:center;gap:2px;padding:7px 5px;background:url(assets/drive/ui/ui-card-default.png) center/100% 100% no-repeat;text-align:center}
+.furniture-card[data-furniture-card="wall"]{aspect-ratio:auto;grid-column:1/-1;grid-template-rows:auto;grid-template-columns:repeat(4,minmax(0,1fr));align-items:center}
+.furniture-card[data-furniture-card="wall"] button{font-size:10px;margin:0;white-space:normal}
 .furniture-card .furniture-icon{width:100%;height:100%;min-height:0;object-fit:contain;object-position:center}
 .furniture-card strong{max-width:100%;font-size:10px;line-height:1.2;white-space:nowrap}
 

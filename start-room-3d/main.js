@@ -6,7 +6,7 @@ import {CFG,GACHA_TABLE,pressureAt,isUnset} from './config.js';
 import * as S from './sim.js';
 import {makeT,LANGS} from './i18n.js';
 import {TABS,DEFAULT_TAB,tabBadges} from './tabs.js';
-import {FLOAT_LAYOUT} from './map-data.js';
+import {PARTITION,FLOAT_LAYOUT} from './map-data.js';
 
 const Q=new URLSearchParams(location.search);
 const temp=Q.get('temp')==='1'; // capture/test roster never writes a production save
@@ -83,7 +83,7 @@ function renderMainMenu(){
  $('menuList').classList.add('tab-list');
  // §17: 가게 관리 = café status + popup buttons only (the old menu card grid is gone; 메뉴 개발 lives in its popup)
  if(mainTab==='manage'){const scroll=$('menuList').scrollTop;$('menuList').innerHTML=manageTop(now);$('menuList').scrollTop=scroll;return;}
- const content=mainTab==='shiba'?P.shibas().html:mainTab==='shop'?P.shop().html:mainTab==='alba'?P.alba().html:`<button data-edit-toggle aria-pressed="${iso.edit}">${iso.edit?'편집 끝':'배치 편집'}</button><section class="furniture-section" aria-labelledby="furniture-heading"><h3 id="furniture-heading">가구</h3><div class="furniture-grid">${CFG.furniture.items.filter(({id})=>s.placement.slots.some(slot=>slot.type===({'tea-table':'table',zabuton:'cushion'}[id]||id))).map(({id,name})=>`<article class="furniture-card" data-furniture-card="${id}"><img class="furniture-icon" src="assets/drive/ui/ui-icon-${id}.png" alt=""><strong>${name}</strong></article>`).join('')}</div></section>`;const scroll=$('menuList').scrollTop;$('menuList').innerHTML=content;$('menuList').scrollTop=scroll;if(mainTab==='furniture'&&iso.edit)$('menuList').prepend(iso.actions);$('menuList').querySelector('[data-edit-toggle]')?.addEventListener('click',()=>{iso.setEdit(!iso.edit);});
+ const content=mainTab==='shiba'?P.shibas().html:mainTab==='shop'?P.shop().html:mainTab==='alba'?P.alba().html:`<button data-edit-toggle aria-pressed="${iso.edit}">${iso.edit?'편집 끝':'배치 편집'}</button><section class="furniture-section" aria-labelledby="furniture-heading"><h3 id="furniture-heading">가구</h3><div class="furniture-grid">${CFG.furniture.items.filter(({id})=>s.placement.slots.some(slot=>slot.type===({'tea-table':'table',zabuton:'cushion'}[id]||id))).map(({id,name})=>`<article class="furniture-card" data-furniture-card="${id}"><img class="furniture-icon" src="assets/drive/ui/ui-icon-${id}.png" alt=""><strong>${name}</strong></article>`).join('')}<article class="furniture-card" data-furniture-card="wall"><strong>가벽</strong><span data-wall-count>${(s.wallOwned??PARTITION.count)-s.placement.slots.filter(x=>x.type==='wall').length}</span><button data-act="wallBuy" ${s.coins<PARTITION.price?'disabled':''}>${fmt(PARTITION.price)}멍 구입</button><button data-wall-inventory-place ${(s.wallOwned??PARTITION.count)<=s.placement.slots.filter(x=>x.type==='wall').length?'disabled':''}>배치</button></article></div></section>`;const scroll=$('menuList').scrollTop;$('menuList').innerHTML=content;$('menuList').scrollTop=scroll;if(mainTab==='furniture'&&iso.edit)$('menuList').prepend(iso.actions);$('menuList').querySelector('[data-wall-inventory-place]')?.addEventListener('click',()=>{iso.setEdit(true);iso.actions.querySelector('[data-wall-add]').click();});$('menuList').querySelector('[data-edit-toggle]')?.addEventListener('click',()=>{iso.setEdit(!iso.edit);});
 }
 document.querySelectorAll('[data-main-tab]').forEach(b=>b.addEventListener('click',()=>{close();mainTab=b.dataset.mainTab;if(mainTab==='manage')ui.seen.menuDone=false;menuSig='';renderMainMenu();}));
 // 가게 관리 (§17): popup buttons (메뉴 개발 · 업그레이드), §15 ledger, café status (level, current development, upgrade levels).
@@ -230,7 +230,7 @@ const heartRow=(it,sh=null)=>{const now=clock.now(),locked=it.level==null||s.caf
 LP.hearts=()=>{const now=clock.now(),a=S.heartAdStatus(s,now),active=S.activeHeartEffects(s,now),ad=S.heartItems().some(it=>it.level!=null&&it.level<=s.cafe.level&&it.cost>s.hearts)?`<button data-act="heartAd" ${a.left||!a.remaining?'disabled':''}>광고 보고 하트 ${CFG.heartUse.ads.grant}${a.left?' · '+mmss(a.left):!a.remaining?' · 오늘 완료':''}</button>`:'';return {title:'하트 쓰기',top:`<div data-heart-balance>하트 ${ico('heart')}${s.hearts}</div><div data-heart-active>${active.map(e=>`<div>${CFG.heartUse.items.find(x=>x.id===e.id).name}${e.shibaId?' · '+nameOf(S.byId(s,e.shibaId)||{name:'시바'}):''} ${mmss(Math.ceil((e.until-now)/1000))}</div>`).join('')}</div>${ad}`,rows:S.heartItems().map(it=>heartRow(it)),footer:`<button data-act="heartBuy" ${s.dia<CFG.heartUse.buy.dia?'disabled':''}>${CFG.heartUse.buy.hearts}하트 = ${priceText(CFG.heartUse.buy.dia,'dia')}</button><button data-act="heartStub">다른 카페 방문 · 하루 ${CFG.heartUse.visit.daily}회 · ${CFG.heartUse.visit.hearts}하트</button><button data-act="heartStub">초대 메시지 · 하루 ${CFG.heartUse.invite.daily}회 · ${CFG.heartUse.invite.hearts}하트</button>`};};
 // Reuse the daycare list frame and portrait row, including the same existing shiba images.
 LP.heartShiba=id=>({title:'시바 고르기',rows:s.shibas.map(sh=>heartRow(CFG.heartUse.items.find(x=>x.id===id),sh))});
-LP.heartMenu=id=>({title:'추천 메뉴 고르기',rows:s.menus.map(key=>{const m=CFG.menu.items.find(x=>x.id===key);return {key,face:m?'assets/drive/'+m.img:null,name:L('menu.'+key),effect:'추천 효과 미정',price:CFG.heartUse.items.find(x=>x.id===id).cost,unit:'heart',disabled:s.hearts<CFG.heartUse.items.find(x=>x.id===id).cost,act:'heartUse',data:{item:id,menu:key}};})});
+LP.heartMenu=id=>({title:'추천 메뉴 고르기',rows:s.menus.map(key=>{const m=CFG.menu.items.find(x=>x.id===key);return {key,face:m?'assets/drive/'+m.img:null,name:L('menu.'+key),effect:'판매 ×1.3 · 가격 ×1.1',price:CFG.heartUse.items.find(x=>x.id===id).cost,unit:'heart',disabled:s.hearts<CFG.heartUse.items.find(x=>x.id===id).cost,act:'heartUse',data:{item:id,menu:key}};})});
 
 const priceText=(p,unit='coin')=>p==null?L('app.unset'):ico(unit)+fmt(p); // unit = RES key: coin · dia · paw
 const lockedLine=lv=>L('app.locked',{lv}); // 'Lv15 해금' — the real unlock level from CFG
@@ -254,9 +254,9 @@ LP.menu=()=>{const now=clock.now();return {title:L('shop.menu'),rows:CFG.menu.it
  if(dev){const left=S.skipLeftSec(s,{type:'menu'},now);return {key:m.id,face:'assets/drive/'+m.img,name:L('menu.'+m.id),effect,detail:detail+' · '+L('skip.note'),price:S.skipCost(left),unit:'dia',label:'즉시 완료 '+priceText(S.skipCost(left),'dia'),disabled:!!S.skipCheck(s,{type:'menu'},now),act:'skip',data:{type:'menu',id:''}};}
  return {key:m.id,face:'assets/drive/'+m.img,name:L('menu.'+m.id),effect,detail,locked,price:m.devCost,unit:'coin',label:owned?'개발 완료':null,disabled:!!c,act:'dev',data:{id:m.id}};})};};
 // 가게 관리 업그레이드 (§17, answer 2026-10-14): four kinds from CFG.upgrades. Price null → 미정, disabled. Effect null → '효과 미정'.
-const UPGRADES=Object.keys(CFG.upgrades),UPGRADE_NAME={seat:'좌석 추가',interval:'손님 간격 단축',price:'판매가 인상',queue:'대기 줄 연장'};
-const UPGRADE_SHORT={seat:'좌석',interval:'간격',price:'판매가',queue:'대기 줄'};
-const UPGRADE_FX={seat:e=>`최대 손님 +${e}명`,interval:()=>'손님 오는 간격 단축',price:()=>'메뉴 판매가 인상',queue:e=>`대기 줄 +${e}칸`};
+const UPGRADES=Object.keys(CFG.upgrades),UPGRADE_NAME={interval:'손님 간격 단축',price:'판매가 인상',queue:'대기 줄 연장'};
+const UPGRADE_SHORT={interval:'간격',price:'판매가',queue:'대기 줄'};
+const UPGRADE_FX={interval:()=>'손님 오는 간격 단축',price:()=>'메뉴 판매가 인상',queue:e=>`대기 줄 +${e}칸`};
 LP.upgrade=()=>({title:'가게 관리 업그레이드',rows:UPGRADES.map(k=>{const U=CFG.upgrades[k],lv=S.upgradeLevel(s,k),c=S.upgradeCheck(s,k),fx=Number.isFinite(U.effect);
  return {key:k,face:null,name:`${UPGRADE_NAME[k]} Lv${lv}`,effect:fx?UPGRADE_FX[k](U.effect):'효과 '+L('app.unset'),
   detail:`${fx?UPGRADE_FX[k](U.effect)+' (레벨마다)':UPGRADE_FX[k]()+' · 효과 '+L('app.unset')} · 가격 ${priceText(U.price,'coin')} · 최고 레벨 ${Number.isFinite(U.maxLevel)?U.maxLevel:L('app.unset')}`,
@@ -302,7 +302,7 @@ const act={
  hearts:()=>{S.heartState(s);ui.modals.unshift({kind:'list',list:'hearts'});},
  heartPick:d=>ui.modals.unshift({kind:'list',list:'heartShiba',arg:d.item}),
  heartMenu:d=>ui.modals.unshift({kind:'list',list:'heartMenu',arg:d.item}),
- heartUse:d=>{if(S.useHeartItem(s,d.item,d.id?+d.id:null,clock.now(),d.menu||null,w)){if(ui.modals[0].list!=='hearts')ui.modals.shift();toast(['cookie','special','blanket','recommend'].includes(d.item)?'사용했어요 · 미정 효과 준비 중':'사용했어요');}},
+ heartUse:d=>{if(S.useHeartItem(s,d.item,d.id?+d.id:null,clock.now(),d.menu||null,w)){if(ui.modals[0].list!=='hearts')ui.modals.shift();toast('사용했어요');}},
  heartAd:()=>{S.claimHeartAd(s,clock.now());},heartBuy:()=>{S.buyHearts(s);},heartStub:()=>toast('준비 중'),
  heartWalk:()=>{ui.modals=[];open('walk');},
  listOpen:d=>{if(d.list==='menu')ui.seen.menuDone=false;ui.lpOpen={};ui.modals.unshift({kind:'list',list:d.list,arg:d.kind||null});},
@@ -323,6 +323,7 @@ const act={
  walk:d=>{if(S.startWalk(s,ui.walkPick,+d.sec,clock.now(),r))S.tick(s,w,0,clock.now());else why(S.walkCheck(s,ui.walkPick,+d.sec,clock.now()));},
  albaPick:d=>{const id=+d.id;if(ui.walkAlba.has(id))ui.walkAlba.delete(id);else if(ui.walkAlba.size<CFG.alba.walk.maxShibas)ui.walkAlba.add(id);},
  albaWalk:()=>{if(S.hireAlba(s,'walk',[...ui.walkAlba],clock.now()))ui.walkAlba.clear();},
+ wallBuy:()=>{S.buyWall(s,clock.now());menuSig='';},
  manager:()=>{S.hireAlba(s,'manager',[],clock.now());},
  skip:d=>{const t={type:d.type,id:d.id===''?null:+d.id};if(S.skipNow(s,t,clock.now())==null)why(S.skipCheck(s,t,clock.now()));},
  levelUp:d=>{const sh=S.byId(s,+d.id);if(S.levelUpCheck(s,+d.id))return;const lv=sh.level,need=S.pawsToNext(lv);ui.modals.unshift({kind:'confirm',text:`${nameOf(sh)} Lv ${lv} → ${lv+1} · 발바닥 ${fmt(need)}개를 사용할까요?`,yes:()=>{if(S.byId(s,+d.id)?.level!==lv||!S.levelUp(s,+d.id)){toast(L('toast.paws'));return;}ui.modals.unshift({kind:'levelResult',id:+d.id,from:lv,to:lv+1});}});},
@@ -354,7 +355,7 @@ $('scene').addEventListener('pointerdown',e=>{const t=e.target.closest('[data-ac
 addEventListener('pointerup',e=>{if(!drag)return;const d=drag;drag=null;if(Math.hypot(e.clientX-d.x,e.clientY-d.y)<12)return;
  const seat=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-cust]');if(seat&&S.deliver(s,w,d.id,+seat.dataset.cust,clock.now())){ui.sel=null;refresh();}});
 function applyStatic(){document.documentElement.lang=s.settings.language||'ko';document.title=L('app.title');document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=L(e.dataset.i18n));sceneSig='';panelSig='';modalSig='';}
-function refresh(){for(const it of S.heartUnlocks(s))toast(it.name+' 해금');if(Q.get('debug')==='1'){let debug=document.getElementById('manager-debug');if(!debug){debug=document.createElement('output');debug.id='manager-debug';debug.style.cssText='position:absolute;top:70px;left:8px;color:white;background:#222;z-index:5';$('isomap').parentElement.append(debug);}debug.textContent=w.manager?'매니저 '+w.manager.phase+' ['+w.manager.cell.join(',')+']':'';}handleEvents();renderHUD();renderScene();renderPanel();renderModal();}
+function refresh(){for(const it of S.heartUnlocks(s))toast(it.name+' 해금');handleEvents();renderHUD();renderScene();renderPanel();renderModal();}
 
 // ───────── loop ─────────
 let last=performance.now(),saveT=0;
