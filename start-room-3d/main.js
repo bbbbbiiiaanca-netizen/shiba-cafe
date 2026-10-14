@@ -46,21 +46,24 @@ function renderHUD(){const now=clock.now();$('coins').textContent=fmt(s.coins);$
  $('closed').hidden=!C.closed;$('closed').textContent=L('hud.closed');}
 
 // ───────── café scene (keyed DOM, rebuilt only when its signature changes) ─────────
+// Foot anchors on the tatami (percent of the cover viewport); perspective sizes in CSS px.
+const cafeSeats=[[16,66,56],[48,67,60],[82,64,54],[35,71,64],[69,74,66]];
+const seatStyle=i=>{const [x,y,size]=cafeSeats[i%5];const row=Math.floor(i/5);return `--x:${x}%;--y:${y-row*7}%;--size:${Math.max(54,size-row*6)}px;z-index:${Math.round(y-row*7)}`;};
 let sceneSig='';
 function renderScene(){const cap=S.capOf(s),bySeat={};for(const c of w.custs)bySeat[c.seat]=c;
  const tokens={};for(const sh of Object.values(w.sh))if(sh.phase==='meet')tokens[sh.cust]=sh.id;
  const sig=JSON.stringify([cap,w.custs.map(c=>[c.id,c.seat,c.met.length,c.fulfilled,c.with]),Object.values(w.sh).map(x=>[x.id,x.phase]),w.queue.map(c=>c.id),s.cafe.stains,s.dongu.placed,ui.sel,s.settings.language]);
  if(sig!==sceneSig){sceneSig=sig;let h='';
   for(let i=0;i<cap;i++){const c=bySeat[i];
-   if(!c){h+=`<div class="seat" data-seat="${i}"></div>`;continue;}
+   if(!c){h+=`<div class="seat" style="${seatStyle(i)}" data-seat="${i}"></div>`;continue;}
    const q=c.request,reqHtml=q?`<div class="req${c.fulfilled?' ok':''}">${img(q.type==='meetShiba'?IMG.reqShiba:IMG.reqTrick)}<b>${q.type==='meetShiba'?nameOf(S.byId(s,q.shibaId)||{breed:'red'}):L('trick.'+q.trick)}</b></div>`:'';
    const tok=c.with!=null?(()=>{const o=S.byId(s,c.with);return o?`<div class="tok">${img(IMG.shiba(o.breed))}</div>`:''})():'';
-   h+=`<div class="seat cust${ui.sel!=null&&c.with==null?' sel':''}" data-act="seat" data-cust="${c.id}"><div class="who">${img(IMG.guest(c.kind),L('npc.'+c.kind))}</div>${reqHtml}<span class="met">${'♥'.repeat(c.met.length)}</span>${tok}<div class="tm">${bar(c.t/CFG.cafe.stayingSec)}</div></div>`;}
+   h+=`<div class="seat cust${ui.sel!=null&&c.with==null?' sel':''}" style="${seatStyle(i)}" data-act="seat" data-cust="${c.id}"><div class="who">${img(IMG.guest(c.kind),L('npc.'+c.kind))}</div>${reqHtml}<span class="met">${'♥'.repeat(c.met.length)}</span>${tok}<div class="tm">${bar(c.t/CFG.cafe.stayingSec)}</div></div>`;}
   $('seats').innerHTML=h;
-  let rh='';for(const x of Object.values(w.sh))if(x.phase==='roam'){const o=S.byId(s,x.id);if(o)rh+=`<div class="tok${ui.sel===x.id?' sel':''}" data-act="pickShiba" data-shiba="${x.id}">${img(IMG.shiba(o.breed),nameOf(o))}</div>`;}
-  if(s.dongu.placed)rh+=`<div style="flex:1"></div><div class="tok dongu" title="${L('char.dongu.name')}">${img(IMG.dongu)}</div>`;
+  let rh='',roamIndex=0;for(const x of Object.values(w.sh))if(x.phase==='roam'){const o=S.byId(s,x.id);if(o)rh+=`<div class="tok${ui.sel===x.id?' sel':''}" style="--x:${[40,64,20,83][roamIndex%4]}%;--y:${[66,76,74,71][roamIndex++%4]}%" data-act="pickShiba" data-shiba="${x.id}">${img(IMG.shiba(o.breed),nameOf(o))}</div>`;}
+  if(s.dongu.placed)rh+=`<div class="tok dongu" title="${L('char.dongu.name')}">${img(IMG.dongu)}</div>`;
   $('roam').innerHTML=rh;
-  let sh='';const n=Math.min(s.cafe.stains,12);for(let i=0;i<n;i++){const x=(i*73+17)%86,y=(i*41+23)%60;sh+=`<div class="stain" data-act="stain" style="left:${x}%;top:${8+y*.9}%"></div>`;}
+  let sh='';const n=Math.min(s.cafe.stains,12);for(let i=0;i<n;i++){const x=(i*73+17)%86,y=(i*41+23)%60;sh+=`<div class="stain" data-act="stain" style="left:${x}%;top:${58+y*.35}%"></div>`;}
   $('stains').innerHTML=sh;
   let qh=`<span class="lab">${L('cafe.queue',{n:w.queue.length,max:CFG.cafe.queueMax})}</span>`;for(const c of w.queue)qh+=`<div class="q" data-q="${c.id}">${img(IMG.guest(c.kind))}<div class="bar"><i></i></div></div>`;
   $('queue').innerHTML=qh;}

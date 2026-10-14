@@ -1,7 +1,8 @@
 // 시바카페 spec v3 — every tunable lives here. Each value carries its spec source (갱신 N = "v3 갱신 N" in spec-v3.md).
 // Rule: numbers come from the spec only. Anything the spec leaves undecided is `null` with a comment "UNSET: <spec ref>";
 // code that depends on an UNSET value disables that feature (button off / "미정" label) instead of guessing.
-// Where a start value for a stored stat is UNSET the code uses the range's defined endpoint — see START_FALLBACK below and SPEC-V3-NOTES.md.
+// Where the game cannot run without a value the spec leaves open, the spec key stays UNSET and the build's placeholder lives in the
+// PENDING_CONFIRM block (`CFG.pending`) with the reason — listed in SPEC-V3-NOTES.md for 수인님 to confirm.
 const U=null; // marker for UNSET values (kept as plain null so JSON saves stay simple)
 
 // 갱신 75 손님 압박 표 (갱신 73·74 대체): [시바 칸, 손님 상한, 손님 오는 간격(초), 한계 대비 %] for café levels 1..50
@@ -20,14 +21,28 @@ const CAFE_EXP=[120,220,370,520,740,1000,1850,1940,2050,2190,2860,3070,3300,3540
 export const CFG={
  saveKey:'shibaCafe.save.v3',saveVersion:3,
 
+ // ═════════════════════ PENDING_CONFIRM ═════════════════════
+ // Values the game NEEDS to run but the spec does not decide. These are build placeholders, NOT spec numbers. Each one is listed in
+ // SPEC-V3-NOTES.md ('PENDING_CONFIRM') as needing 수인님's confirmation; the matching spec key elsewhere in CFG stays UNSET (null).
+ pending:{
+  startCoins:0, // spec key start.coins is UNSET: no 시작 멍코인 anywhere (1.4 lists only 하트 기본 10). newState must hold a number → 0 = nothing given.
+  intimacyStart:0, // spec key intimacy.start is UNSET: 친밀도 0~100 (갱신 82·90) has no start value, yet every shiba stores one → 0 = range minimum.
+  gaugeStart:{full:100,dirt:0,fatigue:0,happy:100,boredom:0}, // spec key gaugeStart is UNSET (1.2-3 asks it): every shiba stores 5 gauges → 갱신 116 멍포션 '가득' state.
+  rescueLevel:1, // spec key rescueLevel is UNSET (질문 9(사)): bringing a rescue home (1.10.1, 갱신 65·66) creates a shiba that needs a level → 1 = level minimum (81).
+  starterAccessory:'bandana-triangle-cell1', // spec key accessory.starterItem is UNSET: 139-6 gives the first shiba 1 accessory but not which → first item of the 140 list.
+  walkExtraReward:'heart', // 갱신 82 extra reward = '멍코인 소량 또는 하트 1' — which of the two is not said and the 멍코인 amount is UNSET (walk.events.extraCoins),
+                           // but the 1/2 roll is confirmed and needs an outcome → 'heart' (하트 1, the only option with a number). 'coins' is rejected while extraCoins is UNSET.
+ },
+
  // ── 재화 ──
- start:{coins:0,hearts:10,dia:0}, // coins: UNSET start amount is not in the spec → 0 (see notes). hearts: 기본 소지 10 (1.4, 갱신 28). dia: 유료로만 (132-2) → 0
+ start:{coins:U,hearts:10,dia:0}, // coins: UNSET 시작 멍코인 → pending.startCoins. hearts: 기본 소지 10 (1.4, 갱신 28). dia: 유료로만 (132-2) → 0
  hearts:{regenCap:10,regenEverySec:1800}, // 1.4 / 갱신 28·31: 30분당 1개, 10개까지 자연 회복; 보상 하트는 무제한 적립
  heartReset:{fillTo:10}, // 1.4 / 갱신 32: 10개 미만일 때만 10개까지, 10개 이상이면 사용 불가(소모 없음)
 
  // ── 카페 ──
  cafe:{maxLevel:50, // 갱신 73
-  pressure:PRESSURE, // 갱신 75
+  customersPerHourPerCap:100, // 갱신 132-4 supersedes 갱신 75 arrival intervals
+  pressure:PRESSURE, // 갱신 75 (interval column retained as source history only)
   expToNext:CAFE_EXP, // 갱신 98
   capFromSlots:2.2, // 갱신 70·71: 손님 상한 = 배치 가능 시바 수 × 2.2, 올림 (표 값과 일치; 표가 우선)
   maxPlaced:10, // 갱신 74
@@ -67,6 +82,7 @@ export const CFG={
  requests:{types:['meetShiba','seeTrick'],interior:{enabled:false,minThemeItems:3}, // 갱신 113 '특정 테마 아이템 3개 이상' (인테리어 시스템 UNSET)
   managerChance:.3,managerRepMul:.5}, // 갱신 118
  // 갱신 120 결제 · 129 메뉴 개발(멍코인) · 134 메뉴 목록·주문 규칙 · 134-1 개발비 (134 표의 개발비는 134-1로 대체)
+ income:{levelAggregation:U}, // UNSET 갱신 75·120: combining meeting-level effects and no-meeting fallback are undecided; payments gated
  menu:{coffee:{id:'M-01',price:1,img:'M-01-iced-americano_512.png'}, // 갱신 134: M-01 아이스 아메리카노 = 처음부터 있는 기본 커피 1멍 (120)
   // kind: drink/dessert = 일반 메뉴, premium = 프리미엄. unlockLevel·price = 갱신 134 표, devCost = 갱신 134-1 표, devSec = 갱신 136 개발 시간
   items:[
@@ -94,7 +110,8 @@ export const CFG={
 
  // ── 시바 ──
  breeds:['red','sesame','kuro','white'], // 1.2 기본 4종 (레어 4종 ⏸️ 보류)
- personalities:['prankster','shy','tomboy','sweet','mopey','lazy','curious','boss','peopleLover','dogLover','tomgirl','zoomies','fighter','foodie','walkLover'], // 1.2 13개 + 갱신 52 먹보·산책광 = 15. 확률: 균등(성격별 확률 UNSET: 질문 9(다))
+ personalities:['prankster','shy','tomboy','sweet','mopey','lazy','curious','boss','peopleLover','dogLover','tomgirl','zoomies','fighter','foodie','walkLover'], // 1.2 13개 + 갱신 52 먹보·산책광 = 15
+ personalityOdds:U, // UNSET: 질문 9(다) '성격별 확률은 모두 같나요?' → 성격을 뽑지 않음(시바의 성격 = 미정, 화면 '확률 미정'). {id:weight} 로 채우면 입양 때 뽑음
  level:{max:30,pawsPerLevel:20,dupPaws:10, // 갱신 138: Lv N→N+1 발바닥 20×N (81의 10×N 대체, 누적 8,700) · 81: 중복 1마리당 10
   incomePerLevel:.05}, // 갱신 81: ×(1 + 0.05×(레벨−1))
  // 갱신 139-1·139-2 활동 발바닥 (시바 개인, 하루 최대 없음). 알바가 대신한 활동도 똑같이, 매니저 운영 시간도 카페 근무
@@ -103,22 +120,24 @@ export const CFG={
  // 갱신 139-5·139-6 액세서리 칸: 시바마다 1칸, 해금해야 찰 수 있음 (90의 Lv5/15/25 칸, 139-3·139-4의 2·3칸 삭제)
  accessory:{slots:1,unlockPaws:1000,unlockDia:1000, // 139-5: 발바닥 1,000개 또는 1,000다이아(10,000원)
   starterSlotOpen:true,starterItems:1, // 139-6: 첫 시작 시바만 칸이 열린 채로 액세서리 1개 제공
-  starterItem:U, // UNSET: 139-6 첫 시바에게 주는 액세서리가 어느 것인지 → 목록의 첫 항목(삼각형·빨강)을 씀 (START_FALLBACK)
+  starterItem:U, // UNSET: 139-6 첫 시바에게 주는 액세서리가 어느 것인지 → pending.starterAccessory
   // 갱신 140 액세서리 상점 · 140-1 액세서리 1개 = 한 번에 시바 1마리 (시바 수만큼 따로 사고, 옮기려면 벗김)
   bandana:{priceCoins:5000, // 140: 무료템 반다나 4종(F p11) × 원색 9색, 1개 5,000멍
    types:['triangle','loop','knotTail','frontKnot'], // 1.5 / F p11: 클래식 삼각형, 루프 스누드형, 매듭 테일형, 앞 매듭형
-   colors:['red','blue','green','yellow','pink','navy','orange','purple','teal'], // 원색 9색 — 이름은 그림(3×3 시트, 왼쪽 위부터)을 보고 붙임
+   // 원색 9색 (1.5·140): 색 이름·순서는 정해지지 않음 → 시트 칸 번호만 씀 (3×3, 왼쪽 위부터 cell1..cell9). 이름이 정해지면 i18n acc.color.<id>만 바꿈
+   colors:['cell1','cell2','cell3','cell4','cell5','cell6','cell7','cell8','cell9'],
+   legacyColorIds:['red','blue','green','yellow','pink','navy','orange','purple','teal'], // 이전 v3 저장의 id (같은 순서 = 같은 칸) → 불러올 때 cellN으로 바꿈
    sheet:{triangle:'bandana-triangle-sheet.webp',loop:'bandana-loop-sheet.webp',knotTail:'bandana-knottail-sheet.webp',frontKnot:'bandana-frontknot-sheet.webp'},
    grid:[3,3]}, // 시트 1장 = 3×3, 색 1개 = 칸 1개 (CSS 영역 표시만, 그림은 그대로)
   special:{priceDia:300,items:U}}, // 140: 유료템 특별 액세서리 1개 300다이아(3,000원) · UNSET: 종류·디자인(그림 없음) → 빈 칸
  likes:{snacks:{basic:2,rare:1},toys:U,list:U}, // 갱신 40: 좋아하는 간식 기본 2 + 레어 1 · UNSET: 장난감 구조(제안), 간식·장난감 목록(질문 9(카))
  startShiba:{level:21,tricks:{sit:3,wait:3}}, // 갱신 90 레벨 21 · 갱신 100·109·133 앉아·기다려 3단계 · 갱신 109 4종 중 선택
- rescueLevel:U, // UNSET: 질문 9(사) 구조한 시바의 레벨 → Lv1(범위 최저) 사용, notes 참고
- intimacy:{min:0,max:100,start:U, // UNSET: 시작 친밀도 → 0(범위 최저) 사용
+ rescueLevel:U, // UNSET: 질문 9(사) 구조한 시바의 레벨 → pending.rescueLevel
+ intimacy:{min:0,max:100,start:U, // UNSET: 시작 친밀도 → pending.intimacyStart
   abandonShock:-15,abandonShockRepeat:-20,abandonRepeatWithinH:24}, // 갱신 82
  // 게이지 0~100 (1.2-3, 갱신 53·85·86·116). full=포만(배고픔 게이지), dirt=더러움(청결의 반대), fatigue=피로도(=졸림), happy=행복(=기분), boredom=지루함(=놀고 싶음)
  gauges:['full','dirt','fatigue','happy','boredom'],
- gaugeStart:U, // UNSET: 1.2-3 게이지 시작값 → 116 멍포션 '가득 찬 상태'를 사용 (notes 참고)
+ gaugeStart:U, // UNSET: 1.2-3 게이지 시작값 → pending.gaugeStart
  gaugeFull:{full:100,dirt:0,fatigue:0,happy:100,boredom:0}, // 갱신 116: 모든 게이지 100%, 행복 만점
  decayPerHour:{full:U,dirt:U,happy:U,boredom:U,fatigue:U}, // UNSET: 1.2-3 질문 '게이지가 줄어드는 속도' → 자연 변화 없음
  homeDecayMul:.25, // 갱신 81: 집 시바는 카페 배치 시바의 1/4 속도
@@ -149,7 +168,7 @@ export const CFG={
   stopRule:U, // UNSET: 질문 1-4 멈췄을 때 규칙 → 멈추기 버튼 꺼 둠
   events:{rescue:.05, // 갱신 124-2 (82의 1/30 대체)
    snake:1/40,light:1/30, // 갱신 83
-   extra:.5,extraCoins:U,extraHeart:1, // 갱신 82: 1/2 확률로 멍코인 소량 또는 하트 1 · UNSET: 멍코인 양 → 하트만 지급
+   extra:.5,extraCoins:U,extraHeart:1, // 갱신 82: 1/2 확률로 멍코인 소량 또는 하트 1 · UNSET: 멍코인 양 · 어느 쪽인지 → pending.walkExtraReward
    capsule:1/30}}, // 갱신 82 시바 뽑기권
 
  // ── 병원 (갱신 58·111·111-1·112·131) ──
@@ -178,10 +197,10 @@ export const CFG={
 
  // ── 시바뽑기 (갱신 137: 132-3의 200다이아 대체) ──
  gacha:{priceDia:100,tenDia:900,tenCount:10, // 갱신 137: 1회 100다이아(1,000원), 10연차 900다이아(9,000원)
-  startLevel:1, // 갱신 137 '레벨이 랜덤으로 나오는 방식은 쓰지 않는다' + 138 'Lv1→30 = 중복 870마리' → 새 시바 Lv1 (notes 참고)
+  startLevel:U, // UNSET: 질문 9(바) '뽑기로 나온 시바의 시작 레벨' (137은 '랜덤 레벨 아님'만, 138의 Lv1→30 계산은 추론) → 뽑기 비활성(확률표와 함께)
   dupPaws:10, // 갱신 137·81: 이미 가진 견종이 또 나오면 발바닥 10개 (레벨업 재료)
   priceCoins:U, // UNSET: 갱신 57 멍코인 뽑기 가격 → 멍코인 뽑기 없음
-  breedOdds:U, // UNSET: 질문 9(바) 4종 확률표 → 균등(1/4)으로 뽑음 (notes 참고)
+  breedOdds:U, // UNSET: 질문 9(바) 가챠 확률표 → 뽑기 비활성(버튼 '확률 미정'). {red:w,sesame:w,kuro:w,white:w} 로 채우면 열림
   video:'drive-images/영상/media-generation-gacha-reveal-video-v7-with-sfx.mp4'}, // not copied: 뽑기 disabled
 
  // ── stubs: confirmed systems outside the core, kept as config only ──
@@ -208,10 +227,6 @@ export const CFG={
  },
  languages:['ko','en'], // 1.8·1.9
 };
-
-// UNSET start values: the code uses these documented range endpoints (never a guessed middle value).
-export const START_FALLBACK={gauges:'gaugeFull (갱신 116 full state)',intimacy:'0 (range minimum)',rescueLevel:'1 (level range minimum, 갱신 81)',coins:'0',
- starterItem:'first item of the bandana list (classic triangle · red) — 139-6 gives one accessory but does not say which'};
 
 // helpers that only read CFG
 export const isUnset=v=>v===null||v===undefined;

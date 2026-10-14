@@ -7,6 +7,7 @@ drawn, edited, cropped or recoloured. Where the UI shows only part of an image i
 
 | file here | original (`drive-images/…`) | sha256 (16) |
 |---|---|---|
+| `cafe-start-room.png` | `이미지/interior/9e648de4.png` | `9e648de4444473d3` |
 | `shiba-red.png` | `이미지/CH/시바캐릭터/적시바.png` | `bfff4ee949a45263` |
 | `shiba-sesame.png` | `이미지/CH/시바캐릭터/참깨.png` | `143d23ff81005180` |
 | `shiba-kuro.png` | `이미지/CH/시바캐릭터/쿠로.png` | `a2a73203d47efcb1` |
@@ -61,12 +62,12 @@ drawn, edited, cropped or recoloured. Where the UI shows only part of an image i
 | `bandana-chart-warm.webp` | `이미지/ITEM/웜 차트.webp` | `7829d7cb0bcec3e8` |
 
 ## How each image is displayed
-- `shiba-{red,sesame,kuro,white}.png` — breed portraits (1.2 기본 4종). Shown whole in cards; round café tokens use `object-fit:cover` (display crop only).
+- `shiba-{red,sesame,kuro,white}.png` — breed portraits (1.2 기본 4종). Shown whole in cards; café characters use `object-fit:contain` and multiply blending.
 - `shiba-four.webp` — banner on the start-shiba choice screen (갱신 109).
 - `dongu.webp` — 동구 (IMG_0730, 갱신 52 기준 그림) in the café and the Shiba list.
 - `rescue-brown.png` (UUID 70037a38…, 갈색 진흙 강아지) / `rescue-gray.png` (UUID ff8c15e5…, 회색 털 진흙 강아지) — 구조견 그림 2장, picked at random (갱신 60·61). Identified by looking at the images; the spec lists them by Drive file ID.
 - `pose-{sesame,kuro}-walk.png`, `pose-{sesame,kuro}-sleep.png` — shown instead of the portrait while that shiba walks / sleeps (red·white have no walk/sleep pose yet → portrait).
-- `guest-sitting-<kind>-final.png` — the 10 normal guest types of 갱신 51 (seated image, `object-position` shows the upper body in seat cells).
+- `guest-sitting-<kind>-final.png` — the 10 normal guest types of 갱신 51 (whole seated image at tatami seat positions, multiply blending).
   `girl` uses `guest-sitting-girl-final.png` (kid=girl still unconfirmed, 갱신 51).
 - `request-bubble-empty_512.png`, `request-icon-shiba_256.png`, `request-icon-trick_256.png` — 일반손님 요구 말풍선 (갱신 106).
 - `floor-stain_512.png` — 얼룩 (갱신 101-3·117-2).
@@ -90,10 +91,18 @@ drawn, edited, cropped or recoloured. Where the UI shows only part of an image i
 ## Drive images present but not used (and why)
 - `이미지/결과 카드 v2.webp` — N/R/SR grade cards; the grade system is abolished (1.6, image-list §2).
 - `이미지/b019f241.png` — mock-up screenshot with baked-in UI text; not an asset.
-- `이미지/interior/9e648de4.png`, `063b9153.png` — dioramas with characters baked in; unusable as an empty café background.
+- `이미지/interior/063b9153.png` — diorama with characters baked in; unused.
 - `이미지/interior/preview-rooms-v2.png`, `fuji-7-preview.jpg`, `night-*.jpg`, `대나무 회랑.webp`, `실내 인테리어 세트.webp`, `정원 소품 세트.webp` — themes/interior (out of core scope; interior score and theme prices are UNSET).
 - `이미지/ITEM/8eb5d737-….png` — accessory set; not in the 140 shop (bandanas only; the 300-diamond special accessories are undecided and the spec says not to invent them from images).
 - `이미지/ITEM/request-icon-interior_256.png` — interior requests are disabled (갱신 113 interior system UNSET).
 - `이미지/CH/NPC/guest-a4-kid-final.png`, `guest-floor-*` — not needed while guests are only shown seated; `guest-sitting-{realtor,rudeman,rudewoman}` — 부동산·진상손님 are stubs.
 - `이미지/CH/시바캐릭터/*_charset_A4.png`, `동구_캐릭터시트_v2.png` — expression/turnaround sheets; expression switching needs frame/region data (UNSET).
 - `영상/media-generation-gacha-reveal-video-v7-with-sfx.mp4` — not copied: the 137 gacha shows a plain result card (a video reveal is not in the spec rules; can be added later).
+
+## Main cafe scene v1
+- `cafe-start-room.png` — requested start-room background, `object-fit:cover`, focus 32% horizontally on the tatami. Full SHA256: `9e648de4444473d33dad79c56d775da1104cc1ae4e89de15505bca20b38f36cd`. The original includes two guests and three shibas; these remain baked into the untouched background and do not represent live game state.
+- `guest-sitting-*.png` — live guests at floor seat anchors, with whole chairs retained; smaller at the back, larger at the front.
+- `shiba-*.png` — visiting shibas beside their guest while meeting, otherwise on the tatami floor; `dongu.webp` near the counter. Character images use `mix-blend-mode:multiply` at render time.
+- `request-bubble-empty_512.png` + request shiba/trick icon — small bubble above a requesting guest. Menu images remain shown in the payment pop when the guest leaves.
+- Capture: `node start-room-3d/capture-main-screen.mjs` writes the requested main-screen-v1 PNGs at 390×844 CSS px, DPR 1 and 2. **Staged** level 10 and three placed breeds; 240 simulated seconds create live guests and visits, then five guests are retained for both screenshots.
+- Missing for this scene: a character-free version of this exact start room; matching floor-seated guest poses without chairs; transparent character cutouts (cream can still tint the floor under multiply); a confirmed 멍코인 HUD icon. No replacement images were fabricated.

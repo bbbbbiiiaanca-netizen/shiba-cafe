@@ -19,29 +19,31 @@ button.warn{background:#d9695a;box-shadow:0 2px 0 #9c4136}
 .bar{height:8px;border-radius:5px;background:#ead8b8;overflow:hidden;flex:1}.bar i{display:block;height:100%;background:#f0a64a;border-radius:5px}
 #lvl{font-weight:900;font-size:13px;white-space:nowrap}#rep{font-weight:800;font-size:12px;white-space:nowrap}#mgr{font-size:11px;font-weight:800;color:#5b7a3a;white-space:nowrap}
 /* scene */
-#scene{flex:1;position:relative;overflow:hidden;background:linear-gradient(#e8d2a6,#d9bd8a 60%,#c9a46e);touch-action:none}
-#seats{position:absolute;left:6px;right:6px;top:6px;display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
-.seat{position:relative;height:86px;border-radius:12px;background:rgba(255,248,232,.55);border:2px solid rgba(160,120,70,.35)}
-.seat.cust{background:#fffaf0;border-color:#e3c9a3}.seat.sel{outline:3px solid #5fa8d8}
-.seat .who{position:absolute;inset:3px 3px 12px 3px;border-radius:9px;overflow:hidden;background:#fbefd9}
-.seat .who img{width:100%;height:100%;object-fit:cover;object-position:50% 12%}
-.seat .tm{position:absolute;left:5px;right:5px;bottom:4px;height:5px}
-.req{position:absolute;right:-3px;top:-6px;width:40px;height:30px;background:url(assets/drive/request-bubble-empty_512.png) center/contain no-repeat;display:flex;align-items:center;justify-content:center;padding-bottom:5px;z-index:2}
-.req img{width:18px;height:18px}.req.ok{filter:drop-shadow(0 0 3px #6bc46b)}
-.req b{position:absolute;bottom:-9px;right:0;font-size:9px;background:#fffaf0;border-radius:6px;padding:0 3px;white-space:nowrap;max-width:76px;overflow:hidden;text-overflow:ellipsis;border:1px solid #e3c9a3}
-.met{position:absolute;left:4px;top:3px;font-size:10px;font-weight:900;color:#c0574a;text-shadow:0 0 2px #fff}
-.tok{position:absolute;width:46px;height:46px;border-radius:50%;overflow:hidden;border:3px solid #fff;box-shadow:0 2px 4px rgba(60,30,10,.35);background:#fff;transition:opacity .25s}
-.tok img{width:100%;height:100%;object-fit:cover;object-position:50% 30%}
-.seat .tok{right:-4px;bottom:6px;width:40px;height:40px;z-index:3}
-.tok.sel{border-color:#5fa8d8;box-shadow:0 0 0 3px #5fa8d8}.tok.dongu{border-color:#3aa59a}
-#roam{position:absolute;left:0;right:0;bottom:0;height:62px;padding:6px 8px;display:flex;gap:8px;align-items:center;background:rgba(120,80,40,.18)}
-#roam .tok{position:relative}
-#roam .lbl{font-size:10px;font-weight:800;color:#6b4426;margin-right:2px;writing-mode:vertical-rl}
-.stain{position:absolute;width:44px;height:44px;background:url(assets/drive/floor-stain_512.png) center/contain no-repeat;z-index:1}
-#queue{flex:none;height:56px;display:flex;align-items:center;gap:4px;padding:4px 8px;background:#e9d2a8;border-top:2px solid #d6b98a;overflow:hidden}
-#queue .q{position:relative;width:30px;height:44px;border-radius:7px;overflow:hidden;background:#fffaf0;flex:none}
-#queue .q img{width:100%;height:36px;object-fit:cover;object-position:50% 8%}#queue .q .bar{position:absolute;left:2px;right:2px;bottom:2px;height:5px}
-#queue .lab{font-size:11px;font-weight:800;white-space:nowrap;margin-right:4px}
+#scene{flex:1;min-height:0;position:relative;overflow:hidden;background:#f7e6cc;touch-action:none}
+.room{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:32% 50%;pointer-events:none}
+#seats,#roam,#stains{position:absolute;inset:0;pointer-events:none}
+.seat{position:absolute;left:var(--x);top:var(--y);width:var(--size);height:calc(var(--size)*1.44);transform:translate(-50%,-100%);pointer-events:auto;mix-blend-mode:multiply}
+.seat:not(.cust){pointer-events:none}
+.seat .who{position:absolute;inset:0}
+.seat .who img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply}
+.seat.sel .who{outline:2px dashed #78c5e6;border-radius:12px}
+.seat .tm{position:absolute;left:24%;right:24%;bottom:0;height:3px;opacity:.65}
+.seat .tm .bar{height:3px}
+.req{position:absolute;left:40%;top:-20px;width:34px;height:30px;background:url(assets/drive/request-bubble-empty_512.png) center/contain no-repeat;display:flex;align-items:center;justify-content:center;padding-bottom:5px;z-index:2}
+.req img{width:16px;height:16px;mix-blend-mode:multiply}.req.ok{filter:drop-shadow(0 0 2px #6bc46b)}
+.req b{display:none}
+.met{position:absolute;left:24%;bottom:5px;font-size:8px;font-weight:900;color:#c0574a;text-shadow:0 0 2px #fff}
+.tok{position:absolute;width:62px;height:62px;pointer-events:auto;mix-blend-mode:multiply}
+.tok img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply}
+.seat .tok{left:72%;bottom:-2px;width:42px;height:42px}
+.tok.sel{outline:2px dashed #78c5e6;border-radius:12px}
+#roam .tok{left:var(--x);top:var(--y);transform:translate(-50%,-100%)}
+#roam .dongu{left:49%;top:34%;width:54px;height:54px}
+.stain{position:absolute;width:34px;height:34px;background:url(assets/drive/floor-stain_512.png) center/contain no-repeat;mix-blend-mode:multiply;pointer-events:auto}
+#queue{position:absolute;left:8px;right:8px;bottom:70px;height:36px;display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:12px;background:rgba(255,246,230,.85);overflow:hidden}
+#queue .q{position:relative;width:24px;height:30px;flex:none;mix-blend-mode:multiply}
+#queue .q img{width:100%;height:26px;object-fit:contain}#queue .q .bar{position:absolute;left:2px;right:2px;bottom:0;height:3px}
+#queue .lab{font-size:10px;font-weight:800;white-space:nowrap;margin-right:4px}
 #closed{position:absolute;inset:0;background:rgba(40,25,10,.55);color:#fff;font-weight:900;font-size:22px;display:flex;align-items:center;justify-content:center;z-index:6}
 .pop{position:absolute;font-weight:900;font-size:12px;color:#7a3f12;background:#fffaf0;border-radius:8px;padding:1px 5px;pointer-events:none;z-index:8;animation:pop 1.4s forwards}
 .pop img{width:22px;height:22px;vertical-align:middle;margin-right:2px}
@@ -89,7 +91,7 @@ input[type=text]{font:inherit;font-size:15px;padding:8px;border-radius:10px;bord
   </div>
   <div class="row"><span id="lvl"></span><div class="bar"><i id="expBar"></i></div><span id="rep"></span><span id="mgr"></span></div>
  </div>
- <div id="scene"><div id="seats"></div><div id="stains"></div><div id="roam"></div><div id="closed" hidden></div></div>
+ <div id="scene"><img class="room" src="assets/drive/cafe-start-room.png" alt="다다미 카페와 울타리 빈터"><div id="seats"></div><div id="stains"></div><div id="roam"></div><div id="closed" hidden></div></div>
  <div id="queue"></div>
  <div id="nav">
   <button data-nav="cafe" class="on" data-i18n="nav.cafe"></button><button data-nav="shibas" data-i18n="nav.shibas"></button><button data-nav="walk" data-i18n="nav.walk"></button><button data-nav="shop" data-i18n="nav.shop"></button><button data-nav="settings" data-i18n="nav.settings"></button>

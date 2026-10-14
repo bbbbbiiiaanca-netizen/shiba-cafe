@@ -27,12 +27,12 @@ const shibaImg=sh=>{const st=S.statusOf(s,sh);if(st==='sleeping'&&IMG.sleepPose[
 
 // ───────── formatting ─────────
 const fmt=n=>Math.floor(n).toLocaleString(s.settings.language==='en'?'en-US':'ko-KR');
-const f2=n=>(Math.round(n*100)/100).toString();
+const f2=n=>n==null?L('unset'):(Math.round(n*100)/100).toString();
 const tfmt=sec=>{sec=Math.max(0,Math.ceil(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),x=sec%60;return h?`${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`:`${m}:${String(x).padStart(2,'0')}`;};
 const nameOf=sh=>sh.name||L('shiba.breed.'+sh.breed);
 const bar=(k,col)=>`<div class="bar"><i style="width:${Math.round(Math.max(0,Math.min(1,k))*100)}%${col?';background:'+col:''}"></i></div>`;
 function toast(t){const e=$('toast');e.textContent=t;e.style.opacity=1;ui.toastT=2.2;}
-const reason={slot:'toast.slot',none:'toast.none',ticket:'toast.ticket',owned:'rescue.full',busy:'toast.devBusy',coins:'toast.coins',hearts:'toast.hearts',slots:'toast.slots',unset:'toast.unset',last:'toast.last',dia:'toast.dia'};
+const reason={slot:'toast.slot',none:'toast.none',ticket:'toast.ticket',owned:'rescue.full',busy:'toast.devBusy',coins:'toast.coins',hearts:'toast.hearts',slots:'toast.slots',unset:'toast.unset',last:'toast.last',dia:'toast.dia',odds:'toast.odds'};
 function why(code){toast(L(reason[code]||'toast.unset'));}
 // 갱신 135-2: 남은 시간 바로 완료 버튼 (1분당 1다이아, 1분 올림)
 function skipBtn(t){const left=S.skipLeftSec(s,t,clock.now());if(!(left>0))return '';const cost=S.skipCost(left);
@@ -46,21 +46,24 @@ function renderHUD(){const now=clock.now();$('coins').textContent=fmt(s.coins);$
  $('closed').hidden=!C.closed;$('closed').textContent=L('hud.closed');}
 
 // ───────── café scene (keyed DOM, rebuilt only when its signature changes) ─────────
+// Foot anchors on the tatami (percent of the cover viewport); perspective sizes in CSS px.
+const cafeSeats=[[16,66,56],[48,67,60],[82,64,54],[35,71,64],[69,74,66]];
+const seatStyle=i=>{const [x,y,size]=cafeSeats[i%5];const row=Math.floor(i/5);return `--x:${x}%;--y:${y-row*7}%;--size:${Math.max(54,size-row*6)}px;z-index:${Math.round(y-row*7)}`;};
 let sceneSig='';
 function renderScene(){const cap=S.capOf(s),bySeat={};for(const c of w.custs)bySeat[c.seat]=c;
  const tokens={};for(const sh of Object.values(w.sh))if(sh.phase==='meet')tokens[sh.cust]=sh.id;
  const sig=JSON.stringify([cap,w.custs.map(c=>[c.id,c.seat,c.met.length,c.fulfilled,c.with]),Object.values(w.sh).map(x=>[x.id,x.phase]),w.queue.map(c=>c.id),s.cafe.stains,s.dongu.placed,ui.sel,s.settings.language]);
  if(sig!==sceneSig){sceneSig=sig;let h='';
   for(let i=0;i<cap;i++){const c=bySeat[i];
-   if(!c){h+=`<div class="seat" data-seat="${i}"></div>`;continue;}
+   if(!c){h+=`<div class="seat" style="${seatStyle(i)}" data-seat="${i}"></div>`;continue;}
    const q=c.request,reqHtml=q?`<div class="req${c.fulfilled?' ok':''}">${img(q.type==='meetShiba'?IMG.reqShiba:IMG.reqTrick)}<b>${q.type==='meetShiba'?nameOf(S.byId(s,q.shibaId)||{breed:'red'}):L('trick.'+q.trick)}</b></div>`:'';
    const tok=c.with!=null?(()=>{const o=S.byId(s,c.with);return o?`<div class="tok">${img(IMG.shiba(o.breed))}</div>`:''})():'';
-   h+=`<div class="seat cust${ui.sel!=null&&c.with==null?' sel':''}" data-act="seat" data-cust="${c.id}"><div class="who">${img(IMG.guest(c.kind),L('npc.'+c.kind))}</div>${reqHtml}<span class="met">${'♥'.repeat(c.met.length)}</span>${tok}<div class="tm">${bar(c.t/CFG.cafe.stayingSec)}</div></div>`;}
+   h+=`<div class="seat cust${ui.sel!=null&&c.with==null?' sel':''}" style="${seatStyle(i)}" data-act="seat" data-cust="${c.id}"><div class="who">${img(IMG.guest(c.kind),L('npc.'+c.kind))}</div>${reqHtml}<span class="met">${'♥'.repeat(c.met.length)}</span>${tok}<div class="tm">${bar(c.t/CFG.cafe.stayingSec)}</div></div>`;}
   $('seats').innerHTML=h;
-  let rh='';for(const x of Object.values(w.sh))if(x.phase==='roam'){const o=S.byId(s,x.id);if(o)rh+=`<div class="tok${ui.sel===x.id?' sel':''}" data-act="pickShiba" data-shiba="${x.id}">${img(IMG.shiba(o.breed),nameOf(o))}</div>`;}
-  if(s.dongu.placed)rh+=`<div style="flex:1"></div><div class="tok dongu" title="${L('char.dongu.name')}">${img(IMG.dongu)}</div>`;
+  let rh='',roamIndex=0;for(const x of Object.values(w.sh))if(x.phase==='roam'){const o=S.byId(s,x.id);if(o)rh+=`<div class="tok${ui.sel===x.id?' sel':''}" style="--x:${[40,64,20,83][roamIndex%4]}%;--y:${[66,76,74,71][roamIndex++%4]}%" data-act="pickShiba" data-shiba="${x.id}">${img(IMG.shiba(o.breed),nameOf(o))}</div>`;}
+  if(s.dongu.placed)rh+=`<div class="tok dongu" title="${L('char.dongu.name')}">${img(IMG.dongu)}</div>`;
   $('roam').innerHTML=rh;
-  let sh='';const n=Math.min(s.cafe.stains,12);for(let i=0;i<n;i++){const x=(i*73+17)%86,y=(i*41+23)%60;sh+=`<div class="stain" data-act="stain" style="left:${x}%;top:${8+y*.9}%"></div>`;}
+  let sh='';const n=Math.min(s.cafe.stains,12);for(let i=0;i<n;i++){const x=(i*73+17)%86,y=(i*41+23)%60;sh+=`<div class="stain" data-act="stain" style="left:${x}%;top:${58+y*.35}%"></div>`;}
   $('stains').innerHTML=sh;
   let qh=`<span class="lab">${L('cafe.queue',{n:w.queue.length,max:CFG.cafe.queueMax})}</span>`;for(const c of w.queue)qh+=`<div class="q" data-q="${c.id}">${img(IMG.guest(c.kind))}<div class="bar"><i></i></div></div>`;
   $('queue').innerHTML=qh;}
@@ -111,7 +114,7 @@ function accShop(){const B=CFG.accessory.bandana,t=ui.accType||B.types[0],items=
  return h;}
 P.care=id=>{const sh=S.byId(s,id);if(!sh)return P.shibas();const st=S.statusOf(s,sh),now=clock.now(),need=S.pawsToNext(sh.level);
  let h=`<div class="card"><div class="big">${img(shibaImg(sh),nameOf(sh))}</div><div style="text-align:center"><div class="nm" style="font-size:18px;font-weight:900">${nameOf(sh)}</div>
-  <div class="note">${L('shiba.breed.'+sh.breed)} · ${L('care.personality')}: ${L('per.'+sh.personality)} · ${statusText(sh,st)}</div></div>
+  <div class="note">${L('shiba.breed.'+sh.breed)} · ${L('care.personality')}: ${sh.personality?L('per.'+sh.personality):L('app.oddsUnset')} · ${statusText(sh,st)}</div></div>
   <div class="g"><span>${L('care.level')} ${sh.level}</span>${bar(need?sh.paws/need:1)}<span class="ico paw"></span></div><div class="btns"><span class="note grow">${need?L('care.paws',{n:fmt(sh.paws),need:fmt(need)}):L('care.pawsMax',{n:fmt(sh.paws)})} · ${L('care.levelEff',{m:f2(S.levelEffect(sh.level))})}</span>
    ${need?`<button data-act="levelUp" data-id="${id}" ${S.levelUpCheck(s,id)?'disabled':''}>${L('care.levelUp',{n:fmt(need)})}</button>`:''}</div><div class="note">${L('care.pawsSrc')}</div>
   <div class="g"><span>${L('care.intimacy')}</span>${bar(sh.intimacy/100,'#e98aa0')}<span>${Math.round(sh.intimacy)}</span></div>
@@ -155,6 +158,12 @@ const hm=sec=>{const h=Math.floor(sec/3600),m=Math.round(sec%3600/60);return h&&
 function devCard(now){const D=s.menuDev;if(!D)return `<div class="note">${L('shop.devIdle')}</div>`;const m=S.menuItem(D.id),left=(D.until-now)/1000;
  return `<div class="li dev" data-dev="${D.id}"><div class="pt">${img('assets/drive/'+m.img)}</div><div class="grow"><div class="nm">${L('shop.developing',{name:L('menu.'+D.id)})}</div>
   ${bar((now-D.startAt)/(D.until-D.startAt))}<div class="sub">${L('shop.devLeft',{t:tfmt(left)})} · ${L('skip.note')}</div></div>${skipBtn({type:'menu'})}</div>`;}
+// 갱신 137 시바뽑기 — 확률표 UNSET(질문 9(바))이면 버튼 3개 모두 비활성 '확률 미정'
+function gachaCard(){const G=CFG.gacha,odds=S.gachaOddsSet(),tag=odds?'':' · '+L('app.oddsUnset'),dis=(n,o)=>S.gachaCheck(s,n,o)?'disabled':'';
+ return `<div class="card" data-gacha><h3>${L('shop.gacha')}</h3><div class="note">${L(odds&&!isUnset(G.startLevel)?'shop.gachaNote':'shop.gachaNoteUnset',{p:G.dupPaws,lv:G.startLevel})}</div><div class="btns">
+   <button data-act="gacha" data-n="1" ${dis(1)}>${L('shop.gacha1',{dia:G.priceDia})}${tag}</button>
+   <button data-act="gacha" data-n="${G.tenCount}" ${dis(G.tenCount)}>${L('shop.gacha10',{n:G.tenCount,dia:fmt(G.tenDia)})}${tag}</button>
+   <button class="sec" data-act="gacha" data-n="1" data-ticket="1" ${dis(1,{ticket:true})}>${L('shop.gachaTicket',{n:s.items.capsule})}${tag}</button></div></div>`;}
 P.shop=()=>{const now=clock.now(),M=CFG.menu,menuImg=f=>`<div class="pt">${img('assets/drive/'+f)}</div>`;
  let h=`<div class="card"><h3>${L('shop.menu')}</h3><div class="note">${L('shop.menuRule',{n:S.normalDeveloped(s),p:f2(S.premiumChance(s.cafe.rep,false,S.normalDeveloped(s))*100)})}</div>
   ${devCard(now)}<div class="li" data-menu="${M.coffee.id}">${menuImg(M.coffee.img)}<div class="grow"><div class="nm">${L('menu.'+M.coffee.id)}</div><div class="sub">${L('shop.coffee',{p:M.coffee.price})}</div></div><button disabled>✓</button></div>`;
@@ -167,10 +176,7 @@ P.shop=()=>{const now=clock.now(),M=CFG.menu,menuImg=f=>`<div class="pt">${img('
   ${accShop()}<div class="card"><h3>${L('shop.bag')}</h3><div class="li"><span class="ico reset" style="width:34px;height:34px"></span><div class="grow nm">${L('shop.heartReset',{n:s.items.heartReset})}</div><button data-act="heartReset" ${S.canUseHeartReset(s)?'':'disabled'}>${L('shop.use')}</button></div>
    <div class="li">${slot(L('app.missingImg'),34,34)}<div class="grow nm">${L('shop.capsule',{n:s.items.capsule})}</div></div>
    <div class="li">${img(IMG.potion)}<div class="grow nm">${L('dia.potionBig')} ×${s.items.potionBig} · ${L('dia.potionSmall')} ×${s.items.potionSmall}</div></div></div>
-  <div class="card" data-gacha><h3>${L('shop.gacha')}</h3><div class="note">${L('shop.gachaNote',{p:CFG.gacha.dupPaws})}</div><div class="btns">
-   <button data-act="gacha" data-n="1" ${S.gachaCheck(s,1)?'disabled':''}>${L('shop.gacha1',{dia:CFG.gacha.priceDia})}</button>
-   <button data-act="gacha" data-n="${CFG.gacha.tenCount}" ${S.gachaCheck(s,CFG.gacha.tenCount)?'disabled':''}>${L('shop.gacha10',{n:CFG.gacha.tenCount,dia:fmt(CFG.gacha.tenDia)})}</button>
-   <button class="sec" data-act="gacha" data-n="1" data-ticket="1" ${S.gachaCheck(s,1,{ticket:true})?'disabled':''}>${L('shop.gachaTicket',{n:s.items.capsule})}</button></div></div>
+  ${gachaCard()}
   <div class="card"><h3>${L('shop.dia')}</h3><div class="note">${L('shop.diaRate',{won:CFG.stub.diaPriceWon})} · ${L('app.payment')}</div>
    ${[['cooldown1',CFG.cooldownTicketDia.one],['cooldown5',CFG.cooldownTicketDia.five],['potionBig',CFG.potion.bigDia],['potionSmall',CFG.potion.smallDia],['boost',CFG.itemIncome.priceDia],['expBoost',CFG.stub.expBoost.priceDia],['slot',CFG.cafe.paidSlotUnlockDia]]
     .map(([k,p])=>`<div class="li"><span class="ico dia"></span><div class="grow">${L('dia.'+k)}</div><button disabled>${p==null?L('app.unset'):p+'💎'}</button></div>`).join('')}</div>`;
@@ -185,7 +191,7 @@ P.income=()=>{const now=clock.now(),item=S.itemIncomeMul(s,now),base=CFG.menu.co
   <div class="note">${s.menus.length?S.developed(s).map(m=>L('menu.'+m.id)+' '+L('app.coins',{n:m.price})).join(' · '):L('inc.noPremium')}</div>
   <div class="note">${L('inc.premium',{p:f2(S.premiumChance(s.cafe.rep,false,S.normalDeveloped(s))*100)})}</div><div class="note">${L('inc.item',{m:item})}</div></div><div class="card">`;
  for(const sh of S.placedShibas(s)){const e=S.levelEffect(sh.level);h+=`<div class="li"><div class="pt" style="width:40px;height:40px">${img(IMG.shiba(sh.breed))}</div><div class="grow"><div class="nm" style="font-size:12px">${L('inc.row',{name:nameOf(sh),lv:sh.level,base,lv2:f2(e),item,total:f2(base*e*item)})}</div><div class="sub">${L('inc.cond',{m:f2(S.conditionMul(sh))})}</div></div></div>`;}
- const p=w.lastPay;if(p)h+=`<div class="note">${L('inc.last',{out:L('out.'+p.outcome),base:p.base,lv:f2(p.lvMul),item:p.item,total:f2(p.total)})} ${p.met.length?'':L('inc.metNone')}</div>`;
+ const p=w.lastPay;if(p)h+=`<div class="note">${L('inc.last',{out:L('out.'+p.outcome),base:p.base,lv:f2(p.lvMul),item:p.item,total:f2(p.total)})} ${p.pending?L('inc.pending'):''}</div>`;
  return {title:L('inc.title'),html:h+'</div>'};};
 let panelSig='';
 function renderPanel(force){if(!ui.panel){$('panel').hidden=true;return;}const v=P[ui.panel](ui.arg);const sig=v.title+v.html;if(!force&&sig===panelSig)return;panelSig=sig;
@@ -209,7 +215,7 @@ function renderModal(){const m=ui.modals[0]||(!s.settings.language?{kind:'lang'}
  if(m.kind==='walkResult'){const sh=S.byId(s,m.res.shibaId);h=`<h2>${L('walk.back',{name:sh?nameOf(sh):'?'})}</h2><div class="big" style="width:120px;height:120px">${sh?img(IMG.shiba(sh.breed)):''}</div>
   <div class="note" style="text-align:center">${[m.res.paws?L('walk.paws',{n:m.res.paws}):'',...m.res.events.map(e=>L('walk.ev.'+e))].filter(Boolean).join(' · ')}</div><button data-act="modalOk">${L('app.ok')}</button>`;}
  if(m.kind==='rescue'){const x=m.x,cost=S.hospitalCost(s,'rescueBath');
-  h=x.bathed?`<h2>${L('rescue.reveal',{breed:L('shiba.breed.'+x.breed)})}</h2><div class="big">${img(IMG.shiba(x.breed))}</div><div class="note" style="text-align:center">${L('rescue.lvNote')}</div>
+  h=x.bathed?`<h2>${L('rescue.reveal',{breed:L('shiba.breed.'+x.breed)})}</h2><div class="big">${img(IMG.shiba(x.breed))}</div><div class="note" style="text-align:center">${L('rescue.lvNote',{lv:CFG.rescueLevel??CFG.pending.rescueLevel})}</div>
     <button data-act="rescueBring" ${S.bringCheck(s,x.rid)?'disabled':''}>${L('rescue.bring')}</button>${S.bringCheck(s,x.rid)==='owned'?`<div class="note">${L('rescue.full')}</div>`:''}<button class="sec" data-act="rescueDecline">${L('rescue.decline')}</button>`
    :`<h2>${L('rescue.found')}</h2><div class="big">${img(IMG.rescue[x.pic])}</div><button data-act="rescueBath" ${s.coins<cost?'disabled':''}>${L('rescue.bath',{cost:fmt(cost)})}</button><button class="sec" data-act="rescueDecline">${L('rescue.decline')}</button>`;}
  if(m.kind==='gacha')h=`<h2>${L('gacha.title')}</h2><div class="gres">${m.res.map(x=>`<div class="gi${x.dup?' dup':''}">${img(IMG.shiba(x.breed))}<span>${x.dup?L('gacha.dup',{name:nameOf(S.byId(s,x.toId)||{breed:x.breed}),p:x.paws}):L('gacha.new',{breed:L('shiba.breed.'+x.breed),lv:CFG.gacha.startLevel})}</span></div>`).join('')}</div><button data-act="modalOk">${L('app.ok')}</button>`;
