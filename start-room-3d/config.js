@@ -164,9 +164,12 @@ export const CFG={
  // ── 동구 (갱신 78·79·80) ──
  dongu:{takesSlot:false,earns:false,canWalk:false,canAbandon:false},
 
- // ── 뽑기 (갱신 57·132) — 시작 레벨·확률·멍코인 가격 UNSET이라 꺼 둠 ──
- gacha:{priceDia:200, // 갱신 132-3
-  priceCoins:U,startLevel:U,breedOdds:U, // UNSET: 갱신 57 멍코인 가격, 질문 9(바) 시작 레벨·확률표
+ // ── 시바뽑기 (갱신 137: 132-3의 200다이아 대체) ──
+ gacha:{priceDia:100,tenDia:900,tenCount:10, // 갱신 137: 1회 100다이아(1,000원), 10연차 900다이아(9,000원)
+  startLevel:1, // 갱신 137 '레벨이 랜덤으로 나오는 방식은 쓰지 않는다' + 138 'Lv1→30 = 중복 870마리' → 새 시바 Lv1 (notes 참고)
+  dupPaws:10, // 갱신 137·81: 이미 가진 견종이 또 나오면 발바닥 10개 (레벨업 재료)
+  priceCoins:U, // UNSET: 갱신 57 멍코인 뽑기 가격 → 멍코인 뽑기 없음
+  breedOdds:U, // UNSET: 질문 9(바) 4종 확률표 → 균등(1/4)으로 뽑음 (notes 참고)
   video:'drive-images/영상/media-generation-gacha-reveal-video-v7-with-sfx.mp4'}, // not copied: 뽑기 disabled
 
  // ── stubs: confirmed systems outside the core, kept as config only ──

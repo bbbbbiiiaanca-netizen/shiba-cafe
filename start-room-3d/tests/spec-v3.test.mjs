@@ -35,7 +35,7 @@ test('spec numbers: stay/queue/visit/rep/hearts/walk/hospital/part-timers/paymen
  assert.deepEqual([C.alba.daycare.cooldownSec,C.alba.walk.cooldownSec,C.alba.trainer.cooldownSec,C.alba.manager.hireSec],[7200,14400,14400,43200]);
  assert.deepEqual([C.alba.daycare.unlock,C.alba.walk.unlock,C.alba.trainer.unlock,C.alba.manager.unlock],[10,15,20,25]);
  assert.equal(C.alba.walk.maxShibas,4);assert.equal(C.alba.walk.boredom,-50);
- assert.equal(C.menu.coffee.price,1);assert.equal(C.menu.coffee.id,'M-01');assert.deepEqual([C.menu.premiumDrinkPrice,C.menu.premiumDessertPrice],[3,5]);assert.equal(C.gacha.priceDia,200);assert.equal(C.stub.diaPriceWon,10);
+ assert.equal(C.menu.coffee.price,1);assert.equal(C.menu.coffee.id,'M-01');assert.deepEqual([C.menu.premiumDrinkPrice,C.menu.premiumDessertPrice],[3,5]);assert.equal(C.gacha.priceDia,100);assert.equal(C.stub.diaPriceWon,10);
  assert.deepEqual(C.cooldownTicketDia,{one:20,five:80});assert.deepEqual(C.potion,{bigDia:150,smallDia:50});});
 test('갱신 133: exactly 5 tricks from config (앉아·손·기다려·엎드려·인사), max step 5, ×4',()=>{
  assert.deepEqual(CFG.tricks.map(t=>t.id),['sit','paw','wait','down','bow']);assert.equal(CFG.trickMaxLevel,5);assert.equal(CFG.intelligencePerLevel,4);assert.equal(CFG.intelligenceMax,100);});
@@ -237,6 +237,21 @@ test('136: development finishes while the app is closed (offline fast-forward, a
  const a=S.load(st,H,S.rng(2)).state;assert.ok(a.menuDev&&a.menuDev.id==='P-06'&&!a.menus.includes('P-06'));S.save(st,a,H);
  const b=S.load(st,49*H,S.rng(2)).state;assert.ok(b.menus.includes('P-06'));assert.equal(b.menuDev,null);});
 
+// ───────── 갱신 137 시바뽑기 ─────────
+test('137: gacha 100 diamonds per pull, 900 for 10 (10% off); not enough diamonds → refused',()=>{const {s}=freshGame();
+ assert.deepEqual([CFG.gacha.priceDia,CFG.gacha.tenDia,CFG.gacha.tenCount,CFG.gacha.dupPaws],[100,900,10,10]);assert.equal(S.gachaPrice(1),100);assert.equal(S.gachaPrice(10),900);assert.equal(S.gachaPrice(5),null);
+ s.dia=99;assert.equal(S.gachaCheck(s,1),'dia');assert.equal(S.gachaPull(s,1,S.rng(1),0),null);assert.equal(s.dia,99);
+ s.dia=1000;assert.equal(S.gachaPull(s,10,S.rng(1),0).length,10);assert.equal(s.dia,100);assert.equal(S.gachaPull(s,1,S.rng(2),0).length,1);assert.equal(s.dia,0);});
+test('137 + 81: new breed → new Lv1 shiba (no random level); owned breed → 10 paws to that breed\'s first shiba, no new shiba',()=>{const {s,sh}=freshGame('red');s.dia=100;
+ const p0=sh.paws;const dupRes=S.gachaPull(s,1,()=>0,0);assert.deepEqual(dupRes,[{breed:'red',dup:true,toId:sh.id,paws:10}]);assert.equal(sh.paws,p0+10);assert.equal(s.shibas.length,1);
+ s.dia=100;const nw=S.gachaPull(s,1,()=>.3,0)[0];assert.equal(nw.dup,false);assert.equal(nw.breed,'sesame');const n=S.byId(s,nw.id);assert.equal(n.level,1);assert.ok(n.placed,'placed when a slot is free');
+ assert.equal(s.shibas.length,2);});
+test('137: 4 breeds only, equal odds while the odds table is UNSET; 10-pull from 4 owned breeds = 100 paws, no new shibas',()=>{const {s}=freshGame('red');s.dia=1e7;const r=S.rng(5),cnt={};
+ for(let i=0;i<4000;i++)for(const x of S.gachaPull(s,1,r,0))cnt[x.breed]=(cnt[x.breed]||0)+1;assert.deepEqual(Object.keys(cnt).sort(),[...CFG.breeds].sort());for(const b of CFG.breeds)near(cnt[b]/4000,.25,.03,b);
+ assert.equal(CFG.gacha.breedOdds,null);assert.equal(s.shibas.length,4);const before=s.shibas.reduce((a,o)=>a+o.paws,0);S.gachaPull(s,10,r,0);assert.equal(s.shibas.reduce((a,o)=>a+o.paws,0)-before,100);assert.equal(s.shibas.length,4);});
+test('137 + 82: a capsule ticket from walks = one free pull',()=>{const {s}=freshGame();assert.equal(S.gachaCheck(s,1,{ticket:true}),'ticket');s.items.capsule=1;
+ assert.equal(S.gachaCheck(s,10,{ticket:true}),'count');assert.equal(S.gachaPull(s,1,S.rng(1),0,{ticket:true}).length,1);assert.equal(s.items.capsule,0);assert.equal(s.dia,0);});
+
 // ───────── 갱신 135-2 남은 시간 바로 완료 ─────────
 test('135-2: instant finish = 1 diamond per remaining minute, rounded up per minute (37 min → 37, 4 h → 240, 30 s → 1)',()=>{
  assert.equal(CFG.timeSkip.diaPerMin,1);assert.equal(S.skipCost(37*60),37);assert.equal(S.skipCost(4*3600),240);assert.equal(S.skipCost(30),1);assert.equal(S.skipCost(60.001),2);assert.equal(S.skipCost(0),0);
@@ -253,8 +268,8 @@ test('135-2: part-timer cooldowns (데이케어·산책 알바·훈련사) finis
  assert.equal(S.skipCheck(s,{type:'manager'},0),'none','manager hire time is not a wait');});
 
 // ───────── UNSET features stay off ─────────
-test('UNSET features are disabled: gacha, paid slot, regulars, walk stop, rescue level → Lv1',()=>{const {s}=freshGame();s.coins=1e9;
- assert.equal(S.gachaCheck(),'unset');assert.equal(S.slotUnlockCheck(),'unset');
+test('UNSET features are disabled: paid slot, regulars, walk stop, rescue level → Lv1',()=>{const {s}=freshGame();s.coins=1e9;
+ assert.equal(S.slotUnlockCheck(),'unset');
  assert.equal(S.regularsCheck(),'unset');assert.equal(S.canStopWalk(),false);assert.equal(CFG.rescueLevel,null);
  for(const [k,v] of Object.entries(CFG.decayPerHour))assert.equal(v,null,k);for(const k of ['feed','snack','bath','sleep'])assert.ok(Object.values(CFG.care[k]).every(v=>v===null),k);});
 test('potions (116): big fills all gauges, small one gauge; no effect on tricks/intimacy/level',()=>{const {s,sh}=freshGame();Object.assign(sh.g,{full:10,dirt:90,fatigue:90,happy:10,boredom:90});s.items.potionSmall=1;s.items.potionBig=1;

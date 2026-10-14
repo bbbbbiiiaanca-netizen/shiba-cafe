@@ -170,6 +170,21 @@ export function bringRescue(s,rid,r=Math.random,now=Date.now()){if(bringCheck(s,
  s.rescues=s.rescues.filter(y=>y!==x);addCafeExp(s,CFG.cafeExp.rescueAdopt);return sh;}
 export function declineRescue(s,rid){const n=s.rescues.length;s.rescues=s.rescues.filter(x=>x.rid!==rid);return s.rescues.length<n;}
 
+// ───────────────────────── 시바뽑기 (갱신 137·81·82) ─────────────────────────
+// n = 1 (100다이아 또는 뽑기권 1장) or 10 (900다이아). 견종 4종; 이미 가진 견종이면 그 견종의 가장 먼저 온 시바에게 발바닥 10개.
+export const gachaPrice=n=>n===CFG.gacha.tenCount?CFG.gacha.tenDia:n===1?CFG.gacha.priceDia:null;
+export function gachaCheck(s,n=1,{ticket=false}={}){if(!s.started)return 'pick';if(ticket){if(n!==1)return 'count';if(!(s.items.capsule>0))return 'ticket';}
+ else{const p=gachaPrice(n);if(p==null)return 'count';if(s.dia<p)return 'dia';}
+ if(s.shibas.length>=CFG.cafe.maxOwned&&CFG.breeds.some(b=>!s.shibas.some(o=>o.breed===b)))return 'owned';return null;}
+function pickBreed(r){const O=CFG.gacha.breedOdds;if(isUnset(O))return pick(r,CFG.breeds); // UNSET 확률표 → 균등
+ let x=r()*CFG.breeds.reduce((a,b)=>a+O[b],0);for(const b of CFG.breeds){x-=O[b];if(x<0)return b;}return CFG.breeds.at(-1);}
+export function gachaPull(s,n=1,r=Math.random,now=Date.now(),{ticket=false}={}){if(gachaCheck(s,n,{ticket}))return null;
+ if(ticket)s.items.capsule--;else s.dia-=gachaPrice(n);const out=[];
+ for(let i=0;i<n;i++){const breed=pickBreed(r),own=s.shibas.find(o=>o.breed===breed);
+  if(own){addPaws(own,CFG.gacha.dupPaws);out.push({breed,dup:true,toId:own.id,paws:CFG.gacha.dupPaws});continue;}
+  const sh=makeShiba(s,{breed,level:CFG.gacha.startLevel,r,now});s.shibas.push(sh);if(placedShibas(s).length<slotsOf(s))sh.placed=true;out.push({breed,dup:false,id:sh.id});}
+ return out;}
+
 // ───────────────────────── 메뉴·결제 (갱신 120·129) ─────────────────────────
 export const menuItem=id=>CFG.menu.items.find(m=>m.id===id);
 export function menuCheck(s,id){const m=menuItem(id);if(!m)return 'pick';if(s.menus.includes(id))return 'owned';if(s.menuDev&&s.menuDev.id===id)return 'developing';
@@ -296,7 +311,6 @@ export function load(storage,now=Date.now(),r=Math.random){let s=null;try{s=JSON
  const reopened=reopenCafe(s,now);s.lastSeen=now;return {state:s,fresh:false,offline,reopened};}
 
 // ───────────────────────── UNSET-gated features (stubs) ─────────────────────────
-export function gachaCheck(){const G=CFG.gacha;if(isUnset(G.startLevel)||isUnset(G.breedOdds))return 'unset';return 'payment';} // 다이아는 유료 전용(132-2), 결제 미연결
 export function slotUnlockCheck(){return isUnset(CFG.cafe.paidSlotUnlockDia)?'unset':'payment';}
 export const regularsCheck=()=>isUnset(CFG.stub.regulars.population)?'unset':'stub'; // 갱신 102·108·122: '같은 손님' 개체 수 UNSET
 // 갱신 116 potions (bought with 다이아 only — stub shop); using one you own works

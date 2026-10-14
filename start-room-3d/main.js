@@ -32,7 +32,7 @@ const tfmt=sec=>{sec=Math.max(0,Math.ceil(sec));const h=Math.floor(sec/3600),m=M
 const nameOf=sh=>sh.name||L('shiba.breed.'+sh.breed);
 const bar=(k,col)=>`<div class="bar"><i style="width:${Math.round(Math.max(0,Math.min(1,k))*100)}%${col?';background:'+col:''}"></i></div>`;
 function toast(t){const e=$('toast');e.textContent=t;e.style.opacity=1;ui.toastT=2.2;}
-const reason={busy:'toast.devBusy',coins:'toast.coins',hearts:'toast.hearts',slots:'toast.slots',unset:'toast.unset',last:'toast.last',dia:'toast.dia'};
+const reason={ticket:'toast.ticket',owned:'rescue.full',busy:'toast.devBusy',coins:'toast.coins',hearts:'toast.hearts',slots:'toast.slots',unset:'toast.unset',last:'toast.last',dia:'toast.dia'};
 function why(code){toast(L(reason[code]||'toast.unset'));}
 // 갱신 135-2: 남은 시간 바로 완료 버튼 (1분당 1다이아, 1분 올림)
 function skipBtn(t){const left=S.skipLeftSec(s,t,clock.now());if(!(left>0))return '';const cost=S.skipCost(left);
@@ -143,7 +143,10 @@ P.shop=()=>{const now=clock.now(),M=CFG.menu,menuImg=f=>`<div class="pt">${img('
   <div class="card"><h3>${L('shop.bag')}</h3><div class="li"><span class="ico reset" style="width:34px;height:34px"></span><div class="grow nm">${L('shop.heartReset',{n:s.items.heartReset})}</div><button data-act="heartReset" ${S.canUseHeartReset(s)?'':'disabled'}>${L('shop.use')}</button></div>
    <div class="li">${slot(L('app.missingImg'),34,34)}<div class="grow nm">${L('shop.capsule',{n:s.items.capsule})}</div></div>
    <div class="li">${img(IMG.potion)}<div class="grow nm">${L('dia.potionBig')} ×${s.items.potionBig} · ${L('dia.potionSmall')} ×${s.items.potionSmall}</div></div></div>
-  <div class="card"><h3>${L('shop.gacha')}</h3><div class="note">${L('shop.gachaNote',{dia:CFG.gacha.priceDia})}</div><button disabled>${L('app.unset')}</button></div>
+  <div class="card" data-gacha><h3>${L('shop.gacha')}</h3><div class="note">${L('shop.gachaNote',{p:CFG.gacha.dupPaws})}</div><div class="btns">
+   <button data-act="gacha" data-n="1" ${S.gachaCheck(s,1)?'disabled':''}>${L('shop.gacha1',{dia:CFG.gacha.priceDia})}</button>
+   <button data-act="gacha" data-n="${CFG.gacha.tenCount}" ${S.gachaCheck(s,CFG.gacha.tenCount)?'disabled':''}>${L('shop.gacha10',{n:CFG.gacha.tenCount,dia:fmt(CFG.gacha.tenDia)})}</button>
+   <button class="sec" data-act="gacha" data-n="1" data-ticket="1" ${S.gachaCheck(s,1,{ticket:true})?'disabled':''}>${L('shop.gachaTicket',{n:s.items.capsule})}</button></div></div>
   <div class="card"><h3>${L('shop.dia')}</h3><div class="note">${L('shop.diaRate',{won:CFG.stub.diaPriceWon})} · ${L('app.payment')}</div>
    ${[['cooldown1',CFG.cooldownTicketDia.one],['cooldown5',CFG.cooldownTicketDia.five],['potionBig',CFG.potion.bigDia],['potionSmall',CFG.potion.smallDia],['boost',CFG.itemIncome.priceDia],['expBoost',CFG.stub.expBoost.priceDia],['slot',CFG.cafe.paidSlotUnlockDia]]
     .map(([k,p])=>`<div class="li"><span class="ico dia"></span><div class="grow">${L('dia.'+k)}</div><button disabled>${p==null?L('app.unset'):p+'💎'}</button></div>`).join('')}</div>`;
@@ -185,6 +188,7 @@ function renderModal(){const m=ui.modals[0]||(!s.settings.language?{kind:'lang'}
   h=x.bathed?`<h2>${L('rescue.reveal',{breed:L('shiba.breed.'+x.breed)})}</h2><div class="big">${img(IMG.shiba(x.breed))}</div><div class="note" style="text-align:center">${L('rescue.lvNote')}</div>
     <button data-act="rescueBring" ${S.bringCheck(s,x.rid)?'disabled':''}>${L('rescue.bring')}</button>${S.bringCheck(s,x.rid)==='owned'?`<div class="note">${L('rescue.full')}</div>`:''}<button class="sec" data-act="rescueDecline">${L('rescue.decline')}</button>`
    :`<h2>${L('rescue.found')}</h2><div class="big">${img(IMG.rescue[x.pic])}</div><button data-act="rescueBath" ${s.coins<cost?'disabled':''}>${L('rescue.bath',{cost:fmt(cost)})}</button><button class="sec" data-act="rescueDecline">${L('rescue.decline')}</button>`;}
+ if(m.kind==='gacha')h=`<h2>${L('gacha.title')}</h2><div class="gres">${m.res.map(x=>`<div class="gi${x.dup?' dup':''}">${img(IMG.shiba(x.breed))}<span>${x.dup?L('gacha.dup',{name:nameOf(S.byId(s,x.toId)||{breed:x.breed}),p:x.paws}):L('gacha.new',{breed:L('shiba.breed.'+x.breed),lv:CFG.gacha.startLevel})}</span></div>`).join('')}</div><button data-act="modalOk">${L('app.ok')}</button>`;
  if(m.kind==='confirm')h=`<div class="note" style="font-size:14px">${m.text}</div><div class="btns"><button class="warn" data-act="confirmYes">${L('app.ok')}</button><button class="sec" data-act="modalOk">${L('app.cancel')}</button></div>`;
  $('mbox').innerHTML=h;$('modal').hidden=false;}
 if(L0.offline&&(L0.offline.sec>=60||L0.reopened))ui.modals.push({kind:'offline',o:L0.offline,closed:!!L0.reopened});
@@ -208,6 +212,7 @@ const act={
  manager:()=>{S.hireAlba(s,'manager',[],clock.now());},
  skip:d=>{const t={type:d.type,id:d.id===''?null:+d.id};if(S.skipNow(s,t,clock.now())==null)why(S.skipCheck(s,t,clock.now()));},
  levelUp:d=>{if(S.levelUp(s,+d.id))toast(L('toast.levelUpShiba',{lv:S.byId(s,+d.id).level}));else toast(L('toast.paws'));},
+ gacha:d=>{const res=S.gachaPull(s,+d.n,r,clock.now(),{ticket:!!d.ticket});if(res)ui.modals.push({kind:'gacha',res});else why(S.gachaCheck(s,+d.n,{ticket:!!d.ticket}));},
  dev:d=>{if(!S.developMenu(s,d.id,clock.now()))why(S.menuCheck(s,d.id));},
  heartReset:()=>{S.useHeartReset(s,clock.now());},
  setLang:d=>{s.settings.language=d.lang;applyStatic();},toggle:d=>{s.settings[d.k]=!s.settings[d.k];},

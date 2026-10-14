@@ -21,7 +21,10 @@ export default async function({ev,check,sleep,reload}){
  await ev('document.querySelector("[data-act=walk][data-sec=\'600\']").click();true');
  await check('walk started, shiba left the café','!!__game.state.walk&&!__game.world.sh[__game.state.walk.shibaId]&&[...document.querySelectorAll("#pbody button")].some(b=>/Stop/.test(b.textContent)&&b.disabled)');
  await ev('document.querySelector("[data-nav=shop]").click();true');
- await check('shop: 14 menus with images (M-01 default), 13 dev buttons locked/unaffordable at start; gacha UNSET, diamond items payment stub','document.querySelectorAll("[data-menu]").length===14&&document.querySelectorAll("[data-menu] img").length===14&&document.querySelectorAll("[data-act=dev][disabled]").length===13&&[...document.querySelectorAll("#pbody button")].some(b=>b.disabled&&/TBD/.test(b.textContent))');
+ await check('shop: 14 menus with images (M-01 default), 13 dev buttons locked/unaffordable at start; gacha UNSET, diamond items payment stub; gacha 100/900 disabled with 0 diamonds (137)','document.querySelectorAll("[data-menu]").length===14&&document.querySelectorAll("[data-menu] img").length===14&&document.querySelectorAll("[data-act=dev][disabled]").length===13&&[...document.querySelectorAll("#pbody button")].some(b=>b.disabled&&/TBD/.test(b.textContent))&&[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled)&&/100💎/.test(document.querySelector("[data-gacha]").textContent)&&/900💎/.test(document.querySelector("[data-gacha]").textContent)');
+ await ev('__game.state.dia=100;__game.refresh();document.querySelector("[data-act=gacha][data-n=\'1\']:not([data-ticket])").click();true');
+ await check('1 pull for 100 diamonds shows the result card (137)','__game.state.dia===0&&!!document.querySelector("#mbox .gres .gi")');
+ await ev('document.querySelector("#mbox [data-act=modalOk]").click();true');
  await ev('__game.state.cafe.level=2;__game.state.coins=8500;__game.refresh();document.querySelector("[data-act=dev][data-id=M-02]").click();true');
  await check('developing M-02 at Lv2 costs 8,500 멍코인 and shows 30 min in progress (136)','__game.state.menuDev?.id==="M-02"&&!__game.state.menus.includes("M-02")&&__game.state.coins===0&&!!document.querySelector("[data-dev=M-02]")&&document.querySelector("[data-act=dev][data-id=M-05]")?.disabled');
  await ev('__game.state.dia=30;__game.refresh();document.querySelector("[data-act=skip][data-type=menu]").click();true');
@@ -32,5 +35,5 @@ export default async function({ev,check,sleep,reload}){
  await ev('__game.close();true');
  // persisted across reload, offline report path
  await reload();await ev('__game.step(.2);true');
- await check('save kept after reload (language, shiba)','__game.state.settings.language==="ko"&&__game.state.shibas.length===1&&__game.state.started');
+ await check('save kept after reload (language, shiba)','__game.state.settings.language==="ko"&&__game.state.shibas.length>=1&&__game.state.shibas[0].breed==="kuro"&&__game.state.started');
 }

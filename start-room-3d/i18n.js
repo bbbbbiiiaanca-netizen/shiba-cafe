@@ -40,8 +40,8 @@ export const STR={
   'menu.M-01':'아이스 아메리카노','menu.M-02':'따뜻한 라테','menu.M-03':'딸기 라테','menu.M-04':'유자 에이드','menu.M-05':'치즈케이크','menu.M-06':'초코칩 쿠키','menu.M-07':'크루아상','menu.M-08':'딸기 파르페',
   'menu.P-01':'골드 티라미수','menu.P-02':'딸기 홀케이크','menu.P-03':'몽블랑','menu.P-04':'초코 퐁당','menu.P-05':'마카롱 3종','menu.P-06':'파블로바',
   'shop.manager':'매니저 알바','shop.managerNote':'12시간 · 얼룩 10분마다 1개 · 요구 30% 대신 · 평판 절반 · 경험치 없음','shop.hire':'고용 {cost}멍',
-  'shop.gacha':'시바뽑기','shop.gachaNote':'{dia}다이아 · 시작 레벨·확률 미정','shop.bag':'가방','shop.heartReset':'하트 리셋권 {n}장','shop.use':'사용',
-  'shop.capsule':'시바 뽑기권 {n}개 (뽑기 미정)','shop.dia':'다이아 상점 (유료 전용)','shop.diaRate':'다이아 1개 = {won}원 · 묶음 미정',
+  'shop.gacha':'시바뽑기','shop.gachaNote':'시바 4종 · 새 시바는 Lv1 · 이미 가진 견종이면 발바닥 {p}개 (확률표 미정 → 4종 균등)','shop.bag':'가방','shop.heartReset':'하트 리셋권 {n}장','shop.use':'사용',
+  'shop.capsule':'시바 뽑기권 {n}개 (1장 = 뽑기 1회)','shop.dia':'다이아 상점 (유료 전용)','shop.diaRate':'다이아 1개 = {won}원 · 묶음 미정',
   'dia.cooldown1':'쿨타임권 1장','dia.cooldown5':'쿨타임권 5장','dia.potionBig':'멍포션','dia.potionSmall':'작은 멍포션','dia.boost':'수익 1.2배 4시간','dia.expBoost':'경험치 1.2배 4시간','dia.slot':'시바 칸 미리 해제',
   'set.title':'설정','set.sound':'효과음','set.music':'배경음','set.income':'수익 계산식 보기','set.reset':'처음부터 다시','set.resetQ':'저장을 지우고 처음부터 시작할까요?','set.stubs':'준비 중인 기능',
   'stub.list':'랭킹(카페 레벨, 주간) · GM 카페 · 일일·주간 미션 · 동구 부탁 · 진상손님 · 단골·최애 · 시바 궁합·싸움 · 시바끼리 놀기 · 인테리어 점수 · 2층 확장 · 머지 요리 · 입양(복제본) · 카메라 모드 · 마을 지도',
@@ -59,6 +59,7 @@ export const STR={
   'skip.btn':'바로 완료 {n}💎','toast.dia':'다이아가 모자라요','skip.note':'남은 시간 1분당 1다이아(1분 단위 올림)',
   'app.hm':'{h}시간 {m}분','app.h':'{h}시간','app.m':'{m}분','shop.devTime':'개발 {t}','shop.developing':'{name} 개발 중','shop.developingShort':'개발 중','shop.devLeft':'{t} 남음','shop.devIdle':'메뉴는 한 번에 1개만 개발해요. 멍코인을 내면 개발 시간이 지나야 완성돼요.','toast.menuDone':'{name} 개발 완료!','toast.devBusy':'지금 개발 중인 메뉴가 있어요 (한 번에 1개)',
   'care.levelUp':'레벨업 🐾{n}','toast.levelUpShiba':'Lv{lv}이 됐어요!','toast.paws':'발바닥이 모자라요',
+  'shop.gacha1':'1회 {dia}💎','shop.gacha10':'{n}연차 {dia}💎','shop.gachaTicket':'뽑기권 사용 ({n}장)','gacha.title':'시바뽑기 결과','gacha.new':'새 친구! {breed} Lv{lv}','gacha.dup':'중복 → {name} 발바닥 +{p}','toast.ticket':'뽑기권이 없어요',
  },
  en:{
   'lang.name.ko':'한국어','lang.name.en':'English','lang.select.title':'Choose your language','lang.select.hint':'You can change it any time in Settings','lang.select.confirm':'OK',
@@ -97,8 +98,8 @@ export const STR={
   'menu.M-01':'Iced americano','menu.M-02':'Hot latte','menu.M-03':'Strawberry latte','menu.M-04':'Yuja ade','menu.M-05':'Cheesecake','menu.M-06':'Choc-chip cookie','menu.M-07':'Croissant','menu.M-08':'Strawberry parfait',
   'menu.P-01':'Gold tiramisu','menu.P-02':'Strawberry whole cake','menu.P-03':'Mont blanc','menu.P-04':'Choco fondant','menu.P-05':'Macaron trio','menu.P-06':'Pavlova',
   'shop.manager':'Manager','shop.managerNote':'12 h · cleans 1 stain / 10 min · 30% of requests · half rep · no exp','shop.hire':'Hire {cost}',
-  'shop.gacha':'Shiba capsule','shop.gachaNote':'{dia} diamonds · start level & odds TBD','shop.bag':'Bag','shop.heartReset':'Heart reset ticket ×{n}','shop.use':'Use',
-  'shop.capsule':'Capsule tickets ×{n} (gacha TBD)','shop.dia':'Diamond shop (paid only)','shop.diaRate':'1 diamond = {won} KRW · bundles TBD',
+  'shop.gacha':'Shiba capsule','shop.gachaNote':'4 breeds · a new Shiba starts at Lv1 · a breed you already have becomes {p} paws (odds TBD → equal)','shop.bag':'Bag','shop.heartReset':'Heart reset ticket ×{n}','shop.use':'Use',
+  'shop.capsule':'Capsule tickets ×{n} (1 = one pull)','shop.dia':'Diamond shop (paid only)','shop.diaRate':'1 diamond = {won} KRW · bundles TBD',
   'dia.cooldown1':'Cooldown ticket','dia.cooldown5':'Cooldown tickets ×5','dia.potionBig':'Mung potion','dia.potionSmall':'Small mung potion','dia.boost':'Income ×1.2 for 4 h','dia.expBoost':'Exp ×1.2 for 4 h','dia.slot':'Unlock a Shiba slot early',
   'set.title':'Settings','set.sound':'Sound','set.music':'Music','set.income':'Show income formula','set.reset':'Start over','set.resetQ':'Erase the save and start over?','set.stubs':'Coming later',
   'stub.list':'Ranking (café level, weekly) · GM café · Daily/weekly missions · Donggu requests · Rude guests · Regulars & favourites · Shiba friendships/fights · Shiba play · Interior score · 2nd floor · Merge cooking · Adoption (copies) · Camera mode · Village map',
@@ -116,6 +117,7 @@ export const STR={
   'skip.btn':'Finish now {n}💎','toast.dia':'Not enough diamonds','skip.note':'1 diamond per remaining minute (rounded up)',
   'app.hm':'{h} h {m} min','app.h':'{h} h','app.m':'{m} min','shop.devTime':'takes {t}','shop.developing':'Developing {name}','shop.developingShort':'Developing','shop.devLeft':'{t} left','shop.devIdle':'One menu at a time. After paying, it is ready when the development time has passed.','toast.menuDone':'{name} is ready!','toast.devBusy':'Another menu is in development (one at a time)',
   'care.levelUp':'Level up 🐾{n}','toast.levelUpShiba':'Now Lv{lv}!','toast.paws':'Not enough paws',
+  'shop.gacha1':'1 pull {dia}💎','shop.gacha10':'{n} pulls {dia}💎','shop.gachaTicket':'Use ticket (×{n})','gacha.title':'Capsule results','gacha.new':'New! {breed} Lv{lv}','gacha.dup':'Duplicate → {name} +{p} paws','toast.ticket':'No capsule tickets',
  },
 };
 export function makeT(getLang){return (key,vars={})=>{const l=getLang()||'ko';let t=STR[l]?.[key]??STR.en[key]??key;for(const [k,v] of Object.entries(vars))t=t.split('{'+k+'}').join(v);return t;};}
