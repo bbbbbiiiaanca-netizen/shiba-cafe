@@ -80,7 +80,9 @@ export function restorePlacement(saved,zone=MAP.zones[0]){
 
 // unlockedRows is the persisted expansion count (legacy key retained).
 // Approved room's central tatami cell, cropped by crop-room-tatami.py; original tile alpha retained.
-export const FLOOR_ART={tatami:'assets/drive/tiles/tatami-room-crop.png'};
+export const FLOOR_ART={tatami:'assets/drive/tiles/floor-tatami-v3.png'}; // approved 타일_바닥_다다미_v3 (128x64 seamless), replaces the room crop
+// Approved 벽_방벽_연장 왼쪽/오른쪽: 128x244, anchor = cell top vertex at (64,180).
+export const WALL_EXT={left:'assets/drive/tiles/wall-ext-left.png',right:'assets/drive/tiles/wall-ext-right.png',anchor:[64,180]};
 // User Task B 2026-10-15: first down-left (j), then down-right (i), alternating.
 export function nextExpansion(zone,count){return count%2===0?{axis:'j',cells:Array.from({length:zone.cols},(_,i)=>[i,zone.rows])}:{axis:'i',cells:Array.from({length:zone.rows},(_,j)=>[zone.cols,j])};}
 export function restoreSpace(saved){

@@ -1,5 +1,5 @@
 import {preservesEntrance} from './navigation.js';
-import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges} from './map-data.js';
+import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges,WALL_EXT} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
@@ -69,13 +69,12 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
      if(i<MAP.zones[0].cols&&j<MAP.zones[0].rows)continue;
      const p=cellToScreen(i,j,view,z);ctx.drawImage(floor,p.x-z.cell.w*scale/2,p.y-z.cell.h*scale/2,z.cell.w*scale,z.cell.h*scale);
     }
-    // Extend approved bitmap walls along the two outer rear edges, never inside the floor.
+    // Approved 벽_방벽_연장 pieces (128x244, cell top vertex at (64,180)), one per expanded row/column along the two rear edges.
     for(const [axis,count,base] of [['i',z.cols,MAP.zones[0].cols],['j',z.rows,MAP.zones[0].rows]]){
-     const sprite=axis==='i'?SPRITES.wall:SPRITES.wall.flip,im=load(sprite.file),fit=scale*SPRITES.wall.scale;
+     const im=load(WALL_EXT[axis==='i'?'right':'left']);
      if(im.complete&&im.naturalWidth)for(let n=base;n<count;n++){
-      const p=cellToScreen(...(axis==='i'?[n,0]:[0,n]),view,z);
-      p.x+=(axis==='i'?1:-1)*z.cell.w*scale/4;p.y-=z.cell.h*scale/4;
-      ctx.drawImage(im,p.x-sprite.anchor[0]*fit,p.y-sprite.anchor[1]*fit,im.naturalWidth*fit,im.naturalHeight*fit);
+      const p=cellToScreen(...(axis==='i'?[n,0]:[0,n]),view,z),top={x:p.x,y:p.y-z.cell.h*scale/2};
+      ctx.drawImage(im,top.x-WALL_EXT.anchor[0]*scale,top.y-WALL_EXT.anchor[1]*scale,im.naturalWidth*scale,im.naturalHeight*scale);
      }
     }
     const strip=nextExpansion(z,state.space.unlockedRows),centre=strip.cells.reduce((p,c)=>p.map((v,k)=>v+c[k]/strip.cells.length),[0,0]);

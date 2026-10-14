@@ -71,7 +71,7 @@ console.log('§17 renderer: approved wall images, alpha selection, move/rotate/r
 const expandIso=createIsoMap(canvas);
 state.space.unlockedRows=3;draws.length=0;expandIso.setEdit(true);expandIso.draw(state,{});
 assert.equal(expandIso.gridCells,7*8);
-assert.equal(draws.filter(d=>d.file==='assets/drive/tiles/tatami-room-crop.png').length,7*8-36);
+assert.equal(draws.filter(d=>d.file==='assets/drive/tiles/floor-tatami-v3.png').length,7*8-36);assert.equal(draws.filter(d=>/wall-ext-(left|right)\.png$/.test(d.file)).length,(7-6)+(8-6));
 assert.equal(expandIso.markers.find(m=>m.kind==='row').axis,'i');
 expandIso.panTo(Infinity,Infinity);assert.equal(expandIso.panX,expandIso.panBounds.maxX);assert.equal(expandIso.scroll,expandIso.maxScroll);
 expandIso.panTo(-Infinity,-Infinity);assert.equal(expandIso.panX,expandIso.panBounds.minX);assert.equal(expandIso.scroll,0);
@@ -123,9 +123,9 @@ for(const n of [1,2,3]){
  const merged=newState(0);merged.space.unlockedRows=n;draws.length=0;iso.draw(merged,{});
  assert.ok(draws.some(d=>d.file.endsWith(n===1?'room-merged-j.png':'room-merged-ij.png')));
  assert.ok(!draws.some(d=>d.file.endsWith('room-tatami-noline.png')));
- assert.equal(draws.filter(d=>d.file.endsWith('wall-inner.png')||d.file.endsWith('wall-inner-flip.png')).length,n);
+ assert.equal(draws.filter(d=>/wall-ext-(left|right)\.png$/.test(d.file)).length,n);
  assert.ok(draws.every(d=>d.args.every(Number.isFinite)),'wall flip scaling and all draw coordinates finite');
- const walls=draws.map((d,i)=>d.file.includes('/wall-inner')?i:-1).filter(i=>i>=0);
+ const walls=draws.map((d,i)=>/wall-ext-/.test(d.file)?i:-1).filter(i=>i>=0);
  assert.ok(Math.max(...walls)<draws.findIndex(d=>d.file.includes('/furn-')));
 }
 console.log('Task B: cropped room rims, both approved rear wall axes, finite scale and furniture layering passed');

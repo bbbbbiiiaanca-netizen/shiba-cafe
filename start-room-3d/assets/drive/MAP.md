@@ -242,3 +242,30 @@ Shown as: top-bar resource pills (coin, heart slots full/empty, diamond, paw), p
 | ui/ui-lv-badge.png | interior/UI_Lv배지.png | 1ZMFyLB9urA8rGh80X4xzqdUgM2ssZCz9 | 38113c8577a71279eb564906fee21bf48be4c77bdcbfb91854bc3560bf27fa2f |
 | tiles/wall-inner.png | interior/벽_안쪽벽.png | 1MXkxbJ6DE2y5euvaL4pZnB7luIjpDEqn | 38921b02edc0c797e47166b0f4d5c407ae3e2507bc4f21b10e5032f810eb6b58 |
 | tiles/wall-inner-flip.png | interior/벽_안쪽벽_반전.png | 1DGGliAacJznf3cqq3PLoIs-GUPPAT0zz | de8809a1c5f9c60744c1eb47eae1a3ffbf2f1f1baf34fe1147df6b48dd75e1d5 |
+
+## 그림이 manager v2 + wall extensions + tatami v3 (2026-10-15)
+Manager v2 frames replace the v1 files at the same local paths (v1 rows above are superseded).
+
+| file | Drive original | Drive id | sha256 |
+|---|---|---|---|
+| chars/manager/manager-walk-front-dr-1.png | interior/알바_매니저_걷기_앞_오른쪽아래_1_v2.png | 125DruAooDSZjRNTAB4HM4MadR8VpYHbs | 3164f718d96264f92761af134d6f80eaa1a20b6760a75516a132e5a6f7a935a9 |
+| chars/manager/manager-walk-front-dr-2.png | interior/알바_매니저_걷기_앞_오른쪽아래_2_v2.png | 1ZoGBnHCHqsExYYDqgjznG4ZjdP3VXHUO | 0df8cc55ed3105699be41341ea7bb5bc31832405c53e9ebf28d0f60e9e9bdc9f |
+| chars/manager/manager-walk-front-dr-3.png | interior/알바_매니저_걷기_앞_오른쪽아래_3_v2.png | 11Y11MQpmZ7QgXqJfNisEjzAxAqi1usQw | 60e23a77f88d3e7ed66cfb180bf07e6bf65800275c8cbef0896e4d53819471b7 |
+| chars/manager/manager-walk-front-dr-4.png | interior/알바_매니저_걷기_앞_오른쪽아래_4_v2.png | 1mU-FR6nO15S1Df60FBbJaR9y1KRgqiYO | c306a4558094bb93f6940dbfae787c666cb4c56de683945f897e63b61576a40b |
+| chars/manager/manager-walk-front-dl-1.png | interior/알바_매니저_걷기_앞_왼쪽아래_1_v2.png | 1yl6BtSBBVMHhz6ZZCE12o9DPLGNU5jJA | c77548c2d87466fbcce131090d0a0a1e35ab75458e3641fd7e32b8608b9eee82 |
+| chars/manager/manager-walk-front-dl-2.png | interior/알바_매니저_걷기_앞_왼쪽아래_2_v2.png | 1s9pI96HJ_AQr0RFvSFE0EIii4oC_TBPB | 7011cdd73ec2ef605383baf19815a4101a7d97b6384ce3e4073dadd8aaaf71a6 |
+| chars/manager/manager-walk-front-dl-3.png | interior/알바_매니저_걷기_앞_왼쪽아래_3_v2.png | 1pcKniUZlIGc0IfqSbBh73cYy8NQJnoDi | 520f9f0b971723e4c34a27092981e4e1f72f58201639f603cc986497982e2329 |
+| chars/manager/manager-walk-front-dl-4.png | interior/알바_매니저_걷기_앞_왼쪽아래_4_v2.png | 15E5gi9VUPP6nan1qpLLn8IekDAINgFkH | 1b8fedfdf205933b59d94e008032a300812d7b604ebe0a0e999430fd1f18acf6 |
+| chars/manager/manager-walk-back-ul-1.png | interior/알바_매니저_걷기_뒤_왼쪽위_1_v2.png | 1PmnFJnZrL8R0McsTT3ZLUy7_1SnRDlyo | 6cf5047a57f878a4de8309e44676e497d5e148566d36b3e395d58868c3755b41 |
+| chars/manager/manager-walk-back-ul-2.png | interior/알바_매니저_걷기_뒤_왼쪽위_2_v2.png | 1rKxUgbPUpDx7PxZUmVspIBwFgpUB7thr | 5d254a67b9018d3857a61ee2696b25d632eb1e4d479e4241bd8f1043b863355f |
+| chars/manager/manager-walk-back-ul-3.png | interior/알바_매니저_걷기_뒤_왼쪽위_3_v2.png | 1ADTYJWejd9Sl0TfqaddqSziMoPkOCKvg | 7af4e86cd81c48a98cdf363aa323f6cbd5155f666e8c85cac7d520ba3f5177ff |
+| chars/manager/manager-walk-back-ul-4.png | interior/알바_매니저_걷기_뒤_왼쪽위_4_v2.png | 1CbsfZ4s46YriYazXChw1Lb3tlBlf_Fdr | afda45a9358d88d857ff667288228b51e35b33bd8742ec4adbca8c3214654b08 |
+| chars/manager/manager-walk-back-ur-1.png | interior/알바_매니저_걷기_뒤_오른쪽위_1_v2.png | 1V4tJ3LTi949nkD4K1JkioZaUbXCHTzhP | ea97d3167d0aa81e4a6d5ffe192c8b02db43eeab01abd59eb7a11229c50ae8ff |
+| chars/manager/manager-walk-back-ur-2.png | interior/알바_매니저_걷기_뒤_오른쪽위_2_v2.png | 1hgPVHR-K3pr3qEOOBEypz3uYcpu2ME66 | c8355699451178086a0ddd9482f6b8174186a8c2d299624311d52cd860fdede0 |
+| chars/manager/manager-walk-back-ur-3.png | interior/알바_매니저_걷기_뒤_오른쪽위_3_v2.png | 1kZ_iFbiSms1a4XWxYhvmMq9YPI5Lbq2F | a84d1714a1bb6180b63d18a6dafd1fadfbd03fd4c67efe1406109593a5f5a84d |
+| chars/manager/manager-walk-back-ur-4.png | interior/알바_매니저_걷기_뒤_오른쪽위_4_v2.png | 1WM4tLGkMkvhaeomfcmR-B9YpG1DFHDIP | a520d00aae9063a1f619cf44c9d10dffb1035e5271aa6710245a933ef36633e8 |
+| chars/manager/manager-stand-dr.png | interior/알바_매니저_서기_오른쪽아래_v2.png | 1t-G0Opw5GlA7ncllvWuaDGXOJV3eSMMk | 2f5c464422afb8759159ec987c4a7cd2d99dc5c2812397a05ccfca35813af17f |
+| chars/manager/manager-stand-dl.png | interior/알바_매니저_서기_왼쪽아래_v2.png | 1hc4EFy-_y4ZoUxo8bZp7l5yRBu17PFWd | f85317fb2ab67ed445df018a775aa9be13bd6a3a9537f975e643e4a23ed57724 |
+| tiles/wall-ext-left.png | interior/벽_방벽_연장_왼쪽.png | 1cDhjig76dPnO6XMsQE1DLt6NdEqRSdWK | d91c045ec8cdc66b26083a342fdd6b4240870f8514c36cb97d4e098946929698 |
+| tiles/wall-ext-right.png | interior/벽_방벽_연장_오른쪽.png | 1C-G7Az2iV1Suz8lCCC0rbYIcd6ClDx_D | a71a188ad1965405a0c23a5b7eb40847cf608f062665fc0e2180d0b21a4aecee |
+| tiles/floor-tatami-v3.png | interior/타일_바닥_다다미_v3.png | 1Qdo1zjVJlYamjgjkq77Du3sMmR_Ytszd | 5c4dbc543363c90cc040def752741129d03673a3a15304071ff5bbe21cfc3ebf |

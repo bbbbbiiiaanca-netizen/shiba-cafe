@@ -85,6 +85,7 @@ export default async function({ev,check,sleep,reload}){
  await ev('document.querySelector("#mbox .lp-close").click();true');
  // §17-7/8: real edit actions and rejected placement, then manager hire using configured values.
  await ev('__game.close();__game.iso.setEdit(true);document.querySelector("[data-wall-add]").click();true');
+await new Promise(r=>setTimeout(r,500));await ev('__game.refresh&&__game.refresh(),true');
  await check('wall placed with one-cell footprint and approved sprite hit','__game.state.placement.slots.some(s=>s.type==="wall"&&__game.iso.hits.some(h=>h.id===s.id&&!h.footprint))&&__game.iso.gridCells>0');
  await ev('window.wallBefore=JSON.stringify(__game.state.placement);__game.iso.placeWall([0,5]);true');
  await check('entrance blocked toast and rollback','document.getElementById("toast").textContent==="입구가 막혔어요!"&&JSON.stringify(__game.state.placement)===window.wallBefore');

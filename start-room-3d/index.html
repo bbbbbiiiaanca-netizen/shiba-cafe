@@ -1,8 +1,11 @@
 <!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover"><link rel="icon" href="data:,"><title>시바카페</title>
 <style>
+@font-face{font-family:"Jua";src:url(assets/fonts/Jua-Regular.woff2) format("woff2");font-display:swap}
+@font-face{font-family:"Gowun Dodum";src:url(assets/fonts/GowunDodum-Regular.woff2) format("woff2");font-display:swap}
+
 [hidden]{display:none!important}
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;overflow:hidden;background:#3b2618;font-family:"Noto Sans CJK KR","Apple SD Gothic Neo",sans-serif;color:#4a2e1c;-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#3b2618;font-family:"Gowun Dodum","Noto Sans CJK KR","Apple SD Gothic Neo",sans-serif;color:#4a2e1c;-webkit-user-select:none;user-select:none}
 #app{position:fixed;inset:0;max-width:430px;margin:0 auto;background:#f3e3c4;display:flex;flex-direction:column;overflow:hidden}
 button{font:inherit;font-weight:800;border:0;border-radius:12px;background:#f0a64a;color:#fff;padding:7px 10px;box-shadow:0 2px 0 #b8742a;cursor:pointer}
 button:disabled{background:#d6c7b3;color:#8a7763;box-shadow:0 2px 0 #b3a28c;cursor:default}
@@ -149,6 +152,16 @@ button[data-act=levelUp]{background:url(assets/drive/ui/ui-btn-levelup-yellow.pn
 
 /* starting value 2026-10-15, pending user confirm: icon chrome fits existing status buttons. */
 .mission-btn img{width:24px;height:24px;object-fit:contain}.mission-btn{position:relative}#mailDot{position:absolute;right:0;top:0}#lvl{background:url(assets/drive/ui/ui-lv-badge.png) center/contain no-repeat;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;min-width:30px;min-height:30px;border-radius:0;color:#58452b;font-size:11px}
+
+/* Global type + centring pass (2026-10-15): Jua for titles/buttons/tabs/numbers, Gowun Dodum for body. */
+h1,h2,h3,h4,button,.btn,[role=button],.tab,.main-tabs button,.pill,.badge,.lp-title,.ribbon,#lvl,#rep,.lp-price,.price,strong{font-family:"Jua","Gowun Dodum",sans-serif;font-weight:400;letter-spacing:0}
+button,.btn,[role=button],.pill,.badge,.chip,#lvl,#rep,.main-tabs button,.tab,.lp-btn,.price-btn{display:inline-flex;align-items:center;justify-content:center;text-align:center;line-height:1.15;gap:4px}
+.main-tabs button{flex-direction:column}
+button{white-space:nowrap}
+.lp-card .lp-body,.lp-card .lp-text{text-align:left}
+button img,.pill img,.badge img,.chip img{display:block;flex:none}
+.card,.lp-card,.furniture-card{align-items:center}
+.modal h2,.modal h3,.lp-title,.ribbon{text-align:center}
 </style>
 <div id="app">
  <div id="hud" aria-label="카페 자원">
