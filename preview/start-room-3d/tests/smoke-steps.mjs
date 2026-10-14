@@ -10,45 +10,50 @@ export default async function({ev,check,sleep,reload}){
  // café loop runs in the page
  await ev('for(let i=0;i<900;i++)__game.step(.1);true');
  await check('guests served; unresolved income aggregation gates payment','__game.state.stats.served>0&&__game.state.coins===0&&__game.world.lastPay.pending&&document.getElementById("isomap").width===390');
- await check('no 도감 / dex button anywhere','!/도감|Collection|dex/i.test(document.getElementById("nav").textContent)');
+ await check('no 도감 / dex button anywhere','!/도감|Collection|dex/i.test(document.querySelector(".main-tabs").textContent)');
  // screens
- for(const n of ['shibas','walk','shop','settings']){await ev(`document.querySelector("[data-nav=${n}]").click();true`);await check(`${n} screen opens`,'!document.getElementById("panel").hidden&&document.getElementById("pbody").children.length>0');}
- await ev('document.querySelector("[data-nav=shibas]").click();document.querySelector("[data-act=care]").click();true');
+ for(const n of ['shibas','walk','shop','settings']){await ev(n==='shibas'?'document.querySelector("[data-main-tab=shiba]").click();true':n==='shop'?'document.querySelector("[data-main-tab=store]").click();true':n==='walk'?'document.querySelector("[data-main-tab=shiba]").click();document.querySelector("[data-open=walk]").click();true':`document.querySelector("[data-nav=${n}]").click();true`);await check(`${n} screen opens`,'document.getElementById("panel").hidden?document.getElementById("menuList").children.length>0:document.getElementById("pbody").children.length>0');}
+ await ev('document.querySelector("[data-main-tab=shiba]").click();document.querySelector("[data-act=care]").click();true');
  await check('care: feed/snack/bath/sleep disabled (UNSET), play enabled','[...document.querySelectorAll("#pbody button[disabled]")].filter(b=>/Feed|Snack|Bath|Put to bed/.test(b.textContent)).length===4&&!document.querySelector("[data-act=play]").disabled');
  await ev('document.querySelector("[data-act=play]").click();true');await check('play costs 1 heart','__game.state.hearts===9');
- await ev('document.querySelector("[data-nav=walk]").click();true');
+ await ev('document.querySelector("[data-main-tab=shiba]").click();document.querySelector("[data-open=walk]").click();true');
  await check('walk buttons ♥1/♥2/♥3, stop disabled','document.querySelectorAll("[data-act=walk]").length===3');
  await ev('document.querySelector("[data-act=walk][data-sec=\'600\']").click();true');
  await check('walk started, shiba left the café','!!__game.state.walk&&!__game.world.sh[__game.state.walk.shibaId]&&[...document.querySelectorAll("#pbody button")].some(b=>/Stop/.test(b.textContent)&&b.disabled)');
- await ev('document.querySelector("[data-nav=shop]").click();true');
- await check('shop: 14 menus with images (M-01 default), 13 dev buttons locked/unaffordable at start; diamond items payment stub; gacha 100/900 disabled with 0 diamonds (137)','document.querySelectorAll("[data-menu]").length===14&&document.querySelectorAll("[data-menu] img").length===14&&document.querySelectorAll("#pbody [data-act=dev][disabled]").length===13&&[...document.querySelectorAll("#pbody button")].some(b=>b.disabled&&/TBD/.test(b.textContent))&&[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled)&&/100💎/.test(document.querySelector("[data-gacha]").textContent)&&/900💎/.test(document.querySelector("[data-gacha]").textContent)');
+ await ev('document.querySelector("[data-main-tab=store]").click();true');
+ await check('shop: 14 menus with images (M-01 default), 13 dev buttons locked/unaffordable at start; diamond items payment stub; gacha 100/900 disabled with 0 diamonds (137)','document.querySelectorAll("[data-menu]").length===14&&document.querySelectorAll("[data-menu] img").length===14&&document.querySelectorAll("#menuList [data-act=dev][disabled]").length===13&&[...document.querySelectorAll("#menuList button")].some(b=>b.disabled&&/TBD/.test(b.textContent))&&[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled)&&/100💎/.test(document.querySelector("[data-gacha]").textContent)&&/900💎/.test(document.querySelector("[data-gacha]").textContent)');
  await ev('__game.state.dia=1000;__game.state.items.capsule=1;__game.refresh();document.querySelector("[data-act=gacha][data-n=\'1\']:not([data-ticket])").click();true');
  await check('red-team #1: gacha odds UNSET → all 3 pull buttons disabled "Odds TBD" even with diamonds and a ticket, nothing spent','[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled&&/Odds TBD/.test(b.textContent))&&__game.state.dia===1000&&__game.state.items.capsule===1&&__game.state.shibas.length===1');
  await ev('__game.state.dia=0;__game.state.items.capsule=0;__game.open("care",__game.state.shibas[0].id);true');
  await check('red-team #1: personality shown as "Odds TBD" (not drawn)','__game.state.shibas[0].personality===null&&/Personality: Odds TBD/.test(document.getElementById("pbody").textContent)');
- await ev('document.querySelector("[data-nav=shop]").click();true');
+ await ev('document.querySelector("[data-main-tab=store]").click();true');
  await check('accessory shop: 4 bandana types, 9 colour cells from the sheet (CSS area), special = UNSET slot (140)','document.querySelectorAll("[data-act=accType]").length===4&&document.querySelectorAll("[data-accitem] .band").length===9&&getComputedStyle(document.querySelector("[data-accitem] .band")).backgroundImage.includes("bandana-triangle-sheet.webp")&&/300💎/.test(document.querySelector("[data-accshop]").textContent)');
  await ev('__game.state.coins=5000;__game.refresh();document.querySelector("[data-act=accType][data-type=loop]").click();document.querySelector("[data-act=buyAcc][data-item=bandana-loop-cell9]").click();true');
  await check('buy a loop bandana for 5,000 멍코인 → bag 1','__game.state.accInv["bandana-loop-cell9"]===1&&__game.state.coins===0&&/1/.test(document.querySelector("[data-accitem=bandana-loop-cell9]").textContent)');
  await ev('__game.open("care",__game.state.shibas[0].id);document.querySelector("[data-act=equip][data-item=bandana-loop-cell9]").click();true');
  await check('starter wears it; the starter bandana goes back to the bag (139-6·140-1)','__game.state.shibas[0].acc==="bandana-loop-cell9"&&__game.state.accInv["bandana-triangle-cell1"]===1&&!!document.querySelector("[data-acc] [data-band=bandana-loop-cell9]")');
- await ev('document.querySelector("[data-nav=shop]").click();true');
+ await ev('document.querySelector("[data-main-tab=store]").click();true');
  await ev('__game.state.cafe.level=2;__game.state.coins=8500;__game.refresh();document.querySelector("[data-act=dev][data-id=M-02]").click();true');
  await check('developing M-02 at Lv2 costs 8,500 멍코인 and shows 30 min in progress (136)','__game.state.menuDev?.id==="M-02"&&!__game.state.menus.includes("M-02")&&__game.state.coins===0&&!!document.querySelector("[data-dev=M-02]")&&document.querySelector("[data-act=dev][data-id=M-05]")?.disabled');
  await ev('__game.state.dia=30;__game.refresh();document.querySelector("[data-act=skip][data-type=menu]").click();true');
  await check('finish now: 30 diamonds, M-02 developed (135-2)','__game.state.menus.includes("M-02")&&__game.state.dia===0&&!__game.state.menuDev');
  // language switch in settings applies at once
  await ev('document.querySelector("[data-nav=settings]").click();document.querySelector("[data-lang=ko]").click();true');
- await check('settings → 한국어 switches nav text','document.querySelector("[data-nav=walk]").textContent==="산책"&&document.getElementById("ptitle").textContent==="설정"');
- await ev('__game.close();true');
+ await check('settings → 한국어 switches nav text','document.querySelector(".gear").getAttribute("aria-label")==="설정"&&document.getElementById("ptitle").textContent==="설정"');
+ await ev('__game.close();document.querySelector("[data-main-tab=menu]").click();true');
  await check('main menu has all 14 configured icons and basic menu','document.querySelectorAll("[data-main-menu]").length===14&&/기본 메뉴/.test(document.querySelector("[data-main-menu=M-01]").textContent)');
  await ev('__game.state.cafe.level=5;__game.state.coins=12000;__game.refresh();document.querySelector("#menuList [data-act=dev][data-id=M-03]").click();true');
- await check('main menu development charges configured cost and renders rounded diamond skip','__game.state.coins===0&&__game.state.menuDev.id==="M-03"&&/다이아 즉시 완료 120/.test(document.querySelector("[data-main-menu=M-03]").textContent)');
+ await check('main menu development charges configured cost and renders rounded diamond skip','__game.state.coins===0&&__game.state.menuDev.id==="M-03"&&/💎 즉시 완료 120/.test(document.querySelector("[data-main-menu=M-03]").textContent)');
  await ev('__game.state.dia=120;__game.refresh();document.querySelector("#menuList [data-act=skip]").click();true');
  await check('main menu instant finish hooks simulation','__game.state.dia===0&&__game.state.menus.includes("M-03")&&!__game.state.menuDev');
  await ev('document.querySelector("[data-main-tab=furniture]").click();true');
- await check('other main tabs show 준비 중','document.getElementById("menuList").textContent==="준비 중"');
+ await check('furniture tab shows four approved icons','document.querySelectorAll(".furniture-icon").length===4');
  await ev('document.querySelector("[data-main-tab=menu]").click();true');
+ await check('v3: no bottom nav; basic menu has no development line; gear is present','!document.getElementById("nav")&&!/개발비|시간/.test(document.querySelector("[data-main-menu=M-01]").textContent)&&!!document.querySelector(".gear svg")');
+ await ev('__game.state.cafe.level=9;__game.state.coins=8500;__game.refresh();true');
+ await check('v3: configured cost and disabled insufficient-coins button','document.querySelector("#menuList [data-id=M-04]").disabled&&/개발 15,000/.test(document.querySelector("[data-main-menu=M-04]").textContent)');
+ await ev('const list=document.getElementById("menuList");list.scrollTop=list.scrollHeight;true');
+ await check('v3: last menu card fully visible after scrolling','(()=>{const list=document.getElementById("menuList").getBoundingClientRect(),last=document.querySelector("[data-main-menu=P-06]").getBoundingClientRect();return last.top>=list.top&&last.bottom<=list.bottom&&list.bottom<=innerHeight;})()');
  // persisted across reload, offline report path
  await reload();await ev('__game.step(.2);true');
  await check('save kept after reload (language, shiba)','__game.state.settings.language==="ko"&&__game.state.shibas.length>=1&&__game.state.shibas[0].breed==="kuro"&&__game.state.started');

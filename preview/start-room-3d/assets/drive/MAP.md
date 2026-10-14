@@ -121,3 +121,29 @@ drawn, edited, cropped or recoloured. Where the UI shows only part of an image i
 V2 replaces the v1 scene: no background illustration or catalog characters. Only tile PNGs are drawn on the map. Furniture and people are labeled code placeholders; registry paths are null. Menu icons remain untouched.
 
 Drive display names: tatami-approved.png = 타일_바닥_다다미_칸.png; tile-floor-tatami.png = 타일_바닥_다다미.png. Floor-side images are 128×80 (opaque halves y32–80); wall images are 128×176 (opaque halves y0–144). Wall origin is tile origin minus 112 source pixels; floor sides use tile origin unchanged.
+
+## Main café v3 approved assets (unmodified, full SHA256)
+
+| File | Drive name / source | SHA256 |
+|---|---|---|
+| `tiles/tile-floor-locked.png` | `타일_바닥_잠금` (`이미지/interior/tile-floor-locked.png`) | `cd452af5b8049e73245fb9989a794b78c549471838e45a039ebdc407adc0bb02` |
+| `tiles/marker-expand-land.png` | `표시_땅넓히기` (`이미지/interior/marker-expand-land.png`) | `3663d641bb51eee536246f24dea209a818d2f0fb3882af50e7a765eb6483bfd9` |
+| `furniture/furn-tea-table.png` | `가구_찻상` (`이미지/interior/furn-tea-table.png`) | `3985821430c24f01ddeb710474e347adecd91e4fb02988ca98d1a0f40927aee3` |
+| `furniture/furn-zabuton-a.png` | `가구_방석_A` (`이미지/interior/furn-zabuton-a.png`) | `6eb4e4ea4189763224e081baeb5564c0ccebb1054694278effbc4b0dcdb024d1` |
+| `furniture/furn-counter.png` | `가구_카운터` (`이미지/interior/furn-counter.png`) | `8aaa71989a231036e5eded1d7bc16f6664da5f42a52f7e87679554eeb50d97a3` |
+| `furniture/furn-stairs.png` | `가구_계단` (`이미지/interior/furn-stairs.png`) | `00b94e37d9ea03fa9482a597d324e1a26b3db4864af22773b77f4cd9ba4b1b94` |
+| `tiles/bg-outside-grass.png` | `배경_바깥_잔디` (`이미지/interior/bg-outside-grass.png`) | `29df29aaa9ef1e62db8c7468167d9d78cfade095c3367c9116199c237f7214f5` |
+| `tiles/tile-wall-end-left.png` | `타일_벽_끝_왼쪽` (`이미지/interior/tile-wall-end-left.png`) | `aedbf582c49eaa3937d54a9b44125a1fe3450c073d613183e59cce7f3b7b0229` |
+| `tiles/tile-wall-end-right.png` | `타일_벽_끝_오른쪽` (`이미지/interior/tile-wall-end-right.png`) | `d0483515f6ef5bef95cd772a882d5b95b303869504dd97f365609096575ef3ad` |
+| `ui/ui-card-default.png` | `UI_카드_기본` (`이미지/interior/ui-card-default.png`) | `4cd3b55b9e0b98a6a10d2a3af99c7bbde9123ed5f92d552d878606d1e228c1e5` |
+| `ui/ui-card-locked.png` | `UI_카드_잠금` (`이미지/interior/ui-card-locked.png`) | `570c6bce07479048d7ebbfa9b5762db9530026048c868b7e6f53d656555a0486` |
+| `ui/ui-lock.png` | `UI_자물쇠` (`이미지/interior/ui-lock.png`) | `b073a29ea1e50f8b71bff31288529ba20a43d58de1c1f96d1470ef0dfed955e4` |
+| `ui/ui-tab-selected.png` | `UI_탭_선택` (`이미지/interior/ui-tab-selected.png`) | `38ffb08fe13f9c3a2349856d2dea55b103ed1f85ba5e8d6914a521b23db18bf2` |
+| `ui/ui-tab-default.png` | `UI_탭_기본` (`이미지/interior/ui-tab-default.png`) | `a135e64cd4ca590711c153078a9978de7a2c7cf04ce9e91df0dab8cd74fd730c` |
+| `ui/ui-btn-develop-green.png` | `개발` (`이미지/interior/ui-btn-develop-green.png`) | `34b085ee28c390259de42579b130ab2552f9d4667de4f046288c6dfc7cbd066d` |
+| `ui/ui-btn-diamond-purple.png` | `다이아 즉시 완료` (`이미지/interior/ui-btn-diamond-purple.png`) | `cab7ecf0f0b7d613b764ae10cb3ccb9ea2d51999327e3cfa13f6e9777a8f196a` |
+| `ui/ui-btn-levelup-yellow.png` | `레벨업` (`이미지/interior/ui-btn-levelup-yellow.png`) | `d7dcf4d6de508d33fa54cc4ee2f7d64a0d518654f717877f66134275833d49da` |
+| `ui/ui-icon-tea-table.png` | `UI_아이콘_찻상` (`이미지/interior/ui-icon-tea-table.png`) | `da3f628e3161727e31fde5a0ca35c690cd0b8418f69286150ba9fb21df5b6732` |
+| `ui/ui-icon-zabuton.png` | `UI_아이콘_방석` (`이미지/interior/ui-icon-zabuton.png`) | `774aeae946cd6186ded16f9f94afcd5f43388a83bff921cdc19b41cf0e4852e5` |
+| `ui/ui-icon-counter.png` | `UI_아이콘_카운터` (`이미지/interior/ui-icon-counter.png`) | `e15a25b2e64066320a68e106a91f5621264c523e30a5428c0c3f931920c8edb4` |
+| `ui/ui-icon-stairs.png` | `UI_아이콘_계단` (`이미지/interior/ui-icon-stairs.png`) | `9abc6439567a6f74eda99b23f0df411029d27b79d0233efe51e89b8ab7d0e4b7` |

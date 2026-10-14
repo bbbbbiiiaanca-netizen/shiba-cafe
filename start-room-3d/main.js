@@ -53,15 +53,16 @@ let menuSig='',mainTab='menu';
 function renderMainMenu(){
  $('paws').textContent=fmt(s.shibas.reduce((n,sh)=>n+(sh.paws||0),0));
  const now=clock.now(),sig=JSON.stringify([mainTab,s.cafe.level,s.coins,s.dia,s.menus,s.menuDev,Math.ceil((s.menuDev?.until-now)/1000)]);
- if(sig===menuSig)return;menuSig=sig;
- if(mainTab!=='menu'){$('menuList').innerHTML='<div class="preparing">준비 중</div>';return;}
+ if(mainTab==='menu'&&sig===menuSig)return;menuSig=sig;
+ $('menuList').classList.toggle('tab-list',mainTab!=='menu');
+ if(mainTab!=='menu'){const content=mainTab==='shiba'?P.shibas().html:mainTab==='store'?P.shop().html:`<div class="note">가구 배치 · 가격 미정</div>${[['tea-table','찻상'],['zabuton','방석'],['counter','카운터'],['stairs','계단']].map(([id,name])=>`<div class="card li"><img class="furniture-icon" src="assets/drive/ui/ui-icon-${id}.png" alt=""><strong>${name}</strong></div>`).join('')}`;$('menuList').innerHTML=content;return;}
  const items=[CFG.menu.coffee,...CFG.menu.items].sort((a,b)=>a.id.localeCompare(b.id));
  const value=n=>n==null?'미정':fmt(n);
  $('menuList').innerHTML=items.map(m=>{const basic=m.id===CFG.menu.coffee.id,locked=!basic&&s.cafe.level<m.unlockLevel,dev=s.menuDev?.id===m.id,owned=s.menus.includes(m.id);
- return `<article class="menu-card" data-main-menu="${m.id}"><img src="assets/drive/${m.img}" alt="${L('menu.'+m.id)}"><div class="menu-info"><small>${m.id}</small><strong>${L('menu.'+m.id)}</strong><span>가격 ${value(m.price)} 멍코인</span><span>개발비 ${value(m.devCost)} · 시간 ${m.devSec==null?'미정':value(m.devSec/60)+'분'}</span>${dev?`<span>개발 중 · ${tfmt((s.menuDev.until-now)/1000)}</span>`:''}</div><div class="menu-action">${basic?'<b>기본 메뉴</b>':locked?`<b>Lv ${m.unlockLevel} 해금</b>`:dev?`<button data-act="skip" data-type="menu" data-id="" ${S.skipCheck(s,{type:'menu'},now)?'disabled':''}>다이아 즉시 완료 ${S.skipCost(S.skipLeftSec(s,{type:'menu'},now))}</button>`:owned?'<b>개발 완료</b>':`<button data-act="dev" data-id="${m.id}" ${S.menuCheck(s,m.id)?'disabled':''}>개발</button>`}</div></article>`;
+ return `<article class="menu-card ${locked?'locked':''}" data-main-menu="${m.id}"><img src="assets/drive/${m.img}" alt="${L('menu.'+m.id)}"><div class="menu-info"><small>${m.id}</small><strong>${L('menu.'+m.id)}</strong><span>가격 ${value(m.price)} 멍코인</span>${basic?'':``}${dev?`<span>개발 중 · ${tfmt((s.menuDev.until-now)/1000)}</span>`:''}</div><div class="menu-action">${basic?'<b>기본 메뉴</b>':locked?`<img class="lock" src="assets/drive/ui/ui-lock.png" alt="잠금"><b>Lv ${m.unlockLevel} 해금</b>`:dev?`<button class="instant" data-act="skip" data-type="menu" data-id="" ${S.skipCheck(s,{type:'menu'},now)?'disabled':''}>💎 즉시 완료 ${S.skipCost(S.skipLeftSec(s,{type:'menu'},now))}</button>`:owned?'<b>개발 완료</b>':`<button data-act="dev" data-id="${m.id}" ${S.menuCheck(s,m.id)?'disabled':''}>개발 ${value(m.devCost)}</button>`}</div></article>`;
  }).join('');
 }
-document.querySelectorAll('[data-main-tab]').forEach(b=>b.addEventListener('click',()=>{mainTab=b.dataset.mainTab;document.querySelectorAll('[data-main-tab]').forEach(x=>x.classList.toggle('active',x===b));renderMainMenu();}));
+document.querySelectorAll('[data-main-tab]').forEach(b=>b.addEventListener('click',()=>{close();mainTab=b.dataset.mainTab;menuSig='';document.querySelectorAll('[data-main-tab]').forEach(x=>x.classList.toggle('active',x===b));close();renderMainMenu();}));
 function popAt(el,text,orderImg){if(!el)return;const sc=$('scene').getBoundingClientRect(),b=el.getBoundingClientRect();const p=document.createElement('div');p.className='pop';p.textContent=text;
  if(orderImg){const i=document.createElement('img');i.src='assets/drive/'+orderImg;p.prepend(i);} // 갱신 134: the ordered menu's picture
  p.style.left=(b.left-sc.left+4)+'px';p.style.top=(b.bottom-sc.top-30)+'px';$('scene').appendChild(p);setTimeout(()=>p.remove(),1500);}
@@ -73,11 +74,11 @@ function handleEvents(){for(const e of w.events.splice(0)){
 
 // ───────── panels ─────────
 const P={};
-P.shibas=()=>{const n=S.placedShibas(s).length;let h=`<div class="card"><div class="note">${L('shibas.slots',{n,max:S.slotsOf(s),own:s.shibas.length,ownMax:CFG.cafe.maxOwned})}</div>`;
+P.shibas=()=>{const n=S.placedShibas(s).length;let h=`<button data-open="walk">${L('nav.walk')}</button><div class="card"><div class="note">${L('shibas.slots',{n,max:S.slotsOf(s),own:s.shibas.length,ownMax:CFG.cafe.maxOwned})}</div>`;
  for(const sh of s.shibas){const st=S.statusOf(s,sh);h+=`<div class="li"><div class="pt" data-act="care" data-id="${sh.id}">${img(shibaImg(sh))}</div><div class="grow" data-act="care" data-id="${sh.id}"><div class="nm">${nameOf(sh)} · ${L('app.lv',{lv:sh.level})}</div><div class="sub">${statusText(sh,st)}</div></div>
   <button class="${sh.placed?'sec':''}" data-act="place" data-id="${sh.id}" data-on="${sh.placed?0:1}" ${!sh.placed&&S.placeCheck(s,sh.id)?'disabled':''}>${sh.placed?L('care.unplace'):L('care.place')}</button></div>`;}
  h+=`</div><div class="card"><div class="li"><div class="pt">${img(IMG.dongu)}</div><div class="grow"><div class="nm">${L('char.dongu.name')}</div><div class="sub">${L('shibas.dongu')}</div></div>
-  <button class="${s.dongu.placed?'sec':''}" data-act="dongu">${s.dongu.placed?L('care.unplace'):L('care.place')}</button></div></div>`;return {title:L('shibas.title'),html:h};};
+  <button class="${s.dongu.placed?'sec':''}" data-act="dongu">${s.dongu.placed?L('care.unplace'):L('care.place')}</button></div></div>`;return {title:L('shibas.title'),html:`<button data-nav="walk">${L('nav.walk')}</button>`+h};};
 function statusText(sh,st){if(st==='hospital')return L('st.hospital',{t:tfmt((sh.hospitalUntil-clock.now())/1000)})+' · '+L('inj.'+sh.hospitalKind);if(st==='injured')return L('st.injured')+' · '+L('inj.'+sh.injury);
  if(st==='ok'&&!sh.placed)return L('st.home');return L('st.'+st);}
 // 갱신 140: 반다나 = 3×3 시트의 한 칸을 CSS로만 보여 줌 (그림은 그대로)
@@ -189,7 +190,7 @@ let panelSig='';
 function renderPanel(force){if(!ui.panel){$('panel').hidden=true;return;}const v=P[ui.panel](ui.arg);const sig=v.title+v.html;if(!force&&sig===panelSig)return;panelSig=sig;
  const sc=$('pbody').scrollTop;$('ptitle').textContent=v.title;$('pbody').innerHTML=v.html;$('pbody').scrollTop=sc;$('panel').hidden=false;}
 function open(name,arg=null){ui.panel=name;ui.arg=arg;ui.nav=['shibas','care'].includes(name)?'shibas':name==='income'?ui.nav:name;renderPanel(true);navState();}
-function close(){ui.panel=null;ui.nav='cafe';renderPanel();navState();}
+function close(){ui.panel=null;$('pbody').innerHTML='';panelSig='';ui.nav='cafe';renderPanel();navState();}
 function navState(){document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('on',b.dataset.nav===ui.nav));}
 
 // ───────── modals ─────────
@@ -252,7 +253,7 @@ const act={
  rescueBath:()=>{if(!S.bathRescue(s,s.rescues[0].rid))toast(L('toast.coins'));},
  rescueBring:()=>{S.bringRescue(s,s.rescues[0].rid,r,clock.now());},rescueDecline:()=>{S.declineRescue(s,s.rescues[0].rid);},
 };
-document.addEventListener('click',e=>{const nb=e.target.closest('[data-nav]');if(nb){const n=nb.dataset.nav;if(n==='cafe')close();else open(n);refresh();return;}
+document.addEventListener('click',e=>{const opener=e.target.closest('[data-open]');if(opener){open(opener.dataset.open);refresh();return;}const nb=e.target.closest('[data-nav]');if(nb){const n=nb.dataset.nav;if(n==='cafe')close();else open(n);refresh();return;}
  const el=e.target.closest('[data-act]');if(!el||el.disabled)return;const f=act[el.dataset.act];if(f){f(el.dataset);refresh();}});
 // drag a roaming shiba onto a guest (갱신 105)
 let drag=null;
