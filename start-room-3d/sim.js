@@ -16,7 +16,11 @@ const drawPersonality=r=>personalityOddsSet()?pickWeighted(r,CFG.personalities,C
 const H=3600e3;
 
 // §15: actual coin flows only; balances at creation/migration are not income.
-export const ledgerCategories={sales:['메뉴 판매','income'],meeting:['시바 만남 추가 수입','income'],offline:['오프라인 수입','income'],alba:['알바비','expense'],hospital:['병원비','expense'],menu:['메뉴 개발비','expense'],accessory:['반다나 구입비','expense']};
+// §17-2 order: income 메뉴 판매 · 시바 만남 추가 수입 · 오프라인 수입 (café payments settled while the game was closed/hidden) · 기타 수입 (walk rewards, any other non-sales coins);
+// expense 알바비 · 병원비 · 메뉴 개발비 · 액세서리 구입 (all accessories) · 가구 구입 (always shown, no purchase exists yet).
+// 가게 업그레이드 is not in the §17-2 list: kept for when upgrade prices exist, shown only when non-zero (4th element = hide at 0).
+export const ledgerCategories={sales:['메뉴 판매','income'],meeting:['시바 만남 추가 수입','income'],offline:['오프라인 수입','income'],other:['기타 수입','income'],
+ alba:['알바비','expense'],hospital:['병원비','expense'],menu:['메뉴 개발비','expense'],accessory:['액세서리 구입','expense'],furniture:['가구 구입','expense'],upgrade:['가게 업그레이드','expense',true]};
 export const ledgerDay=now=>Math.floor((now+CFG.ledger.dayOffsetMs)/CFG.ledger.periodMs);
 export function settleLedger(s,now){
  const today=ledgerDay(now);s.ledger??={days:{},now};s.ledger.now=Math.max(now,s.ledger.now??now);const latest=ledgerDay(s.ledger.now);
@@ -29,7 +33,7 @@ export function recordLedger(s,category,amount,now=s.ledger?.now??s.lastSeen){
 }
 export function ledgerStatement(s,now,offset=0){
  const day=settleLedger(s,now)+(offset===-1?-1:0),row=s.ledger.days[day]||{};
- const lines=Object.entries(ledgerCategories).map(([id,[label,kind]])=>({id,label,kind,amount:row[id]||0}));
+ const lines=Object.entries(ledgerCategories).map(([id,[label,kind,hideZero]])=>({id,label,kind,amount:row[id]||0,hideZero})).filter(x=>!x.hideZero||x.amount).map(({hideZero,...x})=>x);
  return {day,lines,net:lines.reduce((n,x)=>n+(x.kind==='expense'?-x.amount:x.amount),0)};
 }
 export function recordPayment(s,pay,now,{offline=false}={}){
@@ -47,7 +51,7 @@ export function newState(now=Date.now()){
   ledger:{days:{},now},placement:defaultPlacement(),space:restoreSpace(null),
   items:{heartReset:0,capsule:0,potionBig:0,potionSmall:0,cooldownTicket:0},
   cafe:{level:1,exp:0,rep:CFG.rep.start,stains:0,stainAcc:0,badStainAcc:0,driftAcc:0,closed:false,closedAt:null,managerUntil:0,managerCleanAcc:0,boostUntil:0},
-  shibas:[],nextId:1,dongu:{placed:true},walk:null,rescues:[],walkResults:[],menus:[],menuDev:null,accInv:{},lastAbandonAt:null,
+  upgrades:Object.fromEntries(Object.keys(CFG.upgrades).map(k=>[k,0])),shibas:[],nextId:1,dongu:{placed:true},walk:null,rescues:[],walkResults:[],menus:[],menuDev:null,accInv:{},lastAbandonAt:null,
   stats:{served:0,satisfied:0,normal:0,disappointed:0,angry:0,lost:0},
   settings:{language:null,sound:true,music:true},lastSeen:now};
 }
@@ -104,9 +108,9 @@ export const cafeNeed=lv=>lv>=CFG.cafe.maxLevel?null:CFG.cafe.expToNext[lv-1];
 export function addCafeExp(s,n){if(!(n>0))return 0;const C=s.cafe;let up=0;if(C.level>=CFG.cafe.maxLevel)return 0;C.exp+=n;
  for(let need=cafeNeed(C.level);need!=null&&C.exp>=need;need=cafeNeed(C.level)){C.exp-=need;C.level++;up++;}if(C.level>=CFG.cafe.maxLevel)C.exp=0;return up;}
 export const slotsOf=s=>Math.min(CFG.cafe.maxPlaced,pressureAt(s.cafe.level).slots);
-export const capOf=s=>pressureAt(s.cafe.level).cap;
+export const capOf=s=>pressureAt(s.cafe.level).cap+upgradeAdd(s,'seat'); // 좌석 추가 upgrade: +effect guests per level
 export function arrivalMul(rep){for(const [at,m] of CFG.rep.arrivalMul)if(rep>=at)return m;return CFG.rep.arrivalMul.at(-1)[1];}
-export const arrivalInterval=s=>3600/(CFG.cafe.customersPerHourPerCap*capOf(s))*arrivalMul(s.cafe.rep);
+export const arrivalInterval=s=>3600/(CFG.cafe.customersPerHourPerCap*capOf(s))*arrivalMul(s.cafe.rep)*upgradeMul(s,'interval');
 export function satisfiedGain(rep,base=CFG.rep.satisfied){for(const [at,m] of CFG.rep.damp)if(rep>=at)return base*m;return base;}
 // offline: if a drop reaches the floor the café closes for the day (갱신 126-1)
 export function addRep(s,d,ctx={}){const C=s.cafe;C.rep=clamp(C.rep+d,CFG.rep.min,CFG.rep.max);
@@ -211,7 +215,7 @@ export function tickWalk(s,now=Date.now(),r=Math.random){const W=s.walk;if(!W)re
    // 갱신 82·83 independent rolls
    if(r()<E.snake){sh.status='injured';sh.injury='snake';res.events.push('snake');}
    if(r()<E.light){if(sh.status!=='injured'){sh.status='injured';sh.injury='light';}res.events.push('light');}
-   if(r()<E.extra){const kind=extraRewardKind();if(kind==='heart'){s.hearts+=E.extraHeart;res.events.push('extraHeart');}else if(kind==='coins'){addCoins(s,E.extraCoins);res.paidCoins=E.extraCoins;res.events.push('extraCoins');}}
+   if(r()<E.extra){const kind=extraRewardKind();if(kind==='heart'){s.hearts+=E.extraHeart;res.events.push('extraHeart');}else if(kind==='coins'){addCoins(s,E.extraCoins);recordLedger(s,'other',E.extraCoins,now);res.paidCoins=E.extraCoins;res.events.push('extraCoins');}}
    if(r()<E.capsule){s.items.capsule++;res.events.push('capsule');}
    if(W.rescueAt!=null)res.events.push('rescue');}
   s.walkResults.push(res);out.settled=res;}
@@ -270,7 +274,17 @@ export function payFor(s,met,order,now=Date.now()){
  const aggregate=CFG.income.levelAggregation,item=itemIncomeMul(s,now);
  const effects=met.map(id=>byId(s,id)).filter(Boolean).map(o=>levelEffect(o.level));
  const lvMul=typeof aggregate==='function'&&effects.every(Number.isFinite)?aggregate(effects):null;
- const pending=!Number.isFinite(lvMul)||!Number.isFinite(order.price)||!Number.isFinite(item);return {base:order.price,lvMul:pending?null:lvMul,item,total:pending?null:order.price*lvMul*item,pending};}
+ const base=order.price*upgradeMul(s,'price'); // 메뉴 판매가 인상 upgrade (effect UNSET → ×1)
+ const pending=!Number.isFinite(lvMul)||!Number.isFinite(base)||!Number.isFinite(item);return {base,lvMul:pending?null:lvMul,item,total:pending?null:base*lvMul*item,pending};}
+
+// ───────────────────────── 가게 관리 업그레이드 (§16 answer 2026-10-14) ─────────────────────────
+// Levels live in s.upgrades. A null price disables buying; a null effect has no effect (hooks below return the neutral value).
+export const upgradeLevel=(s,kind)=>s.upgrades?.[kind]||0;
+const upgradeAdd=(s,kind)=>{const e=CFG.upgrades[kind]?.effect;return Number.isFinite(e)?e*upgradeLevel(s,kind):0;}; // seat · queue: +effect per level
+const upgradeMul=(s,kind)=>{const e=CFG.upgrades[kind]?.effect;return Number.isFinite(e)?e**upgradeLevel(s,kind):1;}; // interval · price: ×effect per level (form pending confirm)
+export function upgradeCheck(s,kind){const U=CFG.upgrades[kind];if(!U)return 'kind';if(!Number.isFinite(U.price))return 'unset';
+ if(Number.isFinite(U.maxLevel)&&upgradeLevel(s,kind)>=U.maxLevel)return 'max';if(isUnset(s.coins)||s.coins<U.price)return 'coins';return null;}
+export function buyUpgrade(s,kind,now=Date.now()){if(upgradeCheck(s,kind))return false;const p=CFG.upgrades[kind].price;s.coins-=p;recordLedger(s,'upgrade',p,now);s.upgrades[kind]=upgradeLevel(s,kind)+1;return true;}
 
 // ───────────────────────── 얼룩 (갱신 101-3·117-2) ─────────────────────────
 export function cleanStain(s){if(s.cafe.stains<=0)return false;s.cafe.stains--;addCafeExp(s,CFG.cafeExp.stainClean);return true;}
@@ -302,7 +316,10 @@ function spawn(s,w,now){const {zone,slots,entrance}=layout(s,w);
  if(w.queue.length<queueLimit(s,w)){c.phase='queue';c.t=CFG.navigation.queueWaitSec;w.queue.push(c);w.events.push({type:'queue',id:c.id});}
  else{s.stats.lost++;w.events.push({type:'lost'});}} // overflow guests turn back
 // starting value 똑또기 2026-10-14: queue only on the grass cells outside the entrance (capped by 갱신 66 queueMax)
-const queueLimit=(s,w)=>Math.min(CFG.cafe.queueMax??Infinity,layout(s,w).zone.queueCells?.length??0);
+// 대기 줄 연장 upgrade: +effect cells per level, continuing the map's queue line in the same direction (needs ≥1 map cell; no entrance → no queue)
+export function queueCells(s,w){const base=layout(s,w).zone.queueCells||[];const extra=upgradeAdd(s,'queue');if(!base.length||!extra)return base;
+ const a=base.at(-1),b=base.at(-2)||layout(s,w).entrance,d=[a[0]-b[0],a[1]-b[1]],out=[...base];for(let n=1;n<=extra;n++)out.push([a[0]+d[0]*n,a[1]+d[1]*n]);return out;}
+const queueLimit=(s,w)=>Math.min(CFG.cafe.queueMax??Infinity,queueCells(s,w).length);
 function approach(s,w,sh,c){const {zone,slots}=layout(s,w);const targets=[[1,0],[-1,0],[0,1],[0,-1]].map(([i,j])=>[c.cell[0]+i,c.cell[1]+j]);const target=targets.find(p=>!Object.values(w.sh).some(other=>other!==sh&&(other.target||other.cell)?.join(',')===p.join(','))&&pathfind(zone,slots,sh.cell,p));if(!target)return false;sh.state='approachGuest';sh.phase='approach';sh.cust=c.id;c.with=sh.id;routeTo(s,w,sh,target);return true;}
 function startMeeting(s,w,sh,c,ctx){const o=byId(s,sh.id);
  // 갱신 100: the shiba shows one learned trick — a random learned one, independent of the request
@@ -317,11 +334,11 @@ function managerCanFulfil(s,c){const q=c.request;if(!q)return false;const workin
 function leave(s,w,c,ctx){const V=CFG.visit,E=CFG.cafeExp;let outcome,repD=0,exp=0,byManager=false;
  if(c.fulfilled){outcome='satisfied';repD=satisfiedGain(s.cafe.rep,CFG.requests.metRep);exp=E.custSatisfied;} // price unchanged: the order was fixed at sit
  else if(managerActive(s,ctx.now)&&managerCanFulfil(s,c)&&w.r()<CFG.requests.managerChance){outcome='satisfied';byManager=true;repD=satisfiedGain(s.cafe.rep,CFG.rep.satisfied*CFG.requests.managerRepMul);exp=0;}
- else if(!isUnset(c.score)&&c.score<V.scoreDisappointedBelow){outcome='disappointed';repD=CFG.rep.disappointed;exp=E.custDisappointed;}
+ else if(!isUnset(c.score)&&c.score<V.scoreDisappointedBelow){outcome='disappointed';repD=!c.met.length&&s.cafe.level<CFG.rep.unmetFreeBelowLevel?0:CFG.rep.disappointed;exp=E.custDisappointed;} // starting value 2026-10-14: unmet guests cost no reputation below café Lv5
  else{outcome='normal';repD=CFG.rep.normal;exp=E.custNormal;}
  const order=c.order||chooseOrder(s,outcome==='satisfied',w.r);const pay=payFor(s,c.met,order,ctx.now);recordPayment(s,pay,ctx.now,ctx);
  s.stats.served++;s.stats[outcome]++;addCafeExp(s,exp);w.lastPay={...pay,order:order.id,orderImg:order.img,outcome,met:[...c.met]};
- w.events.push({type:'leave',id:c.id,outcome,coins:pay.total,order:order.id,orderImg:order.img,byManager,seat:c.seat,cell:c.cell&&[...c.cell]});
+ w.events.push({type:'leave',id:c.id,outcome,coins:pay.total,order:order.id,orderImg:order.img,byManager,requestMet:outcome==='satisfied',metShiba:c.met.length>0,seat:c.seat,cell:c.cell&&[...c.cell]});
  w.recent.push({id:c.id,order:order.id,coins:pay.total,pending:pay.pending});w.recent=w.recent.slice(-3);c.phase='exiting';routeTo(s,w,c,layout(s,w).entrance);if(repD)addRep(s,repD,{...ctx,world:w});}
 // one step of everything that runs with time (online, or fast-forwarded while the app was closed)
 export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};settleLedger(s,now);syncRoutes(s,w);w.t+=dt;const C=s.cafe;
@@ -341,7 +358,7 @@ export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};settleLedger(s,now);syn
  C.driftAcc+=dt;while(C.driftAcc>=3600){C.driftAcc-=3600;const d=CFG.rep.driftTo-C.rep;if(d)C.rep+=Math.sign(d)*Math.min(Math.abs(d),CFG.rep.driftPerHour);}
  // customers
  w.spawnT-=dt;while(w.spawnT<=0){w.spawnT+=arrivalInterval(s);spawn(s,w,now);}
- for(const c of [...w.queue]){c.t-=dt;if(c.t<0){w.queue=w.queue.filter(x=>x!==c);s.stats.angry++;w.events.push({type:'angry',id:c.id});addRep(s,CFG.navigation.queueReputation,{...ctx,world:w});if(C.closed)return w;}} // answer 똑또기 2026-10-14: timeout leaves, reputation unchanged
+ for(const c of [...w.queue]){c.t-=dt;if(c.t<0){w.queue=w.queue.filter(x=>x!==c);s.stats.angry++;w.events.push({type:'angry',id:c.id,cell:c.cell&&[...c.cell]});addRep(s,CFG.navigation.queueReputation,{...ctx,world:w});if(C.closed)return w;}} // answer 똑또기 2026-10-14: timeout leaves, reputation unchanged
  for(const c of [...w.custs]){
   if(c.phase==='exiting'){if(moveCell(c,dt,CFG.navigation.cellStepSec)){w.custs=w.custs.filter(x=>x!==c);w.events.push({type:'exit',id:c.id});}continue;}
   if(c.phase==='entering'){if(moveCell(c,dt,CFG.navigation.cellStepSec)){c.phase='seated';c.activity='eat';c.eatRemaining=behaviour(w).eatSec;c.order=chooseOrder(s,false,w.r);linkTable(s,w,c);w.events.push({type:'seat',id:c.id},{type:'order',id:c.id,order:c.order.id,orderImg:c.order.img,cell:[...c.cell]},{type:'serve',id:c.id,order:c.order.id});}continue;}
@@ -350,7 +367,7 @@ export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};settleLedger(s,now);syn
   if(c.t<=0&&(c.activity==='play'||c.activity==='eat'&&Number.isFinite(c.eatRemaining)))continue;
   if(c.t<=0){if(c.with!=null&&w.sh[c.with])endMeeting(w,w.sh[c.with]);leave(s,w,c,ctx);if(C.closed)return w;}}
  while(w.queue.length){if(!seat(s,w,w.queue[0]))break;w.queue.shift();}
- // shibas: 갱신 70 손님 곁 7초 → 5초 돌아다님 → 다시 7초
+ // shibas: starting value 2026-10-14 (pending user confirm): 손님 곁 visit.meetSec 5초 → roamSec 3초 돌아다님 → 다시
  const work=new Set(s.shibas.filter(o=>canWork(s,o)).map(o=>o.id));
  for(const id of Object.keys(w.sh).map(Number))if(!work.has(id)){const sh=w.sh[id];if(sh.phase==='meet'||sh.phase==='approach')endMeeting(w,sh);delete w.sh[id];}
  for(const id of work)if(!w.sh[id])w.sh[id]={id,phase:'roam',state:'wander',facing:0,t:0,cust:null,cell:layout(s,w).entrance&&[...layout(s,w).entrance]};
@@ -373,7 +390,7 @@ export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};settleLedger(s,now);syn
   for(let i=0;i<zone.cols;i++)for(let j=0;j<zone.rows;j++){const len=pathfind(zone,slots,sh.cell,[i,j])?.length;if(len>=lo&&len<=hi)near.push({cell:[i,j],len});}
   const exact=near.filter(x=>x.len===n),list=exact.length?exact:near;if(list.length)routeTo(s,w,sh,pick(w.r,list).cell);else sh.state='wander';sh.t=0;
  }
- for(let n=0;n<w.queue.length;n++){const c=w.queue[n],cell=layout(s,w).zone.queueCells?.[n];if(cell){if(c.queueTarget?.join(',')!==cell.join(',')){c.queueTarget=[...cell];c.route=[];const direction=Math.sign(cell[1]-c.cell[1]);for(let j=c.cell[1]+direction;direction&&j!==cell[1]+direction;j+=direction)c.route.push([cell[0],j]);c.moveAcc=0;}moveCell(c,dt,CFG.navigation.cellStepSec);}}
+ const qc=queueCells(s,w);for(let n=0;n<w.queue.length;n++){const c=w.queue[n],cell=qc[n];if(cell){if(c.queueTarget?.join(',')!==cell.join(',')){c.queueTarget=[...cell];c.route=[];const direction=Math.sign(cell[1]-c.cell[1]);for(let j=c.cell[1]+direction;direction&&j!==cell[1]+direction;j+=direction)c.route.push([cell[0],j]);c.moveAcc=0;}moveCell(c,dt,CFG.navigation.cellStepSec);}}
 
  return w;}
 // 갱신 105: a roaming shiba (not with a guest) can be brought straight to a chosen guest → normal 7-second meeting
@@ -399,7 +416,7 @@ export function save(storage,s,now=Date.now()){settleLedger(s,now);s.lastSeen=no
 // v3 uses its own save key; v1/v2 saves (grades, old currencies) are left untouched and not migrated (spec v3 abolished their model).
 export function load(storage,now=Date.now(),r=Math.random){let s=null;try{s=JSON.parse(storage.getItem(CFG.saveKey));}catch{}
  if(!s||s.v!==CFG.saveVersion)return {state:newState(now),fresh:true,offline:null,reopened:null};
- const d=newState(now);s={...d,...s,items:{...d.items,...s.items},cafe:{...d.cafe,...s.cafe},stats:{...d.stats,...s.stats},settings:{...d.settings,...s.settings}};
+ const d=newState(now);s={...d,...s,items:{...d.items,...s.items},cafe:{...d.cafe,...s.cafe},upgrades:{...d.upgrades,...s.upgrades},stats:{...d.stats,...s.stats},settings:{...d.settings,...s.settings}};
  s.space=restoreSpace(s.space);s.placement=restorePlacement(s.placement,zonesForSpace(s.space)[0]);
  if(s.cafe.floor===2&&!s.space.floor2Unlocked)s.cafe.floor=1;
  s.menus=(s.menus||[]).filter(id=>menuItem(id));if(s.menuDev&&!menuItem(s.menuDev.id))s.menuDev=null;

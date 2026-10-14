@@ -32,7 +32,8 @@ export const CFG={
 
  // ── 재화 ──
  start:{coins:U,hearts:10,dia:0}, // coins: UNSET 시작 멍코인. hearts: 기본 소지 10 (1.4, 갱신 28). dia: 유료로만 (132-2) → 0
- hearts:{regenCap:10,regenEverySec:1800}, // 1.4 / 갱신 28·31: 30분당 1개, 10개까지 자연 회복; 보상 하트는 무제한 적립
+ hearts:{regenCap:5, // starting value 2026-10-14, pending user confirm: interior §17-1 '최대 5개(시작값)' = natural-regen cap and top-bar slot count. CONFLICT: spec v3 1.4 / 갱신 28·31 say 10 (SPEC-V3-NOTES '§17 questions')
+  regenEverySec:1800}, // 1.4 / 갱신 28·31: 30분당 1개; 보상 하트는 상한을 넘어 무제한 적립 (top bar: 5 full + '+N')
  heartReset:{fillTo:10}, // 1.4 / 갱신 32: 10개 미만일 때만 10개까지, 10개 이상이면 사용 불가(소모 없음)
 
  expansion:{rowCost:U}, // UNSET: interior §1 / spec v3 §1.3 land row cost
@@ -67,10 +68,20 @@ export const CFG={
   damp:[[90,.25],[70,.5]], // 갱신 106: 70 이상 만족 증가 절반, 90 이상 4분의 1
   driftPerHour:1,driftTo:50, // 갱신 106: 1시간마다 50 쪽으로 1점
   arrivalMul:[[70,.9],[30,1.0],[0,1.2]], // 갱신 87: ≥70 ×0.9, 30~69 ×1.0, <30 ×1.2 (간격 배율)
-  closureFloor:30}, // 갱신 126-1: 오프라인 중 평판 하한 30 → 임시휴무
+  closureFloor:30, // 갱신 126-1: 오프라인 중 평판 하한 30 → 임시휴무
+  unmetFreeBelowLevel:5}, // starting value 2026-10-14, pending user confirm: early game ('손님 4명 이하' phase = café Lv < 5) a guest who met no shiba costs no reputation
+
+ // ── 가게 관리 업그레이드 (§16 question 3 answer 2026-10-14) ──
+ // price: UNSET → '미정', purchase disabled. maxLevel: UNSET → no known cap (purchase is still gated by price).
+ // effect = per purchased level. seat/queue +1 come from the item names; interval/price magnitudes are UNSET (no effect while null).
+ upgrades:{
+  seat:{price:U,maxLevel:U,effect:1}, // starting value 2026-10-14, pending user confirm: 좌석 추가 → 최대 손님 +1 per level · UNSET price/max level
+  interval:{price:U,maxLevel:U,effect:U}, // UNSET: 손님 오는 간격 단축 — effect (interval multiplier per level), price, max level
+  price:{price:U,maxLevel:U,effect:U}, // UNSET: 메뉴 판매가 인상 — effect (sale price multiplier per level), price, max level
+  queue:{price:U,maxLevel:U,effect:1}}, // starting value 2026-10-14, pending user confirm: 대기 줄 연장 → +1 queue cell per level · UNSET price/max level
 
  // ── 손님 (갱신 70, 86, 100, 105, 106, 113, 120, 124-4, 128, 129) ──
- visit:{meetSec:7,roamSec:5, // 갱신 70: 손님 곁 7초, 5초 돌아다님 · starting value 똑또기 2026-10-14, pending user batch confirm: interaction 7 s, then roam 5 s, then seek a guest
+ visit:{meetSec:5,roamSec:3, // starting value 2026-10-14, pending user confirm: interaction (meet) 5 s, then roam 3 s, then seek a guest (was 갱신 70 7 s / 5 s)
   scoreDisappointedBelow:.5, // 갱신 86: 합계 0.5 미만 실망
   scoreSatisfiedAt:1.5, // 갱신 86 (만족 판정은 갱신 106에서 '요구 충족'으로 바뀜 — notes 참고; 값은 기록용)
   condMin:.25,condMax:1.3, // 갱신 86
@@ -112,11 +123,14 @@ export const CFG={
  itemIncome:{boostMul:1.2,boostHours:4,boostMaxHours:24,paidCapMul:1.5,priceDia:U}, // 갱신 97 시간제 수익 1.2배 · UNSET: 가격(다이아)
  navigation:{cellStepSec:.4,shibaCellStepSec:.5,queueWaitSec:30,queueReputation:0, // answer 똑또기 2026-10-14: editable starting values; queueWaitSec = the only 30 s limit (waiting for a seat)
   queueCells:4}, // starting value 똑또기 2026-10-14, pending user batch confirm: up to 4 queue cells on the grass outside the entrance, overflow guests turn back; floors without an entrance (stairs only) have no queue
- // interior §13 shiba poses. After a meeting the shiba roams visit.roamSec (5 s) then seeks a free guest; the meeting lasts visit.meetSec (7 s).
+ // interior §13 shiba poses. After a meeting the shiba roams visit.roamSec (3 s) then seeks a free guest; the meeting lasts visit.meetSec (5 s).
  behaviour:{eatSec:8, // starting value 똑또기 2026-10-14, pending user batch confirm: eating 8 s; a visit may run past stayingSec while eating/playing
   weights:{walk:40,lookAround:15,sit:15,tailWag:15,nap:15}, // starting value 똑또기 2026-10-14, pending user batch confirm: action odds in %
   walkCells:[2,4], // starting value 똑또기 2026-10-14, pending user batch confirm: a walk covers 2–4 cells
   durations:{lookAround:2,tailWag:2,sit:4,nap:10}}, // starting value 똑또기 2026-10-14, pending user batch confirm: seconds per pose (walk lasts its route)
+ // interior §17-5·17-6 floats over a guest's head (layout constants: map-data.js FLOAT_LAYOUT)
+ feedback:{floatSec:1, // starting value 2026-10-14, pending user confirm: §17-5/17-6 '약 1초, 시작값' — rise and fade time of coin / heart / anger floats
+  heartIfRequestMet:true,heartIfMetShiba:true}, // starting value 2026-10-14, pending user confirm: '완전 만족' = request met (incl. manager) OR met at least one shiba → heart float too
  offline:{capHours:12,stepSec:1}, // 갱신 56: 오프라인 수익 최대 12시간분. EXEMPT stepSec = engine integration step
 
  // ── 시바 ──

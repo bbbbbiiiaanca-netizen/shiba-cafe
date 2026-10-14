@@ -1,5 +1,6 @@
-// §16-1 bottom tab row (수인님 확정 2026-10-14): one icon row at the very bottom, merging the big menus (가게 관리·알바·미션·가구·상점)
-// with the old list-panel tabs (메뉴/시바/가구/가게). Mapping in SPEC-V3-NOTES.md '§16 tabs'.
+// §16-1 bottom tab row (수인님 확정 2026-10-14): one icon row at the very bottom, merging the big menus with the old list-panel tabs
+// (메뉴/시바/가구/가게). §17 (2026-10-14): five tabs with 가게 관리 in the centre; 미션 moved to a small top-right button.
+// Mapping in SPEC-V3-NOTES.md '§16 tabs' / '§17'.
 // Icons are existing confirmed images only; icon:null → text label only (art request in SPEC-V3-NOTES.md '§16 art requests').
 import {CFG,isUnset} from './config.js';
 import * as S from './sim.js';
@@ -7,8 +8,7 @@ import * as S from './sim.js';
 export const TABS=[
  {id:'shiba',label:'시바',icon:'shiba'}, // 'shiba' = portrait of the first owned shiba (assets/drive/shiba-<breed>.png)
  {id:'alba',label:'알바',icon:null},
- {id:'manage',label:'가게 관리',icon:'assets/drive/M-01-iced-americano_512.png',main:true}, // main item: menu development + café
- {id:'mission',label:'미션',icon:null}, // stub '준비 중'
+ {id:'manage',label:'가게 관리',icon:'assets/drive/M-01-iced-americano_512.png',main:true}, // main item (centre): café status + 메뉴 개발 / 업그레이드 / 손익계산서
  {id:'furniture',label:'가구',icon:'assets/drive/ui/ui-icon-tea-table.png'},
  {id:'shop',label:'상점',icon:null}];
 export const DEFAULT_TAB='manage';
@@ -21,7 +21,8 @@ export function albaAvailable(s,now){
  return false;}
 
 // Red dots come only from real state. seen.menuDone = a development finished and the player has not opened 가게 관리 / 메뉴 개발 since.
+// 시바 also lights for a returned walk whose result is still waiting (s.walkResults) and a rescue waiting for a decision (s.rescues).
 export function tabBadges(s,now,seen={}){
- const manage=!!seen.menuDone||(!s.menuDev&&CFG.menu.items.some(m=>!S.menuCheck(s,m.id)));
- const shiba=s.shibas.some(sh=>sh.status==='injured'||sh.status==='sick'||!S.levelUpCheck(s,sh.id));
- return {shiba,alba:albaAvailable(s,now),manage,mission:false,furniture:false,shop:false};}
+ const manage=!!seen.menuDone||(!s.menuDev&&CFG.menu.items.some(m=>!S.menuCheck(s,m.id)))||Object.keys(CFG.upgrades).some(k=>!S.upgradeCheck(s,k));
+ const shiba=s.shibas.some(sh=>sh.status==='injured'||sh.status==='sick'||!S.levelUpCheck(s,sh.id))||s.walkResults.length>0||s.rescues.length>0;
+ return {shiba,alba:albaAvailable(s,now),manage,furniture:false,shop:false};}

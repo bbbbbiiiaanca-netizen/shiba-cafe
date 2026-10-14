@@ -1,4 +1,4 @@
-import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize} from './map-data.js';
+import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,FLOAT_ICONS} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
@@ -78,7 +78,11 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
      const icon=load(c.request.type==='meetShiba'?'assets/drive/request-icon-shiba_256.png':'assets/drive/request-icon-trick_256.png');
      if(icon.complete&&icon.naturalWidth)ctx.drawImage(icon,p.x-10,p.y-46,20,20);
     }
-    const pay=world.feedback;if(pay?.cell){const p=cellToScreen(...pay.cell,view,z);ctx.save();ctx.font='12px sans-serif';ctx.textAlign='center';ctx.fillStyle='#fff0bb';ctx.fillText(pay.coins==null?'결제 미정':`+${pay.coins} 멍코인`,p.x,p.y-20);const im=load('assets/drive/'+pay.orderImg);if(im.complete&&im.naturalWidth)ctx.drawImage(im,p.x-16,p.y-62,32,32);ctx.restore();}
+    // §17-5·17-6: icon floats rise from the guest's head and fade (age advanced by main.js); kinds without art (빠직) draw nothing
+    for(const f of world.floats||[]){const file=FLOAT_ICONS[f.kind];if(!file||!f.cell)continue;const im=load(file);if(!(im.complete&&im.naturalWidth))continue;
+     const k=Math.min(1,Math.max(0,f.age/f.dur)),p=cellToScreen(...f.cell,view,z),size=FLOAT_LAYOUT.iconPx[f.kind]*scale,F=FLOAT_LAYOUT;
+     const x=p.x+(F.headOffset[0]+(f.dx||0))*scale,y=p.y+F.headOffset[1]*scale-F.risePx*scale*k;
+     ctx.save();ctx.globalAlpha=k<.4?1:1-(k-.4)/.6;ctx.drawImage(im,x-size/2,y-size,size,size);ctx.restore();}
    }
    if(z.floor===1&&!state.space.floor2Unlocked){
     const stairs=placed.find(s=>s.type==='stairs');

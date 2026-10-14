@@ -42,8 +42,10 @@ test('갱신 98 café exp table: 49 steps, 120 … 37,870, total 676,180; max le
  const e=CFG.cafe.expToNext;assert.equal(e.length,49);assert.equal(e[0],120);assert.equal(e[6],1850);assert.equal(e[48],37870);assert.equal(e.reduce((a,b)=>a+b,0),676180);assert.equal(CFG.cafe.maxLevel,50);});
 test('spec numbers: stay/queue/visit/rep/hearts/walk/hospital/part-timers/payment',()=>{
  const C=CFG;assert.equal(C.cafe.stayingSec,30);assert.equal(C.cafe.queueMax,10);assert.equal(C.cafe.queueWaitSec,30);assert.equal(C.cafe.maxPlaced,10);assert.equal(C.cafe.maxOwned,50);
- assert.equal(C.visit.meetSec,7);assert.equal(C.visit.roamSec,5);assert.equal(C.rep.start,50);assert.equal(C.rep.queueAngry,-2);assert.equal(C.rep.closureFloor,30);
- assert.deepEqual([C.hearts.regenCap,C.hearts.regenEverySec],[10,1800]);assert.deepEqual(C.walk.durationsSec,[600,1200,1800]);assert.equal(C.walk.cooldownSec,0);
+ assert.equal(C.visit.meetSec,5);assert.equal(C.visit.roamSec,3); // starting value 2026-10-14, pending user confirm (was 갱신 70 7 s / 5 s)
+ assert.equal(C.rep.start,50);assert.equal(C.rep.queueAngry,-2);assert.equal(C.rep.closureFloor,30);
+ assert.deepEqual([C.hearts.regenCap,C.hearts.regenEverySec],[5,1800]); // cap: interior §17-1 starting value 5 (spec v3 1.4 said 10 — conflict, notes '§17 questions'); 30 min: spec v3
+assert.deepEqual(C.walk.durationsSec,[600,1200,1800]);assert.equal(C.walk.cooldownSec,0);
  assert.equal(C.walk.events.rescue,.05);assert.equal(C.walk.events.snake,1/40);assert.equal(C.walk.events.light,1/30);assert.equal(C.walk.events.capsule,1/30);assert.equal(C.walk.events.extra,.5);
  assert.deepEqual(C.hospital.stays,{light:1800,snake:7200,sick:14400});assert.equal(C.offline.capHours,12);
  assert.deepEqual([C.alba.daycare.cost,C.alba.walk.cost,C.alba.trainer.cost,C.alba.manager.cost],[8000,18000,24000,60000]);
@@ -130,21 +132,22 @@ test('hospital & rescue-bath fixed costs by café level band (131)',()=>{const s
  assert.deepEqual([c('light'),c('snake'),c('sick'),c('rescueBath')],[400,1200,2400,200]);s.cafe.level=10;assert.equal(c('snake'),1500);s.cafe.level=25;assert.equal(c('sick'),4700);s.cafe.level=39;assert.equal(c('light'),1000);s.cafe.level=45;assert.equal(c('rescueBath'),550);});
 
 // ───────── customers ─────────
-test('customer flow: arrive → seat → shiba 7 s meeting / 5 s roam → leave after 30 s → pay (69·70·120)',()=>{const {s,w,sh}=freshGame();
+test('customer flow: arrive → seat → shiba 5 s meeting / 3 s roam (starting values 2026-10-14) → leave after 30 s → pay (69·70·120)',()=>{const {s,w,sh}=freshGame();
  const {ev}=run(s,w,600);const leaves=ev.filter(e=>e.type==='leave');assert.ok(leaves.length>=60,'served '+leaves.length);assert.equal(s.stats.served,leaves.length);
  const paid=leaves.reduce((a,e)=>a+e.coins,0);near(s.coins+s.coinFrac,paid,1e-6);
- // full 7 s meetings (visit extends while playing, starting value 똑또기 2026-10-14): one shiba cannot reach every guest, so pay is 2 only for met guests
+ // full 5 s meetings (visit extends while playing, starting value 똑또기 2026-10-14): one shiba cannot reach every guest, so pay is 2 only for met guests
  const metIds=new Set(ev.filter(e=>e.type==='meet').map(e=>e.custId));assert.ok(leaves.every(e=>e.coins===(metIds.has(e.id)?2:1)),'coffee 1 × Lv21 2.0 when met, ×1.0 otherwise');assert.ok(leaves.some(e=>e.coins===2));
- // meeting timing: 7 s at a guest then 5 s roaming
+ // meeting timing: 5 s at a guest then 3 s roaming
  const g=freshGame();const ws=g.w;let t=0,phase=[];for(let i=0;i<200;i++){t+=100;S.tick(g.s,ws,.1,t);phase.push(ws.sh[g.sh.id]?.phase);}
- const first=phase.indexOf('meet'),endM=phase.indexOf('roam',first);if(endM>0){const nextM=phase.indexOf('meet',endM);assert.ok(endM-first<=71,'meeting ≤7 s (+1 tick float)');if(nextM>0)assert.ok(Math.abs(nextM-endM-50)<=3,'roam 5 s plus route steps: '+(nextM-endM));}});
+ const first=phase.indexOf('meet'),endM=phase.indexOf('roam',first);if(endM>0){const nextM=phase.indexOf('meet',endM);assert.ok(endM-first<=51,'meeting ≤5 s (+1 tick float)');if(nextM>0)assert.ok(Math.abs(nextM-endM-30)<=3,'roam 3 s plus route steps: '+(nextM-endM));}});
 test('queue: cap reached → queue (4 grass cells, starting value 똑또기 2026-10-14; 66 max 10); waiting >30 s → leaves, reputation unchanged, no money (66·68·87)',()=>{const {s,w}=freshGame();s.cafe.rep=50;
  for(const sh of s.shibas)sh.placed=false; // nobody serves → seats stay full
  w.spawnT=1e9;for(let i=0;i<5;i++)w.custs.push({id:100+i,kind:'mom',phase:'seated',seat:i,cell:[1,3],t:999,score:0,met:[],with:null,fulfilled:false,request:null});
  for(let i=0;i<12;i++){w.spawnT=0;S.tick(s,w,0,0);w.spawnT=1e9;}assert.equal(w.queue.length,CFG.navigation.queueCells);assert.equal(w.queue.length,4);assert.equal(s.stats.lost,8);
  const c0=s.coins;run(s,w,30.5);assert.equal(w.queue.length,0);assert.equal(s.stats.angry,4);assert.equal(s.cafe.rep,50);assert.equal(s.coins,c0);});
-test('0 meetings → disappointed (rep −1, exp 0); request met → satisfied (+1, exp +2); met but not met-request → normal (+0, exp +1) (70·86·87·106)',()=>{
- const a=freshGame();a.sh.placed=false;const {ev}=run(a.s,a.w,60);const L=ev.filter(e=>e.type==='leave');assert.ok(L.length&&L.every(e=>e.outcome==='disappointed'));assert.equal(a.s.cafe.exp,0);assert.equal(a.s.cafe.rep,50-L.length);assert.ok(L.every(e=>e.coins===1),'coffee still paid ×1');
+test('0 meetings → disappointed (rep −1 from café Lv5, 0 below Lv5 — starting value 2026-10-14; exp 0); request met → satisfied (+1, exp +2); met but not met-request → normal (+0, exp +1) (70·86·87·106)',()=>{
+ const e=freshGame();e.sh.placed=false;const le=run(e.s,e.w,60).ev.filter(x=>x.type==='leave');assert.ok(le.length&&le.every(x=>x.outcome==='disappointed'));assert.equal(e.s.cafe.rep,50,'early game (Lv<5): unmet guests cost no reputation');
+ const a=freshGame();a.s.cafe.level=CFG.rep.unmetFreeBelowLevel;a.sh.placed=false;const {ev}=run(a.s,a.w,60);const L=ev.filter(e=>e.type==='leave');assert.ok(L.length&&L.every(e=>e.outcome==='disappointed'));assert.equal(a.s.cafe.exp,0);assert.equal(a.s.cafe.rep,50-L.length);assert.ok(L.every(e=>e.coins===1),'coffee still paid ×1');
  const b=freshGame();b.w.spawnT=1e9;b.w.custs.push({id:1,kind:'dad',phase:'seated',seat:0,cell:[1,3],t:30,score:0,met:[],with:null,fulfilled:false,request:{type:'meetShiba',shibaId:b.sh.id}});
  const rb=run(b.s,b.w,40).ev.find(e=>e.type==='leave'); // visit may run past 30 s while playing (starting value 똑또기 2026-10-14)assert.equal(rb.outcome,'satisfied');assert.equal(b.s.cafe.exp,2);assert.equal(b.s.cafe.rep,51);
  const c=freshGame();c.w.spawnT=1e9;c.w.custs.push({id:1,kind:'dad',phase:'seated',seat:0,cell:[1,3],t:30,score:0,met:[],with:null,fulfilled:false,request:{type:'seeTrick',trick:'bow'}});
@@ -181,7 +184,7 @@ test('sick after a 0 gauge for 2 h; hospital needs coins (no credit); 4 h stay; 
  const g=freshGame();S.changeGauges(g.s,g.sh,{happy:-100},0);g.s.coins=1e6;run(g.s,g.w,26*3600,0,60);assert.equal(g.sh.status,'hospital');assert.equal(g.sh.hospitalUntil-g.sh.hospitalUntil%1,(2+24)*H+2*14400e3);});
 test('abandon: others −15, again within 24 h −20; the last shiba cannot be given up (76·82)',()=>{const {s,sh}=freshGame();const a=S.makeShiba(s,{breed:'kuro'}),b=S.makeShiba(s,{breed:'white'});a.intimacy=b.intimacy=50;s.shibas.push(a,b);
  S.abandon(s,sh.id,0);assert.equal(a.intimacy,35);S.abandon(s,b.id,10*H);assert.equal(a.intimacy,15);assert.equal(S.abandonCheck(s,a.id),'last');});
-test('hearts: +1 per 30 min up to 10; reward hearts above 10; reset ticket only below 10 (1.4)',()=>{const s=S.newState(0);s.hearts=0;S.settleHearts(s,95*MIN);assert.equal(s.hearts,3);S.settleHearts(s,100*H);assert.equal(s.hearts,10);
+test('hearts: +1 per 30 min up to the natural cap (§17-1 starting value 5); reward hearts above it; reset ticket only below 10 (1.4)',()=>{const s=S.newState(0);s.hearts=0;S.settleHearts(s,95*MIN);assert.equal(s.hearts,3);S.settleHearts(s,100*H);assert.equal(s.hearts,CFG.hearts.regenCap);
  s.hearts=14;S.settleHearts(s,200*H);assert.equal(s.hearts,14);s.items.heartReset=1;assert.equal(S.useHeartReset(s,200*H),false);assert.equal(s.items.heartReset,1);
  s.hearts=4;assert.ok(S.useHeartReset(s,200*H));assert.equal(s.hearts,10);assert.equal(s.items.heartReset,0);});
 

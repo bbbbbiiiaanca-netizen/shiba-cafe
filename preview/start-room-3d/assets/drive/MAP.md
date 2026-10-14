@@ -169,3 +169,17 @@ Drive display names: tatami-approved.png = 타일_바닥_다다미_칸.png; tile
 | `furn-cushion-v4.png` | `이미지/interior/가구_방석_v4.png` | `1jkbdj3tgaRkrCeEY9Tyv_K5LRmDoqEaf` | `ed42045bf19743a0b7102b084d76b6be9289bec34337cab03adb09f26795920a` |
 
 | tile-grass-outside.png | 타일_잔디_가게밖.png | 1VrPcLGwjUdvIVY-u22LmTvGjEJKSEyGC | 128×64 seamless | sha256 837b34d753d2396f919f6b4683c6c3f84355f92018e5f1de66c7d8ca63c286e5 |
+
+## 그림이 UI icons (2026-10-14)
+
+128×128 transparent PNGs, used unmodified (CSS/canvas size only). sha256 re-checked against the files here.
+Shown as: top-bar resource pills (coin, heart slots full/empty, diamond, paw), price buttons (coin, diamond), §17-5 payment floats (coin, heart), settings button (gear).
+
+| file | Drive original | Drive id | sha256 |
+|---|---|---|---|
+| `ui/ui-gear.png` | `이미지/interior/UI_설정_톱니.png` | `1VxSZy5ZiU-fpZmhkUA-pUVHumllU71lc` | `c77290f5f21a615714bfbf06e05be106194054fa8c5194bc112eb7bfa7f6a538` |
+| `ui/res-coin.png` | `이미지/interior/UI_재화_멍코인.png` | `1QmU_jYd7IicafTQaahUfa6KxGcCwA5Mk` | `9f736d37176b50cbe567352d763acc704c996a4559c44f1d7fe1fb8afca91577` |
+| `ui/res-heart.png` | `이미지/interior/UI_재화_하트.png` | `1cU9j66IIb9f5LD2rg8y73TCKuijLFVxK` | `d843a2191469aa911e94c17b948029b30704250d589d32b5eb7df6f7b9b71ffa` |
+| `ui/res-heart-empty.png` | `이미지/interior/UI_재화_하트_빈.png` | `1pHIKJl1RgV7j4mX20Ltlo1ojmQWDxpVo` | `ccf6669887ba9854378a61757df3db8ac3c19c51b48fbf8e85a9431335121832` |
+| `ui/res-diamond.png` | `이미지/interior/UI_재화_다이아.png` | `148mziE9fLPJ9QZK18ZZTmV1k4RBQpIzh` | `fbda3773816ab1afbf9be54323e1a7b8a31ced900e1b7029a3a2f53baf7fdb64` |
+| `ui/res-paw.png` | `이미지/interior/UI_재화_발바닥.png` | `1YmTwuvjr8hP8O3I2InseFHEAA_maXmrN` | `e921b24c0640b1534c36f0229099af17e367cf6c0b5bd8708adcccc21c04e856` |

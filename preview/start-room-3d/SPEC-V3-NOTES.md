@@ -367,6 +367,8 @@ Validation: `npm test` includes 94 acceptance tests, timeline/map/edit/Unit 3/re
 
 ### Top bar §14 art requests
 
+> **Resolved 2026-10-14:** 그림이 supplied `ui/res-coin.png`, `res-heart.png`, `res-heart-empty.png`, `res-diamond.png`, `res-paw.png` and `ui/ui-gear.png` (MAP.md '그림이 UI icons'). The CSS-drawn `.resource.*` shapes and the text `설정` are gone; see '§17-1…17-6' below. The bullets below are kept as history.
+
 - **Fix (before §16):** `icons-final-check.jpg` sheet cropping rendered red/black squares in the top bar. The bar now uses the pre-§14 HUD icons from 6ac0bdd — those were CSS-drawn coin/heart/diamond/paw shapes (`.resource.*`), not image files; no coin/heart/diamond/paw image file exists in the repo history. Replace when 그림이 icons arrive. The `+` now sits at the right end of the 멍코인 pill and the 다이아 pill (two buttons, toast only); the shared end-of-row + was removed.
 
 - Optional cafe Lv badge image: no supplied badge found in assets/drive or the local Drive image mirror. Current badge uses a CSS circle and text only.
@@ -415,7 +417,7 @@ Source: interior spec §16-1 (수인님 확정 2026-10-14), layout after `refs/r
 ## §16 art requests
 - Tab icons: 알바, 미션, 상점 (text labels now); optionally a dedicated 가게 관리 icon (now the M-01 drink) and 시바 tab icon (now the portrait).
 - 알바 faces for the popup: 데이케어 알바, 산책 알바, 훈련사, 매니저 (empty face slots now).
-- Coin / diamond icon for the green price buttons (text `멍` / `다이아` now; same missing 멍코인 icon as §14).
+- ~~Coin / diamond icon for the green price buttons~~ — resolved 2026-10-14 (`res-coin.png` / `res-diamond.png`).
 - Optional: ribbon, window frame, close-X and green button art to replace the CSS chrome.
 
 ## §16 questions
@@ -428,3 +430,63 @@ Source: interior spec §16-1 (수인님 확정 2026-10-14), layout after `refs/r
 Validation: `npm test` passes (adds `tests/unit16.test.mjs`). Chrome ran in this sandbox this time: `npm run test:browser` → 116/116 checks, 0 page errors (adds §16 row/dots/popup/scroll/null-price checks; tab ids updated). `capture-main-screen.mjs --u16` writes `main-screen-u16-tabs.png`, `main-screen-u16-popup-alba.png`, `main-screen-u16-popup-menu.png` (+ `main-screen-u16-state.txt`), DPR2; the default run also produces them; `--u14`/`--u15` and all earlier outputs still run. Images were checked in a scratch dir only, not written to `/workspace/shiba-cafe-docs/spec-v3-build/`.
 
 Changed files: tabs.js (new), main.js, index.html, sim.js (albaCheck null guard), package.json, tests/unit16.test.mjs (new), tests/smoke-browser.mjs, tests/smoke-steps.mjs, capture-main-screen.mjs, SPEC-V3-NOTES.md.
+
+## §17 tabs / 가게 관리 / upgrades / balance (answers 2026-10-14 to §16 questions)
+Supersedes the contradictory parts of '§16 tabs' and '§16-2 list popup' above (six tabs, 미션 tab, 14-card menu grid, 업그레이드 `준비 중`).
+
+1. **Five bottom tabs** (`tabs.js` `TABS`): 시바 · 알바 · **가게 관리** (centre, 3rd of 5, larger) · 가구 · 상점. 미션 tab removed; 미션 is now a small `미션` button in the top bar right next to `설정` (`#hud [data-act=mission]`) → toast `준비 중`, no state change. CSS-only button, text label (no icon art).
+2. **Menu development = popup only.** The 14-card menu grid (`[data-main-menu]`, `.menu-card` CSS) is removed. 가게 관리 now shows: buttons 메뉴 개발 (popup) / 업그레이드 (popup) / 손익계산서; café card (Lv, EXP, 평판, 배치 가능 시바, 최대 손님, upgrade levels); current development card (existing `devCard`, finish-now) and `개발 완료 n / 13`. Customer strip stays in the heading.
+3. **가게 관리 업그레이드** (`CFG.upgrades`, `s.upgrades` levels, saved; older saves → 0): `seat` 좌석 추가, `interval` 손님 간격 단축, `price` 판매가 인상, `queue` 대기 줄 연장. All `price:null` → popup button `미정`, disabled; `S.upgradeCheck` returns `'unset'`, `S.buyUpgrade` refuses. `maxLevel:null` (no known cap). Effects:
+   - seat `effect:1` — **starting value 2026-10-14, pending user confirm** — `capOf` + 1 max guest per level (physical seats from furniture still limit seating).
+   - queue `effect:1` — **starting value 2026-10-14, pending user confirm** — +1 queue cell per level, continuing the map's grass line ([0,10], [0,11]…), still capped by 갱신 66 `queueMax` 10.
+   - interval / price `effect:null` — no effect. Hooks exist (`arrivalInterval` × effect^level, `payFor` base × effect^level); the multiplicative form is an engineering placeholder for when a value arrives (question 1 below).
+   - Buying (once a price exists) books a new ledger expense line `가게 업그레이드` (`upgrade`). The 가게 관리 red dot also lights when an upgrade is affordable (never while prices are null).
+4. **산책 알바 / 훈련사 handoffs kept** (walk screen / care screen), unchanged.
+5. **Red dots** additionally from real state: 시바 lights while a returned walk's result is waiting (`s.walkResults`, now kept in state until the result popup's 확인 — `walkResultOk`; before, results moved straight into UI-only modals) and while a rescue is waiting (`s.rescues`).
+
+**Balance starting values** (each marked `starting value 2026-10-14, pending user confirm` in `config.js`):
+- interaction (meet) `visit.meetSec` 7 → **5 s**; post-interaction roam `visit.roamSec` 5 → **3 s** (replaces the 갱신 70 values).
+- early game: `rep.unmetFreeBelowLevel:5` — below café Lv5 (the '손님 4명 이하' phase) a guest who met no shiba is still `disappointed` (exp 0, pays ×1) but reputation is unchanged; from Lv5 it is −1 as before.
+- Observed (sandbox run, not a spec value): 12 h offline-style run with one Lv21 starter, coins 0, full gauges, production map/behaviour → no closure, café Lv7, 평판 99, 2,616 served (2,131 satisfied / 485 normal / 0 disappointed), Lv5 reached after ~3.1 h. The Unit 5 balance flag (closure at Lv1 after ~17 min) no longer reproduces with these values. Many guests still turn back (2,830 queue timeouts, 4,477 lost to a full queue) because only two cushions exist.
+
+### §17 questions
+1. Upgrade prices (per level or flat), max levels, and the effect sizes for 손님 간격 단축 and 판매가 인상. Are they multipliers per level (current hook) or flat amounts?
+2. Should 좌석 추가 also add a physical cushion, or only raise the guest cap (current behaviour; seating still needs placed furniture)?
+3. 미션 button: is a `준비 중` toast OK, or should it open an empty 미션 popup?
+4. **CONFLICT — heart cap 5 vs 10.** Interior §17-1 shows 5 heart slots, '최대 5개(시작값)'. Spec v3 1.4 / 갱신 28·31 (confirmed) say natural regen stops at **10** (30 min each; reward hearts may exceed it). Built: `hearts.regenCap:5` (starting value, used both as regen cap and slot count), 30 min regen from spec v3, overflow kept and shown as 5 filled + `+N`. Which cap is right — 5 or 10? If 10, should the bar show 10 slots or 5 slots + `+N`?
+5. Follow-ups of (4), unchanged for now: starting hearts stay **10** (1.4 기본 소지) → a new game shows 5 filled + `+5` with no countdown until hearts drop below 5; 하트 리셋권 still fills to **10** and works only below 10 (갱신 32). Should both follow the new cap (5)?
+6. '완전 만족' for the heart float (§17-5): built as request met (incl. 매니저 대신 충족) **or** met at least one shiba (`feedback.heartIfRequestMet` / `heartIfMetShiba`, starting values). Should meeting a shiba without the request count?
+7. 오프라인 수입 = café payments settled by the offline fast-forward: on launch (game closed) **and** after the tab/app was hidden (same catch-up and offline report). Should a backgrounded app count as 'closed', or only a real relaunch?
+8. 손익계산서: §17-2 does not list `가게 업그레이드`. It is kept after 가구 구입 and shown only when non-zero (never today: all upgrade prices are null). Keep, merge into another line, or drop?
+9. 화난 손님 (§17-6): only queue timeouts emit 빠직 now. Guests who turn back because the queue is full (`lost`, never queued) do not. Should they?
+10. Locked list cards (§17-4) show name + `Lv{N} 해금` only — the price button is hidden too (shown in the tap detail). OK, or keep a disabled price button?
+
+### §17 art requests
+- 미션 button icon (top bar); faces for the 4 upgrade rows (empty face slots now).
+- **빠직 (anger mark) icon** for §17-6 — small, transparent, same 128×128 style as the `res-*` icons. The float event already runs (`FLOAT_ICONS.angry = null` in `map-data.js`); drawing starts as soon as a file path is set there.
+- Optional: 알바 faces (4) for the 알바 고르기 cards (still empty slots); a 하트 리셋권 icon (still the `icons-final-check.jpg` sheet tile).
+
+Validation: `npm test` passes all 10 suites (adds `tests/unit17.test.mjs`: starting values, early-game reputation by level, null-price gating, test-priced purchase/ledger/maxLevel, seat/queue hooks and null interval/price hooks, save/load, walk-result/rescue dots). `tests/smoke-steps.mjs` and `tests/smoke-browser.mjs` updated (five tabs in order with centred main item, 미션 top-right stub, popup-only menu development incl. finish-now and last-row scroll, upgrade popup 4 × 미정 disabled and click-does-nothing, 가게 관리 status without grid, walk-result/rescue dots and acknowledge). **Not run here**: the user runs browser tests. `capture-main-screen.mjs --u17` writes `main-screen-u17-tabs.png`, `main-screen-u17-manage.png`, `main-screen-u17-upgrades.png` (+ `main-screen-u17-state.txt`) at DPR2; the default run includes them. `main-screen-u2-menu.png` / `main-screen-u5-menu.png` now show the 가게 관리 status screen (no grid).
+
+Changed files: config.js, sim.js, tabs.js, main.js, index.html, package.json, tests/spec-v3.test.mjs, tests/unit5.test.mjs, tests/unit16.test.mjs, tests/unit17.test.mjs (new), tests/smoke-steps.mjs, tests/smoke-browser.mjs, capture-main-screen.mjs, SPEC-V3-NOTES.md.
+
+## §17-1…17-6 hearts / ledger / short texts / floats + 그림이 icons (2026-10-14)
+**0. Browser smoke fix (6 failures after the uncommitted §17 tab/popup changes).** Causes: (a) app bug — `confirmYes` had been pasted onto the end of the `walkResultOk` `//` comment in `main.js`, so confirming a level-up did nothing; (b) test bug — the new walk-result/rescue dot checks set `coins=0` and never restored the Lv10/8,000 fixture, so every 알바 price button was disabled and the daycare hire chain failed; (c) test bug — `/최대 손님 \+1명/` inside a JS template literal lost its backslash (`\+` → `+`, "one or more spaces"). Fixed the app for (a), the tests for (b)/(c).
+
+**Icons.** `ui/res-coin|res-heart|res-heart-empty|res-diamond|res-paw|ui-gear.png` (MAP.md section '그림이 UI icons (2026-10-14)', sha256 verified). Top bar pills use `<img class="resource">`; the CSS-drawn coin/heart/diamond/paw shapes are deleted. Settings = gear image, `aria-label="설정"`, no text. Price buttons show coin / diamond / paw images (`priceText(n, unit)` → `ico(unit)+n`) in the list popups, shop, care screen, finish-now buttons, gacha and 다이아 상품; the 💎/🐾 emoji stand-ins are gone from `main.js` and `i18n.js`. `.ico.reset` (하트 리셋권) still uses the old sheet tile — no new icon for it.
+
+**§17-1 hearts.** Top bar = `CFG.hearts.regenCap` heart slots (filled `res-heart`, empty `res-heart-empty`), no number. Above the cap: all slots filled + small `+N`. Below the cap: `mm:ss` to the next heart just under the pill (`#heartT`). `hearts.regenCap:5` = **starting value 2026-10-14, pending user confirm** (conflict with spec v3's 10 → '§17 questions' 4–5); `regenEverySec:1800` = spec v3 (confirmed). Reward hearts above the cap are kept (existing `settleHearts`).
+
+**§17-2 ledger.** Income: 메뉴 판매 · 시바 만남 추가 수입 · 오프라인 수입 (payments settled by the offline fast-forward only) · 기타 수입 (new `other`: the walk 멍코인 reward when it becomes configured; any future non-sales coin income). Expense: 알바비 · 병원비 · 메뉴 개발비 · 액세서리 구입 (renamed from 반다나 구입비; `buyAcc` covers every accessory) · 가구 구입 (new `furniture`, always shown, 0 — no purchase exists) · then 가게 업그레이드 only when non-zero (question 8).
+**§17-3.** Ledger row padding 10px → 4px (line-height 1.2; rows ~23 px instead of ~36 px).
+
+**§17-4 short texts.** List cards = name + ONE line; details only after tapping the card body (face or text; inline `.lp-detail`, one open card per list, `ui.lpOpen`; tapping again closes). 알바: 데이케어 알바 "시바랑 놀아줘요", 산책 알바 "산책 4마리" (`maxShibas`), 훈련사 "훈련 1회 성공", 매니저 알바 "12시간 대신 운영" (`hireSec`); active manager "운영 중 h:mm:ss". Locked cards: "Lv{N} 해금" from CFG `unlock`/`unlockLevel`, dimmed, no price button (question 10). 메뉴 개발: "판매가 N멍" / "개발 중 h:mm:ss" / "Lv{N} 해금"; detail = 판매가 · 개발 시간 · 개발비 · 해금 레벨. 업그레이드: "좌석 추가 Lv0" + "최대 손님 +1명" / "효과 미정" / "대기 줄 +1칸"; detail = effect · 가격 · 최고 레벨. 가게 관리 heading summary = "착석 N · 대기 N" (+ " · 결제 미정" only while the last payment is undecided); café card shortened to 3 lines; the dev card drops the long 1-diamond-per-minute note (still in the menu card detail).
+
+**§17-5 payment floats.** On `leave`, a paid guest (`coins != null`) floats a small `res-coin` from the head; '완전 만족' (`requestMet` or `metShiba` on the leave event, gated by `CFG.feedback.heartIfRequestMet` / `heartIfMetShiba`, starting values) adds a small `res-heart` beside it. Guests are invisible, so head = foot cell + `FLOAT_LAYOUT.headOffset` `[0,-90]` image px (map-data.js). Float: rises `risePx` 40 image px and fades (opaque for the first 40 %) over `CFG.feedback.floatSec` = 1 s; icon 30 / 26 image px (≈ 13 / 11 CSS px); coin/heart offset ±12 px when together. Floats live in `w.floats` (UI-only), aged in `step()`, drawn by `isomap.js`; the old canvas text "+N 멍코인" + order image at the leaving guest is replaced. Offline fast-forward makes no floats.
+**§17-6 anger.** Queue timeout `angry` events now carry the guest cell → `w.floats` gets an `angry` float with the same 1 s life, but `FLOAT_ICONS.angry = null` → nothing is drawn (art request).
+
+**Starting values added (all 'starting value 2026-10-14, pending user confirm')**: `hearts.regenCap 5`; `feedback.floatSec 1`; `feedback.heartIfRequestMet true`, `feedback.heartIfMetShiba true`; `FLOAT_LAYOUT` headOffset `[0,-90]`, risePx 40, iconPx coin 30 / heart 26 / angry 30, stagger ±12.
+
+Validation: `npm test` — all 10 suites pass (`unit17` now 16 tests: icon files 128×128 RGBA + MAP.md sha256, no CSS shapes/emoji, heart cap/countdown/overflow, ledger order/labels/always-shown 가구/other income/offline, §17-3 padding, leave/angry event fields, float layout + null 빠직 slot; `spec-v3` heart assertions follow the cap). Browser smoke ran here: `node tests/smoke-browser.mjs` → **138/138, 0 page errors** (twice); new checks for icon images + gear, heart slots / `04:32` / cap / `+3`, ledger order + padding, short alba/menu/upgrade lines, locked "Lv{N} 해금", tap-to-expand/collapse, summary line, coin+heart float drawn and gone after 1 s, angry float with nothing drawn, unpaid → no coin. `capture-main-screen.mjs --u17b` writes `main-screen-u17-{topbar,ledger,alba,menu,manage,float,tabs}.png` + `main-screen-u17b-state.txt` (DPR2, `?temp=1` staging); run here into a scratch dir only (`/tmp/u17b`) and inspected — nothing written to `/workspace/shiba-cafe-docs/spec-v3-build/`. `--u16` / `--u17` still run.
+
+Changed files: config.js, sim.js, map-data.js, isomap.js, main.js, i18n.js, index.html, assets/drive/MAP.md, tests/spec-v3.test.mjs, tests/unit17.test.mjs, tests/smoke-browser.mjs, tests/smoke-steps.mjs, capture-main-screen.mjs, SPEC-V3-NOTES.md.
