@@ -5,9 +5,15 @@ export default async function({ev,check,sleep,reload}){
  await ev('document.querySelector("[data-lang=en]").click();document.querySelector("[data-act=langOk]").click();true');
  // 갱신 109 start choice
  await check('start screen: 4 breeds, English text','document.querySelectorAll("[data-act=startPick]").length===4&&/Pick your first/.test(document.getElementById("mbox").textContent)');
- await ev('document.querySelector("[data-breed=kuro]").click();document.querySelector("[data-act=startGo]").click();true');
+ await check('start requires both breed and bandana','document.querySelector("[data-act=startGo]").disabled');
+ await ev('document.querySelector("[data-act=startPick][data-breed=kuro]").click();true');
+ await check('breed alone does not enable start','document.querySelector("[data-act=startGo]").disabled');
+ await ev('document.getElementById("startName").value="Smoke";document.querySelector("[data-act=startBandana][data-item=bandana-triangle-cell1]").click();true');
+ await check('bandana selection rerenders and enables start, preserving the name','!document.querySelector("[data-act=startGo]").disabled&&document.querySelector("[data-item=bandana-triangle-cell1]").getAttribute("aria-pressed")==="true"&&document.getElementById("startName").value==="Smoke"');
+ await ev('document.querySelector("[data-act=startGo]").click();true');
+ await check('start modal closes','__game.state.started&&document.getElementById("modal").hidden');
  await check('start shiba is Lv21 kuro with Sit/Wait 3','(s=>s.shibas.length===1&&s.shibas[0].breed==="kuro"&&s.shibas[0].level===21&&s.shibas[0].tricks.sit===3&&s.shibas[0].tricks.wait===3)(__game.state)');
- await check('starter accessory identity UNSET: unlocked slot, nothing worn or given','__game.state.shibas[0].accUnlocked&&__game.state.shibas[0].acc===null&&Object.keys(__game.state.accInv).length===0');
+ await check('starter chosen approved bandana equipped','__game.state.shibas[0].accUnlocked&&__game.state.shibas[0].acc==="bandana-triangle-cell1"&&Object.keys(__game.state.accInv).length===0');
  // café loop runs in the page
  await ev('for(let i=0;i<900;i++)__game.step(.1);true');
  await check('answered entrance enables guests; coins start at 30,000 (밸런스_2년.md §5) and only grow from payments; gauges remain null','__game.state.stats.served>0&&__game.state.coins>=__game.CFG.start.coins&&Object.values(__game.state.shibas[0].g).every(v=>v===null)&&document.getElementById("isomap").width===390');
@@ -42,7 +48,7 @@ export default async function({ev,check,sleep,reload}){
  await ev('__game.state.coins=5000;__game.refresh();document.querySelector("[data-act=accType][data-type=loop]").click();document.querySelector("[data-act=buyAcc][data-item=bandana-loop-cell9]").click();true');
  await check('buy a loop bandana for 5,000 멍코인 → bag 1','__game.state.accInv["bandana-loop-cell9"]===1&&__game.state.coins===0&&/1/.test(document.querySelector("[data-accitem=bandana-loop-cell9]").textContent)');
  await ev('__game.open("care",__game.state.shibas[0].id);document.querySelector("[data-act=equip][data-item=bandana-loop-cell9]").click();true');
- await check('starter wears purchased bandana; no starter accessory appears in the bag (139-6·140-1)','__game.state.shibas[0].acc==="bandana-loop-cell9"&&__game.state.accInv["bandana-loop-cell9"]===0&&Object.keys(__game.state.accInv).length===1&&__game.S.accOwned(__game.state,"bandana-triangle-cell1")===0&&!!document.querySelector("[data-acc] [data-band=bandana-loop-cell9]")');
+ await check('starter wears purchased bandana; chosen starter accessory returns to bag (139-6·140-1)','__game.state.shibas[0].acc==="bandana-loop-cell9"&&__game.state.accInv["bandana-loop-cell9"]===0&&Object.keys(__game.state.accInv).length===2&&__game.S.accOwned(__game.state,"bandana-triangle-cell1")===1&&!!document.querySelector("[data-acc] [data-band=bandana-loop-cell9]")');
  await ev('document.querySelector("[data-main-tab=shop]").click();true');
  await ev('document.querySelector("[data-main-tab=manage]").click();__game.state.cafe.level=2;__game.state.coins=15000;__game.refresh();document.querySelector("[data-act=listOpen][data-list=menu]").click();document.querySelector("[data-lp-row=M-02] .lp-price").click();true');
  await check('developing M-02 at Lv2 costs 15,000 멍코인 and shows 30 min in progress (136)','__game.state.menuDev?.id==="M-02"&&!__game.state.menus.includes("M-02")&&__game.state.coins===0&&/즉시 완료 30/.test(document.querySelector("[data-lp-row=M-02] .lp-price").textContent)&&!document.querySelector("[data-lp-row=M-05] .lp-price")&&/Lv3/.test(document.querySelector("[data-lp-row=M-05] .lp-effect").textContent)&&!!document.querySelector("#menuList [data-manage-dev] [data-dev=M-02]")');
@@ -59,7 +65,7 @@ export default async function({ev,check,sleep,reload}){
  await check('main menu instant finish hooks simulation','__game.state.dia===0&&__game.state.menus.includes("M-03")&&!__game.state.menuDev');
  await ev('document.querySelector("[data-main-tab=furniture]").click();true');
  await check('furniture tab shows four approved icons','document.querySelectorAll(".furniture-icon").length===4');
- await check('furniture grid has four equal square columns and contained icons',`(()=>{const grid=document.querySelector('.furniture-grid'),cards=[...grid.querySelectorAll('.furniture-card')].filter(e=>e.dataset.furnitureCard!=='wall'),rects=cards.map(e=>e.getBoundingClientRect()),style=getComputedStyle(grid);return style.display==='grid'&&style.gridTemplateColumns.split(' ').length===4&&cards.length===4&&rects.every(r=>Math.abs(r.width-r.height)<1&&Math.abs(r.width-rects[0].width)<1&&Math.abs(r.top-rects[0].top)<1)&&rects[3].right<=grid.getBoundingClientRect().right+1&&cards.every(e=>getComputedStyle(e.querySelector('img')).objectFit==='contain'&&e.querySelector('strong').textContent&&!e.querySelector('span')&&!/가격|미정/.test(e.textContent))&&document.getElementById('furniture-heading').textContent==='가구'&&document.querySelectorAll('[data-space-card]').length===0;})()`);
+ await check('furniture grid has four equal square columns and contained icons',`(()=>{const grid=document.querySelector('.furniture-grid'),cards=[...grid.querySelectorAll('.furniture-card')].filter(e=>e.dataset.furnitureCard!=='wall'),rects=cards.map(e=>e.getBoundingClientRect()),style=getComputedStyle(grid);return style.display==='grid'&&style.gridTemplateColumns.split(' ').length===4&&cards.length===4&&rects.every(r=>Math.abs(r.width-r.height)<1&&Math.abs(r.width-rects[0].width)<1&&Math.abs(r.top-rects[0].top)<1)&&rects[3].right<=grid.getBoundingClientRect().right+1&&cards.every(e=>getComputedStyle(e.querySelector('img')).objectFit==='contain'&&e.querySelector('strong').textContent&&!e.querySelector('span'))&&document.getElementById('furniture-heading').textContent==='가구 · 좌석 '+__game.S.seatCount(__game.state)&&document.querySelectorAll('[data-space-card]').length===0;})()`);
  await check('edit starts disabled','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="false"&&document.querySelector("[data-edit-toggle]").textContent==="배치 편집"');
  await ev('document.querySelector("[data-edit-toggle]").click();true');
  await check('edit bar is in furniture panel','document.getElementById("menuList").contains(document.querySelector(".furniture-actions"))&&!document.getElementById("scene").contains(document.querySelector(".furniture-actions"))');
@@ -98,4 +104,23 @@ export default async function({ev,check,sleep,reload}){
  // persisted across reload, offline report path
  await reload();await ev('__game.step(.2);true');
  await check('save kept after reload (language, shiba)','__game.state.settings.language==="ko"&&__game.state.shibas.length>=1&&__game.state.shibas[0].breed==="kuro"&&__game.state.started');
+
+ await ev('__game.ui.modals=[];__game.refresh();document.querySelector("[data-act=mailbox]").click();true');
+ await check('final mailbox reachable with unclaimed mail','document.getElementById("mbox").textContent.includes("우편함")&&!!document.querySelector("[data-act=claimMail]:not(:disabled)")');
+ await ev('document.querySelector("[data-act=claimMail]:not(:disabled)").click();true');
+ await check('final mail claim saved once','__game.state.mailClaimed.length===1&&!!document.querySelector("[data-act=claimMail]:disabled")');
+ await ev('document.querySelector("[data-act=modalOk]").click();document.querySelector("[data-main-tab=shop]").click();true');
+ await check('final unknown boost multiplier disables use without consumption', 'document.querySelector("[data-item=expBoost4h][data-act=useItem]").disabled&&document.querySelector("[data-item=expBoost4h][data-act=useItem]").textContent.includes("미정")&&__game.state.items.expBoost4h>0');
+ // Test-only legacy multiplier; production remains null.
+ await ev('__game.CFG.stub.expBoost.mul=1.2;__game.refresh();true');
+ await check('final configured boost enables use immediately', '!document.querySelector("[data-item=expBoost4h][data-act=useItem]").disabled');
+ await ev('document.querySelector("[data-item=expBoost4h][data-act=useItem]").click();true');
+ await check('final boost use shows remaining time', '__game.state.items.expBoost4h===0&&document.getElementById("boostChip").textContent.includes("경험치")');
+ await check('final 2F diamond price stays disabled', 'document.querySelector("[data-kind=floor2][data-via=dia]").disabled&&document.querySelector("[data-kind=floor2][data-via=dia]").textContent.includes("미정")');
+ await ev('document.querySelector("[data-main-tab=furniture]").click();true');
+ await check('final furniture inventory preserves wall controls', '!!document.querySelector("[data-wall-inventory-place]")&&!!document.querySelector("[data-act=placeFurniture]")');
+
+ await ev(`(()=>{const g=__game;g.ui.modals=[];const before=g.state.items.expBoost4h;Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));g.clock.offset+=60000;Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));delete document.hidden;return true;})()`);
+ await check('final background return catches up once and uses offline accounting', '__game.ui.modals.some(m=>m.kind==="offline"&&m.o.sec===60&&m.o.simSec<=__game.CFG.offline.capHours*3600)');
+
 }

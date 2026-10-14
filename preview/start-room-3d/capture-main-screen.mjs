@@ -1,5 +1,6 @@
+import {startFlow} from './tests/start-flow.mjs';
 // Main cafe capture using capture-spec-v3.mjs Chrome CDP pipe approach, portrait 390×844.
-// Usage (from the repo root or start-room-3d/): node start-room-3d/capture-main-screen.mjs [OUTDIR] [--u18 | --u179 | --u12 | --rf]
+// Usage (from the repo root or start-room-3d/): node start-room-3d/capture-main-screen.mjs [OUTDIR] [--final | --u18 | --u179 | --u12 | --rf]
 // Default OUTDIR: /workspace/shiba-cafe-docs/spec-v3-build
 import {spawn} from 'node:child_process';import {mkdirSync,writeFileSync,readFileSync,rmSync} from 'node:fs';import {resolve,dirname,join} from 'node:path';import {fileURLToPath} from 'node:url';
 const ROOT=dirname(fileURLToPath(import.meta.url));
@@ -24,9 +25,15 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await c('Page.navigate',{url:'file://'+resolve(ROOT,'index.html')+'?temp=1&still=1&fresh=1&seed=7'+(edit?'&edit=1':'')});
  for(let i=0;i<300&&!(await ev('Boolean(window.__ready)'));i++)await sleep(100);
  // Unsaved capture state: Lv6, M-02 in development.
- await click('[data-lang=ko]');await click('[data-act=langOk]');await click('[data-breed=red]');await click('[data-act=startGo]');
+ await startFlow(ev);
  await ev(`(()=>{const g=__game;g.state.cafe.level=5;g.state.coins=30000;g.state.dia=30;for(let i=0;i<250;i++)g.step(.1);g.world.custs=g.world.custs.slice(0,2);g.S.developMenu(g.state,'M-02',g.clock.now());g.refresh();return true;})()`);
  await sleep(1600);
+ };
+ const stageStarter=async()=>{
+  await c('Page.navigate',{url:'file://'+resolve(ROOT,'index.html')+'?temp=1&still=1&fresh=1&seed=7'});
+  for(let i=0;i<300&&!(await ev('Boolean(window.__ready)'));i++)await sleep(100);
+  await startFlow(ev,{beforeGo:()=>shot('main-screen-final-starter.png')});
+  await stage();
  };
  // §16: bottom tab row with real-state red dots, 알바 고르기 and 메뉴 개발 list popups (DPR2, unsaved TEMP staging).
  const u16=async()=>{
@@ -155,7 +162,23 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.alba.manager.unlock;g.state.coins=g.CFG.alba.manager.cost;g.S.hireAlba(g.state,'manager',[],g.clock.now());g.step(g.CFG.navigation.cellStepSec);g.refresh();if(!g.world.manager||document.getElementById('manager-debug'))throw Error('manager fixture');return true;})()`);
   await shot('main-screen-rf-manager.png');
  };
- if(process.argv.includes('--u18')){
+ // Unsaved capture fixture: legacy spec boost multiplier 1.2 exercises the timer; production multiplier stays null.
+ if(process.argv.includes('--final')){
+ await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+ await stageStarter();
+ await click('[data-act=mailbox]');await shot('main-screen-final-mailbox.png');await click('[data-act=modalOk]');
+ await ev(`(()=>{const g=__game;g.S.claimMail(g.state,1,g.clock.now());g.CFG.stub.expBoost.mul=1.2;g.refresh();return true;})()`);
+ await click('[data-main-tab=shop]');
+ if(!(await ev(`!document.querySelector('[data-act=useItem][data-item=expBoost4h]').disabled`)))throw Error('configured EXP boost remains disabled');
+ await click('[data-act=useItem][data-item=expBoost4h]');
+ if(!(await ev(`__game.state.items.expBoost4h===0&&document.getElementById('boostChip').textContent.includes('경험치')`)))throw Error('EXP boost consumption/timer missing');
+ await shot('main-screen-final-boost.png');
+ await click('[data-main-tab=furniture]');await shot('main-screen-final-seats.png');
+
+ await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.themes.find(t=>t.id==='bamboo').unlockLevel;g.state.coins=g.CFG.cafe.expansion2FCost;g.state.dia=g.CFG.themes.find(t=>t.id==='bamboo').unlockDia;g.refresh();return true;})()`);await click('[data-main-tab=shop]');await shot('main-screen-final-unlock.png');
+ if(errors.length)throw Error(errors.join('\n'));
+ }
+ else if(process.argv.includes('--u18')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
   await ev(`(()=>{const g=__game;g.debugExpand(3);g.world.custs=[];g.world.queue=[];g.world.manager=null;g.refresh();return true;})()`);
   await ev(`Promise.all(['left','right','corner'].map(part=>{const im=new Image();im.src='assets/drive/tiles/plate-edge-'+part+'.png';return im.decode();})).then(()=>true)`);

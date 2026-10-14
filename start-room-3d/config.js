@@ -13,13 +13,9 @@ const PRESSURE=[
  [8,18,1.5,95],[8,18,1.4,90],[8,18,1.3,85],[9,20,1.8,125],[9,20,1.6,110],[9,20,1.5,106],[9,20,1.5,102],[9,20,1.4,98],[9,20,1.3,93],[9,20,1.3,89], // 갱신 75 pressure table
  [9,20,1.2,85],[10,22,1.6,125],[10,22,1.4,110],[10,22,1.3,106],[10,22,1.3,103],[10,22,1.2,99],[10,22,1.2,96],[10,22,1.2,92],[10,22,1.1,89],[10,22,1.1,85]]; // 갱신 75 pressure table
 
-// 카페 레벨 경험치 (L→L+1). starting value 2026-10-15 (밸런스_2년.md §2), pending user confirm: 2-year curve to Lv50, sum 27,653,000
-// (replaces 갱신 98 table, sum 676,180; guest XP, guest cap, guest interval and the 10-shiba cap are unchanged)
-const CAFE_EXP=[11100,11100,11100,15600,29100,29100,37400,37400,37400,133600, // starting value 2026-10-15 (밸런스_2년.md §2), pending user confirm
- 133600,133600,133600,133600,174200,221800,221800,221800,221800,332600, // starting value 2026-10-15 (밸런스_2년.md §2), pending user confirm
- 380200,380200,380200,380200,475200,475200,534600,534600,534600,641500, // starting value 2026-10-15 (밸런스_2년.md §2), pending user confirm
- 641500,641500,641500,712800,950400,950400,950400,950400,950400,1188000, // starting value 2026-10-15 (밸런스_2년.md §2), pending user confirm
- 1188000,1306800,1306800,1306800,1393900,1393900,1393900,1393900,1393900]; // starting value 2026-10-15 (밸런스_2년.md §2), pending user confirm
+// Café EXP fitted from tests/balance-results.json, 20h/day, mean XP 1.1, ×1.5 first 14 days.
+// starting value 2026-10-15, pending user confirm: seat schedule 2→20; target days 10/80/215/425/735.
+const CAFE_EXP=[7187,7187,11293,10853,10853,14813,14227,18480,18480,99792,77000,77000,77000,62216,62216,75768,75768,75768,91168,175824,177012,175824,175824,175824,206712,206712,239976,239976,239976,421344,421344,421344,417648,413952,413952,460152,460152,511896,511896,755656,750200,752928,752928,755656,755656,826584,826584,826584,886600];
 
 export const CFG={
  ledger:{periodMs:86400000,dayOffsetMs:32400000,historyDays:7,includeDiamonds:false,openFromPill:true,openFromStore:true}, // §15 starting value 똑또기 2026-10-14, pending user batch confirm: KST midnight day, 7 days kept, 멍코인만, opened from 멍코인 pill and 가게 tab
@@ -35,12 +31,15 @@ export const CFG={
 
  // ── 재화 ──
  start:{coins:30000,hearts:10,dia:300}, // coins: starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm (was UNSET). hearts: 기본 소지 10 (1.4, 갱신 28). dia: starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm (was 0 '유료로만' 132-2)
- // 처음 14일 뿌리기 (밸런스_2년.md §5). starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm. Only `start` is applied (newState);
- // no daily claim mechanism exists yet, so the day grants are config only (also stub.onboarding dayMode UNSET). day:null = the file does not say which day.
- grants14:{
-  start:{coins:30000,dia:300,items:{furnitureSet:5,bandana:1}}, // starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm · coins/dia → CFG.start; 기본 가구 세트 5개·반다나 1개 (확정) are config only (which bandana = accessory.starterItem UNSET)
+ // 처음 14일 뿌리기 (밸런스_2년.md §5). starting value 2026-10-15, pending user confirm. Starting wallet applies at newState; daily grants require mailbox claim.
+ // Daily grants are merged with onboarding rewards in the claimable mailbox.
+ grants14:{incomeBoostRemainingDay:null, // UNSET: balance §5 has three income boosts; day 8/14 quantities unclear, grant one each and ask where the third belongs
+  dayMode:'calendar-KST', // starting value 2026-10-15, pending user confirm
+  itemDays:{8:{incomeBoost4h:1},10:{cooldownTicket:5},12:{potionBig:2},14:{incomeBoost4h:1}}, // starting value 2026-10-15, pending user confirm: income split unclear: 1 each on days 8/14; third boost allocation null/question; tickets 5, big potions 2
+
+  start:{coins:30000,dia:300,items:{furnitureSet:5,bandana:1}}, // starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm · coins/dia → CFG.start; five extra approved furniture items go to inventory; one existing bandana is chosen by the player
   days1to7:{fromDay:1,toDay:7,everyDays:1,coins:15000,dia:50,items:{heartReset:1,expBoost4h:1}}, // starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm · heartReset = the same 확정 grant as stub.onboarding days 1–7 (not extra)
-  days8to14:{fromDay:8,toDay:14,everyDays:2,coins:25000,dia:100}, // starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm · '2일마다' — which days is a question (8·10·12·14 matches the file's ~235,000멍 total)
+  days8to14:{fromDay:8,toDay:14,everyDays:2,coins:25000,dia:100}, // starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm · 8·10·12·14 per user task; merged into mailbox
   items:[{item:'incomeBoost4h',count:3,day:U},{item:'cooldownTicket',count:5,day:U},{item:'potionBig',count:2,day:U}], // starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm · 8~14일 row, day UNSET
   capsules:'stub.onboarding'}, // 캡슐 4·9·11일 (확정 온보딩) already live in stub.onboarding.rewards — not duplicated
  hearts:{regenCap:10, // 1.4 / 갱신 28·31, confirmed by user 2026-10-15: natural regen stops at 10
@@ -72,16 +71,19 @@ export const CFG={
  expansion:{rowCost:U}, // UNSET: interior §1 / spec v3 §1.3 land row cost
  themes:[
   {id:'tatami',name:'다다미',locked:false,unlockCost:null,art:'assets/drive/room-tatami-noline.png'}, // §1.3 default
-  // unlockCost (멍코인) / unlockDia / unlockLevel: starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm. art UNSET (interior §6). No theme UI yet; the 다이아 option is config only.
+  // unlockCost (멍코인) / unlockDia / unlockLevel: starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm. art UNSET (interior §6). Theme UI offers either currency while retaining level gates.
   {id:'fuji',name:'후지산 벽화 카페',locked:true,unlockCost:2400000,unlockDia:1500,unlockLevel:20,art:null}, // starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: Lv20, 2,400,000멍 or 1,500다이아
   {id:'bamboo',name:'대나무 회랑',locked:true,unlockCost:5400000,unlockDia:3000,unlockLevel:35,art:null} // starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: Lv35, 5,400,000멍 or 3,000다이아
  ],
- furniture:{items:[{id:'tea-table',name:'찻상',price:U},{id:'zabuton',name:'방석',price:U},{id:'counter',name:'카운터',price:U},{id:'stairs',name:'계단',price:U}]}, // UNSET: 1.3 / F p6·9 furniture prices
+ furniture:{starterExtra:{table:1,cushion:2,counter:1,stairs:1}, // starting value 2026-10-15, pending user confirm: five extra approved-sprite items, unplaced
+ items:[{id:'tea-table',name:'찻상',price:U},{id:'zabuton',name:'방석',price:U},{id:'counter',name:'카운터',price:U},{id:'stairs',name:'계단',price:U}]}, // UNSET: 1.3 / F p6·9 furniture prices
  // ── 카페 ──
- cafe:{maxLevel:50, // 갱신 73
+ cafe:{seatRewards:Array.from({length:50},(_,i)=>Math.round(2+18*i/49)), // starting value 2026-10-15, pending user confirm: cumulative cushions earned, Lv1 2 → Lv50 20
+  expansion2FDia:null, // UNSET: 2F diamond price
+  maxLevel:50, // 갱신 73
   customersPerHourPerCap:100, // 갱신 132-4 supersedes 갱신 75 arrival intervals
   pressure:PRESSURE, // 갱신 75 (interval column retained as source history only)
-  expToNext:CAFE_EXP, // 갱신 98
+  expToNext:CAFE_EXP, // starting value 2026-10-15, pending user confirm: fitted physical-seat curve, see BALANCE-2Y-2026-10-15.md
   capFromSlots:2.2, // 갱신 70·71: 손님 상한 = 배치 가능 시바 수 × 2.2, 올림 (표 값과 일치; 표가 우선)
   maxPlaced:10, // 갱신 74
   maxOwned:50, // 갱신 75
@@ -154,7 +156,7 @@ export const CFG={
   premiumUpgradeChance:.3, // 갱신 134: 고급 디저트 주문 → 프리미엄 1개 이상 개발 시 30% 확률로 프리미엄(8멍)
   drinkToDessert:[2,1], // 갱신 120: 음료:디저트 2:1
   devAtOnce:1,devMaxSec:172800}, // 갱신 136: 개발 시간이 지나야 완성, 최대 2일, 한 번에 1개
- itemIncome:{boostMul:1.2,boostHours:4,boostMaxHours:24,paidCapMul:1.5,priceDia:U}, // 갱신 97 시간제 수익 1.2배 · UNSET: 가격(다이아)
+ itemIncome:{boostMul:null,boostHours:4,boostMaxHours:24,paidCapMul:1.5,priceDia:U}, // UNSET: balance §5 does not specify income boost multiplier; question pending. Duration 4h from balance §5; existing 24h ceiling retained.
  navigation:{cellStepSec:.4,shibaCellStepSec:.5,queueWaitSec:30,queueReputation:0, // answer 똑또기 2026-10-14: editable starting values; queueWaitSec = the only 30 s limit (waiting for a seat)
   queueCells:4}, // starting value 똑또기 2026-10-14, pending user batch confirm: up to 4 queue cells on the grass outside the entrance, overflow guests turn back; floors without an entrance (stairs only) have no queue
  // interior §13 shiba poses. After a meeting the shiba roams visit.roamSec (3 s) then seeks a free guest; the meeting lasts visit.meetSec (5 s).
@@ -277,10 +279,10 @@ export const CFG={
   relations:{friendsMax:3,enemiesMax:3,fightChancePerMin:.1,fightSec:3,huffSec:2,fightInjury:1/20,fightHappy:-5,friendPickMul:2}, // 갱신 101-4·110·127
   shibaPlay:{checkIntervalSec:20,pairChance:.25}, // 1.7.1 · 갱신 127
   interior:{score:[0,100],recommended:{10:20,30:50,50:80},maxArrivalPenalty:.2,walkoutChance:.01}, // 갱신 113 (아이템별 점수 UNSET)
-  expBoost:{mul:1.2,hours:4,maxHours:24,capTotal:.2,priceDia:U}, // 갱신 98 · UNSET 가격
+  expBoost:{mul:null,hours:4,maxHours:24,capTotal:.2,priceDia:U}, // UNSET: balance §5 does not specify EXP boost multiplier; question pending. Duration 4h from balance §5; existing ceiling retained.
   diaPriceWon:10, // 갱신 141 confirmed: 1다이아 = 10원; free grants only events/onboarding/ranking
   // 1.4 · 갱신 29·33 28일 온보딩 (확정분만): 1~7일 하트 리셋권 1장, 캡슐 4·11·18·25일 1개 + 9일 5개 + 19일 10개. 3·17·26일 하트 개수 UNSET(질문 1(다)), 날짜 진행 방식 UNSET(보상표 Q5·Q6)
-  onboarding:{days:28,dayMode:U,rewards:{1:{heartReset:1},2:{heartReset:1},3:{heartReset:1,hearts:U},4:{heartReset:1,capsule:1},5:{heartReset:1},6:{heartReset:1},7:{heartReset:1}, // §1.4 · 갱신 29·33 onboarding days and quantities
+  onboarding:{days:28,dayMode:'calendar-KST',rewards:{1:{heartReset:1},2:{heartReset:1},3:{heartReset:1,hearts:U},4:{heartReset:1,capsule:1},5:{heartReset:1},6:{heartReset:1},7:{heartReset:1}, // §1.4 · 갱신 29·33 onboarding days and quantities
    9:{capsule:5},11:{capsule:1},17:{hearts:U},18:{capsule:1},19:{capsule:10},25:{capsule:1},26:{hearts:U}}}, // §1.4 · 갱신 29·33 onboarding days and quantities
   heartSources:{ads:U,friends:U}, // 갱신 54: 광고 시청·플레이어끼리 주고받기 — 방식·한도 UNSET
   adoptionIncome:U, // UNSET: 질문 4 입양 수익

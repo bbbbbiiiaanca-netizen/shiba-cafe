@@ -15,7 +15,7 @@ test('§17 early game: an unmet guest costs no reputation below Lv5, −1 from L
   w.custs.push({id:1,kind:'mom',phase:'seated',cell:[1,3],t:.05,activity:'interact',met:[],score:0,with:null,fulfilled:false,request:null,order:{id:'M-01',kind:'coffee',price:1,img:'x'}});
   for(const sh of s.shibas)sh.placed=false;S.tick(s,w,.1,now+100);const e=w.events.find(e=>e.type==='leave');assert.equal(e.outcome,'disappointed');assert.equal(s.cafe.rep,rep,'Lv'+lv);}});
 
-test('§17 upgrades: four kinds, null prices disabled (미정), seat/queue +1, interval/price effects null',()=>{
+test('§17 upgrades: three kinds, null prices disabled (미정), queue +1, interval/price effects null',()=>{
  assert.deepEqual(Object.keys(CFG.upgrades),['interval','price','queue']);
  for(const k of Object.keys(CFG.upgrades))assert.equal(CFG.upgrades[k].price,null,k);
  assert.equal(CFG.upgrades.queue.effect,1);assert.equal(CFG.upgrades.interval.effect,null);assert.equal(CFG.upgrades.price.effect,null);

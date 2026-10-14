@@ -38,10 +38,8 @@ test('갱신 75 pressure table: 50 rows, spot values, cap = ceil(slots×2.2) (70
  for(let lv=1;lv<=50;lv++){const p=pressureAt(lv);assert.equal(p.cap,Math.ceil(+(p.slots*CFG.cafe.capFromSlots).toFixed(6)),'lv'+lv);}
  // slots only grow at the 125% (숨통) levels (73)
  for(let lv=2;lv<=50;lv++)if(pressureAt(lv).slots>pressureAt(lv-1).slots)assert.equal(pressureAt(lv).pct,125,'lv'+lv);});
-test('café exp table (밸런스_2년.md §2 starting value 2026-10-15): 49 steps, 11,100 … 1,393,900, total 27,653,000; max level 50 (73)',()=>{
- const e=CFG.cafe.expToNext;assert.equal(e.length,49);assert.equal(e[0],11100);assert.equal(e[9],133600);assert.equal(e[48],1393900);assert.equal(e.reduce((a,b)=>a+b,0),27653000);assert.equal(CFG.cafe.maxLevel,50);
- // §2 table checkpoints: [level, exp to next, cumulative to reach that level]
- const cum=lv=>e.slice(0,lv-1).reduce((a,b)=>a+b,0);for(const [lv,next,c] of [[5,29100,48900],[10,133600,219300],[15,174200,887300],[20,332600,1948700],[25,475200,3802100],[30,641500,6356300],[35,950400,9635100],[40,1188000,14387100],[45,1393900,20683500]]){assert.equal(e[lv-1],next,'lv'+lv);assert.equal(cum(lv),c,'cum lv'+lv);}assert.equal(cum(50),27653000);
+test('café exp table: seat-growth calibration has 49 positive steps, max level 50',()=>{
+ const e=CFG.cafe.expToNext;assert.equal(e.length,49);assert.ok(e.every(n=>Number.isInteger(n)&&n>0));assert.equal(CFG.cafe.maxLevel,50);
  // unchanged by §2: guest exp, cap, interval, 10 placed shibas
  assert.deepEqual([CFG.cafeExp.custNormal,CFG.cafeExp.custSatisfied,CFG.cafeExp.custDisappointed,CFG.cafe.customersPerHourPerCap,CFG.cafe.maxPlaced],[1,2,0,100,10]);});
 test('spec numbers: stay/queue/visit/rep/hearts/walk/hospital/part-timers/payment',()=>{
@@ -84,14 +82,14 @@ test('139-5: unlock costs that shiba\'s 1,000 paws or 1,000 diamonds; paws used 
  n.paws=999;assert.equal(S.accUnlockCheck(s,n.id,'paws'),'paws');sh.paws=5000;assert.equal(S.accUnlockCheck(s,n.id,'paws'),'paws','another shiba\'s paws do not count');
  n.paws=1020;assert.ok(S.unlockAccSlot(s,n.id,'paws'));assert.equal(n.paws,20);assert.ok(n.accUnlocked);assert.equal(S.accUnlockCheck(s,n.id,'paws'),'done');
  const m=S.makeShiba(s,{breed:'white',level:1});s.shibas.push(m);s.dia=999;assert.equal(S.accUnlockCheck(s,m.id,'dia'),'dia');s.dia=1000;assert.ok(S.unlockAccSlot(s,m.id,'dia'));assert.equal(s.dia,0);assert.ok(m.accUnlocked);});
-test('café exp curve: level ups at table values, Lv7 after 107,100 exp, stops at 50',()=>{const s=S.newState(0);S.addCafeExp(s,11099);assert.equal(s.cafe.level,1);S.addCafeExp(s,1);assert.equal(s.cafe.level,2);
- const t=S.newState(0);S.addCafeExp(t,107100);assert.equal(t.cafe.level,7);assert.equal(t.cafe.exp,0);S.addCafeExp(t,1e9);assert.equal(t.cafe.level,50);});
+test('café exp curve: level boundaries, cumulative threshold and max level 50',()=>{const s=S.newState(0);S.addCafeExp(s,CFG.cafe.expToNext[0]-1);assert.equal(s.cafe.level,1);S.addCafeExp(s,1);assert.equal(s.cafe.level,2);
+ const t=S.newState(0);S.addCafeExp(t,CFG.cafe.expToNext.slice(0,6).reduce((a,b)=>a+b,0));assert.equal(t.cafe.level,7);assert.equal(t.cafe.exp,0);S.addCafeExp(t,1e9);assert.equal(t.cafe.level,50);});
 test('premium chance 5% + (rep−50)×0.3%p, +15%p satisfied, cap 40% (120)',()=>{near(S.premiumChance(50,false),.05);near(S.premiumChance(30,false),.05);near(S.premiumChance(70,false),.11);near(S.premiumChance(90,false),.17);near(S.premiumChance(90,true),.32);near(S.premiumChance(100,true),.35);
  const bak=CFG.menu.premiumSatisfiedBonus;CFG.menu.premiumSatisfiedBonus=.5;try{near(S.premiumChance(100,true),.4);}finally{CFG.menu.premiumSatisfiedBonus=bak;}});
 test('payment mechanics with explicit test aggregation × item (75·120); fractions kept (120)',()=>{const {s,sh}=freshGame();
  assert.equal(S.payFor(s,[sh.id],{price:1}).total,2);assert.equal(S.payFor(s,[],{price:1}).total,1);
  const o=S.makeShiba(s,{breed:'kuro',level:1});s.shibas.push(o);near(S.payFor(s,[sh.id,o.id],{price:3}).total,3*1.5);
- s.cafe.boostUntil=1e15;near(S.payFor(s,[sh.id],{price:1}).total,2.4);});
+ s.cafe.boostUntil=1e15;near(S.payFor(s,[sh.id],{price:1}).total,2);const saved=CFG.itemIncome.boostMul;try{CFG.itemIncome.boostMul=1.2;near(S.payFor(s,[sh.id],{price:1}).total,2.4);}finally{CFG.itemIncome.boostMul=saved;}});
 test('갱신 134 menu table: 13 items, unlock level & price from 134; dev cost = 15× 134-1 except 라테 15,000 (밸런스_2년.md §3)',()=>{
  const T={'M-02':['drink',2,8500,3],'M-05':['dessert',3,10000,5],'M-03':['drink',5,12000,3],'M-06':['dessert',7,13500,5],'M-04':['drink',9,15000,3],'M-07':['dessert',12,17000,5],'M-08':['dessert',15,18500,5],
   'P-01':['premium',20,23500,8],'P-02':['premium',25,27000,8],'P-03':['premium',30,30500,8],'P-04':['premium',35,32000,8],'P-05':['premium',40,34000,8],'P-06':['premium',45,35500,8]}; // [kind, level, 134-1 cost, price]

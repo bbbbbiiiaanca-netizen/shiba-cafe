@@ -69,11 +69,11 @@ export function validPlacement(item,slots,zone=MAP.zones[0]){
 export function defaultPlacement(){return {v:1,slots:structuredClone(MAP.zones[0].slots)};}
 export function restorePlacement(saved,zone=MAP.zones[0]){
  const fallback=defaultPlacement();
- if(!saved||saved.v!==1||!Array.isArray(saved.slots)||saved.slots.filter(s=>s?.type!=='wall').length!==fallback.slots.length)return fallback;
+ if(!saved||saved.v!==1||!Array.isArray(saved.slots)||saved.slots.length<fallback.slots.length)return fallback;
  if(saved.slots.some(s=>!s||!Array.isArray(s.origin)||s.origin.length!==2||!s.origin.every(Number.isInteger)||!SPRITES[s.type]||!availableDirs(s.type).includes(s.dir))||new Set(saved.slots.map(s=>s.id)).size!==saved.slots.length)return fallback;
  if(fallback.slots.some(d=>!saved.slots.some(s=>s.id===d.id&&s.type===d.type)))return fallback;
  const slots=fallback.slots.map(d=>{const s=saved.slots.find(s=>s.id===d.id&&s.type===d.type);return s?{...d,origin:s.origin,dir:s.dir}:d;});
- slots.push(...saved.slots.filter(s=>s.type==='wall').map(s=>({...s})));
+ slots.push(...saved.slots.filter(s=>!fallback.slots.some(d=>d.id===s.id)).map(s=>({...s})));
  return slots.every(s=>validPlacement(s,slots,zone))?{v:1,slots}:fallback;
 }
 
