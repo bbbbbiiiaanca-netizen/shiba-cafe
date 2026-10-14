@@ -45,8 +45,12 @@ test('도감 and in-game YouTube are not in the build',async()=>{});
 
 // ───────── formulas ─────────
 test('shiba level income effect ×(1+0.05(L−1)) (81): Lv10 1.45, Lv21 2.0, Lv30 2.45',()=>{near(S.levelEffect(1),1);near(S.levelEffect(10),1.45);near(S.levelEffect(21),2);near(S.levelEffect(30),2.45);});
-test('paw exp 10×N per level, cumulative 4,350 to Lv30, cap 30 (81)',()=>{let tot=0;for(let l=1;l<30;l++)tot+=S.pawsToNext(l);assert.equal(tot,4350);assert.equal(S.pawsToNext(30),null);
- const {sh}=freshGame();sh.level=1;assert.equal(S.addPaws(sh,10),1);assert.equal(sh.level,2);S.addPaws(sh,99999);assert.equal(sh.level,30);assert.equal(sh.paws,0);});
+test('138: paws 20×N per level (Lv1→2 20, Lv10→11 200, Lv29→30 580), cumulative 8,700 = 870 duplicates, cap 30',()=>{let tot=0;for(let l=1;l<30;l++)tot+=S.pawsToNext(l);
+ assert.equal(tot,8700);assert.equal(tot/CFG.level.dupPaws,870);assert.deepEqual([S.pawsToNext(1),S.pawsToNext(10),S.pawsToNext(29)],[20,200,580]);assert.equal(S.pawsToNext(30),null);});
+test('138: paws are a per-shiba balance spent with the level-up button (not automatic); max Lv30 keeps the balance',()=>{const {s,sh}=freshGame();sh.level=1;
+ S.addPaws(sh,19);assert.equal(sh.level,1);assert.equal(S.levelUpCheck(s,sh.id),'paws');assert.equal(S.levelUp(s,sh.id),false);
+ S.addPaws(sh,1);assert.ok(S.levelUp(s,sh.id));assert.deepEqual([sh.level,sh.paws],[2,0]);
+ S.addPaws(sh,99999);while(S.levelUp(s,sh.id));assert.equal(sh.level,30);assert.equal(sh.paws,99999-(8700-20));assert.equal(S.levelUpCheck(s,sh.id),'max');});
 test('intelligence = sum of trick steps × 4, capped at 100 (133)',()=>{const {sh}=freshGame();assert.equal(S.intelligence(sh),24); // 앉아·기다려 3단계 (100·109)
  for(const t of CFG.tricks)sh.tricks[t.id]=5;assert.equal(S.intelligence(sh),100);
  CFG.tricks.push({id:'extra'});sh.tricks.extra=5;try{assert.equal(S.intelligence(sh),100);}finally{CFG.tricks.pop();}});

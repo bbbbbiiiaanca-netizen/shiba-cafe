@@ -27,9 +27,11 @@ export function makeShiba(s,{breed,level=1,name=null,tricks={},r=Math.random,now
 }
 export const byId=(s,id)=>s.shibas.find(o=>o.id===id);
 export const levelEffect=lv=>1+CFG.level.incomePerLevel*(lv-1); // 갱신 81
-export const pawsToNext=lv=>lv>=CFG.level.max?null:CFG.level.pawsPerLevel*lv; // 갱신 81
-export function addPaws(sh,n){sh.paws+=n;let up=0;for(let need=pawsToNext(sh.level);need!=null&&sh.paws>=need;need=pawsToNext(sh.level)){sh.paws-=need;sh.level++;up++;}
- if(sh.level>=CFG.level.max)sh.paws=0;return up;}
+export const pawsToNext=lv=>lv>=CFG.level.max?null:CFG.level.pawsPerLevel*lv; // 갱신 138: 20×N
+// 발바닥 = 시바별 잔고. 레벨업과 액세서리 칸 해금(139-6)에 쓰므로 자동으로 레벨을 올리지 않고 플레이어가 레벨업 버튼으로 쓴다.
+export function addPaws(sh,n){if(sh&&n>0)sh.paws+=n;return sh?sh.paws:0;}
+export function levelUpCheck(s,id){const sh=byId(s,id);if(!sh)return 'pick';const need=pawsToNext(sh.level);if(need==null)return 'max';if(sh.paws<need)return 'paws';return null;}
+export function levelUp(s,id){if(levelUpCheck(s,id))return false;const sh=byId(s,id);sh.paws-=pawsToNext(sh.level);sh.level++;return true;}
 export function accessorySlots(lv){for(const [at,n] of CFG.accessorySlots)if(lv>=at)return n;return 0;} // 갱신 90
 export const trickSum=sh=>CFG.tricks.reduce((a,t)=>a+(sh.tricks[t.id]||0),0);
 export const intelligence=sh=>Math.min(CFG.intelligenceMax,trickSum(sh)*CFG.intelligencePerLevel); // 갱신 133

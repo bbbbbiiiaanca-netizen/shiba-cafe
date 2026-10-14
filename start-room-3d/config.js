@@ -95,7 +95,7 @@ export const CFG={
  // ── 시바 ──
  breeds:['red','sesame','kuro','white'], // 1.2 기본 4종 (레어 4종 ⏸️ 보류)
  personalities:['prankster','shy','tomboy','sweet','mopey','lazy','curious','boss','peopleLover','dogLover','tomgirl','zoomies','fighter','foodie','walkLover'], // 1.2 13개 + 갱신 52 먹보·산책광 = 15. 확률: 균등(성격별 확률 UNSET: 질문 9(다))
- level:{max:30,pawsPerLevel:10,dupPaws:10, // 갱신 81: Lv N→N+1 발바닥 10×N, 중복 1마리당 10
+ level:{max:30,pawsPerLevel:20,dupPaws:10, // 갱신 138: Lv N→N+1 발바닥 20×N (81의 10×N 대체, 누적 8,700) · 81: 중복 1마리당 10
   incomePerLevel:.05}, // 갱신 81: ×(1 + 0.05×(레벨−1))
  accessorySlots:[[25,3],[15,2],[5,1]], // 갱신 90: Lv5 1칸, Lv15 2칸, Lv25 3칸
  accessories:U, // UNSET: 1.2 / 질문 9(가) 어떤 액세서리가 열리는지

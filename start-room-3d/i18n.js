@@ -19,7 +19,7 @@ export const STR={
   'shibas.title':'시바','shibas.slots':'배치 {n}/{max}칸 · 보유 {own}/{ownMax}','shibas.placed':'카페','shibas.home':'집','shibas.dongu':'동구는 칸을 차지하지 않고 수익에 관여하지 않아요',
   'st.ok':'카페에서 일해요','st.home':'집에서 쉬어요','st.walking':'산책 중','st.injured':'다쳤어요','st.sick':'앓아누웠어요','st.hospital':'입원 중 {t}','st.sleeping':'잠만 자요 (피로 100%)',
   'inj.light':'가벼운 부상','inj.snake':'뱀 물림','inj.sick':'앓아누움',
-  'care.title':'돌봄','care.personality':'성격','care.level':'레벨','care.paws':'발바닥 {n}/{need}','care.pawsMax':'최고 레벨','care.intimacy':'친밀도','care.intel':'지능',
+  'care.title':'돌봄','care.personality':'성격','care.level':'레벨','care.paws':'발바닥 {n}/{need}','care.pawsMax':'최고 레벨 · 발바닥 {n}','care.intimacy':'친밀도','care.intel':'지능',
   'care.cond':'손님 만남 컨디션 ×{m}','care.levelEff':'수익 레벨 효과 ×{m}',
   'g.full':'배고픔(포만)','g.dirt':'더러움','g.fatigue':'피로도','g.happy':'행복','g.boredom':'지루함',
   'care.play':'놀아주기 ♥{n}','care.feed':'밥 주기','care.snack':'간식','care.bath':'목욕','care.sleep':'재우기','care.walk':'산책 보내기',
@@ -58,6 +58,7 @@ export const STR={
   'npc.commuter':'출근길 손님','npc.mom':'엄마','npc.dad':'아빠','npc.girl':'여자아이','npc.boykid':'남자아이','npc.grandma':'할머니','npc.grandpa':'할아버지','npc.coupleman':'연인 남','npc.couplewoman':'연인 여','npc.friend':'친구',
   'skip.btn':'바로 완료 {n}💎','toast.dia':'다이아가 모자라요','skip.note':'남은 시간 1분당 1다이아(1분 단위 올림)',
   'app.hm':'{h}시간 {m}분','app.h':'{h}시간','app.m':'{m}분','shop.devTime':'개발 {t}','shop.developing':'{name} 개발 중','shop.developingShort':'개발 중','shop.devLeft':'{t} 남음','shop.devIdle':'메뉴는 한 번에 1개만 개발해요. 멍코인을 내면 개발 시간이 지나야 완성돼요.','toast.menuDone':'{name} 개발 완료!','toast.devBusy':'지금 개발 중인 메뉴가 있어요 (한 번에 1개)',
+  'care.levelUp':'레벨업 🐾{n}','toast.levelUpShiba':'Lv{lv}이 됐어요!','toast.paws':'발바닥이 모자라요',
  },
  en:{
   'lang.name.ko':'한국어','lang.name.en':'English','lang.select.title':'Choose your language','lang.select.hint':'You can change it any time in Settings','lang.select.confirm':'OK',
@@ -75,7 +76,7 @@ export const STR={
   'shibas.title':'Shibas','shibas.slots':'Placed {n}/{max} · Owned {own}/{ownMax}','shibas.placed':'Café','shibas.home':'Home','shibas.dongu':'Donggu takes no slot and earns nothing',
   'st.ok':'Working in the café','st.home':'Resting at home','st.walking':'On a walk','st.injured':'Injured','st.sick':'Sick in bed','st.hospital':'In hospital {t}','st.sleeping':'Only sleeping (fatigue 100%)',
   'inj.light':'Light injury','inj.snake':'Snake bite','inj.sick':'Sick',
-  'care.title':'Care','care.personality':'Personality','care.level':'Level','care.paws':'Paws {n}/{need}','care.pawsMax':'Max level','care.intimacy':'Intimacy','care.intel':'Intelligence',
+  'care.title':'Care','care.personality':'Personality','care.level':'Level','care.paws':'Paws {n}/{need}','care.pawsMax':'Max level · paws {n}','care.intimacy':'Intimacy','care.intel':'Intelligence',
   'care.cond':'Guest condition ×{m}','care.levelEff':'Income level effect ×{m}',
   'g.full':'Fullness','g.dirt':'Dirt','g.fatigue':'Fatigue','g.happy':'Happiness','g.boredom':'Boredom',
   'care.play':'Play ♥{n}','care.feed':'Feed','care.snack':'Snack','care.bath':'Bath','care.sleep':'Put to bed','care.walk':'Go for a walk',
@@ -114,6 +115,7 @@ export const STR={
   'npc.commuter':'Commuter','npc.mom':'Mom','npc.dad':'Dad','npc.girl':'Girl','npc.boykid':'Boy','npc.grandma':'Grandma','npc.grandpa':'Grandpa','npc.coupleman':'Couple (him)','npc.couplewoman':'Couple (her)','npc.friend':'Friend',
   'skip.btn':'Finish now {n}💎','toast.dia':'Not enough diamonds','skip.note':'1 diamond per remaining minute (rounded up)',
   'app.hm':'{h} h {m} min','app.h':'{h} h','app.m':'{m} min','shop.devTime':'takes {t}','shop.developing':'Developing {name}','shop.developingShort':'Developing','shop.devLeft':'{t} left','shop.devIdle':'One menu at a time. After paying, it is ready when the development time has passed.','toast.menuDone':'{name} is ready!','toast.devBusy':'Another menu is in development (one at a time)',
+  'care.levelUp':'Level up 🐾{n}','toast.levelUpShiba':'Now Lv{lv}!','toast.paws':'Not enough paws',
  },
 };
 export function makeT(getLang){return (key,vars={})=>{const l=getLang()||'ko';let t=STR[l]?.[key]??STR.en[key]??key;for(const [k,v] of Object.entries(vars))t=t.split('{'+k+'}').join(v);return t;};}
