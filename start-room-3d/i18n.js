@@ -25,7 +25,7 @@ export const STR={
   'care.play':'놀아주기 ♥{n}','care.feed':'밥 주기','care.snack':'간식','care.bath':'목욕','care.sleep':'재우기','care.walk':'산책 보내기',
   'care.hospital':'병원 보내기 {cost}멍','care.hospitalNo':'멍코인이 모자라요 ({cost}멍)','care.unsetNote':'회복량·비용 미정',
   'care.tricks':'재주','care.train':'훈련 ♥1 ({p}%)','care.trainMax':'최고 단계','care.trainer':'훈련사','care.daycare':'데이케어 알바',
-  'care.acc':'액세서리 {n}칸','care.accEmpty':'액세서리 미정','care.likes':'좋아하는 간식·장난감','care.locked':'잠김',
+  'care.acc':'액세서리 칸','care.accEmpty':'비어 있음','care.likes':'좋아하는 간식·장난감','care.locked':'잠김',
   'care.abandon':'파양','care.abandonQ':'정말 {name}을(를) 파양할까요? 남은 시바 모두 친밀도가 {d} 떨어져요. 이 시바를 최애로 둔 단골: 미정(단골 기능 미정)',
   'care.place':'카페에 배치','care.unplace':'집으로','care.potion':'멍포션 {n}개 · 작은 멍포션 {m}개',
   'walk.title':'산책','walk.now':'{name} 산책 중 · {t} 남음','walk.stop':'멈추기 (규칙 미정)','walk.pick':'산책할 시바','walk.min':'{m}분 ♥{h}',
@@ -61,6 +61,7 @@ export const STR={
   'care.levelUp':'레벨업 🐾{n}','toast.levelUpShiba':'Lv{lv}이 됐어요!','toast.paws':'발바닥이 모자라요',
   'shop.gacha1':'1회 {dia}💎','shop.gacha10':'{n}연차 {dia}💎','shop.gachaTicket':'뽑기권 사용 ({n}장)','gacha.title':'시바뽑기 결과','gacha.new':'새 친구! {breed} Lv{lv}','gacha.dup':'중복 → {name} 발바닥 +{p}','toast.ticket':'뽑기권이 없어요',
   'walk.paws':'발바닥 +{n}','care.pawsSrc':'발바닥 얻는 법: 산책 2 · 놀아주기 1 · 카페 근무 1시간 1 · 재주 1단계 3 · 중복 시바 10 (알바도 같음, 하루 최대 없음)',
+  'care.accLockedNote':'시바마다 1칸. 해금해야 액세서리를 찰 수 있어요.','care.accUnlockPaws':'해금 🐾{n} (보유 {have})','care.accUnlockDia':'해금 {n}💎','care.accOpen':'칸이 열려 있어요. 상점에서 산 액세서리를 채울 수 있어요.',
  },
  en:{
   'lang.name.ko':'한국어','lang.name.en':'English','lang.select.title':'Choose your language','lang.select.hint':'You can change it any time in Settings','lang.select.confirm':'OK',
@@ -84,7 +85,7 @@ export const STR={
   'care.play':'Play ♥{n}','care.feed':'Feed','care.snack':'Snack','care.bath':'Bath','care.sleep':'Put to bed','care.walk':'Go for a walk',
   'care.hospital':'Hospital {cost}','care.hospitalNo':'Not enough coins ({cost})','care.unsetNote':'Amount/cost TBD',
   'care.tricks':'Tricks','care.train':'Train ♥1 ({p}%)','care.trainMax':'Max step','care.trainer':'Trainer','care.daycare':'Daycare part-timer',
-  'care.acc':'Accessories: {n} slots','care.accEmpty':'Accessories TBD','care.likes':'Favourite snacks & toys','care.locked':'Locked',
+  'care.acc':'Accessory slot','care.accEmpty':'Empty','care.likes':'Favourite snacks & toys','care.locked':'Locked',
   'care.abandon':'Give up','care.abandonQ':'Really give up {name}? Every other Shiba loses {d} intimacy. Regulars who love this Shiba: TBD (regulars not decided)',
   'care.place':'Place in café','care.unplace':'Send home','care.potion':'Mung potion {n} · small {m}',
   'walk.title':'Walk','walk.now':'{name} is walking · {t} left','walk.stop':'Stop (rule TBD)','walk.pick':'Who walks','walk.min':'{m} min ♥{h}',
@@ -120,6 +121,7 @@ export const STR={
   'care.levelUp':'Level up 🐾{n}','toast.levelUpShiba':'Now Lv{lv}!','toast.paws':'Not enough paws',
   'shop.gacha1':'1 pull {dia}💎','shop.gacha10':'{n} pulls {dia}💎','shop.gachaTicket':'Use ticket (×{n})','gacha.title':'Capsule results','gacha.new':'New! {breed} Lv{lv}','gacha.dup':'Duplicate → {name} +{p} paws','toast.ticket':'No capsule tickets',
   'walk.paws':'+{n} paws','care.pawsSrc':'Paws: walk 2 · play 1 · 1 h in the café 1 · trick step 3 · duplicate 10 (part-timers too, no daily cap)',
+  'care.accLockedNote':'One slot per Shiba. Unlock it to wear an accessory.','care.accUnlockPaws':'Unlock 🐾{n} (have {have})','care.accUnlockDia':'Unlock {n}💎','care.accOpen':'Slot open. Accessories bought in the shop can go here.',
  },
 };
 export function makeT(getLang){return (key,vars={})=>{const l=getLang()||'ko';let t=STR[l]?.[key]??STR.en[key]??key;for(const [k,v] of Object.entries(vars))t=t.split('{'+k+'}').join(v);return t;};}

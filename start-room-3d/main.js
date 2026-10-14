@@ -85,6 +85,12 @@ P.shibas=()=>{const n=S.placedShibas(s).length;let h=`<div class="card"><div cla
   <button class="${s.dongu.placed?'sec':''}" data-act="dongu">${s.dongu.placed?L('care.unplace'):L('care.place')}</button></div></div>`;return {title:L('shibas.title'),html:h};};
 function statusText(sh,st){if(st==='hospital')return L('st.hospital',{t:tfmt((sh.hospitalUntil-clock.now())/1000)})+' · '+L('inj.'+sh.hospitalKind);if(st==='injured')return L('st.injured')+' · '+L('inj.'+sh.injury);
  if(st==='ok'&&!sh.placed)return L('st.home');return L('st.'+st);}
+// 갱신 139-5·139-6: 액세서리 칸 1개 — 잠김이면 발바닥 1,000 / 1,000다이아로 해금
+function accCard(sh){const A=CFG.accessory,id=sh.id;let h=`<div class="card" data-acc="${id}"><h3>${L('care.acc')}</h3>`;
+ if(!sh.accUnlocked)return h+`<div class="li">${slot('🔒 '+L('care.locked'))}<div class="grow note">${L('care.accLockedNote')}</div></div>
+  <div class="btns"><button data-act="accUnlock" data-id="${id}" data-via="paws" ${S.accUnlockCheck(s,id,'paws')?'disabled':''}>${L('care.accUnlockPaws',{n:fmt(A.unlockPaws),have:fmt(sh.paws)})}</button>
+  <button data-act="accUnlock" data-id="${id}" data-via="dia" ${S.accUnlockCheck(s,id,'dia')?'disabled':''}>${L('care.accUnlockDia',{n:fmt(A.unlockDia)})}</button></div></div>`;
+ return h+`<div class="li">${slot(L('care.accEmpty'))}<div class="grow note">${L('care.accOpen')}</div></div></div>`;}
 P.care=id=>{const sh=S.byId(s,id);if(!sh)return P.shibas();const st=S.statusOf(s,sh),now=clock.now(),need=S.pawsToNext(sh.level);
  let h=`<div class="card"><div class="big">${img(shibaImg(sh),nameOf(sh))}</div><div style="text-align:center"><div class="nm" style="font-size:18px;font-weight:900">${nameOf(sh)}</div>
   <div class="note">${L('shiba.breed.'+sh.breed)} · ${L('care.personality')}: ${L('per.'+sh.personality)} · ${statusText(sh,st)}</div></div>
@@ -107,7 +113,7 @@ P.care=id=>{const sh=S.byId(s,id);if(!sh)return P.shibas();const st=S.statusOf(s
  for(const t of CFG.tricks){const lv=sh.tricks[t.id],c=S.trainCheck(s,id,t.id),tc=S.albaCheck(s,'trainer',[id],now,t.id),tcd=(sh.cd.trainer||0)-now;
   h+=`<div class="trk"><div class="li"><b>${L('trick.'+t.id)}</b><span class="stars">${'★'.repeat(lv)}${'☆'.repeat(CFG.trickMaxLevel-lv)}</span><span class="grow note">${lv<CFG.trickMaxLevel?sh.trickExp[t.id]+'/'+(lv+1):L('care.trainMax')}</span></div>
    ${lv>=CFG.trickMaxLevel?'':`<div class="btns"><button data-act="train" data-id="${id}" data-trick="${t.id}" ${c?'disabled':''}>${L('care.train',{p:Math.round(S.trainChance(sh)*100)})}</button><button class="sec" data-act="trainer" data-id="${id}" data-trick="${t.id}" ${tc?'disabled':''}>${L('care.trainer')} · ${s.cafe.level<T.unlock?L('app.locked',{lv:T.unlock}):tcd>0?tfmt(tcd/1000):L('app.coins',{n:fmt(T.cost)})}</button></div>`}</div>`;}
- h+=`</div><div class="card"><h3>${L('care.acc',{n:S.accessorySlots(sh.level)})}</h3><div class="btns">${Array.from({length:S.accessorySlots(sh.level)},()=>slot(L('care.accEmpty'))).join('')}</div>
+ h+=`</div>${accCard(sh)}<div class="card">
   <h3>${L('care.likes')}</h3><div class="btns">${Array.from({length:CFG.likes.snacks.basic+CFG.likes.snacks.rare},()=>slot('🔒 '+L('care.locked'))).join('')}${slot('🔒 '+L('app.unset'))}</div></div>
   <div class="card"><div class="btns"><button class="${sh.placed?'sec':''}" data-act="place" data-id="${id}" data-on="${sh.placed?0:1}" ${!sh.placed&&S.placeCheck(s,id)?'disabled':''}>${sh.placed?L('care.unplace'):L('care.place')}</button>
    <button class="warn" data-act="abandon" data-id="${id}" ${S.abandonCheck(s,id)?'disabled':''}>${L('care.abandon')}</button></div></div>`;
@@ -213,6 +219,7 @@ const act={
  skip:d=>{const t={type:d.type,id:d.id===''?null:+d.id};if(S.skipNow(s,t,clock.now())==null)why(S.skipCheck(s,t,clock.now()));},
  levelUp:d=>{if(S.levelUp(s,+d.id))toast(L('toast.levelUpShiba',{lv:S.byId(s,+d.id).level}));else toast(L('toast.paws'));},
  gacha:d=>{const res=S.gachaPull(s,+d.n,r,clock.now(),{ticket:!!d.ticket});if(res)ui.modals.push({kind:'gacha',res});else why(S.gachaCheck(s,+d.n,{ticket:!!d.ticket}));},
+ accUnlock:d=>{if(!S.unlockAccSlot(s,+d.id,d.via))why(S.accUnlockCheck(s,+d.id,d.via));},
  dev:d=>{if(!S.developMenu(s,d.id,clock.now()))why(S.menuCheck(s,d.id));},
  heartReset:()=>{S.useHeartReset(s,clock.now());},
  setLang:d=>{s.settings.language=d.lang;applyStatic();},toggle:d=>{s.settings[d.k]=!s.settings[d.k];},

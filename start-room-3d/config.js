@@ -100,8 +100,9 @@ export const CFG={
  // 갱신 139-1·139-2 활동 발바닥 (시바 개인, 하루 최대 없음). 알바가 대신한 활동도 똑같이, 매니저 운영 시간도 카페 근무
  activityPaws:{walk:2,play:1,cafeWorkHour:1,trickLevel:3, // 139-1: 직접 산책 1회 2, 놀아주기 1회 1, 카페 근무 1시간 1, 훈련 1단계 완료 3
   walkAlba:2,daycare:1,trainer:3,dailyCap:null}, // 139-2: 산책 알바 = 산책 2, 데이케어 = 놀아주기 1, 훈련사 = 훈련 1단계 3 · dailyCap null = '하루 최대 없음'(정해진 값)
- accessorySlots:[[25,3],[15,2],[5,1]], // 갱신 90: Lv5 1칸, Lv15 2칸, Lv25 3칸
- accessories:U, // UNSET: 1.2 / 질문 9(가) 어떤 액세서리가 열리는지
+ // 갱신 139-5·139-6 액세서리 칸: 시바마다 1칸, 해금해야 찰 수 있음 (90의 Lv5/15/25 칸, 139-3·139-4의 2·3칸 삭제)
+ accessory:{slots:1,unlockPaws:1000,unlockDia:1000, // 139-5: 발바닥 1,000개 또는 1,000다이아(10,000원)
+  starterSlotOpen:true,starterItems:1}, // 139-6: 첫 시작 시바만 칸이 열린 채로 액세서리 1개 제공
  likes:{snacks:{basic:2,rare:1},toys:U,list:U}, // 갱신 40: 좋아하는 간식 기본 2 + 레어 1 · UNSET: 장난감 구조(제안), 간식·장난감 목록(질문 9(카))
  startShiba:{level:21,tricks:{sit:3,wait:3}}, // 갱신 90 레벨 21 · 갱신 100·109·133 앉아·기다려 3단계 · 갱신 109 4종 중 선택
  rescueLevel:U, // UNSET: 질문 9(사) 구조한 시바의 레벨 → Lv1(범위 최저) 사용, notes 참고

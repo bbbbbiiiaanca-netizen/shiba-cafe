@@ -54,7 +54,15 @@ test('138: paws are a per-shiba balance spent with the level-up button (not auto
 test('intelligence = sum of trick steps × 4, capped at 100 (133)',()=>{const {sh}=freshGame();assert.equal(S.intelligence(sh),24); // 앉아·기다려 3단계 (100·109)
  for(const t of CFG.tricks)sh.tricks[t.id]=5;assert.equal(S.intelligence(sh),100);
  CFG.tricks.push({id:'extra'});sh.tricks.extra=5;try{assert.equal(S.intelligence(sh),100);}finally{CFG.tricks.pop();}});
-test('accessory slots by level 5/15/25 (90); start shiba Lv21 has 2',()=>{assert.equal(S.accessorySlots(4),0);assert.equal(S.accessorySlots(5),1);assert.equal(S.accessorySlots(15),2);assert.equal(S.accessorySlots(25),3);assert.equal(S.accessorySlots(21),2);});
+test('139-5·139-6: one accessory slot per shiba (no Lv5/15/25 slots); only the starting shiba has it open',()=>{const {s,r,sh}=freshGame();
+ assert.equal(CFG.accessory.slots,1);assert.equal(CFG.accessorySlots,undefined);assert.ok(sh.accUnlocked&&sh.starter);
+ s.items.capsule=1;s.dia=0;const res=S.gachaPull(s,1,()=>.3,0,{ticket:true})[0];const n=S.byId(s,res.id);assert.equal(n.accUnlocked,false);assert.ok(!n.starter);
+ n.level=30;assert.equal(n.accUnlocked,false,'levels do not open slots');});
+test('139-5: unlock costs that shiba\'s 1,000 paws or 1,000 diamonds; paws used are no longer there for level-ups',()=>{const {s,sh}=freshGame();s.dia=0;
+ const n=S.makeShiba(s,{breed:'kuro',level:1});s.shibas.push(n);assert.equal(CFG.accessory.unlockPaws,1000);assert.equal(CFG.accessory.unlockDia,1000);
+ n.paws=999;assert.equal(S.accUnlockCheck(s,n.id,'paws'),'paws');sh.paws=5000;assert.equal(S.accUnlockCheck(s,n.id,'paws'),'paws','another shiba\'s paws do not count');
+ n.paws=1020;assert.ok(S.unlockAccSlot(s,n.id,'paws'));assert.equal(n.paws,20);assert.ok(n.accUnlocked);assert.equal(S.accUnlockCheck(s,n.id,'paws'),'done');
+ const m=S.makeShiba(s,{breed:'white',level:1});s.shibas.push(m);s.dia=999;assert.equal(S.accUnlockCheck(s,m.id,'dia'),'dia');s.dia=1000;assert.ok(S.unlockAccSlot(s,m.id,'dia'));assert.equal(s.dia,0);assert.ok(m.accUnlocked);});
 test('café exp curve: level ups at table values, Lv7 after 2,970 exp, stops at 50',()=>{const s=S.newState(0);S.addCafeExp(s,119);assert.equal(s.cafe.level,1);S.addCafeExp(s,1);assert.equal(s.cafe.level,2);
  const t=S.newState(0);S.addCafeExp(t,2970);assert.equal(t.cafe.level,7);assert.equal(t.cafe.exp,0);S.addCafeExp(t,1e9);assert.equal(t.cafe.level,50);});
 test('premium chance 5% + (rep−50)×0.3%p, +15%p satisfied, cap 40% (120)',()=>{near(S.premiumChance(50,false),.05);near(S.premiumChance(30,false),.05);near(S.premiumChance(70,false),.11);near(S.premiumChance(90,false),.17);near(S.premiumChance(90,true),.32);near(S.premiumChance(100,true),.35);

@@ -23,7 +23,7 @@ export function makeShiba(s,{breed,level=1,name=null,tricks={},r=Math.random,now
  const tr={},te={};for(const t of CFG.tricks){tr[t.id]=clamp(tricks[t.id]||0,0,CFG.trickMaxLevel);te[t.id]=0;}
  return {id:s.nextId++,breed,name,personality:pick(r,CFG.personalities),level:clamp(level,1,CFG.level.max),paws:0,
   intimacy:CFG.intimacy.start??CFG.intimacy.min,g,tricks:tr,trickExp:te,placed:false,status:'ok',injury:null,hospitalUntil:0,hospitalKind:null,
-  zeroSince:null,sickSince:null,cd:{},joinedAt:now,accessories:[],likesFound:{snacks:[],toys:[]}};
+  zeroSince:null,sickSince:null,cd:{},joinedAt:now,acc:null,accUnlocked:false,likesFound:{snacks:[],toys:[]}};
 }
 export const byId=(s,id)=>s.shibas.find(o=>o.id===id);
 export const levelEffect=lv=>1+CFG.level.incomePerLevel*(lv-1); // 갱신 81
@@ -32,7 +32,10 @@ export const pawsToNext=lv=>lv>=CFG.level.max?null:CFG.level.pawsPerLevel*lv; //
 export function addPaws(sh,n){if(sh&&n>0)sh.paws+=n;return sh?sh.paws:0;}
 export function levelUpCheck(s,id){const sh=byId(s,id);if(!sh)return 'pick';const need=pawsToNext(sh.level);if(need==null)return 'max';if(sh.paws<need)return 'paws';return null;}
 export function levelUp(s,id){if(levelUpCheck(s,id))return false;const sh=byId(s,id);sh.paws-=pawsToNext(sh.level);sh.level++;return true;}
-export function accessorySlots(lv){for(const [at,n] of CFG.accessorySlots)if(lv>=at)return n;return 0;} // 갱신 90
+// 갱신 139-5·139-6: 액세서리 칸 1개, 시바마다 발바닥 1,000개(그 시바의 발바닥) 또는 1,000다이아로 해금
+export function accUnlockCheck(s,id,via){const sh=byId(s,id);if(!sh)return 'pick';if(sh.accUnlocked)return 'done';const A=CFG.accessory;
+ if(via==='paws')return sh.paws<A.unlockPaws?'paws':null;if(via==='dia')return s.dia<A.unlockDia?'dia':null;return 'via';}
+export function unlockAccSlot(s,id,via){if(accUnlockCheck(s,id,via))return false;const sh=byId(s,id);if(via==='paws')sh.paws-=CFG.accessory.unlockPaws;else s.dia-=CFG.accessory.unlockDia;sh.accUnlocked=true;return true;}
 export const trickSum=sh=>CFG.tricks.reduce((a,t)=>a+(sh.tricks[t.id]||0),0);
 export const intelligence=sh=>Math.min(CFG.intelligenceMax,trickSum(sh)*CFG.intelligencePerLevel); // 갱신 133
 export function changeGauges(s,sh,d,now=Date.now()){for(const k of CFG.gauges)if(d[k])sh.g[k]=clamp(sh.g[k]+d[k],0,100);
@@ -74,7 +77,9 @@ function addCoins(s,x){const t=s.coinFrac+x,w=Math.floor(t+1e-9);s.coins+=w;s.co
 // ───────────────────────── start / placement / abandon ─────────────────────────
 // 갱신 109: the player picks one of the 4 breeds; it starts at Lv21 (갱신 90) with 앉아·기다려 3단계 (갱신 100·133)
 export function chooseStart(s,breed,name,r=Math.random,now=Date.now()){if(s.started||!CFG.breeds.includes(breed))return null;
- const sh=makeShiba(s,{breed,name:name||null,level:CFG.startShiba.level,tricks:CFG.startShiba.tricks,r,now});sh.placed=true;s.shibas.push(sh);s.started=true;return sh;}
+ const sh=makeShiba(s,{breed,name:name||null,level:CFG.startShiba.level,tricks:CFG.startShiba.tricks,r,now});sh.placed=true;
+ sh.starter=true;sh.accUnlocked=!!CFG.accessory.starterSlotOpen; // 139-6: 첫 시작 시바만 칸이 열려 있음
+ s.shibas.push(sh);s.started=true;return sh;}
 export const placedShibas=s=>s.shibas.filter(o=>o.placed);
 export function placeCheck(s,id){const sh=byId(s,id);if(!sh)return 'pick';if(sh.placed)return null;if(placedShibas(s).length>=slotsOf(s))return 'slots';return null;}
 export function setPlaced(s,id,on){const sh=byId(s,id);if(!sh)return false;if(on&&placeCheck(s,id))return false;sh.placed=!!on;return true;}
@@ -309,7 +314,9 @@ export function save(storage,s,now=Date.now()){s.lastSeen=now;storage.setItem(CF
 export function load(storage,now=Date.now(),r=Math.random){let s=null;try{s=JSON.parse(storage.getItem(CFG.saveKey));}catch{}
  if(!s||s.v!==CFG.saveVersion)return {state:newState(now),fresh:true,offline:null,reopened:null};
  const d=newState(now);s={...d,...s,items:{...d.items,...s.items},cafe:{...d.cafe,...s.cafe},stats:{...d.stats,...s.stats},settings:{...d.settings,...s.settings}};
- s.menus=(s.menus||[]).filter(id=>menuItem(id));if(s.menuDev&&!menuItem(s.menuDev.id))s.menuDev=null;let offline=null;if(s.started&&now>s.lastSeen){const w=newWorld(s,r);offline=fastForward(s,w,s.lastSeen,now,{offline:true});}
+ s.menus=(s.menus||[]).filter(id=>menuItem(id));if(s.menuDev&&!menuItem(s.menuDev.id))s.menuDev=null;
+ // older v3 saves: 90's level slots → 139-6 one slot (the first shiba is the starter)
+ for(const sh of s.shibas){if(!('accUnlocked' in sh)){sh.starter=sh.id===Math.min(...s.shibas.map(o=>o.id));sh.accUnlocked=sh.starter;sh.acc=null;delete sh.accessories;}}let offline=null;if(s.started&&now>s.lastSeen){const w=newWorld(s,r);offline=fastForward(s,w,s.lastSeen,now,{offline:true});}
  const reopened=reopenCafe(s,now);s.lastSeen=now;return {state:s,fresh:false,offline,reopened};}
 
 // ───────────────────────── UNSET-gated features (stubs) ─────────────────────────
