@@ -16,10 +16,36 @@ export const personalityOddsSet=()=>!isUnset(CFG.personalityOdds);
 const drawPersonality=r=>personalityOddsSet()?pickWeighted(r,CFG.personalities,CFG.personalityOdds):null;
 const H=3600e3;
 
+// §15: actual coin flows only; balances at creation/migration are not income.
+export const ledgerCategories={sales:['메뉴 판매','income'],meeting:['시바 만남 추가 수입','income'],offline:['오프라인 수입','income'],alba:['알바비','expense'],hospital:['병원비','expense'],menu:['메뉴 개발비','expense'],accessory:['반다나 구입비','expense']};
+export const ledgerDay=now=>Math.floor((now+CFG.ledger.dayOffsetMs)/CFG.ledger.periodMs);
+export function settleLedger(s,now){
+ const today=ledgerDay(now);s.ledger??={days:{},now};s.ledger.now=Math.max(now,s.ledger.now??now);const latest=ledgerDay(s.ledger.now);
+ s.ledger.days??={};for(const key of Object.keys(s.ledger.days))if(+key<latest-Math.max(2,CFG.ledger.historyDays)+1)delete s.ledger.days[key];
+ return today;
+}
+export function recordLedger(s,category,amount,now=s.ledger?.now??s.lastSeen){
+ if(!ledgerCategories[category]||!Number.isFinite(amount)||amount===0)return;
+ const day=settleLedger(s,now);if(day<ledgerDay(s.ledger.now)-Math.max(2,CFG.ledger.historyDays)+1)return;const row=s.ledger.days[day]??={};row[category]=(row[category]||0)+amount;
+}
+export function ledgerStatement(s,now,offset=0){
+ const day=settleLedger(s,now)+(offset===-1?-1:0),row=s.ledger.days[day]||{};
+ const lines=Object.entries(ledgerCategories).map(([id,[label,kind]])=>({id,label,kind,amount:row[id]||0}));
+ return {day,lines,net:lines.reduce((n,x)=>n+(x.kind==='expense'?-x.amount:x.amount),0)};
+}
+export function recordPayment(s,pay,now,{offline=false}={}){
+ if(pay.pending||!Number.isFinite(pay.total)||isUnset(s.coins))return null;
+ const credited=addCoins(s,pay.total);
+ // Book exact flows including fractional carry; statement formatting keeps them visible.
+ if(offline)recordLedger(s,'offline',pay.total,now);
+ else{recordLedger(s,'sales',pay.base,now);recordLedger(s,'meeting',pay.total-pay.base,now);}
+ return credited;
+}
+
 // ───────────────────────── state ─────────────────────────
 export function newState(now=Date.now()){
  return {v:CFG.saveVersion,started:false,coins:CFG.start.coins,coinFrac:0,hearts:CFG.start.hearts,heartRegenAt:now,dia:CFG.start.dia,
-  placement:defaultPlacement(),space:restoreSpace(null),
+  ledger:{days:{},now},placement:defaultPlacement(),space:restoreSpace(null),
   items:{heartReset:0,capsule:0,potionBig:0,potionSmall:0,cooldownTicket:0},
   cafe:{level:1,exp:0,rep:CFG.rep.start,stains:0,stainAcc:0,badStainAcc:0,driftAcc:0,closed:false,closedAt:null,managerUntil:0,managerCleanAcc:0,boostUntil:0},
   shibas:[],nextId:1,dongu:{placed:true},walk:null,rescues:[],walkResults:[],menus:[],menuDev:null,accInv:{},lastAbandonAt:null,
@@ -52,7 +78,7 @@ export const starterItem=()=>CFG.accessory.starterItem; // identity UNSET → no
 export const accWorn=(s,id)=>s.shibas.filter(o=>o.acc===id).length;
 export const accOwned=(s,id)=>(s.accInv[id]||0)+accWorn(s,id);
 export function buyAccCheck(s,id){const it=accItem(id);if(!it)return isUnset(CFG.accessory.special.items)?'unset':'pick';if(isUnset(s.coins)||s.coins<it.price)return 'coins';return null;}
-export function buyAcc(s,id){if(buyAccCheck(s,id))return false;s.coins-=accItem(id).price;s.accInv[id]=(s.accInv[id]||0)+1;return true;}
+export function buyAcc(s,id,now=Date.now()){if(buyAccCheck(s,id))return false;s.coins-=accItem(id).price;recordLedger(s,'accessory',accItem(id).price,now);s.accInv[id]=(s.accInv[id]||0)+1;return true;}
 export function equipCheck(s,shId,id){const sh=byId(s,shId);if(!sh)return 'pick';if(!sh.accUnlocked)return 'slot';if(sh.acc===id)return 'worn';if(!(s.accInv[id]>0))return 'none';return null;}
 export function equipAcc(s,shId,id){if(equipCheck(s,shId,id))return false;const sh=byId(s,shId);if(sh.acc)s.accInv[sh.acc]=(s.accInv[sh.acc]||0)+1;s.accInv[id]--;sh.acc=id;return true;}
 export function unequipAcc(s,shId){const sh=byId(s,shId);if(!sh||!sh.acc)return false;s.accInv[sh.acc]=(s.accInv[sh.acc]||0)+1;sh.acc=null;return true;}
@@ -134,7 +160,7 @@ export function albaCheck(s,kind,ids=[],now=Date.now(),trick=null){const A=CFG.a
  if(!ids.length)return 'pick';if(kind==='walk'?ids.length>A.maxShibas:ids.length!==1)return 'count';
  for(const id of ids){const sh=byId(s,id);if(!sh)return 'pick';if((sh.cd[kind]||0)>now)return 'cooldown';const st=statusOf(s,sh);if(st!=='ok')return st;}
  if(kind==='trainer')return trainCheck(s,ids[0],trick,{trainer:true});return null;}
-export function hireAlba(s,kind,ids=[],now=Date.now(),trick=null){if(albaCheck(s,kind,ids,now,trick))return null;const A=CFG.alba[kind];s.coins-=A.cost;
+export function hireAlba(s,kind,ids=[],now=Date.now(),trick=null){if(albaCheck(s,kind,ids,now,trick))return null;const A=CFG.alba[kind];s.coins-=A.cost;recordLedger(s,'alba',A.cost,now);
  if(kind==='manager'){s.cafe.managerUntil=now+A.hireSec*1000;return {kind};}
  for(const id of ids){const sh=byId(s,id);sh.cd[kind]=now+A.cooldownSec*1000;
   if(kind==='walk'){changeGauges(s,sh,{boredom:A.boredom},now);addPaws(sh,CFG.activityPaws.walkAlba);} // 지루함 50 즉시 해소, 하트·경험치·친밀도·구조견 없음 · 139-2 발바닥 2
@@ -148,7 +174,7 @@ export function hospitalCost(s,kind){const col={light:1,snake:2,sick:3,rescueBat
 export function hospitalCheck(s,id){const sh=byId(s,id);if(!sh)return 'pick';if(sh.status!=='injured'&&sh.status!=='sick')return 'healthy';
  if(isUnset(s.coins)||s.coins<hospitalCost(s,sh.status==='sick'?'sick':sh.injury))return 'coins';return null;} // 갱신 111-1: 외상 없음
 export function sendToHospital(s,id,now=Date.now(),stayMul=1){if(hospitalCheck(s,id))return null;const sh=byId(s,id),kind=sh.status==='sick'?'sick':sh.injury;
- s.coins-=hospitalCost(s,kind);sh.status='hospital';sh.hospitalKind=kind;sh.hospitalUntil=now+CFG.hospital.stays[kind]*1000*stayMul;return sh;}
+ s.coins-=hospitalCost(s,kind);recordLedger(s,'hospital',hospitalCost(s,kind),now);sh.status='hospital';sh.hospitalKind=kind;sh.hospitalUntil=now+CFG.hospital.stays[kind]*1000*stayMul;return sh;}
 function releaseHospital(s,now){for(const sh of s.shibas)if(sh.status==='hospital'&&now>=sh.hospitalUntil){sh.status='ok';sh.injury=null;sh.hospitalKind=null;sh.sickSince=null;sh.zeroSince=null;updateZero(sh,s.cafe.closed?s.cafe.closedAt:now);}} // a gauge still at 0 restarts the 2-hour clock
 function tickHealth(s,now){releaseHospital(s,now);for(const sh of s.shibas){
  if(sh.status==='ok'&&sh.zeroSince!=null&&now-sh.zeroSince>=CFG.sick.zeroHours*H){sh.status='sick';sh.sickSince=now;}
@@ -192,7 +218,7 @@ export function tickWalk(s,now=Date.now(),r=Math.random){const W=s.walk;if(!W)re
   s.walkResults.push(res);out.settled=res;}
  return out.rescued||out.settled?out:null;}
 // 갱신 65·66·81·131: find → bath right there (fixed 멍코인 by café level) → reveal → bring / "안데려갈래"
-export function bathRescue(s,rid){const x=s.rescues.find(x=>x.rid===rid);if(!x||x.bathed)return null;const c=hospitalCost(s,'rescueBath');if(isUnset(s.coins)||s.coins<c)return null;s.coins-=c;x.bathed=true;return x;}
+export function bathRescue(s,rid,now=Date.now()){const x=s.rescues.find(x=>x.rid===rid);if(!x||x.bathed)return null;const c=hospitalCost(s,'rescueBath');if(isUnset(s.coins)||s.coins<c)return null;s.coins-=c;recordLedger(s,'hospital',c,now);x.bathed=true;return x;}
 export function bringCheck(s,rid){const x=s.rescues.find(x=>x.rid===rid);if(!x)return 'pick';if(!x.bathed)return 'bath';if(isUnset(CFG.rescueLevel))return 'unset';if(s.shibas.length>=CFG.cafe.maxOwned)return 'owned';return null;}
 export function bringRescue(s,rid,r=Math.random,now=Date.now()){if(bringCheck(s,rid))return null;const x=s.rescues.find(x=>x.rid===rid);
  const sh=makeShiba(s,{breed:x.breed,level:CFG.rescueLevel,r,now});s.shibas.push(sh);if(placedShibas(s).length<slotsOf(s))sh.placed=true;
@@ -221,7 +247,7 @@ export function menuCheck(s,id){const m=menuItem(id);if(!m)return 'pick';if(s.me
  if(isUnset(m.devCost)||isUnset(m.unlockLevel)||isUnset(m.devSec))return 'unset';if(s.cafe.level<m.unlockLevel)return 'locked';
  if(s.menuDev)return 'busy';if(isUnset(s.coins)||s.coins<m.devCost)return 'coins';return null;} // 갱신 129: 멍코인으로 개발, 134: 카페 레벨 해금, 136: 한 번에 1개
 // 갱신 136: 멍코인을 내면 개발이 시작되고 개발 시간이 지나야 완성(메뉴에 추가)
-export function developMenu(s,id,now=Date.now()){if(menuCheck(s,id))return false;const m=menuItem(id);s.coins-=m.devCost;
+export function developMenu(s,id,now=Date.now()){if(menuCheck(s,id))return false;const m=menuItem(id);s.coins-=m.devCost;recordLedger(s,'menu',m.devCost,now);
  s.menuDev={id,startAt:now,until:now+Math.min(m.devSec,CFG.menu.devMaxSec)*1000};return true;}
 export function settleMenuDev(s,now=Date.now()){const D=s.menuDev;if(!D||now<D.until)return null;s.menuDev=null;if(!s.menus.includes(D.id))s.menus.push(D.id);return D.id;}
 export const developed=(s,kind)=>CFG.menu.items.filter(m=>s.menus.includes(m.id)&&(!kind||m.kind===kind));
@@ -292,12 +318,12 @@ function leave(s,w,c,ctx){const V=CFG.visit,E=CFG.cafeExp;let outcome,repD=0,exp
  else if(managerActive(s,ctx.now)&&managerCanFulfil(s,c)&&w.r()<CFG.requests.managerChance){outcome='satisfied';byManager=true;repD=satisfiedGain(s.cafe.rep,CFG.rep.satisfied*CFG.requests.managerRepMul);exp=0;}
  else if(!isUnset(c.score)&&c.score<V.scoreDisappointedBelow){outcome='disappointed';repD=CFG.rep.disappointed;exp=E.custDisappointed;}
  else{outcome='normal';repD=CFG.rep.normal;exp=E.custNormal;}
- const order=c.order||chooseOrder(s,outcome==='satisfied',w.r);const pay=payFor(s,c.met,order,ctx.now);if(!pay.pending)addCoins(s,pay.total);
+ const order=c.order||chooseOrder(s,outcome==='satisfied',w.r);const pay=payFor(s,c.met,order,ctx.now);recordPayment(s,pay,ctx.now,ctx);
  s.stats.served++;s.stats[outcome]++;addCafeExp(s,exp);w.lastPay={...pay,order:order.id,orderImg:order.img,outcome,met:[...c.met]};
  w.events.push({type:'leave',id:c.id,outcome,coins:pay.total,order:order.id,orderImg:order.img,byManager,seat:c.seat,cell:c.cell&&[...c.cell]});
  w.recent.push({id:c.id,order:order.id,coins:pay.total,pending:pay.pending});w.recent=w.recent.slice(-3);c.phase='exiting';routeTo(s,w,c,layout(s,w).entrance);if(repD)addRep(s,repD,{...ctx,world:w});}
 // one step of everything that runs with time (online, or fast-forwarded while the app was closed)
-export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};syncRoutes(s,w);w.t+=dt;const C=s.cafe;
+export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};settleLedger(s,now);syncRoutes(s,w);w.t+=dt;const C=s.cafe;
  for(const c of [...w.custs])if(c.phase==='entering'&&c.route===null){w.custs=w.custs.filter(x=>x!==c);if(!seat(s,w,c)){c.phase='queue';c.t=CFG.navigation.queueWaitSec;c.seat=null;w.queue.push(c);}}
 
  const dev=settleMenuDev(s,now);if(dev)w.events.push({type:'menuDone',id:dev}); // 갱신 136: real time, also while closed
@@ -359,7 +385,7 @@ export function fastForward(s,w,from,to,{offline=true}={}){const step=CFG.offlin
   served:s.stats.served-st0.served,closed:s.cafe.closed,closedAt:s.cafe.closedAt};}
 
 // ───────────────────────── save / load ─────────────────────────
-export function save(storage,s,now=Date.now()){s.lastSeen=now;storage.setItem(CFG.saveKey,JSON.stringify(s));}
+export function save(storage,s,now=Date.now()){settleLedger(s,now);s.lastSeen=now;storage.setItem(CFG.saveKey,JSON.stringify(s));}
 // v3 uses its own save key; v1/v2 saves (grades, old currencies) are left untouched and not migrated (spec v3 abolished their model).
 export function load(storage,now=Date.now(),r=Math.random){let s=null;try{s=JSON.parse(storage.getItem(CFG.saveKey));}catch{}
  if(!s||s.v!==CFG.saveVersion)return {state:newState(now),fresh:true,offline:null,reopened:null};
@@ -372,7 +398,7 @@ export function load(storage,now=Date.now(),r=Math.random){let s=null;try{s=JSON
  const inv={};for(const [k,n] of Object.entries(s.accInv||{})){const k2=cellId(k);inv[k2]=(inv[k2]||0)+n;}s.accInv=inv;for(const sh of s.shibas)if(sh.acc)sh.acc=cellId(sh.acc);
  // older v3 saves: 90's level slots → 139-6 one slot (the first shiba is the starter)
  for(const sh of s.shibas){if(!('accUnlocked' in sh)){sh.starter=sh.id===Math.min(...s.shibas.map(o=>o.id));sh.accUnlocked=sh.starter;sh.acc=sh.starter?starterItem():null;delete sh.accessories;}}let offline=null;if(s.started&&now>s.lastSeen){const w=newWorld(s,r);offline=fastForward(s,w,s.lastSeen,now,{offline:true});}
- const reopened=reopenCafe(s,now);s.lastSeen=now;return {state:s,fresh:false,offline,reopened};}
+ settleLedger(s,now);const reopened=reopenCafe(s,now);s.lastSeen=now;return {state:s,fresh:false,offline,reopened};}
 
 // ───────────────────────── UNSET-gated features (stubs) ─────────────────────────
 export function slotUnlockCheck(){return isUnset(CFG.cafe.paidSlotUnlockDia)?'unset':'payment';}

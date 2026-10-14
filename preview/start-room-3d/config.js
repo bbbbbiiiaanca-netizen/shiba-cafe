@@ -17,6 +17,7 @@ const CAFE_EXP=[120,220,370,520,740,1000,1850,1940,2050,2190,2860,3070,3300,3540
  26350,30040,31120,32210,33310,34430,35570,36710,37870]; // 갱신 98 experience table; 132-4 unchanged
 
 export const CFG={
+ ledger:{periodMs:86400000,dayOffsetMs:32400000,historyDays:7,includeDiamonds:false,openFromPill:true,openFromStore:true}, // §15 starting value 똑또기: 하루(한국 시각 자정), 7일 보관, 멍코인만, 두 진입점
  saveKey:'shibaCafe.save.v3',saveVersion:3, // EXEMPT: save schema version (engine metadata)
 
  // Removed unsupported build placeholders; null is preserved by the engine.

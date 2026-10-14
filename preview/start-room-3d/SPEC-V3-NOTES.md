@@ -372,3 +372,12 @@ Validation: `npm test` includes 94 acceptance tests, timeline/map/edit/Unit 3/re
 Capture: `node capture-main-screen.mjs --u14` generates only `/workspace/shiba-cafe-docs/spec-v3-build/main-screen-u14-topbar.png`, 390×844 CSS px, DPR2, 메뉴 tab. Chrome cannot launch in this sandbox and no remote browser tool is available, so the screenshot and runtime browser smoke are pending on a Chrome-capable host; no substitute screenshot was fabricated. Browser smoke checks four pills in a row, 390px overflow (including long values), contained existing icons, thin map overlay, settings, 평판, and toast-only + behaviour.
 
 Validation for §14: `npm test` passed all existing suites; `node --check` passed main.js, smoke-browser.mjs and capture-main-screen.mjs. Preview is mirrored deletion-aware with node_modules excluded and verified using `diff -r --exclude=node_modules`.
+
+
+## §15 ledger
+- Real game-day ledger saved in state: Korean midnight, daily period 86,400,000 ms and 7-day cap (minimum yesterday + today), configurable starting values marked `starting value 똑또기`. Opening balance and diamonds are excluded.
+- Existing categories: menu sales at base price; meeting extra = payment minus base; offline customer payments (instead of duplicating sales/meeting); alba wages (all hireAlba kinds); hospital fees including rescue bath; menu development; accessory/bandana purchases. Fractional earnings are preserved and displayed to 2 decimals; net includes those fractions, like the existing coin carry.
+- Omitted furniture purchases: no purchase transaction exists (only owned furniture placement). Walk coin reward is UNSET (both branch and amount), so there is no active coin flow. Land/theme unlock prices remain UNSET; expansion and camera code were untouched.
+- CSS paper modal with yesterday/today, red parenthesized expense amounts, bold net and 멍코인 unit; HUD pill and 가게 button are configurable starting entry points; + keeps its existing toast.
+- `npm test` includes real transaction/category, rollover/cap, offline tick and save/load coverage. Browser smoke steps added for both entry points and day flipping.
+- DPR2 staged capture command: `node capture-main-screen.mjs --u15` writes `main-screen-u15-ledger.png` and `main-screen-u15-ledger-state.txt` (STAGED, ?temp=1, nonzero flows). Chrome cannot launch in this sandbox; browser smoke/capture are prepared but not executed here, and no synthetic screenshot is substituted.

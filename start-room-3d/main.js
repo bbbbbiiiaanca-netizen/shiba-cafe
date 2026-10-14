@@ -163,7 +163,7 @@ function gachaCard(){const G=CFG.gacha;return `<div class="card" data-gacha><h3>
 function cafeCard(){const C=s.cafe,need=S.cafeNeed(C.level);return `<div class="card" data-cafe-level><h3>카페 Lv ${C.level}</h3><div class="note">경험치 ${fmt(C.exp)} / ${C.level>=CFG.cafe.maxLevel?'최고 레벨':need==null?'미정':fmt(need)} · 평판 ${Math.round(C.rep)}</div>${bar(need==null?0:C.exp/need)}<div class="note">경험치를 모으면 자동 레벨업 · 배치 가능 ${S.slotsOf(s)}마리</div></div>`;}
 function shopSlots(){return `<div class="card" data-shop-slots><h3>시바 액세서리 칸</h3>${s.shibas.map(sh=>`<div class="li"><div class="pt">${img(IMG.shiba(sh.breed))}</div><div class="grow"><b>${nameOf(sh)}</b><div class="note">${sh.accUnlocked?'칸 열림 · '+(sh.acc?accName(sh.acc):'빈 칸'):'칸 잠김'}</div><div class="btns">${sh.accUnlocked?`<button class="sec" data-act="care" data-id="${sh.id}">돌봄 · 액세서리</button>`:`<button data-act="accUnlock" data-id="${sh.id}" data-via="paws" ${S.accUnlockCheck(s,sh.id,'paws')?'disabled':''}>발바닥 ${fmt(CFG.accessory.unlockPaws)}</button><button data-act="accUnlock" data-id="${sh.id}" data-via="dia" ${S.accUnlockCheck(s,sh.id,'dia')?'disabled':''}>${fmt(CFG.accessory.unlockDia)}💎</button>`}</div></div></div>`).join('')}</div>`;}
 function inventoryCard(){const items=S.bandanaItems().filter(it=>S.accOwned(s,it.id)>0);return `<div class="card" data-inventory><h3>액세서리 가방</h3>${items.length?items.map(it=>`<div class="li">${bandHtml(it.id)}<div class="grow"><b>${accName(it.id)}</b><div class="note">보유 ${S.accOwned(s,it.id)} · 착용 ${S.accWorn(s,it.id)} · 가방 ${s.accInv[it.id]||0}</div>${s.shibas.map(sh=>`<button class="sec" data-act="${sh.acc===it.id?'unequip':'equip'}" data-id="${sh.id}" data-item="${it.id}" ${sh.acc===it.id?'':S.equipCheck(s,sh.id,it.id)?'disabled':''}>${nameOf(sh)} · ${sh.acc===it.id?'벗기기':sh.accUnlocked?'착용':'칸 잠김'}</button>`).join('')}</div></div>`).join(''):'<div class="note">보유한 액세서리가 없어요.</div>'}</div>`;}
-P.shop=()=>{const now=clock.now();let h=cafeCard();
+P.shop=()=>{const now=clock.now();let h=(CFG.ledger.openFromStore?`<div class="card"><button data-act="ledger">손익계산서</button></div>`:"")+cafeCard();
  const G=CFG.alba.manager,mc=S.albaCheck(s,'manager',[],now);
  h+=`<div class="card"><h3>${L('shop.manager')}</h3><div class="note">${L('shop.managerNote')}</div><button data-act="manager" ${mc?'disabled':''}>${s.cafe.level<G.unlock?L('app.locked',{lv:G.unlock}):S.managerActive(s,now)?L('hud.manager',{t:tfmt((s.cafe.managerUntil-now)/1000)}):L('shop.hire',{cost:fmt(G.cost)})}</button></div>
   ${accShop()}${shopSlots()}${inventoryCard()}<div class="card"><h3>${L('shop.bag')}</h3><div class="li"><span class="ico reset" style="width:34px;height:34px"></span><div class="grow nm">${L('shop.heartReset',{n:s.items.heartReset})}</div><button data-act="heartReset" ${S.canUseHeartReset(s)?'':'disabled'}>${L('shop.use')}</button></div>
@@ -196,8 +196,15 @@ function navState(){document.querySelectorAll('[data-nav]').forEach(b=>b.classLi
 // ───────── modals ─────────
 let modalSig='';let observedCafeLevel=s.cafe.level;
 function renderModal(){const m=ui.modals[0]||(!s.settings.language?{kind:'lang'}:!s.started?{kind:'start'}:s.rescues.length?{kind:'rescue',x:s.rescues[0]}:null);
- if(!m){$('modal').hidden=true;modalSig='';return;}const sig=JSON.stringify([m.kind,m.x,ui.langPick,ui.startPick,s.settings.language,s.coins>=(m.kind==='rescue'?S.hospitalCost(s,'rescueBath'):0)]);if(sig===modalSig)return;modalSig=sig;
+ if(!m){$('modal').hidden=true;modalSig='';return;}const sig=JSON.stringify([m.kind,m.x,m.kind==='ledger'?[m.day,S.ledgerStatement(s,clock.now(),m.day)]:null,ui.langPick,ui.startPick,s.settings.language,s.coins>=(m.kind==='rescue'?S.hospitalCost(s,'rescueBath'):0)]);if(sig===modalSig)return;modalSig=sig;
  let h='';
+ $('mbox').classList.toggle('ledger-paper',m.kind==='ledger');
+ if(m.kind==='ledger'){
+ const report=S.ledgerStatement(s,clock.now(),m.day),amount=n=>n.toLocaleString('ko-KR',{maximumFractionDigits:2});
+ h=`<div class="ledger-title"><h2>손익계산서</h2><button data-act="modalOk" aria-label="손익계산서 닫기">×</button></div><div class="ledger-days">${[-1,0].map(day=>`<button data-act="ledgerDay" data-day="${day}" aria-pressed="${m.day===day}">${day===-1?'어제':'오늘'}</button>`).join('')}</div><small class="ledger-unit">단위: 멍코인</small>`;
+ for(const kind of ['income','expense'])h+=`<section class="ledger-section"><h3>${kind==='income'?'수입':'지출'}</h3>${report.lines.filter(x=>x.kind===kind).map(x=>`<div class="ledger-row ${kind}" data-ledger-category="${x.id}"><span>${x.label}</span><span>${kind==='expense'?'('+amount(x.amount)+')':amount(x.amount)}</span></div>`).join('')}</section>`;
+ h+=`<div class="ledger-row ledger-net"><strong>순이익</strong><strong>${amount(report.net)} 멍코인</strong></div>`;
+ }
  if(m.kind==='lang')h=`<h2>${makeT(()=>ui.langPick||'ko')('lang.select.title')}</h2>${LANGS.map(c=>`<button class="${ui.langPick===c?'':'sec'}" data-act="langPick" data-lang="${c}">${makeT(()=>c)('lang.name.'+c)}</button>`).join('')}
   <div class="note">${makeT(()=>ui.langPick||'ko')('lang.select.hint')}</div><button data-act="langOk" ${ui.langPick?'':'disabled'}>${makeT(()=>ui.langPick||'ko')('lang.select.confirm')}</button>`;
  if(m.kind==='start')h=`<h2>${L('start.title')}</h2><div class="banner">${img(IMG.four)}</div><div class="note">${L('start.hint')}</div>
@@ -219,7 +226,7 @@ if(L0.offline&&(L0.offline.sec>=60||L0.reopened))ui.modals.push({kind:'offline',
 
 // ───────── actions ─────────
 const act={
- close,resourceShop:()=>toast('상점 준비 중이에요'),income:()=>open('income'),care:d=>open('care',+d.id),
+ close,resourceShop:()=>toast('상점 준비 중이에요'),income:()=>{if(CFG.ledger.openFromPill)ui.modals.unshift({kind:'ledger',day:0});},ledger:()=>ui.modals.unshift({kind:'ledger',day:0}),ledgerDay:d=>{ui.modals[0].day=+d.day;},care:d=>open('care',+d.id),
  place:d=>{if(!S.setPlaced(s,+d.id,d.on==='1'))why(S.placeCheck(s,+d.id));},
  dongu:()=>{s.dongu.placed=!s.dongu.placed;},
  play:d=>{if(!S.playWith(s,+d.id,clock.now()))why(S.careCheck(s,+d.id,'play'));},
@@ -238,7 +245,7 @@ const act={
  levelUp:d=>{const sh=S.byId(s,+d.id);if(S.levelUpCheck(s,+d.id))return;const lv=sh.level,need=S.pawsToNext(lv);ui.modals.unshift({kind:'confirm',text:`${nameOf(sh)} Lv ${lv} → ${lv+1} · 발바닥 ${fmt(need)}개를 사용할까요?`,yes:()=>{if(S.byId(s,+d.id)?.level!==lv||!S.levelUp(s,+d.id)){toast(L('toast.paws'));return;}ui.modals.unshift({kind:'levelResult',id:+d.id,from:lv,to:lv+1});}});},
  gacha:d=>{const res=S.gachaPull(s,+d.n,r,clock.now(),{ticket:!!d.ticket});if(res)ui.modals.push({kind:'gacha',res});else why(S.gachaCheck(s,+d.n,{ticket:!!d.ticket}));},
  accUnlock:d=>{if(!S.unlockAccSlot(s,+d.id,d.via))why(S.accUnlockCheck(s,+d.id,d.via));},
- accType:d=>{ui.accType=d.type;},buyAcc:d=>{if(S.buyAcc(s,d.item))toast(L('toast.accBought',{name:accName(d.item)}));else why(S.buyAccCheck(s,d.item));},
+ accType:d=>{ui.accType=d.type;},buyAcc:d=>{if(S.buyAcc(s,d.item,clock.now()))toast(L('toast.accBought',{name:accName(d.item)}));else why(S.buyAccCheck(s,d.item));},
  equip:d=>{if(!S.equipAcc(s,+d.id,d.item))why(S.equipCheck(s,+d.id,d.item));},unequip:d=>{S.unequipAcc(s,+d.id);},
  dev:d=>{if(!S.developMenu(s,d.id,clock.now()))why(S.menuCheck(s,d.id));},
  heartReset:()=>{S.useHeartReset(s,clock.now());},
@@ -251,7 +258,7 @@ const act={
  startPick:d=>{ui.startName=$('startName')?.value||'';ui.startPick=d.breed;},
  startGo:()=>{const name=($('startName')?.value||'').trim();if(S.chooseStart(s,ui.startPick,name,r,clock.now())){if(temp){for(const breed of ['red','white','kuro'].filter(b=>b!==ui.startPick).slice(0,2)){const sh=S.makeShiba(s,{breed,level:CFG.startShiba.level,now:clock.now()});sh.placed=true;s.shibas.push(sh);}}w=S.newWorld(s,r);}},
  modalOk:()=>{ui.modals.shift();},confirmYes:()=>{const m=ui.modals.shift();m.yes();},
- rescueBath:()=>{if(!S.bathRescue(s,s.rescues[0].rid))toast(L('toast.coins'));},
+ rescueBath:()=>{if(!S.bathRescue(s,s.rescues[0].rid,clock.now()))toast(L('toast.coins'));},
  rescueBring:()=>{S.bringRescue(s,s.rescues[0].rid,r,clock.now());},rescueDecline:()=>{S.declineRescue(s,s.rescues[0].rid);},
 };
 document.addEventListener('click',e=>{const opener=e.target.closest('[data-open]');if(opener){open(opener.dataset.open);refresh();return;}const nb=e.target.closest('[data-nav]');if(nb){const n=nb.dataset.nav;if(n==='cafe')close();else open(n);refresh();return;}

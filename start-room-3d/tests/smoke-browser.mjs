@@ -31,6 +31,15 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await check('§14: long values stay inside their pills',`[...document.querySelectorAll('#hud .pill')].every(p=>{const b=p.getBoundingClientRect(),v=p.querySelector('span').getBoundingClientRect();return v.left>=b.left&&v.right<=b.right;})&&document.querySelector('.resources').scrollWidth<=document.querySelector('.resources').clientWidth`);
 
  await ev('[__game.state.coins,__game.state.hearts,__game.state.dia]=window.u14Values;__game.refresh();true');
+ await ev(`__game.ui.modals=[];__game.state.coins=1000;__game.state.ledger={days:{},now:__game.clock.now()};__game.S.recordPayment(__game.state,{pending:false,base:12,total:24},__game.clock.now());document.querySelector('#hud [data-act=income]').click();true`);
+ await check('§15: pill opens paper ledger',`!document.getElementById('modal').hidden&&document.querySelector('#mbox.ledger-paper h2').textContent==='손익계산서'&&document.querySelector('[data-ledger-category=sales]').textContent.includes('12')`);
+ await ev(`document.querySelector('[data-act=ledgerDay][data-day="-1"]').click();true`);
+ await check('§15: yesterday flip',`document.querySelector('[data-act=ledgerDay][data-day="-1"]').getAttribute('aria-pressed')==='true'&&document.querySelector('[data-ledger-category=sales]').textContent.includes('0')`);
+ await ev(`document.querySelector('[data-act=ledgerDay][data-day="0"]').click();true`);
+ await check('§15: today flip',`document.querySelector('[data-ledger-category=sales]').textContent.includes('12')`);
+ await ev(`document.querySelector('#mbox [data-act=modalOk]').click();document.querySelector('[data-main-tab=store]').click();document.querySelector('#menuList [data-act=ledger]').click();true`);
+ await check('§15: store opens ledger with red parenthesized expenses and bold net',`!document.getElementById('modal').hidden&&document.querySelector('.ledger-row.expense').textContent.includes('(')&&document.querySelector('.ledger-net strong').textContent==='순이익'`);
+ await ev(`document.querySelector('#mbox [data-act=modalOk]').click();true`);
  for(const [tab,title] of [['menu','메뉴 개발'],['shiba','시바'],['furniture','가구'],['store','가게']]){await ev(`document.querySelector('[data-main-tab=${tab}]').click();true`);await check('Unit 2 '+tab+' header',`document.querySelector('.menu-heading').firstChild.textContent.trim()===${JSON.stringify(title)}`);}
  await ev('document.querySelector("[data-main-tab=shiba]").click();__game.state.shibas[0].paws=420;__game.refresh();document.querySelector("#menuList [data-act=levelUp]").click();true');
  await check('level-up confirmation leaves paws intact','__game.state.shibas[0].level===21&&__game.state.shibas[0].paws===420&&!document.getElementById("modal").hidden');

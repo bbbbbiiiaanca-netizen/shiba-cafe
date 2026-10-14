@@ -29,7 +29,19 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await sleep(1600);
  };
  // Capture only §14 with --u14; preserve prior approved artifacts.
- if(process.argv.includes('--u14')){
+ if(process.argv.includes('--u15')){
+  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+  await ev(`(()=>{const g=__game,n=g.clock.now();g.state.cafe.level=30;g.state.coins=300000;g.S.recordPayment(g.state,{pending:false,base:120,total:240},n);g.S.recordPayment(g.state,{pending:false,base:80,total:160},n-g.CFG.ledger.periodMs);g.S.recordPayment(g.state,{pending:false,base:60,total:90},n,{offline:true});g.S.hireAlba(g.state,'manager',[],n);g.state.shibas[0].status='sick';g.S.sendToHospital(g.state,g.state.shibas[0].id,n);g.S.buyAcc(g.state,g.S.bandanaItems()[0].id,n);g.refresh();return true;})()`);
+  await click('#hud [data-act=income]');
+  if(!(await ev(`!document.getElementById('modal').hidden&&document.querySelector('.ledger-title h2').textContent==='손익계산서'`)))throw Error('pill ledger missing');
+  await click('[data-act=ledgerDay][data-day="-1"]');
+  if(!(await ev(`document.querySelector('[data-ledger-category=sales]').textContent.includes('80')`)))throw Error('yesterday missing');
+  await click('[data-act=ledgerDay][data-day="0"]');await click('#mbox [data-act=modalOk]');
+  await click('[data-main-tab=store]');await click('#menuList [data-act=ledger]');
+  await shot('main-screen-u15-ledger.png');
+  writeFileSync(join(out,'main-screen-u15-ledger-state.txt'),'STAGED, unsaved ?temp=1 fixture. 390×844 CSS px, DPR2. Today: sales 120, meeting extra 120, offline 90, manager wages 60000, hospital sick fee, M-02 development 8500 (normal stage), one bandana purchase. Yesterday: sales 80 + meeting extra 80. Smoke: pill opens, yesterday/today flip, close, store button opens.\n');
+  if(errors.length)throw Error(errors.join('\n'));
+ }else if(process.argv.includes('--u14')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
   await click('[data-main-tab=menu]');await shot('main-screen-u14-topbar.png');
   if(errors.length)throw Error(errors.join('\n'));

@@ -1,0 +1,36 @@
+import assert from 'node:assert/strict';
+import * as S from '../sim.js';
+import {CFG} from '../config.js';
+const now=Date.UTC(2026,9,14,3),day=CFG.ledger.periodMs;
+const s=S.newState(now);s.coins=1000000;S.chooseStart(s,'red','',()=>.9,now);s.cafe.level=30;
+S.recordPayment(s,{pending:false,base:3,total:4.5},now);
+S.recordPayment(s,{pending:true,base:3,total:null},now);
+S.hireAlba(s,'manager',[],now);
+s.shibas[0].status='sick';S.sendToHospital(s,s.shibas[0].id,now);
+S.developMenu(s,'M-02',now);
+S.buyAcc(s,S.bandanaItems()[0].id,now);
+const row=s.ledger.days[S.ledgerDay(now)];
+S.recordLedger(s,'sales',7,now-day);assert.equal(s.ledger.days[S.ledgerDay(now)].sales,3);
+assert.equal(row.sales,3);assert.equal(row.meeting,1.5);
+assert.equal(row.alba,CFG.alba.manager.cost);
+assert.equal(row.hospital,S.hospitalCost(s,'sick'));
+assert.equal(row.menu,S.menuItem('M-02').devCost);
+assert.equal(row.accessory,S.bandanaItems()[0].price);
+assert.equal(S.buyAcc(s,'invalid',now),false);
+const before=JSON.stringify(s.ledger);s.dia=10000;S.unlockAccSlot(s,s.shibas[0].id,'dia');assert.equal(JSON.stringify(s.ledger),before);
+S.recordPayment(s,{pending:false,base:2,total:5},now+day,{offline:true});
+assert.equal(S.ledgerStatement(s,now+day,-1).lines.find(x=>x.id==='sales').amount,3);
+assert.equal(S.ledgerStatement(s,now+day).lines.find(x=>x.id==='offline').amount,5);
+assert.equal(s.ledger.days[S.ledgerDay(now+day)].sales,undefined);
+assert.equal(S.ledgerDay(Date.UTC(2026,9,14,15)),S.ledgerDay(Date.UTC(2026,9,14,14,59,59))+1);
+const storage={value:null,setItem(k,v){this.value=v;},getItem(){return this.value;}};
+S.save(storage,s,now+day);assert.deepEqual(S.load(storage,now+day).state.ledger,s.ledger);
+const legacy=JSON.parse(storage.value);delete legacy.ledger;storage.value=JSON.stringify(legacy);assert.deepEqual(S.load(storage,now+day).state.ledger.days,{});
+for(let i=2;i<20;i++)S.recordLedger(s,'sales',1,now+i*day);
+assert.equal(Object.keys(s.ledger.days).length,CFG.ledger.historyDays);
+assert.equal(S.ledgerStatement(s,now+19*day,-1).net,1);
+// Actual tick/fastForward attribution, rather than only exercising the recording API.
+const t=S.newState(now);t.coins=0;const w=S.newWorld(t,()=>.99);w.spawnT=1e9;
+const old=CFG.income.levelAggregation;CFG.income.levelAggregation=()=>1;
+try{w.custs.push({id:1,phase:'seated',cell:[1,3],t:0,score:1,met:[],order:{id:'coffee',price:2},fulfilled:true});S.fastForward(t,w,now,now+1000,{offline:true});assert.equal(t.ledger.days[S.ledgerDay(now)].offline,2);assert.equal(t.ledger.days[S.ledgerDay(now)].sales,undefined);}finally{CFG.income.levelAggregation=old;}
+console.log('§15 ledger: categories, failure/diamond exclusion, rollover, cap, offline tick, save/load passed');
