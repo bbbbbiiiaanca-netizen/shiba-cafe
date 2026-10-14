@@ -28,10 +28,17 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev(`(()=>{const g=__game;g.state.cafe.level=5;g.state.coins=30000;g.state.dia=30;for(const breed of ['white','kuro']){const sh=g.S.makeShiba(g.state,{breed,level:21,now:g.clock.now()});sh.placed=true;g.state.shibas.push(sh);}for(let i=0;i<250;i++)g.step(.1);g.world.custs=g.world.custs.slice(0,2);g.S.developMenu(g.state,'M-02',g.clock.now());g.refresh();return true;})()`);
  await sleep(1600);
  };
+ // v6 artifacts are approved references: do not overwrite them.
  await stage();
- for(const dsf of [1,2]){await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:dsf,mobile:true});await shot(dsf===1?'main-screen-v6.png':'main-screen-v6@2x.png');}
- await stage(true);await shot('main-screen-v6-edit.png');
- writeFileSync(join(out,'main-screen-v6-state.txt'),'Lv6; M-02 developing; coins 21,500; diamonds 30; fresh=1, still=1, seed=7; 250 steps of 0.1 seconds. 390x844, DPR1 and DPR2.\n');
+ for(const dsf of [1,2]){await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:dsf,mobile:true});await shot(dsf===1?'main-screen-v7.png':'main-screen-v7@2x.png');}
+ await stage(true);
+ await ev(`(()=>{const item=__game.state.placement.slots.find(s=>s.id==='counter');item.origin=[0,1];item.dir=1;__game.refresh();return true;})()`);
+ await sleep(300);
+ const p=await ev(`(async()=>{const h=__game.iso.hits.find(h=>h.id==='counter'),im=new Image();im.src='assets/drive/furn-counter-v4.png';await im.decode();const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const ctx=c.getContext('2d');ctx.drawImage(im,0,0);const d=ctx.getImageData(0,0,c.width,c.height).data,r=document.getElementById('isomap').getBoundingClientRect();for(let y=Math.floor(c.height/2);y<c.height;y++)for(let x=Math.floor(c.width/2);x<c.width;x++)if(d[(y*c.width+x)*4+3])return {x:r.left+h.x+(c.width-1-x)/c.width*h.w,y:r.top+h.y+y/c.height*h.h};throw Error('no counter pixel');})()`);
+ for(const type of ['mousePressed','mouseReleased'])await c('Input.dispatchMouseEvent',{type,...p,button:'left',buttons:type==='mousePressed'?1:0,clickCount:1});
+ if(!(await ev('__game.iso.selected==="counter"')))throw Error('counter selection failed');
+ await shot('main-screen-v7-edit.png');
+ writeFileSync(join(out,'main-screen-v7-state.txt'),'Same normal staging as v6; edit: counter origin [0,1], dir1, footprint (0,1)-(0,2); stairs unchanged. 390x844, normal DPR1/DPR2, edit DPR2.\n');
  console.log('Staged capture: cafe level 5, M-02 developing; coins 21,500, diamonds 30; 390x844 CSS px, DPR 1 and 2.');
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}
 console.log(`${shots.length} screens → ${out}`);for(const s of shots)console.log('  '+s);for(const e of errors)console.log('  ERROR',e);process.exitCode=errors.length?1:0;

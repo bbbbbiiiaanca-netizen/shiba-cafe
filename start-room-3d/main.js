@@ -47,7 +47,7 @@ function renderHUD(){const now=clock.now();$('coins').textContent=fmt(s.coins);$
  $('closed').hidden=!C.closed;$('closed').textContent=L('hud.closed');}
 
 let sceneSig='';
-const iso=createIsoMap($('isomap'),hit=>{if(hit.shiba)act.pickShiba({shiba:hit.shiba});if(hit.cust)act.seat({cust:hit.cust});refresh();});
+const iso=createIsoMap($('isomap'),{onChange:()=>S.save(localStorage,s,clock.now()),onBlocked:()=>toast('다른 가구와 겹치거나 방 밖으로 나갈 수 없어요.')});
 function renderScene(){iso.draw(s,w);renderMainMenu();}
 let menuSig='',mainTab='menu';
 function renderMainMenu(){
@@ -278,5 +278,5 @@ function frame(t){let dt=(t-last)/1000;last=t;if(Q.get('still')){requestAnimatio
  if(dt>5&&s.started){catchUp(dt*1000);dt=0;}step(Math.min(dt,.25));requestAnimationFrame(frame);}
 addEventListener('pagehide',()=>S.save(localStorage,s,clock.now()));
 document.addEventListener('visibilitychange',()=>{if(document.hidden)S.save(localStorage,s,clock.now());});
-const game={CFG,S,get state(){return s;},get world(){return w;},step:(dt=.1)=>{step(dt);return {custs:w.custs.length,queue:w.queue.length,coins:s.coins};},advance,open,close,clock,ui,refresh};
+const game={CFG,S,iso,get state(){return s;},get world(){return w;},step:(dt=.1)=>{step(dt);return {custs:w.custs.length,queue:w.queue.length,coins:s.coins};},advance,open,close,clock,ui,refresh};
 window.__game=game;applyStatic();refresh();requestAnimationFrame(frame);window.__ready=true;
