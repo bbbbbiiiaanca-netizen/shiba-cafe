@@ -32,7 +32,7 @@ const tfmt=sec=>{sec=Math.max(0,Math.ceil(sec));const h=Math.floor(sec/3600),m=M
 const nameOf=sh=>sh.name||L('shiba.breed.'+sh.breed);
 const bar=(k,col)=>`<div class="bar"><i style="width:${Math.round(Math.max(0,Math.min(1,k))*100)}%${col?';background:'+col:''}"></i></div>`;
 function toast(t){const e=$('toast');e.textContent=t;e.style.opacity=1;ui.toastT=2.2;}
-const reason={coins:'toast.coins',hearts:'toast.hearts',slots:'toast.slots',unset:'toast.unset',last:'toast.last',dia:'toast.dia'};
+const reason={busy:'toast.devBusy',coins:'toast.coins',hearts:'toast.hearts',slots:'toast.slots',unset:'toast.unset',last:'toast.last',dia:'toast.dia'};
 function why(code){toast(L(reason[code]||'toast.unset'));}
 // 갱신 135-2: 남은 시간 바로 완료 버튼 (1분당 1다이아, 1분 올림)
 function skipBtn(t){const left=S.skipLeftSec(s,t,clock.now());if(!(left>0))return '';const cost=S.skipCost(left);
@@ -71,6 +71,7 @@ function popAt(el,text,orderImg){if(!el)return;const sc=$('scene').getBoundingCl
  if(orderImg){const i=document.createElement('img');i.src='assets/drive/'+orderImg;p.prepend(i);} // 갱신 134: the ordered menu's picture
  p.style.left=(b.left-sc.left+4)+'px';p.style.top=(b.bottom-sc.top-30)+'px';$('scene').appendChild(p);setTimeout(()=>p.remove(),1500);}
 function handleEvents(){for(const e of w.events.splice(0)){
+ if(e.type==='menuDone')toast(L('toast.menuDone',{name:L('menu.'+e.id)}));
  if(e.type==='leave'){const el=document.querySelector(`[data-seat="${e.seat}"],[data-cust="${e.id}"]`);popAt(el,`+${f2(e.coins)} ${L('out.'+e.outcome)}`,e.orderImg);}
 }
  while(s.walkResults.length)ui.modals.push({kind:'walkResult',res:s.walkResults.shift()});}
@@ -124,12 +125,17 @@ P.walk=()=>{const now=clock.now();let h='';const W=s.walk;
   ${s.shibas.filter(o=>(o.cd.walk||0)>now).map(o=>`<div class="li"><span class="grow note">${nameOf(o)} · ${L('app.cooldown',{t:tfmt((o.cd.walk-now)/1000)})}</span>${skipBtn({type:'walk',id:o.id})}</div>`).join('')}
   <button data-act="albaWalk" ${ac?'disabled':''}>${L('walk.albaGo',{cost:fmt(A.cost)})}</button></div>`;
  return {title:L('walk.title'),html:h};};
+const hm=sec=>{const h=Math.floor(sec/3600),m=Math.round(sec%3600/60);return h&&m?L('app.hm',{h,m}):h?L('app.h',{h}):L('app.m',{m});};
+// 갱신 136: 개발 중인 메뉴 1개 — 남은 시간, 진행 막대, 바로 완료(135-2)
+function devCard(now){const D=s.menuDev;if(!D)return `<div class="note">${L('shop.devIdle')}</div>`;const m=S.menuItem(D.id),left=(D.until-now)/1000;
+ return `<div class="li dev" data-dev="${D.id}"><div class="pt">${img('assets/drive/'+m.img)}</div><div class="grow"><div class="nm">${L('shop.developing',{name:L('menu.'+D.id)})}</div>
+  ${bar((now-D.startAt)/(D.until-D.startAt))}<div class="sub">${L('shop.devLeft',{t:tfmt(left)})} · ${L('skip.note')}</div></div>${skipBtn({type:'menu'})}</div>`;}
 P.shop=()=>{const now=clock.now(),M=CFG.menu,menuImg=f=>`<div class="pt">${img('assets/drive/'+f)}</div>`;
  let h=`<div class="card"><h3>${L('shop.menu')}</h3><div class="note">${L('shop.menuRule',{n:S.normalDeveloped(s),p:f2(S.premiumChance(s.cafe.rep,false,S.normalDeveloped(s))*100)})}</div>
-  <div class="li" data-menu="${M.coffee.id}">${menuImg(M.coffee.img)}<div class="grow"><div class="nm">${L('menu.'+M.coffee.id)}</div><div class="sub">${L('shop.coffee',{p:M.coffee.price})}</div></div><button disabled>✓</button></div>`;
+  ${devCard(now)}<div class="li" data-menu="${M.coffee.id}">${menuImg(M.coffee.img)}<div class="grow"><div class="nm">${L('menu.'+M.coffee.id)}</div><div class="sub">${L('shop.coffee',{p:M.coffee.price})}</div></div><button disabled>✓</button></div>`;
  for(const m of M.items){const c=S.menuCheck(s,m.id);
-  h+=`<div class="li" data-menu="${m.id}">${menuImg(m.img)}<div class="grow"><div class="nm">${L('menu.'+m.id)}</div><div class="sub">${L('menu.kind.'+m.kind)} · ${L('shop.sell',{p:m.price})} · ${L('app.lv',{lv:m.unlockLevel})}</div></div>
-   <button data-act="dev" data-id="${m.id}" ${c?'disabled':''}>${c==='owned'?'✓':c==='locked'?L('app.locked',{lv:m.unlockLevel}):L('app.coins',{n:fmt(m.devCost)})}</button></div>`;}
+  h+=`<div class="li" data-menu="${m.id}">${menuImg(m.img)}<div class="grow"><div class="nm">${L('menu.'+m.id)}</div><div class="sub">${L('menu.kind.'+m.kind)} · ${L('shop.sell',{p:m.price})} · ${L('app.lv',{lv:m.unlockLevel})} · ${L('shop.devTime',{t:hm(m.devSec)})}</div></div>
+   <button data-act="dev" data-id="${m.id}" ${c?'disabled':''}>${c==='owned'?'✓':c==='developing'?L('shop.developingShort'):c==='locked'?L('app.locked',{lv:m.unlockLevel}):L('app.coins',{n:fmt(m.devCost)})}</button></div>`;}
  h+='</div>';
  const G=CFG.alba.manager,mc=S.albaCheck(s,'manager',[],now);
  h+=`<div class="card"><h3>${L('shop.manager')}</h3><div class="note">${L('shop.managerNote')}</div><button data-act="manager" ${mc?'disabled':''}>${s.cafe.level<G.unlock?L('app.locked',{lv:G.unlock}):S.managerActive(s,now)?L('hud.manager',{t:tfmt((s.cafe.managerUntil-now)/1000)}):L('shop.hire',{cost:fmt(G.cost)})}</button></div>
@@ -200,7 +206,7 @@ const act={
  albaWalk:()=>{if(S.hireAlba(s,'walk',[...ui.walkAlba],clock.now()))ui.walkAlba.clear();},
  manager:()=>{S.hireAlba(s,'manager',[],clock.now());},
  skip:d=>{const t={type:d.type,id:d.id===''?null:+d.id};if(S.skipNow(s,t,clock.now())==null)why(S.skipCheck(s,t,clock.now()));},
- dev:d=>{if(!S.developMenu(s,d.id))why(S.menuCheck(s,d.id));},
+ dev:d=>{if(!S.developMenu(s,d.id,clock.now()))why(S.menuCheck(s,d.id));},
  heartReset:()=>{S.useHeartReset(s,clock.now());},
  setLang:d=>{s.settings.language=d.lang;applyStatic();},toggle:d=>{s.settings[d.k]=!s.settings[d.k];},
  reset:()=>ui.modals.unshift({kind:'confirm',text:L('set.resetQ'),yes:()=>{localStorage.removeItem(CFG.saveKey);s=S.newState(clock.now());w=S.newWorld(s,r);close();}}),

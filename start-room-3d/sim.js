@@ -12,7 +12,7 @@ export function newState(now=Date.now()){
  return {v:CFG.saveVersion,started:false,coins:CFG.start.coins,coinFrac:0,hearts:CFG.start.hearts,heartRegenAt:now,dia:CFG.start.dia,
   items:{heartReset:0,capsule:0,potionBig:0,potionSmall:0,cooldownTicket:0},
   cafe:{level:1,exp:0,rep:CFG.rep.start,stains:0,stainAcc:0,badStainAcc:0,driftAcc:0,closed:false,closedAt:null,managerUntil:0,managerCleanAcc:0,boostUntil:0},
-  shibas:[],nextId:1,dongu:{placed:true},walk:null,rescues:[],walkResults:[],menus:[],lastAbandonAt:null,
+  shibas:[],nextId:1,dongu:{placed:true},walk:null,rescues:[],walkResults:[],menus:[],menuDev:null,lastAbandonAt:null,
   stats:{served:0,satisfied:0,normal:0,disappointed:0,angry:0,lost:0},
   settings:{language:null,sound:true,music:true},lastSeen:now};
 }
@@ -129,12 +129,12 @@ function tickHealth(s,now){releaseHospital(s,now);for(const sh of s.shibas){
 // ───────────────────────── 남은 시간 바로 완료 (갱신 135-2) ─────────────────────────
 // 1분당 1다이아, 1분 단위 올림. target: {type:'hospital',id} · {type:'daycare'|'walk'|'trainer',id} (알바 쿨타임)
 export const skipCost=sec=>sec>0?Math.ceil(sec/60)*CFG.timeSkip.diaPerMin:0;
-function skipEnd(s,t){if(!CFG.timeSkip.targets.includes(t.type))return null;
+function skipEnd(s,t){if(!CFG.timeSkip.targets.includes(t.type))return null;if(t.type==='menu')return s.menuDev?s.menuDev.until:null;
  const sh=byId(s,t.id);if(!sh)return null;if(t.type==='hospital')return sh.status==='hospital'?sh.hospitalUntil:null;return sh.cd[t.type]||null;}
 export function skipLeftSec(s,t,now=Date.now()){const e=skipEnd(s,t);return e==null?0:Math.max(0,(e-now)/1000);}
 export function skipCheck(s,t,now=Date.now()){const left=skipLeftSec(s,t,now);if(!(left>0))return 'none';if(s.dia<skipCost(left))return 'dia';return null;}
 export function skipNow(s,t,now=Date.now()){if(skipCheck(s,t,now))return null;const cost=skipCost(skipLeftSec(s,t,now));s.dia-=cost;
- if(t.type==='hospital'){byId(s,t.id).hospitalUntil=now;releaseHospital(s,now);}else byId(s,t.id).cd[t.type]=now;return cost;}
+ if(t.type==='menu'){s.menuDev.until=now;settleMenuDev(s,now);}else if(t.type==='hospital'){byId(s,t.id).hospitalUntil=now;releaseHospital(s,now);}else byId(s,t.id).cd[t.type]=now;return cost;}
 
 // ───────────────────────── 산책 (1.10, 갱신 82·83·85·87·90·124·125) ─────────────────────────
 export const walkHearts=sec=>CFG.walk.heartsPer10Min*sec/600;
@@ -170,9 +170,13 @@ export function declineRescue(s,rid){const n=s.rescues.length;s.rescues=s.rescue
 
 // ───────────────────────── 메뉴·결제 (갱신 120·129) ─────────────────────────
 export const menuItem=id=>CFG.menu.items.find(m=>m.id===id);
-export function menuCheck(s,id){const m=menuItem(id);if(!m)return 'pick';if(s.menus.includes(id))return 'owned';
- if(isUnset(m.devCost)||isUnset(m.unlockLevel))return 'unset';if(s.cafe.level<m.unlockLevel)return 'locked';if(s.coins<m.devCost)return 'coins';return null;} // 갱신 129: 멍코인으로 개발, 134: 카페 레벨 해금
-export function developMenu(s,id){if(menuCheck(s,id))return false;s.coins-=menuItem(id).devCost;s.menus.push(id);return true;}
+export function menuCheck(s,id){const m=menuItem(id);if(!m)return 'pick';if(s.menus.includes(id))return 'owned';if(s.menuDev&&s.menuDev.id===id)return 'developing';
+ if(isUnset(m.devCost)||isUnset(m.unlockLevel)||isUnset(m.devSec))return 'unset';if(s.cafe.level<m.unlockLevel)return 'locked';
+ if(s.menuDev)return 'busy';if(s.coins<m.devCost)return 'coins';return null;} // 갱신 129: 멍코인으로 개발, 134: 카페 레벨 해금, 136: 한 번에 1개
+// 갱신 136: 멍코인을 내면 개발이 시작되고 개발 시간이 지나야 완성(메뉴에 추가)
+export function developMenu(s,id,now=Date.now()){if(menuCheck(s,id))return false;const m=menuItem(id);s.coins-=m.devCost;
+ s.menuDev={id,startAt:now,until:now+Math.min(m.devSec,CFG.menu.devMaxSec)*1000};return true;}
+export function settleMenuDev(s,now=Date.now()){const D=s.menuDev;if(!D||now<D.until)return null;s.menuDev=null;if(!s.menus.includes(D.id))s.menus.push(D.id);return D.id;}
 export const developed=(s,kind)=>CFG.menu.items.filter(m=>s.menus.includes(m.id)&&(!kind||m.kind===kind));
 export const normalDeveloped=s=>developed(s,'drink').length+developed(s,'dessert').length;
 // 갱신 120 + 134: 5% + (평판−50)×0.3%p + 개발한 일반 메뉴 1개당 1%p (+15%p 만족), 상한 40%
@@ -237,6 +241,7 @@ function leave(s,w,c,ctx){const V=CFG.visit,E=CFG.cafeExp;let outcome,repD=0,exp
  w.events.push({type:'leave',id:c.id,outcome,coins:pay.total,order:order.id,orderImg:order.img,byManager,seat:c.seat});if(repD)addRep(s,repD,{...ctx,world:w});}
 // one step of everything that runs with time (online, or fast-forwarded while the app was closed)
 export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};w.t+=dt;const C=s.cafe;
+ const dev=settleMenuDev(s,now);if(dev)w.events.push({type:'menuDone',id:dev}); // 갱신 136: real time, also while closed
  if(C.closed){decayGauges(s,dt,true,now);return w;} // 126-3: 휴무 중엔 배고픔만 (속도 UNSET → 변화 없음)
  const wr=tickWalk(s,now,w.r);if(wr)w.events.push({type:'walk',...wr});
  tickHealth(s,now);decayGauges(s,dt,false,now);
@@ -274,7 +279,7 @@ function decayGauges(s,dt,closed,now){const D=CFG.decayPerHour;for(const sh of s
 export function fastForward(s,w,from,to,{offline=true}={}){const step=CFG.offline.stepSec,end=Math.min(to,from+CFG.offline.capHours*H);
  const c0=s.coins+s.coinFrac,r0=s.cafe.rep,st0={...s.stats};let t=from;
  while(t<end&&!s.cafe.closed){const dt=Math.min(step,(end-t)/1000);t+=dt*1000;tick(s,w,dt,t,{offline});w.events.length=0;}
- if(t<to){if(s.walk)tickWalk(s,to,w.r);if(s.cafe.closed)releaseHospital(s,to);else tickHealth(s,to);} // 126-4: 휴무 중엔 앓아눕기·방치 시계가 멈춤
+ if(t<to){if(s.walk)tickWalk(s,to,w.r);settleMenuDev(s,to);if(s.cafe.closed)releaseHospital(s,to);else tickHealth(s,to);} // 126-4: 휴무 중엔 앓아눕기·방치 시계가 멈춤
  settleHearts(s,to);
  return {sec:Math.round((to-from)/1000),simSec:Math.round((Math.min(t,end)-from)/1000),coins:Math.floor(s.coins+s.coinFrac-c0),repFrom:r0,repTo:s.cafe.rep,
   served:s.stats.served-st0.served,closed:s.cafe.closed,closedAt:s.cafe.closedAt};}
@@ -285,7 +290,7 @@ export function save(storage,s,now=Date.now()){s.lastSeen=now;storage.setItem(CF
 export function load(storage,now=Date.now(),r=Math.random){let s=null;try{s=JSON.parse(storage.getItem(CFG.saveKey));}catch{}
  if(!s||s.v!==CFG.saveVersion)return {state:newState(now),fresh:true,offline:null,reopened:null};
  const d=newState(now);s={...d,...s,items:{...d.items,...s.items},cafe:{...d.cafe,...s.cafe},stats:{...d.stats,...s.stats},settings:{...d.settings,...s.settings}};
- s.menus=(s.menus||[]).filter(id=>menuItem(id));let offline=null;if(s.started&&now>s.lastSeen){const w=newWorld(s,r);offline=fastForward(s,w,s.lastSeen,now,{offline:true});}
+ s.menus=(s.menus||[]).filter(id=>menuItem(id));if(s.menuDev&&!menuItem(s.menuDev.id))s.menuDev=null;let offline=null;if(s.started&&now>s.lastSeen){const w=newWorld(s,r);offline=fastForward(s,w,s.lastSeen,now,{offline:true});}
  const reopened=reopenCafe(s,now);s.lastSeen=now;return {state:s,fresh:false,offline,reopened};}
 
 // ───────────────────────── UNSET-gated features (stubs) ─────────────────────────

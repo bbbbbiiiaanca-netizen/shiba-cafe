@@ -67,9 +67,9 @@ test('갱신 134/134-1 menu table: 13 items, unlock level & price from 134, dev 
  assert.equal(CFG.menu.premiumPerNormalDeveloped,.01);assert.equal(CFG.menu.premiumUpgradeChance,.3);assert.equal(CFG.menu.premiumCap,.4);
  for(const m of [CFG.menu.coffee,...CFG.menu.items])assert.ok(existsSync(join(ROOT,'assets/drive',m.img)),m.img);});
 test('menu development: 멍코인, gated by café level, once each (129·134)',()=>{const {s}=freshGame();s.coins=8499;
- assert.equal(S.menuCheck(s,'M-02'),'locked','M-02 unlocks at Lv2');s.cafe.level=2;assert.equal(S.menuCheck(s,'M-02'),'coins');s.coins=8500;assert.ok(S.developMenu(s,'M-02'));assert.equal(s.coins,0);assert.equal(S.menuCheck(s,'M-02'),'owned');
- s.coins=1e6;assert.equal(S.menuCheck(s,'M-05'),'locked');s.cafe.level=3;assert.ok(S.developMenu(s,'M-05'));assert.equal(s.coins,1e6-10000);
- assert.equal(S.menuCheck(s,'P-01'),'locked');s.cafe.level=20;assert.ok(S.developMenu(s,'P-01'));assert.equal(S.developMenu(s,'P-01'),false);assert.equal(S.menuCheck(s,'nope'),'pick');});
+ assert.equal(S.menuCheck(s,'M-02'),'locked','M-02 unlocks at Lv2');s.cafe.level=2;assert.equal(S.menuCheck(s,'M-02'),'coins');s.coins=8500;assert.ok(S.developMenu(s,'M-02',0));assert.equal(s.coins,0);assert.equal(S.menuCheck(s,'M-02'),'developing');S.settleMenuDev(s,30*MIN);assert.equal(S.menuCheck(s,'M-02'),'owned');
+ s.coins=1e6;assert.equal(S.menuCheck(s,'M-05'),'locked');s.cafe.level=3;assert.ok(S.developMenu(s,'M-05',0));assert.equal(s.coins,1e6-10000);S.settleMenuDev(s,H);
+ assert.equal(S.menuCheck(s,'P-01'),'locked');s.cafe.level=20;assert.ok(S.developMenu(s,'P-01',0));assert.equal(S.developMenu(s,'P-01',0),false);assert.equal(S.menuCheck(s,'nope'),'pick');});
 test('premium chance +1%p per developed normal menu, cap 40% unchanged (120·134)',()=>{near(S.premiumChance(50,false,7),.12);near(S.premiumChance(90,true,7),.39);near(S.premiumChance(100,true,7),.4);
  const {s}=freshGame();s.menus=['M-02','M-05','P-01'];assert.equal(S.normalDeveloped(s),2);});
 test('orders (134): no menus → always coffee M-01; drink slot needs a normal drink, dessert slot a normal dessert, else coffee; 2:1 split',()=>{
@@ -214,6 +214,24 @@ test('save → load 2 h later runs the café offline once and reports it',()=>{c
  const L2=S.load({getItem:()=>JSON.stringify({v:2,owned:[]})},0);assert.ok(L2.fresh,'v2 saves are not migrated (separate v3 key)');});
 test('walk that ends while away settles once on load',()=>{const {s,sh}=freshGame();S.startWalk(s,sh.id,600,0,()=>.99);const mem={d:{},getItem(k){return this.d[k]??null},setItem(k,v){this.d[k]=v}};
  S.save(mem,s,60e3);const L=S.load(mem,H,()=>.99);assert.equal(L.state.walk,null);assert.equal(L.state.walkResults.length,1);assert.equal(L.state.shibas[0].g.fatigue,15);});
+
+// ───────── 갱신 136 메뉴 개발 시간 ─────────
+test('136: development times per menu (라테 30분 … 파블로바 48시간), max 2 days',()=>{const t=Object.fromEntries(CFG.menu.items.map(m=>[m.id,m.devSec]));
+ assert.deepEqual(t,{'M-02':1800,'M-05':3600,'M-03':7200,'M-06':10800,'M-04':14400,'M-07':21600,'M-08':28800,'P-01':43200,'P-02':64800,'P-03':86400,'P-04':108000,'P-05':129600,'P-06':172800});
+ assert.equal(CFG.menu.devMaxSec,2*86400);assert.ok(CFG.menu.items.every(m=>m.devSec<=CFG.menu.devMaxSec));assert.equal(CFG.menu.devAtOnce,1);});
+test('136: paying starts development; the menu is not ordered until the time has passed (tick settles it)',()=>{const {s,w}=freshGame();s.cafe.level=3;s.coins=10000;w.spawnT=1e12;
+ assert.ok(S.developMenu(s,'M-05',0));assert.equal(s.coins,0);assert.deepEqual(s.menus,[]);assert.equal(S.normalDeveloped(s),0);
+ S.tick(s,w,1,H-1000);assert.deepEqual(s.menus,[]);S.tick(s,w,1,H);assert.deepEqual(s.menus,['M-05']);assert.equal(s.menuDev,null);assert.ok(w.events.some(e=>e.type==='menuDone'&&e.id==='M-05'));});
+test('136: only one development at a time; the next can start once it is done',()=>{const {s}=freshGame();s.cafe.level=50;s.coins=1e6;
+ assert.ok(S.developMenu(s,'M-02',0));assert.equal(S.menuCheck(s,'M-05'),'busy');assert.equal(S.developMenu(s,'M-05',0),false);assert.equal(s.coins,1e6-8500);
+ S.settleMenuDev(s,30*MIN);assert.equal(S.menuCheck(s,'M-05'),null);assert.ok(S.developMenu(s,'M-05',30*MIN));});
+test('136 + 135-2: remaining development time finishes at once for 1 diamond per minute (P-06 48 h → 2,880)',()=>{const {s}=freshGame();s.cafe.level=45;s.coins=1e6;
+ assert.ok(S.developMenu(s,'P-06',0));const t={type:'menu'};assert.equal(S.skipLeftSec(s,t,0),172800);s.dia=5000;assert.equal(S.skipNow(s,t,0),2880);assert.ok(s.menus.includes('P-06'));assert.equal(s.menuDev,null);
+ assert.ok(S.developMenu(s,'P-05',0));assert.equal(S.skipNow(s,t,(36*60-37)*MIN+20e3),37);assert.equal(s.dia,5000-2880-37);});
+test('136: development finishes while the app is closed (offline fast-forward, also past the 12 h income cap) and survives save/load',()=>{const {s}=freshGame();s.cafe.level=45;s.coins=1e6;
+ assert.ok(S.developMenu(s,'P-06',0));const st={m:{},getItem(k){return this.m[k]??null;},setItem(k,v){this.m[k]=v;}};S.save(st,s,0);
+ const a=S.load(st,H,S.rng(2)).state;assert.ok(a.menuDev&&a.menuDev.id==='P-06'&&!a.menus.includes('P-06'));S.save(st,a,H);
+ const b=S.load(st,49*H,S.rng(2)).state;assert.ok(b.menus.includes('P-06'));assert.equal(b.menuDev,null);});
 
 // ───────── 갱신 135-2 남은 시간 바로 완료 ─────────
 test('135-2: instant finish = 1 diamond per remaining minute, rounded up per minute (37 min → 37, 4 h → 240, 30 s → 1)',()=>{
