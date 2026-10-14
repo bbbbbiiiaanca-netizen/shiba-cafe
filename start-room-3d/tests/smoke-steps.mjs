@@ -50,9 +50,10 @@ export default async function({ev,check,sleep,reload}){
  await check('furniture tab shows four approved icons','document.querySelectorAll(".furniture-icon").length===4');
  await check('edit starts disabled','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="false"&&document.querySelector("[data-edit-toggle]").textContent==="배치 편집"');
  await ev('document.querySelector("[data-edit-toggle]").click();true');
+ await check('edit bar is in furniture panel','document.getElementById("menuList").contains(document.querySelector(".furniture-actions"))&&!document.getElementById("scene").contains(document.querySelector(".furniture-actions"))');
  await check('edit toggle enables outlines','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="true"&&document.querySelector("[data-edit-toggle]").textContent==="편집 끝"');
  await ev('document.querySelector("[data-edit-toggle]").click();true');
- await check('edit toggle returns to normal','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="false"');
+ await check('edit toggle returns to normal and keeps furniture tab','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="false"&&document.querySelector("[data-main-tab=furniture]").classList.contains("active")');
 
  await ev('document.querySelector("[data-main-tab=menu]").click();true');
  await check('v3: no bottom nav; basic menu has no development line; gear is present','!document.getElementById("nav")&&!/개발비|시간/.test(document.querySelector("[data-main-menu=M-01]").textContent)&&!!document.querySelector(".gear svg")');

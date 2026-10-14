@@ -211,3 +211,8 @@ Capture: `node start-room-3d/capture-main-screen.mjs`, 390×844 at DPR1/DPR2, ou
 ## Main screen v3
 Capture: `node start-room-3d/capture-main-screen.mjs`; 390×844 CSS pixels at DPR 1 and 2. Same staged state as v2: seed 7, cafe Lv5, red starter plus white/kuro Lv21 placed, 25 simulated seconds, two retained guests, M-02 developing, 21,500 coins and 30 diamonds. State is unsaved.
 Approved assets are copied byte-identically and drawn whole; hashes and Drive names are in assets/drive/MAP.md. Furniture anchors are source-pixel offsets in map-data.js. Wall end strips cap only the front-most cell of each back wall. Grass repeats in map coordinates. Dongu, shibas and guests remain code-drawn placeholders. Expansion/theme prices and furniture economy remain UNSET.
+
+
+Furniture edit follow-up: action controls now live at the top of the bottom 가구 tab content; no edit DOM controls are added to the map. Entering edit via the toggle, setEdit, ?edit=1 or ?grid=1 activates 가구; exiting keeps 가구. Controls stay visible during edit and are disabled until selection. Browser smoke checks cover panel ownership, map separation, automatic tab activation and exit behavior.
+
+Run `npm run test:browser` and `node capture-main-screen.mjs` on a Chrome-capable host to verify and regenerate main-screen-v7-edit.png (selected flipped counter, origin [0,1], cells (0,1)/(0,2), 가구 action bar). `python3 align-crops.py` generates align-v7/align-counter-flipped.png offline: complete room plus all furniture at 3×, grid, selected counter outline, depth sorting and mirror anchor ax′ = width − ax.

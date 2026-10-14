@@ -1,11 +1,11 @@
 import {MAP,SPRITES,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
-export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{}}={}){
+export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{}}={}){
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
  let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,drag=null,last,selected=null,hits=[],gridCells=0;
- const bar=document.createElement('div');bar.hidden=true;bar.className='furniture-actions';bar.style.cssText='position:absolute;left:6px;top:6px;z-index:5;display:flex;gap:4px';canvas.parentElement.append(bar);
+ const bar=document.createElement('div');bar.hidden=true;bar.className='furniture-actions';bar.setAttribute('aria-label','가구 편집');
  bar.innerHTML='<button data-furniture-flip>좌우 반전</button><button data-furniture-rotate>회전</button><button data-furniture-done>완료/선택 해제</button>';
- function syncBar(){bar.style.display=edit&&selected?'flex':'none';bar.hidden=!(edit&&selected);}
+ function syncBar(){bar.hidden=!edit;for(const button of bar.querySelectorAll('button'))button.disabled=!selected;}
  syncBar();
  const slots=()=>last?.[0].placement.slots||MAP.zones[0].slots;
  const current=()=>slots().find(s=>s.id===selected);
@@ -80,5 +80,5 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{}}={}){
  canvas.addEventListener('pointercancel',e=>{if(drag?.pointerId===e.pointerId){cancelDrag();repaint();}});
  canvas.addEventListener('lostpointercapture',()=>{cancelDrag();repaint();});
  new ResizeObserver(()=>last&&draw(...last)).observe(canvas);
- return {draw,get selected(){return selected;},get gridCells(){return gridCells;},get hits(){return hits.map(({im,...h})=>h);},get edit(){return edit;},setEdit(value){cancelDrag();edit=Boolean(value);if(!edit)selected=null;repaint();},get scroll(){return scroll;}};
+ return {draw,actions:bar,get selected(){return selected;},get gridCells(){return gridCells;},get hits(){return hits.map(({im,...h})=>h);},get edit(){return edit;},setEdit(value){cancelDrag();edit=Boolean(value);if(!edit)selected=null;onEditChange(edit);repaint();},get scroll(){return scroll;}};
 }

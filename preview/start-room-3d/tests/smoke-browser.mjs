@@ -21,7 +21,10 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await go(true);await steps({ev,check,sleep,reload:()=>go(false)});
  await go(false);
  await ev('document.querySelector("[data-main-tab=furniture]").click();document.querySelector("[data-edit-toggle]").click();true');
- await check('toggle enters edit','__game.iso.edit && __game.iso.gridCells===36');
+ await check('toggle enters edit in furniture panel','__game.iso.edit && __game.iso.gridCells===36 && document.querySelector("[data-main-tab=furniture]").classList.contains("active")');
+ await check('action bar is inside bottom panel, clear of map',`(()=>{const bar=document.querySelector('.furniture-actions'),map=document.getElementById('isomap').getBoundingClientRect();return document.getElementById('menuList').contains(bar)&&!document.getElementById('scene').contains(bar)&&bar.getBoundingClientRect().top>=map.bottom&&!bar.hidden&&bar.querySelector('[data-furniture-flip]').disabled;})()`);
+ await ev('document.querySelector("[data-main-tab=menu]").click();__game.iso.setEdit(true);true');
+ await check('programmatic edit activation switches to furniture','document.querySelector("[data-main-tab=furniture]").classList.contains("active")');
  await ev('new Promise(r=>setTimeout(r,300))');
  // Find an opaque sprite pixel, then drive actual pointer events through CDP.
  const spritePoint=async id=>ev(`(async()=>{const h=__game.iso.hits.find(h=>h.id===${JSON.stringify(id)});if(!h)throw Error('missing sprite');const im=new Image();im.src='assets/drive/furn-counter-v4.png';await im.decode();const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const ctx=c.getContext('2d');ctx.drawImage(im,0,0);const d=ctx.getImageData(0,0,c.width,c.height).data;const r=document.getElementById('isomap').getBoundingClientRect();for(let y=Math.floor(c.height/2);y<c.height;y++)for(let x=Math.floor(c.width/2);x<c.width;x++)if(d[(y*c.width+x)*4+3])return {x:r.left+h.x+(h.mirrored?c.width-1-x:x)/c.width*h.w,y:r.top+h.y+y/c.height*h.h,dx:-h.zone.cell.w/2*h.view.scale,dy:h.zone.cell.h/2*h.view.scale};throw Error('no opaque pixel');})()`);
@@ -41,13 +44,12 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev('document.querySelector("[data-furniture-flip]").click();document.querySelector("[data-furniture-done]").click();true');
  await check('done deselects','__game.iso.selected===null');
  await ev('document.querySelector("[data-edit-toggle]").click();true');
- await check('normal mode has no grid','!__game.iso.edit&&__game.iso.gridCells===0');
+ await check('normal mode has no grid','!__game.iso.edit&&__game.iso.gridCells===0&&document.querySelector("[data-main-tab=furniture]").classList.contains("active")&&!document.querySelector(".furniture-actions")');
  await go(false);
  await check('placement survives reload','__game.state.placement.slots[0].dir===1&&JSON.stringify(__game.state.placement.slots[0].origin)==="[0,1]"');
  for(const param of ['edit','grid']){
   await go(false,'&'+param+'=1');
-  await ev('document.querySelector("[data-main-tab=furniture]").click();true');
-  await check(param+'=1 opens edit view','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="true"&&__game.iso.gridCells===36');
+  await check(param+'=1 opens edit view','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="true"&&__game.iso.gridCells===36&&document.querySelector("[data-main-tab=furniture]").classList.contains("active")&&document.getElementById("menuList").contains(document.querySelector(".furniture-actions"))');
  }
 
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}
