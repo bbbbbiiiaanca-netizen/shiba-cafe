@@ -70,7 +70,13 @@ input[type=text]{font:inherit;font-size:15px;padding:8px;border-radius:10px;bord
 .menu-card.locked{background-image:url(assets/drive/ui/ui-card-locked.png)}.menu-card>img{width:54px;height:54px;flex:none}.menu-info{width:100%;align-items:center;gap:3px;flex:1}.menu-info strong{font-size:10px;white-space:nowrap}.menu-info span{font-size:8px}.menu-action{width:100%;font-size:9px;min-height:25px;display:flex;align-items:center;justify-content:center;gap:3px}.menu-action .lock{width:16px;height:16px}
 .menu-action button{width:100%;height:29px;padding:0;font-size:9px;color:#fff;box-shadow:none;border-radius:0;background:url(assets/drive/ui/ui-btn-develop-green.png) center/100% 100% no-repeat}.menu-action button.instant{background-image:url(assets/drive/ui/ui-btn-diamond-purple.png);font-size:8px}.menu-action button:disabled{filter:grayscale(1);opacity:.55}
 button[data-act=levelUp]{background:url(assets/drive/ui/ui-btn-levelup-yellow.png) center/100% 100% no-repeat;box-shadow:none;color:#65421d;min-width:130px;min-height:40px}
-#menuList.tab-list{display:flex;flex-direction:column}.furniture-actions{display:flex;gap:6px;flex-wrap:wrap;padding:8px 0}.furniture-actions[hidden]{display:none}.furniture-actions button{font-size:12px;padding:8px}.furniture-icon{width:64px!important;height:64px!important;object-fit:contain}
+#menuList.tab-list{display:flex;flex-direction:column}.furniture-actions{display:flex;gap:6px;flex-wrap:wrap;padding:8px 0}.furniture-actions[hidden]{display:none}.furniture-actions button{font-size:12px;padding:8px}
+.furniture-section{flex-shrink:0;min-width:0}.furniture-section h3{margin:2px 0 6px;font-size:12px}
+.furniture-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.furniture-card{aspect-ratio:1;min-width:0;overflow:hidden;display:grid;grid-template-rows:minmax(0,1fr) auto auto;justify-items:center;gap:2px;padding:7px 5px;background:url(assets/drive/ui/ui-card-default.png) center/100% 100% no-repeat;text-align:center}
+.furniture-card .furniture-icon{width:100%;height:100%;min-height:0;object-fit:contain;object-position:center}
+.furniture-card strong{max-width:100%;font-size:10px;line-height:1.2;white-space:nowrap}.furniture-card span{font-size:9px;line-height:1.2;color:#8a6a4a}
+
 .space-card{background-size:100% 100%;display:flex;flex-direction:row;flex-shrink:0;align-items:center;gap:8px;min-height:40px;padding:8px}.space-card strong{flex:1}.space-lock{width:26px;height:26px;object-fit:contain}
 </style>
 <div id="app">

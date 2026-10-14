@@ -46,6 +46,9 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await click('#menuList [data-act=levelUp]');await shot('main-screen-u2-levelup.png');
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
  await click('[data-main-tab=furniture]');await shot('main-screen-u3-furniture.png');
+ await ev(`(()=>{const list=document.getElementById('menuList'),grid=document.querySelector('.furniture-grid');list.scrollTop+=grid.getBoundingClientRect().top-list.getBoundingClientRect().top-8;return true;})()`);
+ await shot('main-screen-u3-furniture-grid.png');
+ await ev('document.getElementById("menuList").scrollTop=0;true');
  await ev('__game.iso.scrollTo(__game.iso.maxScroll);true');await shot('main-screen-u3-locked-row.png');
  await ev('__game.iso.scrollTo(0);true');await shot('main-screen-u3-2f.png');
  writeFileSync(join(out,'main-screen-v7-state.txt'),'Same normal staging as v6; edit: counter origin [0,1], dir1, footprint (0,1)-(0,2); stairs unchanged; 가구 tab active with action bar in bottom panel. 390x844, normal DPR1/DPR2, edit DPR2.\n');
