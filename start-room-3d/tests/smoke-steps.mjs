@@ -1,84 +1,32 @@
-// Steps driven by smoke-browser.mjs. Each check is a JS expression evaluated in the page.
-export default async function({ev,check,sleep,temp,reload}){
- // D-11 first run: vertical list, nothing pre-selected, OK disabled until a pick
- await ev('__game.step(.2);true');
- if(temp){await check('test build: TEMP on, saves go to the separate :temp key','__game.CFG.saveKey===__game.S.BASE_SAVE_KEY+":temp"&&Object.values(__game.CFG.TEMP).every(Boolean)');
-  await ev('sessionStorage.setItem("ord",String(localStorage.getItem(__game.S.BASE_SAVE_KEY)));true');}
- else await check('default build: TEMP off, ordinary save key','__game.CFG.saveKey===__game.S.BASE_SAVE_KEY&&Object.values(__game.CFG.TEMP).every(v=>!v)');
- await check('language screen on first run, no default, OK disabled','!document.getElementById("lang").hidden&&document.querySelectorAll("#langList button").length===2&&!document.querySelector("#langList button.on")&&document.getElementById("langOk").disabled');
- await ev('document.querySelector("[data-lang=en]").click();document.getElementById("langOk").click();true');await sleep(50);
- await check('English applied to the main screen','document.getElementById("lang").hidden&&document.querySelector("[data-i18n=\'ui.nav.build.quest\']").textContent==="Quests"&&/Donggu|café/i.test(document.getElementById("qpill").textContent)');
+// Steps driven by smoke-browser.mjs for the spec-v3 build. Each check is a JS expression evaluated in the page.
+export default async function({ev,check,sleep,reload}){
+ // 1.8 first run: language list, nothing pre-selected, OK disabled until a pick
+ await check('language screen on first run, OK disabled','!document.getElementById("modal").hidden&&document.querySelectorAll("[data-act=langPick]").length===2&&document.querySelector("[data-act=langOk]").disabled');
+ await ev('document.querySelector("[data-lang=en]").click();document.querySelector("[data-act=langOk]").click();true');
+ // 갱신 109 start choice
+ await check('start screen: 4 breeds, English text','document.querySelectorAll("[data-act=startPick]").length===4&&/Pick your first/.test(document.getElementById("mbox").textContent)');
+ await ev('document.querySelector("[data-breed=kuro]").click();document.querySelector("[data-act=startGo]").click();true');
+ await check('start shiba is Lv21 kuro with Sit/Wait 3','(s=>s.shibas.length===1&&s.shibas[0].breed==="kuro"&&s.shibas[0].level===21&&s.shibas[0].tricks.sit===3&&s.shibas[0].tricks.wait===3)(__game.state)');
+ // café loop runs in the page
+ await ev('for(let i=0;i<900;i++)__game.step(.1);true');
+ await check('guests served and paid in the page','__game.state.stats.served>0&&__game.state.coins>0&&document.querySelectorAll(".seat").length===5');
+ await check('no 도감 / dex button anywhere','!/도감|Collection|dex/i.test(document.getElementById("nav").textContent)');
+ // screens
+ for(const n of ['shibas','walk','shop','settings']){await ev(`document.querySelector("[data-nav=${n}]").click();true`);await check(`${n} screen opens`,'!document.getElementById("panel").hidden&&document.getElementById("pbody").children.length>0');}
+ await ev('document.querySelector("[data-nav=shibas]").click();document.querySelector("[data-act=care]").click();true');
+ await check('care: feed/snack/bath/sleep disabled (UNSET), play enabled','[...document.querySelectorAll("#pbody button[disabled]")].filter(b=>/Feed|Snack|Bath|Put to bed/.test(b.textContent)).length===4&&!document.querySelector("[data-act=play]").disabled');
+ await ev('document.querySelector("[data-act=play]").click();true');await check('play costs 1 heart','__game.state.hearts===9');
+ await ev('document.querySelector("[data-nav=walk]").click();true');
+ await check('walk buttons ♥1/♥2/♥3, stop disabled','document.querySelectorAll("[data-act=walk]").length===3');
+ await ev('document.querySelector("[data-act=walk][data-sec=\'600\']").click();true');
+ await check('walk started, shiba left the café','!!__game.state.walk&&!__game.world.sh[__game.state.walk.shibaId]&&[...document.querySelectorAll("#pbody button")].some(b=>/Stop/.test(b.textContent)&&b.disabled)');
+ await ev('document.querySelector("[data-nav=shop]").click();true');
+ await check('shop: menu dev + gacha disabled (UNSET), diamond items payment stub','document.querySelectorAll("[data-act=dev][disabled]").length===2&&[...document.querySelectorAll("#pbody button")].some(b=>b.disabled&&/TBD/.test(b.textContent))');
+ // language switch in settings applies at once
+ await ev('document.querySelector("[data-nav=settings]").click();document.querySelector("[data-lang=ko]").click();true');
+ await check('settings → 한국어 switches nav text','document.querySelector("[data-nav=walk]").textContent==="산책"&&document.getElementById("ptitle").textContent==="설정"');
+ await ev('__game.close();true');
+ // persisted across reload, offline report path
  await reload();await ev('__game.step(.2);true');
- await check('language kept after restart','document.getElementById("lang").hidden&&document.querySelector("[data-i18n=\'ui.nav.build.shop\']").textContent==="Shop"');
- await ev('__game.open("settings");document.querySelector("[data-setlang=ko]").click();window.__t0=performance.now();true');
- await ev('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
- await check('settings → 한국어 switches the main screen within 1 s','document.querySelector("[data-i18n=\'ui.nav.build.quest\']").textContent==="퀘스트"&&document.getElementById("ptitle").textContent==="설정"&&performance.now()-window.__t0<1000');
- await ev('__game.close();true');
- // D-12
- await ev('__game.open("shop");true');
- await check('3 themes; Fuji/bamboo show 가격 미정 and are disabled','document.querySelectorAll("[data-th]").length===3&&document.querySelector("[data-th=fuji]").disabled&&/가격 미정/.test(document.querySelector("[data-th=bamboo]").textContent)');
- await ev('__game.close();true');
- // the cafe floor must keep running (customers served, idle income accrues)
- await ev('window.__c0=__game.state.coins;window.__s0=__game.state.served;__game.step(90);true');
- await check('cafe loop runs: guests served and coins grow','__game.state.served>window.__s0&&__game.state.coins>window.__c0');
- await ev('__game.step(.5);true');
- await check('HUD renders hearts','document.getElementById("hearts").textContent===String(__game.state.hearts)');
- // D-13 with all three switches on inside this block (default build ships them off)
- await ev('Object.assign(__game.CFG.FEATURES,{healingPlay:true,healingTimeOfDay:true,healingObserve:true});__game.world.spawnT=1e12;__game.step(300);__game.world.spawnT=1;true');
- await check('D-13 on: play pairs happen, cafe still serves, no errors','__game.world.play.globalCdUntil>0');
- await ev('__game.obs.phase="active";__game.obs.ev="butterfly";__game.obs.t=0;__game.step(.1);window.__c1=__game.state.coins;true');
- await check('observe icon shows','!document.getElementById("obs").hidden&&document.getElementById("obs").textContent==="🦋"');
- await ev('document.getElementById("obs").click();true');await check('tap → +5 coins once, journal entry','__game.state.coins>=window.__c1+5&&__game.state.observeJournal.butterfly.count===1&&document.getElementById("obs").hidden');
- await ev('__game.open("settings");true');await check('time-of-day lock toggle in settings','!!document.querySelector("[data-k=todLock]")');await ev('__game.close();true');
- await ev('Object.assign(__game.CFG.FEATURES,{healingPlay:false,healingTimeOfDay:false,healingObserve:false});true');
- // D-01/D-02
- await ev('__game.open("gacha");true');await sleep(100);
- await check(temp?'gacha enabled with TEMP':'gacha blocked while N/R undecided',temp?'!document.getElementById("pull1").disabled':'document.getElementById("pull1").disabled&&!document.getElementById("gpNote").hidden');
- await ev('document.getElementById("gpull").classList.remove("on");true');
- await ev('__game.gachaShow("kuro","kuro_calm",6.95,"S")');await sleep(300);
- await check('S result card is gold class and shows S only','document.querySelector("#gcard .rc.S")!==null&&/^S · Lv\\.21/.test(document.querySelector("#gcard .rc i").textContent)');
- await ev('document.getElementById("gok").click();true');
- // D-05/D-06
- await ev('__game.state.hearts=3;__game.state.items.heartReset=1;__game.open("bag");true');await sleep(50);
- await check('reset button enabled at 3 hearts','!document.getElementById("useReset").disabled');
- await ev('document.getElementById("useReset").click();true');
- await check('reset → 10 hearts, ticket consumed','__game.state.hearts===10&&__game.state.items.heartReset===0');
- await ev('__game.state.items.heartReset=1;__game.ui.tick();true');await sleep(50);
- await check('reset button disabled at ≥10','document.getElementById("useReset").disabled');
- await ev('__game.close();true');
- await ev('__game.open("shiba");true');await check('shiba panel renders','document.querySelectorAll("#pbody .card").length>0');
- // D-03: two N red_smile Lv10 + Lv5
- await ev('__game.close();const st=__game.state;st.owned.push({id:501,coat:"red",expr:"red_smile",lv:10},{id:502,coat:"red",expr:"red_smile",lv:5},{id:503,coat:"red",expr:"red_smile",lv:3});__game.open("shiba");true');
- await ev('document.querySelector("[data-sel=\'501\']").click();document.querySelector("[data-sel=\'502\']").click();true');
- await check(temp?'merge button enabled (TEMP rule)':'merge disabled: rule undecided',temp?'!document.getElementById("mergeBtn").disabled':'document.getElementById("mergeBtn").disabled&&/준비 중/.test(document.getElementById("mergeWhy").textContent)');
- if(temp){await ev('document.getElementById("mergeBtn").click();true');
-  await check('merged → R Lv15, material gone','__game.state.owned.find(o=>o.id===501).lv===15&&!__game.state.owned.some(o=>o.id===502)&&!__game.world.shibas.some(o=>o.id===502)');
-  await ev('document.querySelector("[data-sel=\'501\']").click();document.querySelector("[data-sel=\'503\']").click();true');
-  await check('then N duplicate → merge blocked','document.getElementById("mergeBtn").disabled');}
- await ev('__game.close();true');
- // D-08
- await ev('__game.open("shiba");document.querySelector("[data-walk=\'1\']").click();true');
- await check(temp?'walk buttons enabled (TEMP free)':'walk buttons show 미정 and are disabled',temp?'!document.querySelector("[data-walkgo=\'1:600\']").disabled':'document.querySelector("[data-walkgo=\'1:600\']").disabled&&/미정/.test(document.querySelector("[data-walkgo=\'1:600\']").textContent)');
- if(temp){await ev('document.querySelector("[data-walkgo=\'1:600\']").click();true');await check('walker leaves the cafe floor','!!__game.state.walk&&!__game.world.shibas.some(x=>x.id===1)');
-  await ev('__game.state.walk.walkStartAt-=601e3;__game.step(.1);true');await check('walk over → back on the floor, settled','__game.state.walk===null&&__game.world.shibas.some(x=>x.id===1)');
-  // full floor (7 owned, 6 on the floor): the walker comes back and the stand-in goes back to reserve
-  await ev(`(()=>{const g=__game,st=g.state;while(st.owned.length<7)st.owned.push({id:st.nextId++,coat:'red',expr:'red_smile',lv:1});for(const o of st.owned)if(g.world.shibas.length<g.CFG.cafe.maxShibas&&!g.world.shibas.some(x=>x.id===o.id))g.S.addShiba(g.world,o);return true;})()`);
-  await ev('window.__wk=__game.world.shibas[0].id;__game.close();__game.open("shiba");document.querySelector(`[data-walk="${__wk}"]`).click();document.querySelector(`[data-walkgo="${__wk}:600"]`).click();true');
-  await check('full floor: walker out, a reserve shiba stands in','!!__game.state.walk&&!__game.world.shibas.some(x=>x.id===__wk)&&__game.world.shibas.length===__game.CFG.cafe.maxShibas');
-  await ev('window.__si=__game.world.standIn[__wk];__game.state.walk.walkStartAt-=601e3;__game.step(.1);true');
-  await check('full floor: walker back on the floor, stand-in back in reserve','__game.state.walk===null&&__game.world.shibas.some(x=>x.id===__wk)&&!__game.world.shibas.some(x=>x.id===__si)&&__game.world.shibas.length===__game.CFG.cafe.maxShibas');}
- await ev('__game.close();true');
- // D-04: card plays once and tap skips (feature switched on only inside this check)
- await ev('__game.CFG.FEATURES.promotionCard=true;const o=__game.state.owned[0];o.lv=10;__game.S.setLevel(__game.state,o,11,"levelup");true');
- await ev('__game.ui.frame();true');await check('promotion card shown','!document.getElementById("promo").hidden&&__game.state.promoQueue.length===0');
- await ev('document.getElementById("promo").click();__game.ui.frame();true');await check('tap skips immediately','document.getElementById("promo").hidden');
- await ev('__game.CFG.FEATURES.promotionCard=false;true');
- // D-07
- await ev('__game.open("event");true');await sleep(50);
- await check('28 day cells, null days say 준비 중','document.querySelectorAll(".obd").length===28&&/준비 중/.test(document.querySelector("[data-ob=\'17\']").textContent)');
- await check(temp?'day 1 claimable (TEMP)':'nothing claimable (dayMode 미정)',temp?'document.querySelector("[data-ob=\'1\']").classList.contains("claimable")':'document.querySelectorAll(".obd.claimable").length===0');
- if(temp){await ev('window.__r0=__game.state.items.heartReset;document.querySelector("[data-ob=\'1\']").click();true');await check('day 1 → +1 ticket, claimed once','__game.state.items.heartReset===window.__r0+1&&document.querySelector("[data-ob=\'1\']").classList.contains("claimed")');}
- await ev('__game.close();true');
- if(temp){await ev('__game.ui.tick();true');
-  await check('TEMP play wrote the :temp save and left the ordinary save untouched','localStorage.getItem(__game.S.BASE_SAVE_KEY+":temp")!==null&&sessionStorage.getItem("ord")!=="null"&&String(localStorage.getItem(__game.S.BASE_SAVE_KEY))===sessionStorage.getItem("ord")');}
+ await check('save kept after reload (language, shiba)','__game.state.settings.language==="ko"&&__game.state.shibas.length===1&&__game.state.started');
 }
