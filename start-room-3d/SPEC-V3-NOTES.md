@@ -770,7 +770,7 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - Task A final validation: `npm test` passed all suites; smoke/capture Node syntax checks and `git diff --check` passed. All 26 batch-3 assets match source SHA-256 hashes. Chrome was not launched.
 
 ## Task B — land expansion + start (2026-10-15)
-- Starting values (`starting value 2026-10-15, pending user confirm`): first row **170,000 멍코인**, multiplier **×1.6**, quote rounded to the nearest **1,000 멍코인**. Formula uses the unrounded first price × multiplier^purchased-row-count, then rounds each quote (170,000 → 272,000 → 435,000 → 696,000); it does not compound rounded quotes. Existing start coin config remains **30,000** with its pending-confirm annotation. No new unlock price, art dimension or timing balance values were introduced.
+- Starting values (`starting value 2026-10-15, pending user confirm`): first row **170,000 멍코인**, multiplier **×1.6**, quote rounded (superseded — see "Land price rounding" below). Formula uses the unrounded first price × multiplier^purchased-row-count, then rounds each quote (170,000 → 272,000 → 435,000 → 696,000); it does not compound rounded quotes. Existing start coin config remains **30,000** with its pending-confirm annotation. No new unlock price, art dimension or timing balance values were introduced.
 - User Task B takes precedence over handoff-v1/spec-v3.md's earlier N/R/S arrival levels: later new shibas start at **Lv1**, starter stays **Lv21**. Existing null odds/other undecided rules remain guarded.
 - Land '+' opens the cost confirmation; cancel spends nothing, confirm rechecks funds and the expansion count. Down-left first, then down-right, alternating. Expanded cells participate in placement/navigation/save.
 - Ledger had neither a land expense nor 기타 지출. Added **땅 넓히기**, hidden at zero per day; no land expense is recorded as 가구 구입. Question: approve this new ledger line, or introduce 기타 지출 and move land purchases there?
@@ -795,3 +795,10 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - Art resolved: rear walls now use approved 벽_방벽_연장 왼쪽/오른쪽 (128×244, anchor (64,180)), one per expanded row; new floor uses 타일_바닥_다다미_v3 (128×64). The earlier wall-inner fallback and tatami-room-crop are no longer drawn for expansion.
 - Validation: browser smoke and `--u12b` / `--final` captures were run outside the sandbox and pass (190/190).
 - Still waiting (not built): outer-wall seam/junction pieces where extensions meet the original diorama walls; 2F diamond price.
+
+## Land price rounding (똑또기 decision, starting value 2026-10-15 08:19 KST)
+- Chain stays exact: row n price = 170,000 × 1.6^n (from the previous row's *exact* value, never the rounded one).
+- Display rounding unit (`CFG.expansion.rowRoundTiers`): <100,000멍 → 1,000; 100,000–<1,000,000 → 10,000; ≥1,000,000 → 100,000. `sim.roundLandPrice`.
+- **Assumption:** the player is charged the shown (rounded) price — what they see is what they pay. Ledger 'land' line records the charged amount.
+- Resulting sequence: 170,000 · 270,000 · 440,000 · 700,000 · 1,100,000 · 1,800,000 · 2,900,000 …
+- Supersedes the earlier "nearest 1,000" starting value above.

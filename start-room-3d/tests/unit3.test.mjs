@@ -58,12 +58,13 @@ const B=await import('../sim.js'),land=B.newState(0);
 assert.equal(land.coins,30000);assert.equal(B.makeShiba(land,{breed:'white',now:0}).level,1);
 B.chooseStart(land,'red','',B.rng(1),0,B.bandanaItems()[0].id);assert.equal(land.shibas[0].level,21);
 assert.ok(!B.ledgerStatement(land,0).lines.some(x=>x.id==='land'));
-for(const [n,price] of [170000,272000,435000,696000].entries()){
+for(const [n,price] of [170000,270000,440000,700000,1100000].entries()){
  assert.equal(B.spacePrice('row',null,'coins',land),price);
  land.coins=price-1;const before=JSON.stringify(land);assert.equal(B.unlockSpace(land,'row',null,'coins',0),false);assert.equal(JSON.stringify(land),before);
  land.coins=price;assert.ok(B.unlockSpace(land,'row',null,'coins',0));assert.equal(land.coins,0);assert.equal(land.space.unlockedRows,n+1);
 }
-const report=B.ledgerStatement(land,0);assert.equal(report.lines.find(x=>x.id==='land').amount,170000+272000+435000+696000);assert.equal(report.lines.find(x=>x.id==='furniture').amount,0);
+assert.equal(B.roundLandPrice(99499),99000);assert.equal(B.roundLandPrice(99999),100000);assert.equal(B.roundLandPrice(435200),440000);assert.equal(B.roundLandPrice(1782579.2),1800000);assert.equal(B.roundLandPrice(2852126.72),2900000);
+const report=B.ledgerStatement(land,0);assert.equal(report.lines.find(x=>x.id==='land').amount,170000+270000+440000+700000+1100000);assert.equal(report.lines.find(x=>x.id==='furniture').amount,0);
 assert.ok(!B.ledgerStatement(land,CFG.ledger.periodMs).lines.some(x=>x.id==='land'));
 const savedPrice=CFG.expansion.rowCost;try{CFG.expansion.rowCost=null;assert.equal(B.spacePrice('row',null,'coins',land),null);assert.equal(B.spaceUnlockCheck(land,'row'),'unset');}finally{CFG.expansion.rowCost=savedPrice;}
 console.log('Task B: price progression/rounding, failed purchase atomicity, land-only daily ledger and Lv1 arrivals passed');
