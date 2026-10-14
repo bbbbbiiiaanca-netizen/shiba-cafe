@@ -16,9 +16,7 @@ let opens=0;
 const iso=createIsoMap(canvas,{onExpand:()=>opens++});
 const state=newState(0);iso.draw(state,{});iso.scrollTo(iso.maxScroll);
 assert.ok(!loads.some(p=>p.includes('tile-floor-locked')));
-const outlines=strokes.filter(s=>s.colour==='#e9cfa6').slice(-6);
-assert.equal(outlines.length,6);
-assert.ok(outlines.every(s=>s.path.every(([x,y])=>x>=0&&x<=390&&y>=0&&y<=300)));
+assert.equal(strokes.length,0,'normal view has no drawn strip outlines');
 assert.ok(iso.markers.some(m=>m.kind==='floor2'));
 const marker=iso.markers.find(m=>m.kind==='row');
 const pointer=(x,y)=>({button:0,pointerId:1,clientX:x,clientY:y});
@@ -26,7 +24,7 @@ events.pointerdown(pointer(marker.buttonX,marker.buttonY));events.pointerup(poin
 assert.equal(opens,1,'plus tap invokes expansion callback');
 events.pointerdown(pointer(marker.buttonX,marker.buttonY));events.pointermove(pointer(marker.buttonX,marker.buttonY-30));events.pointerup(pointer(marker.buttonX,marker.buttonY-30));
 assert.equal(opens,1,'scroll gesture does not activate plus');
-console.log('Expansion renderer: six visible outlines, no locked tile, stairs lock, plus tap and drag passed');
+console.log('Expansion renderer: bitmap marker, no locked tile, stairs lock, plus tap and drag passed');
 
 const grass=draws.filter(d=>d.file==='assets/drive/tile-grass-outside.png');
 assert.ok(grass.length>36,'outside grid extends beyond room');
@@ -66,3 +64,16 @@ assert.equal(JSON.stringify(wallState.placement),snapshot);
 wallIso.actions.querySelector('[data-wall-remove]').onclick();
 assert.ok(!wallState.placement.slots.some(s=>s.type==='wall'));assert.ok(changed>=4);
 console.log('§17 renderer: no wall image, footprint selection, move/rotate/remove and blocked rollback passed');
+
+// Both axes use approved floor art, full edit grid and clamped drag pan.
+const expandIso=createIsoMap(canvas);
+state.space.unlockedRows=3;draws.length=0;expandIso.setEdit(true);expandIso.draw(state,{});
+assert.equal(expandIso.gridCells,7*8);
+assert.equal(draws.filter(d=>d.file==='assets/drive/tiles/tatami-approved.png').length,7*8-36);
+assert.equal(expandIso.markers.find(m=>m.kind==='row').axis,'i');
+expandIso.panTo(Infinity,Infinity);assert.equal(expandIso.panX,expandIso.panBounds.maxX);assert.equal(expandIso.scroll,expandIso.maxScroll);
+expandIso.panTo(-Infinity,-Infinity);assert.equal(expandIso.panX,expandIso.panBounds.minX);assert.equal(expandIso.scroll,0);
+expandIso.setEdit(false);expandIso.panTo(0,0);
+events.pointerdown(pointer(200,150));events.pointermove(pointer(100,100));events.pointerup(pointer(100,100));
+assert.ok(expandIso.panX>0);assert.ok(expandIso.scroll>0);
+console.log('§12 renderer: new floor bitmap count, full grid, alternating marker, clamped two-axis drag passed');

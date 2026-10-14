@@ -1,5 +1,5 @@
 // Main cafe capture using capture-spec-v3.mjs Chrome CDP pipe approach, portrait 390×844.
-// Usage (from the repo root or start-room-3d/): node start-room-3d/capture-main-screen.mjs [OUTDIR]
+// Usage (from the repo root or start-room-3d/): node start-room-3d/capture-main-screen.mjs [OUTDIR] [--u12]
 // Default OUTDIR: /workspace/shiba-cafe-docs/spec-v3-build
 import {spawn} from 'node:child_process';import {mkdirSync,writeFileSync,readFileSync,rmSync} from 'node:fs';import {resolve,dirname,join} from 'node:path';import {fileURLToPath} from 'node:url';
 const ROOT=dirname(fileURLToPath(import.meta.url));
@@ -112,7 +112,24 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   if(!(await ev(`__game.world.manager?.role==='manager'&&document.getElementById('manager-debug').textContent.includes('매니저')`)))throw Error('manager navigation missing');
   await shot('main-screen-u17-manager.png');
  };
- if(process.argv.includes('--u141')){
+ // §11·§12: requested expansion stages, always DPR2, isolated TEMP fixture.
+ const u12=async()=>{
+  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+  await click('[data-main-tab=manage]');
+  for(const n of [0,1,2,3]){
+   await ev(`(()=>{const g=__game;if(!g.debugExpand(${n}))throw Error('TEMP expansion rejected');g.iso.panTo(0,g.iso.maxScroll);return true;})()`);
+   await sleep(300);await shot('main-screen-u12-expand-'+n+'.png');
+  }
+  // Pan by an actual sideways drag; travel is derived from the current bounds.
+  const p=await ev(`(()=>{const g=__game,r=document.getElementById('isomap').getBoundingClientRect();g.iso.panTo(g.iso.panBounds.minX,g.iso.maxScroll);return {x:r.left+r.width/2,y:r.top+r.height/2,dx:g.iso.panBounds.maxX-g.iso.panBounds.minX};})()`);
+  await c('Input.dispatchMouseEvent',{type:'mousePressed',x:p.x,y:p.y,button:'left',buttons:1,clickCount:1});
+  await c('Input.dispatchMouseEvent',{type:'mouseMoved',x:p.x-p.dx,y:p.y,button:'left',buttons:1});
+  await c('Input.dispatchMouseEvent',{type:'mouseReleased',x:p.x-p.dx,y:p.y,button:'left',buttons:0,clickCount:1});
+  if(!(await ev('__game.iso.panX===__game.iso.panBounds.maxX&&__game.iso.panX>0')))throw Error('sideways drag failed');
+  await shot('main-screen-u12-pan.png');
+ };
+ if(process.argv.includes('--u12')){await u12();if(errors.length)throw Error(errors.join('\n'));}
+ else if(process.argv.includes('--u141')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
   await click('[data-main-tab=shiba]');await shot('main-screen-u141-shiba.png');
   await ev('(()=>{const g=__game,sh=g.state.shibas[0];sh.paws=g.S.pawsToNext(sh.level);g.refresh();return true;})()');

@@ -121,6 +121,28 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  }
 
  // Unit 4 checks use TEMP staging and explicit pending-value fixtures; no production save.
+ // §11·§12: TEMP debug, alternating expansion, bitmap floor, drag bounds and saved placements.
+ await go(true,'&temp=1&expansions=3');
+ await ev('__game.ui.modals=[];__game.state.started=true;__game.refresh();true');
+ await check('§12 query unlocks N alternating strips with null price',`__game.state.space.unlockedRows===3&&__game.CFG.expansion.rowCost===null&&__game.iso.markers.find(m=>m.kind==='row').axis==='i'`);
+ for(const [n,grid,axis] of [[0,36,'j'],[1,42,'i'],[2,49,'j'],[3,56,'i']]){
+  await ev(`__game.debugExpand(${n});__game.iso.setEdit(true);true`);
+  await check('§12 full expanded grid '+n,`__game.iso.gridCells===${grid}&&__game.iso.markers.find(m=>m.kind==='row').axis==='${axis}'`);
+ }
+ await ev('__game.iso.setEdit(false);__game.iso.panTo(0,0);true');
+ const pan=await ev(`(()=>{const r=document.getElementById('isomap').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,dx:__game.iso.panBounds.maxX,dy:__game.iso.maxScroll};})()`);
+ await c('Input.dispatchMouseEvent',{type:'mousePressed',x:pan.x,y:pan.y,button:'left',buttons:1,clickCount:1});
+ await c('Input.dispatchMouseEvent',{type:'mouseMoved',x:pan.x-pan.dx,y:pan.y-pan.dy,button:'left',buttons:1});
+ await c('Input.dispatchMouseEvent',{type:'mouseReleased',x:pan.x-pan.dx,y:pan.y-pan.dy,button:'left',buttons:0,clickCount:1});
+ await check('§12 actual drag reaches horizontal and vertical bounds',`__game.iso.panX>0&&__game.iso.panX===__game.iso.panBounds.maxX&&__game.iso.scroll===__game.iso.maxScroll`);
+ await ev('__game.iso.panTo(-Infinity,-Infinity);true');
+ await check('§12 opposite bounds clamp',`__game.iso.panX===__game.iso.panBounds.minX&&__game.iso.scroll===0`);
+ // Production save reload: TEMP never writes a production save.
+ await go(true);
+ await check('§12 production debug cannot unlock',`__game.debugExpand(3)===false&&__game.state.space.unlockedRows===0`);
+ await ev(`(()=>{const g=__game;g.state.started=true;g.state.settings.language='ko';g.state.space.unlockedRows=3;g.state.space.flooring='tatami';g.state.placement.slots.find(x=>x.id==='table').origin=[6,7];g.S.save(localStorage,g.state,g.clock.now());return true;})()`);
+ await go(false);
+ await check('§12 expansion and new-cell placement survive reload',`__game.state.space.unlockedRows===3&&__game.state.space.flooring==='tatami'&&JSON.stringify(__game.state.placement.slots.find(x=>x.id==='table').origin)==='[6,7]'`);
  await go(true,'&temp=1');
  await ev(`(()=>{const g=__game;g.state.settings.language='ko';g.S.chooseStart(g.state,'red','',()=>.99,g.clock.now());g.state.coins=0;g.state.shibas[0].g={full:100,dirt:0,fatigue:0,happy:100,boredom:0};g.world.navigation={entrance:[5,5]};g.CFG.navigation.cellStepSec=1;g.CFG.income.levelAggregation=xs=>xs.length?xs[0]:1;for(let i=0;i<70;i++)g.step(1);g.refresh();document.querySelector('[data-main-tab=manage]').click();return true;})()`);
  await check('Unit 4 / §17-4 가게 관리 summary is one short line "착석 N · 대기 N"','/^착석 \\d+ · 대기 \\d+$/.test(document.querySelector("[data-customer-status]").textContent)&&__game.world.recent.length>0&&!__game.world.recent.at(-1).pending');

@@ -34,3 +34,20 @@ try{
 }finally{CFG.expansion.rowCost=rowCost;}
 assert.equal(restoreSpace({unlockedRows:-1}).unlockedRows,0);
 console.log('Unit 3: transactions, bounds, locks, themes, persistence and migration passed');
+
+const {nextExpansion}=await import('../map-data.js');
+const {pathfind}=await import('../navigation.js');
+for(const [n,cols,rows,axis] of [[0,6,6,'j'],[1,6,7,'i'],[2,7,7,'j'],[3,7,8,'i']]){
+ const z=zonesForSpace({unlockedRows:n})[0];assert.deepEqual([z.cols,z.rows],[cols,rows]);
+ const strip=nextExpansion(z,n);assert.equal(strip.axis,axis);
+ const grown=zonesForSpace({unlockedRows:n+1})[0];
+ for(const cell of strip.cells){assert.equal(validPlacement({id:'new',type:'table',dir:0,origin:cell},[],z),false);assert.equal(validPlacement({id:'new',type:'table',dir:0,origin:cell},[],grown),true);assert.ok(pathfind(grown,[],[0,5],cell));}
+}
+state.space=restoreSpace({unlockedRows:3,flooring:'tatami'});state.placement.slots.find(x=>x.id==='table').origin=[6,7];
+const expansionStore={setItem(k,v){this.value=v;},getItem(){return this.value;}};save(expansionStore,state,0);
+const expanded=load(expansionStore,0).state;assert.equal(expanded.space.unlockedRows,3);assert.equal(expanded.space.flooring,'tatami');assert.deepEqual(expanded.placement.slots.find(x=>x.id==='table').origin,[6,7]);
+console.log('§12: alternating grass conversion, placement, navigation and expanded placement save passed');
+
+const {selectFlooring}=await import('../sim.js');
+assert.equal(selectFlooring(expanded,'fuji'),false);assert.equal(selectFlooring(expanded,'tatami'),true);
+assert.equal(restoreSpace({flooring:'missing'}).flooring,'tatami');

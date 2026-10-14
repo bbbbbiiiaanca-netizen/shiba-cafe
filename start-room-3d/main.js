@@ -16,7 +16,7 @@ if(Q.get('fresh')&&!temp)localStorage.removeItem(CFG.saveKey);
 const r=Q.get('seed')?S.rng(+Q.get('seed')):Math.random;
 const clock={offset:0,now(){return Date.now()+this.offset;}};
 const L0=temp&&Q.get('fresh')?{state:S.newState(clock.now())}:S.load(localStorage,clock.now(),r);let s=L0.state,w=S.newWorld(s,r);
-if(temp&&Q.get('rows')){const rows=Number(Q.get('rows'));if(Number.isSafeInteger(rows)&&rows>=0)s.space.unlockedRows=rows;}
+if(temp&&(Q.has('expansions')||Q.has('rows'))){const rows=Number(Q.get('expansions')??Q.get('rows'));if(Number.isSafeInteger(rows)&&rows>=0)s.space.unlockedRows=rows;}
 const L=makeT(()=>s.settings.language);
 const ui={seen:{menuDone:false},knownMenus:null,nav:'cafe',panel:null,arg:null,sel:null,modals:[],toastT:0,walkPick:null,walkAlba:new Set(),trainPick:{},lpOpen:{}};
 
@@ -360,5 +360,5 @@ function frame(t){let dt=(t-last)/1000;last=t;if(document.hidden){requestAnimati
 let hiddenAt=null;
 addEventListener('pagehide',()=>persist());
 document.addEventListener('visibilitychange',()=>{if(document.hidden){hiddenAt=clock.now();persist();}else if(hiddenAt!=null){catchUp(clock.now()-hiddenAt);hiddenAt=null;last=performance.now();}});
-const game={CFG,S,iso,get characterPositions(){return [...w.custs,...w.queue,...Object.values(w.sh)].map(c=>({id:c.id,phase:c.phase,cell:c.cell&&[...c.cell]}));},get state(){return s;},get world(){return w;},step:(dt=.1)=>{step(dt);return {custs:w.custs.length,queue:w.queue.length,coins:s.coins};},advance,open,close,clock,ui,refresh};
+const game={CFG,S,iso,debugExpand(n){if(!temp||!Number.isSafeInteger(n)||n<0)return false;s.space.unlockedRows=n;S.syncRoutes(s,w);refresh();return true;},get characterPositions(){return [...w.custs,...w.queue,...Object.values(w.sh)].map(c=>({id:c.id,phase:c.phase,cell:c.cell&&[...c.cell]}));},get state(){return s;},get world(){return w;},step:(dt=.1)=>{step(dt);return {custs:w.custs.length,queue:w.queue.length,coins:s.coins};},advance,open,close,clock,ui,refresh};
 window.__game=game;applyStatic();refresh();requestAnimationFrame(frame);window.__ready=true;

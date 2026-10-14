@@ -2,7 +2,7 @@ import {tickManager,linkTable,faceCell,layout,seatSlots,pathfind,routeTo,moveCel
 export {seatSlots,syncRoutes,pathfind};
 // Spec v3 game core — pure logic (no DOM), deterministic with an injected RNG so tests can replay it.
 // Times: `now` is epoch ms; `dt` is seconds. Every number comes from CFG (config.js); UNSET (null) values disable what depends on them.
-import {defaultPlacement,restorePlacement,restoreSpace,zonesForSpace} from './map-data.js';
+import {defaultPlacement,restorePlacement,restoreSpace,zonesForSpace,FLOOR_ART} from './map-data.js';
 import {CFG,GACHA_TABLE,pressureAt,isUnset} from './config.js';
 
 export function rng(seed=1){let a=seed>>>0||1;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
@@ -464,3 +464,6 @@ function weightedState(w,weights){let n=w.r()*Object.values(weights).reduce((a,b
 // every state that can be drawn needs its duration (walk: its cell range); otherwise autonomous behaviour stays gated
 export function behaviourReady(B){const W=B?.weights,ws=W?Object.values(W):[];if(!ws.length||!ws.every(Number.isFinite)||!(ws.reduce((a,b)=>a+b,0)>0))return false;
  return Object.entries(W).every(([k,v])=>!(v>0)||(k==='walk'?Array.isArray(B.walkCells)&&B.walkCells.every(Number.isInteger)&&B.walkCells[0]>=1&&B.walkCells[0]<=B.walkCells[1]:Number.isFinite(B.durations?.[k])));}
+
+// Only flooring with approved tile art can be selected; no generated fallback.
+export function selectFlooring(s,id){if(!Object.hasOwn(FLOOR_ART,id)||!s.space.themes.includes(id))return false;s.space.flooring=id;return true;}

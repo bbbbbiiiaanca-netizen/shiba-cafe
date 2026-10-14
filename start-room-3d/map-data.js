@@ -24,10 +24,6 @@ export const ROOM_BG='assets/drive/room-tatami-noline.png';
 export const MAP={zones:[{
  // answer 똑또기 2026-10-14: front-left entrance; queue = CFG.navigation.queueCells grass cells straight out from the entrance
  id:'A',entrance:[0,5],queueCells:Array.from({length:CFG.navigation.queueCells},(_,n)=>[0,6+n]),image:ROOM_BG,origin:{x:429,y:181},
- // Display placeholder until expansion land art exists. Alpha scan of 방_기본_다다미_선없음 / 시험
- // front-left rim: lowest opaque pixel (429,614); outer edge y-x/2 <= 401. Offset 0 overlaps
- // 18,193 opaque pixels; offset 1 overlaps zero (smallest whole-row offset).
- expansionRowOffset:1,
  cols:6,rows:6,cell:{w:128,h:64},locked:false,unlockCost:null,floor:1,
  slots:[
   {id:'counter',type:'counter',origin:[0,0],dir:0},
@@ -81,12 +77,15 @@ export function restorePlacement(saved,zone=MAP.zones[0]){
  return slots.every(s=>validPlacement(s,slots,zone))?{v:1,slots}:fallback;
 }
 
-// Rows are data only until approved expanded-room art is supplied.
+// unlockedRows is the persisted expansion count (legacy key retained).
+export const FLOOR_ART={tatami:'assets/drive/tiles/tatami-approved.png'};
+// First axis j (down-left): starting value 2026-10-15, pending user confirm.
+export function nextExpansion(zone,count){return count%2===0?{axis:'j',cells:Array.from({length:zone.cols},(_,i)=>[i,zone.rows])}:{axis:'i',cells:Array.from({length:zone.rows},(_,j)=>[zone.cols,j])};}
 export function restoreSpace(saved){
  const unlockedRows=Number.isSafeInteger(saved?.unlockedRows)&&saved.unlockedRows>=0?saved.unlockedRows:0;
- return {unlockedRows,floor2Unlocked:saved?.floor2Unlocked===true,themes:[...new Set([...CFG.themes.filter(t=>!t.locked).map(t=>t.id),...(Array.isArray(saved?.themes)?saved.themes.filter(id=>CFG.themes.some(t=>t.id===id)):[])])]};
+ return {unlockedRows,flooring:Object.hasOwn(FLOOR_ART,saved?.flooring)?saved.flooring:'tatami',floor2Unlocked:saved?.floor2Unlocked===true,themes:[...new Set([...CFG.themes.filter(t=>!t.locked).map(t=>t.id),...(Array.isArray(saved?.themes)?saved.themes.filter(id=>CFG.themes.some(t=>t.id===id)):[])])]};
 }
-export function zonesForSpace(space){const data=restoreSpace(space);return MAP.zones.map(z=>({...z,rows:z.rows+(z.floor===1?data.unlockedRows:0),locked:z.floor===2?!data.floor2Unlocked:z.locked}));}
+export function zonesForSpace(space){const data=restoreSpace(space);return MAP.zones.map(z=>({...z,cols:z.cols+(z.floor===1?Math.floor(data.unlockedRows/2):0),rows:z.rows+(z.floor===1?Math.ceil(data.unlockedRows/2):0),flooring:data.flooring,locked:z.floor===2?!data.floor2Unlocked:z.locked}));}
 
 // starting value 똑또기 2026-10-14, pending user batch confirm: one item per table cell, centred on that cell's table top,
 // displayed at 35% of the cell width. offset = table-top point above the cell centre (image px; layout only).

@@ -1,9 +1,9 @@
 import {preservesEntrance} from './navigation.js';
-import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,FLOAT_ICONS} from './map-data.js';
+import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,FLOAT_ICONS,FLOOR_ART,nextExpansion} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
- let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,drag=null,last,selected=null,hits=[],gridCells=0,maxScroll=0,markers=[];
+ let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,panX=0,panBounds={minX:0,maxX:0},drag=null,last,selected=null,hits=[],gridCells=0,maxScroll=0,markers=[];
  const bar=document.createElement('div');bar.hidden=true;bar.className='furniture-actions';bar.setAttribute('aria-label','가구 편집');
  bar.innerHTML='<button data-furniture-flip>좌우 반전</button><button data-furniture-rotate>회전</button><button data-wall-add>가벽 배치</button><button data-wall-remove>가벽 제거</button><button data-furniture-done>완료/선택 해제</button>';
  function syncBar(){bar.hidden=!edit;for(const button of bar.querySelectorAll('button'))button.disabled=button.hasAttribute('data-wall-add')?false:button.hasAttribute('data-wall-remove')?current()?.type!=='wall':!selected;}
@@ -39,12 +39,18 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
   // Scale from the base room (+ its outside row) only, so unlocked rows grow the map vertically (scroll) instead of shrinking it.
   const minX=Math.min(0,...MAP.zones.filter(z=>z.floor===1).map(z=>cellToImage(0,z.rows+(z.expansionRowOffset||0),z).x-z.cell.w/2));
   const worldWidth=861-minX,scale=(W-12)/worldWidth;
-  const heights=zones.map(z=>Math.max(615,z.origin.y+(z.cols+z.rows+(z.expansionRowOffset||0)+1)*z.cell.h/2+50)*scale);
+  const heights=zones.map(z=>Math.max(615,z.origin.y+(z.cols+z.rows+2)*z.cell.h/2+MAP_MARKERS.expansion.anchor[1])*scale);
   const total=heights.reduce((a,b)=>a+b,0)+Math.max(0,zones.length-1)*24;
+  const baseX=(W-worldWidth*scale)/2-minX*scale;
+  const extents=zones.flatMap(z=>[[0,0],[z.cols,0],[0,z.rows],[z.cols,z.rows]].map(c=>cellToImage(...c,z)));
+  const left=Math.min(0,...extents.map(p=>p.x-MAP.zones[0].cell.w/2));
+  const right=Math.max(861,...extents.map(p=>p.x+MAP.zones[0].cell.w/2));
+  panBounds={minX:Math.min(0,baseX+left*scale),maxX:Math.max(0,baseX+right*scale-W)};
+  panX=Math.max(panBounds.minX,Math.min(panX,panBounds.maxX));
   maxScroll=Math.max(0,total-H);scroll=Math.max(0,Math.min(scroll,maxScroll));
   let y=Math.max(0,(H-total)/2)-scroll;
   zones.forEach((z,index)=>{
-   const view={x:(W-worldWidth*scale)/2-minX*scale,y:y+(z.screenOffset?.y||0)*scale,scale};const placed=z.id==='A'?state.placement.slots:z.slots;
+   const view={x:baseX-panX,y:y+(z.screenOffset?.y||0)*scale,scale};const placed=z.id==='A'?state.placement.slots:z.slots;
    if(z.image){const glow=ctx.createRadialGradient(W/2,y+heights[index]*.84,0,W/2,y+heights[index]*.84,W*.55);
    glow.addColorStop(0,'#b9854540');glow.addColorStop(1,'#b9854500');ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);}
    const stamp=(file,p,anchor)=>{const im=load(file);if(im.complete&&im.naturalWidth)ctx.drawImage(im,p.x-anchor[0]*scale,p.y-anchor[1]*scale,im.naturalWidth*scale,im.naturalHeight*scale);};
@@ -56,18 +62,20 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
    }}
    const room=z.image?load(z.image):null;if(room?.complete&&room.naturalWidth)ctx.drawImage(room,view.x,view.y,room.naturalWidth*scale,room.naturalHeight*scale);
    if(z.floor===1){
-    const row=z.rows+z.expansionRowOffset,hw=z.cell.w*scale/2,hh=z.cell.h*scale/2;
-    ctx.save();ctx.strokeStyle='#e9cfa6';ctx.lineWidth=.8;
-    for(let c=0;c<z.cols;c++){const p=cellToScreen(c,row,view,z);
-     ctx.beginPath();ctx.moveTo(p.x,p.y-hh);ctx.lineTo(p.x+hw,p.y);ctx.lineTo(p.x,p.y+hh);ctx.lineTo(p.x-hw,p.y);ctx.closePath();ctx.stroke();
-    }ctx.restore();
-    const p=cellToScreen((z.cols-1)/2,row,view,z),meta=MAP_MARKERS.expansion,im=load(meta.file);
+    // Approved floor bitmaps replace the grass in every newly owned cell.
+    const floor=load(FLOOR_ART[z.flooring]);
+    if(floor.complete&&floor.naturalWidth)for(let j=0;j<z.rows;j++)for(let i=0;i<z.cols;i++){
+     if(i<MAP.zones[0].cols&&j<MAP.zones[0].rows)continue;
+     const p=cellToScreen(i,j,view,z);ctx.drawImage(floor,p.x-z.cell.w*scale/2,p.y-z.cell.h*scale/2,z.cell.w*scale,z.cell.h*scale);
+    }
+    const strip=nextExpansion(z,state.space.unlockedRows),centre=strip.cells.reduce((p,c)=>p.map((v,k)=>v+c[k]/strip.cells.length),[0,0]);
+    const p=cellToScreen(...centre,view,z),meta=MAP_MARKERS.expansion,im=load(meta.file);
     stamp(meta.file,p,meta.anchor);
-    markers.push({kind:'row',...p,buttonX:p.x,buttonY:p.y-32*scale,
+    markers.push({kind:'row',axis:strip.axis,cells:strip.cells,...p,buttonX:p.x,buttonY:p.y-32*scale,
      x0:p.x-meta.anchor[0]*scale,y0:p.y-meta.anchor[1]*scale,w:im.naturalWidth*scale,h:im.naturalHeight*scale});
    }
    if(edit&&z.image){const occupied=new Set(placed.flatMap(s=>footprintCells(s).map(c=>c.join(','))));
-    for(let r=0;r<MAP.zones[0].rows;r++)for(let c=0;c<z.cols;c++){
+    for(let r=0;r<z.rows;r++)for(let c=0;c<z.cols;c++){
      ctx.strokeStyle=occupied.has(`${c},${r}`)?'#ffd36b':'#7de7ffb0';ctx.lineWidth=occupied.has(`${c},${r}`)?1.5:.8;
      gridCells++;const p=cellToScreen(c,r,view,z),hw=z.cell.w*scale/2,hh=z.cell.h*scale/2;
      ctx.beginPath();ctx.moveTo(p.x,p.y-hh);ctx.lineTo(p.x+hw,p.y);ctx.lineTo(p.x,p.y+hh);ctx.lineTo(p.x-hw,p.y);ctx.closePath();ctx.stroke();
@@ -112,7 +120,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
    y+=heights[index]+24;
   });
  }
- canvas.addEventListener('wheel',e=>{e.preventDefault();scroll+=e.deltaY;last&&draw(...last);},{passive:false});
+ canvas.addEventListener('wheel',e=>{e.preventDefault();scroll+=e.deltaY;panX+=e.deltaX;last&&draw(...last);},{passive:false});
  // Alpha hit testing uses an offscreen copy only; rendered sprites remain unmodified.
  const masks=new Map();
  function opaque(hit,x,y){if(hit.footprint)return Math.abs((x-hit.x-hit.w/2)/(hit.w/2))+Math.abs((y-hit.y-hit.h/2)/(hit.h/2))<=1;let mask=masks.get(hit.im);if(!mask){const c=document.createElement('canvas');c.width=hit.im.naturalWidth;c.height=hit.im.naturalHeight;const m=c.getContext('2d',{willReadFrequently:true});m.drawImage(hit.im,0,0);try{mask=m.getImageData(0,0,c.width,c.height);masks.set(hit.im,mask);}catch{return true;}}
@@ -124,21 +132,21 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
  canvas.addEventListener('pointerdown',e=>{
   if(e.button!==0||drag)return;const p=point(e);
   const marker=markers.find(m=>m.kind==='row'&&p.x>=m.x0&&p.x<m.x0+m.w&&p.y>=m.y0&&p.y<m.y0+m.h&&opaque({im:images.get(MAP_MARKERS.expansion.file),x:m.x0,y:m.y0,w:m.w,h:m.h},p.x,p.y));
-  if(marker)drag={pointerId:e.pointerId,marker:true,start:p,scrollY:e.clientY};
+  if(marker)drag={pointerId:e.pointerId,marker:true,start:p,scrollY:e.clientY,scrollX:e.clientX};
   if(edit&&!drag){const hit=[...hits].reverse().sort((a,b)=>Number(Boolean(b.footprint))-Number(Boolean(a.footprint))).find(h=>p.x>=h.x&&p.x<h.x+h.w&&p.y>=h.y&&p.y<h.y+h.h&&opaque(h,p.x,p.y));selected=hit?.id||null;
    if(hit){const item=current();drag={pointerId:e.pointerId,item:item.id,start:cell(p,hit.view,hit.zone),origin:[...item.origin],candidate:[...item.origin],view:hit.view,zone:hit.zone};}
   }
-  if(!drag)drag={pointerId:e.pointerId,scrollY:e.clientY};
+  if(!drag)drag={pointerId:e.pointerId,scrollY:e.clientY,scrollX:e.clientX};
   canvas.setPointerCapture(e.pointerId);repaint();
  });
  canvas.addEventListener('pointermove',e=>{if(!drag||drag.pointerId!==e.pointerId)return;
   if(drag.marker&&Math.hypot(point(e).x-drag.start.x,point(e).y-drag.start.y)>=8)drag.moved=true;
   if(drag.item){const c=cell(point(e),drag.view,drag.zone);drag.candidate=drag.origin.map((n,i)=>n+Math.round(c[i]-drag.start[i]));}
-  else {scroll+=drag.scrollY-e.clientY;drag.scrollY=e.clientY;}repaint();
+  else {scroll+=drag.scrollY-e.clientY;panX+=drag.scrollX-e.clientX;drag.scrollY=e.clientY;drag.scrollX=e.clientX;}repaint();
  });
  canvas.addEventListener('pointerup',e=>{if(!drag||drag.pointerId!==e.pointerId)return;if(drag.marker&&!drag.moved&&Math.hypot(point(e).x-drag.start.x,point(e).y-drag.start.y)<8)onExpand();if(drag?.item){const item=current(),candidate={...item,origin:drag.candidate};if(accept(candidate,drag.zone)){item.origin=[...drag.candidate];onChange();}}cancelDrag();repaint();});
  canvas.addEventListener('pointercancel',e=>{if(drag?.pointerId===e.pointerId){cancelDrag();repaint();}});
  canvas.addEventListener('lostpointercapture',()=>{cancelDrag();repaint();});
  new ResizeObserver(()=>last&&draw(...last)).observe(canvas);
- return {draw,placeWall,actions:bar,get selected(){return selected;},get gridCells(){return gridCells;},get hits(){return hits.map(({im,...h})=>h);},get edit(){return edit;},setEdit(value){cancelDrag();edit=Boolean(value);if(!edit)selected=null;onEditChange(edit);repaint();},get scroll(){return scroll;},get maxScroll(){return maxScroll;},get markers(){return markers;},scrollTo(value){scroll=value;repaint();}};
+ return {draw,placeWall,actions:bar,get selected(){return selected;},get gridCells(){return gridCells;},get hits(){return hits.map(({im,...h})=>h);},get edit(){return edit;},setEdit(value){cancelDrag();edit=Boolean(value);if(!edit)selected=null;onEditChange(edit);repaint();},get panX(){return panX;},get panBounds(){return {...panBounds};},panTo(x,y=scroll){panX=x;scroll=y;repaint();},get scroll(){return scroll;},get maxScroll(){return maxScroll;},get markers(){return markers;},scrollTo(value){scroll=value;repaint();}};
 }
