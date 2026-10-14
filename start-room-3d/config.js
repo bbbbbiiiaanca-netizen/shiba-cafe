@@ -1,41 +1,36 @@
 // 시바카페 spec v3 — every tunable lives here. Each value carries its spec source (갱신 N = "v3 갱신 N" in spec-v3.md).
 // Rule: numbers come from the spec only. Anything the spec leaves undecided is `null` with a comment "UNSET: <spec ref>";
 // code that depends on an UNSET value disables that feature (button off / "미정" label) instead of guessing.
-// Where the game cannot run without a value the spec leaves open, the spec key stays UNSET and the build's placeholder lives in the
-// PENDING_CONFIRM block (`CFG.pending`) with the reason — listed in SPEC-V3-NOTES.md for 수인님 to confirm.
 const U=null; // marker for UNSET values (kept as plain null so JSON saves stay simple)
 
 // 갱신 75 손님 압박 표 (갱신 73·74 대체): [시바 칸, 손님 상한, 손님 오는 간격(초), 한계 대비 %] for café levels 1..50
 const PRESSURE=[
- [2,5,7.5,125],[2,5,6.6,110],[2,5,5.1,85],[3,7,5.4,125],[3,7,4.7,110],[3,7,3.6,85],[4,9,4.2,125],[4,9,3.7,110],[4,9,3.3,98],[4,9,2.8,85],
- [5,11,3.4,125],[5,11,3.0,110],[5,11,2.8,102],[5,11,2.5,93],[5,11,2.3,85],[6,14,2.5,125],[6,14,2.2,110],[6,14,2.0,102],[6,14,1.9,93],[6,14,1.7,85],
- [7,16,2.2,125],[7,16,1.9,110],[7,16,1.8,104],[7,16,1.7,98],[7,16,1.6,91],[7,16,1.5,85],[8,18,2.0,125],[8,18,1.7,110],[8,18,1.7,105],[8,18,1.6,100],
- [8,18,1.5,95],[8,18,1.4,90],[8,18,1.3,85],[9,20,1.8,125],[9,20,1.6,110],[9,20,1.5,106],[9,20,1.5,102],[9,20,1.4,98],[9,20,1.3,93],[9,20,1.3,89],
- [9,20,1.2,85],[10,22,1.6,125],[10,22,1.4,110],[10,22,1.3,106],[10,22,1.3,103],[10,22,1.2,99],[10,22,1.2,96],[10,22,1.2,92],[10,22,1.1,89],[10,22,1.1,85]];
+ [2,5,7.5,125],[2,5,6.6,110],[2,5,5.1,85],[3,7,5.4,125],[3,7,4.7,110],[3,7,3.6,85],[4,9,4.2,125],[4,9,3.7,110],[4,9,3.3,98],[4,9,2.8,85], // 갱신 75 pressure table
+ [5,11,3.4,125],[5,11,3.0,110],[5,11,2.8,102],[5,11,2.5,93],[5,11,2.3,85],[6,14,2.5,125],[6,14,2.2,110],[6,14,2.0,102],[6,14,1.9,93],[6,14,1.7,85], // 갱신 75 pressure table
+ [7,16,2.2,125],[7,16,1.9,110],[7,16,1.8,104],[7,16,1.7,98],[7,16,1.6,91],[7,16,1.5,85],[8,18,2.0,125],[8,18,1.7,110],[8,18,1.7,105],[8,18,1.6,100], // 갱신 75 pressure table
+ [8,18,1.5,95],[8,18,1.4,90],[8,18,1.3,85],[9,20,1.8,125],[9,20,1.6,110],[9,20,1.5,106],[9,20,1.5,102],[9,20,1.4,98],[9,20,1.3,93],[9,20,1.3,89], // 갱신 75 pressure table
+ [9,20,1.2,85],[10,22,1.6,125],[10,22,1.4,110],[10,22,1.3,106],[10,22,1.3,103],[10,22,1.2,99],[10,22,1.2,96],[10,22,1.2,92],[10,22,1.1,89],[10,22,1.1,85]]; // 갱신 75 pressure table
 
 // 갱신 98 카페 레벨 경험치 (L→L+1, 갱신 87·91·92 대체; 132-4로 표 그대로 유지)
-const CAFE_EXP=[120,220,370,520,740,1000,1850,1940,2050,2190,2860,3070,3300,3540,3800,5190,5560,5940,6340,6760,
- 8220,8730,9250,9790,10350,10920,12950,13620,14310,15020,15740,16480,17230,19990,20850,21730,22630,23540,24460,25400,
- 26350,30040,31120,32210,33310,34430,35570,36710,37870];
+const CAFE_EXP=[120,220,370,520,740,1000,1850,1940,2050,2190,2860,3070,3300,3540,3800,5190,5560,5940,6340,6760, // 갱신 98 experience table; 132-4 unchanged
+ 8220,8730,9250,9790,10350,10920,12950,13620,14310,15020,15740,16480,17230,19990,20850,21730,22630,23540,24460,25400, // 갱신 98 experience table; 132-4 unchanged
+ 26350,30040,31120,32210,33310,34430,35570,36710,37870]; // 갱신 98 experience table; 132-4 unchanged
 
 export const CFG={
- saveKey:'shibaCafe.save.v3',saveVersion:3,
+ saveKey:'shibaCafe.save.v3',saveVersion:3, // EXEMPT: save schema version (engine metadata)
 
- // ═════════════════════ PENDING_CONFIRM ═════════════════════
- // Values the game NEEDS to run but the spec does not decide. These are build placeholders, NOT spec numbers. Each one is listed in
- // SPEC-V3-NOTES.md ('PENDING_CONFIRM') as needing 수인님's confirmation; the matching spec key elsewhere in CFG stays UNSET (null).
+ // Removed unsupported build placeholders; null is preserved by the engine.
  pending:{
-  startCoins:0, // spec key start.coins is UNSET: no 시작 멍코인 anywhere (1.4 lists only 하트 기본 10). newState must hold a number → 0 = nothing given.
-  intimacyStart:0, // spec key intimacy.start is UNSET: 친밀도 0~100 (갱신 82·90) has no start value, yet every shiba stores one → 0 = range minimum.
-  gaugeStart:{full:100,dirt:0,fatigue:0,happy:100,boredom:0}, // spec key gaugeStart is UNSET (1.2-3 asks it): every shiba stores 5 gauges → 갱신 116 멍포션 '가득' state.
-  rescueLevel:1, // spec key rescueLevel is UNSET (질문 9(사)): bringing a rescue home (1.10.1, 갱신 65·66) creates a shiba that needs a level → 1 = level minimum (81).
-  starterAccessory:'bandana-triangle-cell1', // spec key accessory.starterItem is UNSET: 139-6 gives the first shiba 1 accessory but not which → first item of the 140 list.
-  walkExtraReward:'heart', // 갱신 82 extra reward = '멍코인 소량 또는 하트 1' — which of the two is not said and the 멍코인 amount is UNSET (walk.events.extraCoins),
-                           // but the 1/2 roll is confirmed and needs an outcome → 'heart' (하트 1, the only option with a number). 'coins' is rejected while extraCoins is UNSET.
+  startCoins:U, // UNSET: §1.4 starting coins unspecified
+  intimacyStart:U, // UNSET: 갱신 82·90 starting intimacy unspecified
+  gaugeStart:U, // UNSET: §1.2-3 starting gauges unspecified
+  rescueLevel:U, // UNSET: 질문 9(사) rescue level unspecified
+  starterAccessory:U, // UNSET: 갱신 139-6 accessory identity unspecified
+  walkExtraReward:U, // UNSET: 갱신 82 reward branch unspecified
  },
 
  // ── 재화 ──
- start:{coins:U,hearts:10,dia:0}, // coins: UNSET 시작 멍코인 → pending.startCoins. hearts: 기본 소지 10 (1.4, 갱신 28). dia: 유료로만 (132-2) → 0
+ start:{coins:U,hearts:10,dia:0}, // coins: UNSET 시작 멍코인. hearts: 기본 소지 10 (1.4, 갱신 28). dia: 유료로만 (132-2) → 0
  hearts:{regenCap:10,regenEverySec:1800}, // 1.4 / 갱신 28·31: 30분당 1개, 10개까지 자연 회복; 보상 하트는 무제한 적립
  heartReset:{fillTo:10}, // 1.4 / 갱신 32: 10개 미만일 때만 10개까지, 10개 이상이면 사용 불가(소모 없음)
 
@@ -51,17 +46,17 @@ export const CFG={
   stayingSec:30, // 갱신 69: 손님 체류 시간
   queueMax:10, // 갱신 66
   queueWaitSec:30, // 갱신 68·69: 줄 대기 제한 = 체류 시간
-  hourlyCustomersPerCap:100, // 갱신 132-4: 시간당 손님 = 100 × 손님 상한 (planning only; the live sim uses the table interval)
+  hourlyCustomersPerCap:100, // 갱신 132-4: 시간당 손님 = 100 × 손님 상한 (planning only; live sim uses customersPerHourPerCap)
   paidSlotUnlockDia:U, // UNSET: 갱신 87 유료 칸 미리 해제 — 다이아 가격 미정(132-3)
   expansion2FCost:U, // UNSET: 갱신 56 2층 확장 비용 미정
  },
  // 갱신 87 카페 경험치
- cafeExp:{custNormal:1,custSatisfied:2,custDisappointed:0,walkPer10Min:2,play:1,feed:1,bath:1,snack:1,rescueAdopt:10,
+ cafeExp:{custNormal:1,custSatisfied:2,custDisappointed:0,walkPer10Min:2,play:1,feed:1,bath:1,snack:1,rescueAdopt:10, // 갱신 87 café experience
   stainClean:1, // 갱신 101-3
   albaGivesExp:false}, // 갱신 99-2 · 118: 알바·훈련사·매니저가 한 일은 경험치 없음
 
  // ── 평판 (갱신 87, 106, 126) ──
- rep:{min:0,max:100,start:50,satisfied:1,normal:0,disappointed:-1,queueAngry:-2,
+ rep:{min:0,max:100,start:50,satisfied:1,normal:0,disappointed:-1,queueAngry:-2, // 갱신 87 reputation
   damp:[[90,.25],[70,.5]], // 갱신 106: 70 이상 만족 증가 절반, 90 이상 4분의 1
   driftPerHour:1,driftTo:50, // 갱신 106: 1시간마다 50 쪽으로 1점
   arrivalMul:[[70,.9],[30,1.0],[0,1.2]], // 갱신 87: ≥70 ×0.9, 30~69 ×1.0, <30 ×1.2 (간격 배율)
@@ -75,10 +70,10 @@ export const CFG={
   trickBonusPerLevel:.05,trickBonusMax:.25}, // 갱신 100 손님 만남: +0.05 × 재주 단계, 최대 +0.25 (컨디션 상한 1.3 안)
  // 갱신 86 컨디션 배율 (곱해서 적용). 같은 게이지의 두 단계는 더 높은 단계 하나만 적용.
  condition:[
-  {gauge:'dirt',atLeast:80,mul:.5},{gauge:'dirt',atLeast:60,mul:.7},
-  {gauge:'fatigue',atLeast:80,mul:.5},{gauge:'fatigue',atLeast:60,mul:.7},
-  {gauge:'full',atMost:30,mul:.8},
-  {gauge:'happy',atLeast:70,mul:1.2}],
+  {gauge:'dirt',atLeast:80,mul:.5},{gauge:'dirt',atLeast:60,mul:.7}, // 갱신 86 condition thresholds
+  {gauge:'fatigue',atLeast:80,mul:.5},{gauge:'fatigue',atLeast:60,mul:.7}, // 갱신 86 condition thresholds
+  {gauge:'full',atMost:30,mul:.8}, // 갱신 86 condition thresholds
+  {gauge:'happy',atLeast:70,mul:1.2}], // 갱신 86 condition thresholds
  // 갱신 106 일반손님 요구 (124-4: 필수 아님, 안 들어줘도 벌 없음). 113: 인테리어 요구 — 인테리어 점수·아이템 미정이라 꺼 둠.
  requests:{types:['meetShiba','seeTrick'],interior:{enabled:false,minThemeItems:3}, // 갱신 113 '특정 테마 아이템 3개 이상' (인테리어 시스템 UNSET)
   managerChance:.3,managerRepMul:.5}, // 갱신 118
@@ -87,19 +82,19 @@ export const CFG={
  menu:{coffee:{id:'M-01',price:1,img:'M-01-iced-americano_512.png'}, // 갱신 134: M-01 아이스 아메리카노 = 처음부터 있는 기본 커피 1멍 (120)
   // kind: drink/dessert = 일반 메뉴, premium = 프리미엄. unlockLevel·price = 갱신 134 표, devCost = 갱신 134-1 표, devSec = 갱신 136 개발 시간
   items:[
-   {id:'M-02',kind:'drink',unlockLevel:2,devCost:8500,devSec:1800,price:3,img:'M-02-hot-latte_512.png'},            // 따뜻한 라테
-   {id:'M-05',kind:'dessert',unlockLevel:3,devCost:10000,devSec:3600,price:5,img:'M-05-cheesecake_512.png'},        // 치즈케이크
-   {id:'M-03',kind:'drink',unlockLevel:5,devCost:12000,devSec:7200,price:3,img:'M-03-strawberry-latte_512.png'},    // 딸기 라테
-   {id:'M-06',kind:'dessert',unlockLevel:7,devCost:13500,devSec:10800,price:5,img:'M-06-chocochip-cookie_512.png'},  // 초코칩 쿠키
-   {id:'M-04',kind:'drink',unlockLevel:9,devCost:15000,devSec:14400,price:3,img:'M-04-yuja-ade_512.png'},            // 유자 에이드
-   {id:'M-07',kind:'dessert',unlockLevel:12,devCost:17000,devSec:21600,price:5,img:'M-07-croissant_512.png'},        // 크루아상
-   {id:'M-08',kind:'dessert',unlockLevel:15,devCost:18500,devSec:28800,price:5,img:'M-08-strawberry-parfait_512.png'},// 딸기 파르페
-   {id:'P-01',kind:'premium',unlockLevel:20,devCost:23500,devSec:43200,price:8,img:'P-01-gold-tiramisu_512.png'},    // 골드 티라미수
-   {id:'P-02',kind:'premium',unlockLevel:25,devCost:27000,devSec:64800,price:8,img:'P-02-strawberry-whole-cake_512.png'}, // 딸기 홀케이크
-   {id:'P-03',kind:'premium',unlockLevel:30,devCost:30500,devSec:86400,price:8,img:'P-03-montblanc_512.png'},        // 몽블랑
-   {id:'P-04',kind:'premium',unlockLevel:35,devCost:32000,devSec:108000,price:8,img:'P-04-choco-fondant_512.png'},    // 초코 퐁당
-   {id:'P-05',kind:'premium',unlockLevel:40,devCost:34000,devSec:129600,price:8,img:'P-05-macaron-trio_512.png'},     // 마카롱 3종
-   {id:'P-06',kind:'premium',unlockLevel:45,devCost:35500,devSec:172800,price:8,img:'P-06-pavlova_512.png'}],         // 파블로바
+   {id:'M-02',kind:'drink',unlockLevel:2,devCost:8500,devSec:1800,price:3,img:'M-02-hot-latte_512.png'},            // 따뜻한 라테; 갱신 134·134-1·136 (level, cost, time, price)
+   {id:'M-05',kind:'dessert',unlockLevel:3,devCost:10000,devSec:3600,price:5,img:'M-05-cheesecake_512.png'},        // 치즈케이크; 갱신 134·134-1·136 (level, cost, time, price)
+   {id:'M-03',kind:'drink',unlockLevel:5,devCost:12000,devSec:7200,price:3,img:'M-03-strawberry-latte_512.png'},    // 딸기 라테; 갱신 134·134-1·136 (level, cost, time, price)
+   {id:'M-06',kind:'dessert',unlockLevel:7,devCost:13500,devSec:10800,price:5,img:'M-06-chocochip-cookie_512.png'},  // 초코칩 쿠키; 갱신 134·134-1·136 (level, cost, time, price)
+   {id:'M-04',kind:'drink',unlockLevel:9,devCost:15000,devSec:14400,price:3,img:'M-04-yuja-ade_512.png'},            // 유자 에이드; 갱신 134·134-1·136 (level, cost, time, price)
+   {id:'M-07',kind:'dessert',unlockLevel:12,devCost:17000,devSec:21600,price:5,img:'M-07-croissant_512.png'},        // 크루아상; 갱신 134·134-1·136 (level, cost, time, price)
+   {id:'M-08',kind:'dessert',unlockLevel:15,devCost:18500,devSec:28800,price:5,img:'M-08-strawberry-parfait_512.png'},// 딸기 파르페; 갱신 134·134-1·136 (level, cost, time, price)
+   {id:'P-01',kind:'premium',unlockLevel:20,devCost:23500,devSec:43200,price:8,img:'P-01-gold-tiramisu_512.png'},    // 골드 티라미수; 갱신 134·134-1·136 (level, cost, time, price)
+   {id:'P-02',kind:'premium',unlockLevel:25,devCost:27000,devSec:64800,price:8,img:'P-02-strawberry-whole-cake_512.png'}, // 딸기 홀케이크; 갱신 134·134-1·136 (level, cost, time, price)
+   {id:'P-03',kind:'premium',unlockLevel:30,devCost:30500,devSec:86400,price:8,img:'P-03-montblanc_512.png'},        // 몽블랑; 갱신 134·134-1·136 (level, cost, time, price)
+   {id:'P-04',kind:'premium',unlockLevel:35,devCost:32000,devSec:108000,price:8,img:'P-04-choco-fondant_512.png'},    // 초코 퐁당; 갱신 134·134-1·136 (level, cost, time, price)
+   {id:'P-05',kind:'premium',unlockLevel:40,devCost:34000,devSec:129600,price:8,img:'P-05-macaron-trio_512.png'},     // 마카롱 3종; 갱신 134·134-1·136 (level, cost, time, price)
+   {id:'P-06',kind:'premium',unlockLevel:45,devCost:35500,devSec:172800,price:8,img:'P-06-pavlova_512.png'}],         // 파블로바; 갱신 134·134-1·136 (level, cost, time, price)
   premiumDrinkPrice:3,premiumDessertPrice:5, // 갱신 120 고급 음료 3멍·고급 디저트 5멍 (134: 일반 음료/디저트를 1개 이상 개발해야 주문, 아니면 기본 커피)
   premiumBase:.05,premiumPerRepAbove50:.003,premiumSatisfiedBonus:.15,premiumCap:.4, // 갱신 120
   premiumPerNormalDeveloped:.01, // 갱신 134: 개발한 일반 메뉴 1개마다 고급 메뉴 기본 확률 +1%p (상한 40% 그대로)
@@ -107,7 +102,7 @@ export const CFG={
   drinkToDessert:[2,1], // 갱신 120: 음료:디저트 2:1
   devAtOnce:1,devMaxSec:172800}, // 갱신 136: 개발 시간이 지나야 완성, 최대 2일, 한 번에 1개
  itemIncome:{boostMul:1.2,boostHours:4,boostMaxHours:24,paidCapMul:1.5,priceDia:U}, // 갱신 97 시간제 수익 1.2배 · UNSET: 가격(다이아)
- offline:{capHours:12,stepSec:1}, // 갱신 56: 오프라인 수익 최대 12시간분. stepSec = simulation step (engine, not a game number)
+ offline:{capHours:12,stepSec:1}, // 갱신 56: 오프라인 수익 최대 12시간분. EXEMPT stepSec = engine integration step
 
  // ── 시바 ──
  breeds:['red','sesame','kuro','white'], // 1.2 기본 4종 (레어 4종 ⏸️ 보류)
@@ -121,32 +116,32 @@ export const CFG={
  // 갱신 139-5·139-6 액세서리 칸: 시바마다 1칸, 해금해야 찰 수 있음 (90의 Lv5/15/25 칸, 139-3·139-4의 2·3칸 삭제)
  accessory:{slots:1,unlockPaws:1000,unlockDia:1000, // 139-5: 발바닥 1,000개 또는 1,000다이아(10,000원)
   starterSlotOpen:true,starterItems:1, // 139-6: 첫 시작 시바만 칸이 열린 채로 액세서리 1개 제공
-  starterItem:U, // UNSET: 139-6 첫 시바에게 주는 액세서리가 어느 것인지 → pending.starterAccessory
+  starterItem:U, // UNSET: 139-6 첫 시바에게 주는 액세서리가 어느 것인지
   // 갱신 140 액세서리 상점 · 140-1 액세서리 1개 = 한 번에 시바 1마리 (시바 수만큼 따로 사고, 옮기려면 벗김)
   bandana:{priceCoins:5000, // 140: 무료템 반다나 4종(F p11) × 원색 9색, 1개 5,000멍
    types:['triangle','loop','knotTail','frontKnot'], // 1.5 / F p11: 클래식 삼각형, 루프 스누드형, 매듭 테일형, 앞 매듭형
    // 원색 9색 (1.5·140): 색 이름·순서는 정해지지 않음 → 시트 칸 번호만 씀 (3×3, 왼쪽 위부터 cell1..cell9). 이름이 정해지면 i18n acc.color.<id>만 바꿈
    colorNames:U, // UNSET: 1.5 / 갱신 140 colour names and ordering; identify sheet cells only
-   colors:['cell1','cell2','cell3','cell4','cell5','cell6','cell7','cell8','cell9'],
+   colors:['cell1','cell2','cell3','cell4','cell5','cell6','cell7','cell8','cell9'], // 갱신 86 condition thresholds
    legacyColorIds:['red','blue','green','yellow','pink','navy','orange','purple','teal'], // 이전 v3 저장의 id (같은 순서 = 같은 칸) → 불러올 때 cellN으로 바꿈
    sheet:{triangle:'bandana-triangle-sheet.webp',loop:'bandana-loop-sheet.webp',knotTail:'bandana-knottail-sheet.webp',frontKnot:'bandana-frontknot-sheet.webp'},
-   grid:[3,3]}, // 시트 1장 = 3×3, 색 1개 = 칸 1개 (CSS 영역 표시만, 그림은 그대로)
+   grid:[3,3]}, // 시트 1장 = 3×3, 색 1개 = 칸 1개 (CSS 영역 표시만, 그림은 그대로); EXEMPT: sprite-sheet crop geometry
   special:{priceDia:300,items:U}}, // 140: 유료템 특별 액세서리 1개 300다이아(3,000원) · UNSET: 종류·디자인(그림 없음) → 빈 칸
  likes:{snacks:{basic:2,rare:1},toys:U,list:U}, // 갱신 40: 좋아하는 간식 기본 2 + 레어 1 · UNSET: 장난감 구조(제안), 간식·장난감 목록(질문 9(카))
  startShiba:{level:21,tricks:{sit:3,wait:3}}, // 갱신 90 레벨 21 · 갱신 100·109·133 앉아·기다려 3단계 · 갱신 109 4종 중 선택
- rescueLevel:U, // UNSET: 질문 9(사) 구조한 시바의 레벨 → pending.rescueLevel
- intimacy:{min:0,max:100,start:U, // UNSET: 시작 친밀도 → pending.intimacyStart
+ rescueLevel:U, // UNSET: 질문 9(사) 구조한 시바의 레벨
+ intimacy:{min:0,max:100,start:U, // 갱신 82·90 range; UNSET: starting intimacy
   abandonShock:-15,abandonShockRepeat:-20,abandonRepeatWithinH:24}, // 갱신 82
  // 게이지 0~100 (1.2-3, 갱신 53·85·86·116). full=포만(배고픔 게이지), dirt=더러움(청결의 반대), fatigue=피로도(=졸림), happy=행복(=기분), boredom=지루함(=놀고 싶음)
  gauges:['full','dirt','fatigue','happy','boredom'],
- gaugeStart:U, // UNSET: 1.2-3 게이지 시작값 → pending.gaugeStart
+ gaugeStart:U, // UNSET: 1.2-3 게이지 시작값
  gaugeFull:{full:100,dirt:0,fatigue:0,happy:100,boredom:0}, // 갱신 116: 모든 게이지 100%, 행복 만점
  decayPerHour:{full:U,dirt:U,happy:U,boredom:U,fatigue:U}, // UNSET: 1.2-3 질문 '게이지가 줄어드는 속도' → 자연 변화 없음
  homeDecayMul:.25, // 갱신 81: 집 시바는 카페 배치 시바의 1/4 속도
  sick:{zeroGauges:['full','dirt','happy'],zeroHours:2}, // 갱신 111: 배고픔·청결·기분 중 하나라도 0인 채로 2시간 (청결 0 = dirt 100)
  neglect:{intimacyDropAfterH:12,intimacyDrop:U,donguAfterH:24,donguStayMul:2,donguIntimacyDrop:U}, // 갱신 112 · UNSET: 친밀도 감소량
  // 갱신 85 산책 후 상태 변화 · 90 친밀도 · 88 놀아주기
- walkEffect:{600:{boredom:-40,dirt:15,fatigue:15,happy:10,intimacy:2},1200:{boredom:-55,dirt:25,fatigue:25,happy:15,intimacy:4},1800:{boredom:-70,dirt:35,fatigue:35,happy:20,intimacy:6}},
+ walkEffect:{600:{boredom:-40,dirt:15,fatigue:15,happy:10,intimacy:2},1200:{boredom:-55,dirt:25,fatigue:25,happy:15,intimacy:4},1800:{boredom:-70,dirt:35,fatigue:35,happy:20,intimacy:6}}, // 갱신 85·90 walk effects; durations 갱신 14
  care:{
   play:{hearts:1,boredom:-28,dirt:3,fatigue:5,happy:7,intimacy:3}, // 갱신 84·88·90 놀아주기
   feed:{full:U,cost:U}, // UNSET: 밥 회복량·비용 (1.2-3 질문)
@@ -160,7 +155,7 @@ export const CFG={
  tricks:[{id:'sit'},{id:'paw'},{id:'wait'},{id:'down'},{id:'bow'}], // 갱신 133: 앉아·손·기다려·엎드려·인사. 더 넣으려면 여기에 추가(이름은 i18n trick.<id>)
  trickMaxLevel:5,intelligencePerLevel:4,intelligenceMax:100, // 갱신 133: 지능 = 단계 합 × 4, 최대 100
  training:{hearts:1,fatigue:5, // 갱신 100: 하트 1, 성공 시 피로 +5
-  successBase:.6,bonuses:[{stat:'intimacy',atLeast:70,add:.15},{stat:'happy',atLeast:70,add:.10},{stat:'fatigue',atLeast:60,add:-.20},{stat:'boredom',atLeast:60,add:-.15}],
+  successBase:.6,bonuses:[{stat:'intimacy',atLeast:70,add:.15},{stat:'happy',atLeast:70,add:.10},{stat:'fatigue',atLeast:60,add:-.20},{stat:'boredom',atLeast:60,add:-.15}], // 갱신 100 training success table
   min:.2,max:.95}, // 갱신 100 성공률 · 단계 N→N+1 성공 N+1번
 
  // ── 산책 (1.10, 갱신 82·83·85·87·90·124·125) ──
@@ -176,7 +171,7 @@ export const CFG={
  // ── 병원 (갱신 58·111·111-1·112·131) ──
  hospital:{stays:{light:1800,snake:7200,sick:14400}, // 갱신 111: 30분, 2시간, 4시간
   // 갱신 131 카페 레벨 구간별 고정 멍코인 [최저레벨, 가벼운 부상, 뱀 물림, 앓아누움, 구조견 목욕]
-  costs:[[1,400,1200,2400,200],[10,500,1500,3000,250],[20,800,2400,4700,400],[30,1000,3000,6100,500],[40,1100,3400,6800,550]],
+  costs:[[1,400,1200,2400,200],[10,500,1500,3000,250],[20,800,2400,4700,400],[30,1000,3000,6100,500],[40,1100,3400,6800,550]], // 갱신 131 hospital cost table
   }, // 치료 앞당기기 = timeSkip (갱신 135-2)
 
  // ── 알바 (갱신 99·99-2·118·118-1·123-x·124-1·125-1) ──
@@ -188,11 +183,11 @@ export const CFG={
  cooldownTicketDia:{one:20,five:80}, // 갱신 115-1 (유료 전용, stub)
 
  // ── 남은 시간 바로 완료 (갱신 135-2, 135·135-1 대체) ──
- timeSkip:{diaPerMin:1, // 1분당 1다이아(10원), 1분 단위 올림, 버튼 하나로 남은 시간 전부
+ timeSkip:{diaPerMin:1, // 1분당 1다이아(10원), 1분 단위 올림, 버튼 하나로 남은 시간 전부; 갱신 135-2
   targets:['hospital','daycare','walk','trainer','menu']}, // '치료와 알바 쿨타임 등 남은 시간이 있는 모든 대기' · menu = 메뉴 개발(갱신 136)
 
  // ── 얼룩 (갱신 101-3 · 117-2) ──
- stains:{everySecPerShiba:7200,warnAt:3,warnDirtMul:1.5,badAt:6,badDirtMul:2,badRepEverySec:600,badRep:-1},
+ stains:{everySecPerShiba:7200,warnAt:3,warnDirtMul:1.5,badAt:6,badDirtMul:2,badRepEverySec:600,badRep:-1}, // 갱신 101-3·117-2 stain thresholds
 
  // ── 동구 (갱신 78·79·80) ──
  dongu:{takesSlot:false,earns:false,canWalk:false,canAbandon:false},
@@ -221,8 +216,8 @@ export const CFG={
   expBoost:{mul:1.2,hours:4,maxHours:24,capTotal:.2,priceDia:U}, // 갱신 98 · UNSET 가격
   diaPriceWon:10, // 갱신 132-3
   // 1.4 · 갱신 29·33 28일 온보딩 (확정분만): 1~7일 하트 리셋권 1장, 캡슐 4·11·18·25일 1개 + 9일 5개 + 19일 10개. 3·17·26일 하트 개수 UNSET(질문 1(다)), 날짜 진행 방식 UNSET(보상표 Q5·Q6)
-  onboarding:{days:28,dayMode:U,rewards:{1:{heartReset:1},2:{heartReset:1},3:{heartReset:1,hearts:U},4:{heartReset:1,capsule:1},5:{heartReset:1},6:{heartReset:1},7:{heartReset:1},
-   9:{capsule:5},11:{capsule:1},17:{hearts:U},18:{capsule:1},19:{capsule:10},25:{capsule:1},26:{hearts:U}}},
+  onboarding:{days:28,dayMode:U,rewards:{1:{heartReset:1},2:{heartReset:1},3:{heartReset:1,hearts:U},4:{heartReset:1,capsule:1},5:{heartReset:1},6:{heartReset:1},7:{heartReset:1}, // §1.4 · 갱신 29·33 onboarding days and quantities
+   9:{capsule:5},11:{capsule:1},17:{hearts:U},18:{capsule:1},19:{capsule:10},25:{capsule:1},26:{hearts:U}}}, // §1.4 · 갱신 29·33 onboarding days and quantities
   heartSources:{ads:U,friends:U}, // 갱신 54: 광고 시청·플레이어끼리 주고받기 — 방식·한도 UNSET
   adoptionIncome:U, // UNSET: 질문 4 입양 수익
   mergeCooking:U, // UNSET: 갱신 62
@@ -232,4 +227,4 @@ export const CFG={
 
 // helpers that only read CFG
 export const isUnset=v=>v===null||v===undefined;
-export const pressureAt=lv=>{const p=CFG.cafe.pressure[Math.max(1,Math.min(CFG.cafe.maxLevel,lv))-1];return {slots:p[0],cap:p[1],interval:p[2],pct:p[3]};};
+export const pressureAt=lv=>{const p=CFG.cafe.pressure[Math.max(1,Math.min(CFG.cafe.maxLevel,lv))-1];return {slots:p[0],cap:p[1],interval:p[2],pct:p[3]};}; // EXEMPT: array indexing and bounds, uses 갱신 75 table

@@ -98,12 +98,12 @@ Source: `shiba-cafe-docs/spec-v3-build/spec-v3.md` (최신 갱신 140-1 기준; 
 8. **줄이 10명 꽉 찼을 때** 오는 손님은 들어오지 않음(통계 `lost`, 평판 영향 없음).
 9. **임시휴무**는 오프라인(앱을 닫았거나 탭이 숨겨진 동안)에만. 온라인에서는 갱신 87의 '<30 ×1.2' 규칙대로 30 아래로 내려갈 수 있다. 오프라인 12시간을 넘긴 시간에는 카페 수익·평판이 멈추고 산책 종료·퇴원·하트 회복만 정산.
 10. **산책 이벤트 시점**: 구조 순간은 출발 때 정하고(산책 중 그 시각에 장면), 부상·추가 보상·뽑기권은 귀가 정산 때. 뱀과 가벼운 부상이 둘 다 나오면 뱀(더 긴 치료)으로 입원 종류를 정함.
-11. **추가 보상**: '멍코인 소량 또는 하트 1개' 중 멍코인 양이 UNSET이라, 당첨되면 하트 1개만 준다.
+11. **추가 보상**: 갱신 82의 코인/하트 선택 방식과 코인 양 미정 → 추가 보상 비활성.
 12. **산책은 한 번에 1마리** (누가 산책하는지 질문 10 미정 → 이전 빌드와 같은 보수적 선택).
 13. **훈련 피로 +5는 성공 때만** ("성공 시 그 재주 경험치 +1, 피로 +5"의 문장 구조).
 14. **퇴원** 시 부상·앓아누움 해제. 게이지가 여전히 0이면 2시간 시계가 처음부터 다시 돈다.
 15. **마지막 시바는 파양 불가** (공학적 보호: 뽑기가 UNSET이라 시바를 다시 얻을 길이 산책 구조뿐 — 스펙 규칙 아님, 바꾸기 쉬움).
-16. **시작값이 UNSET인 저장 값**은 범위의 정의된 끝값을 쓴다(아래 UNSET 표 `START_FALLBACK`): 게이지 = 갱신 116 '가득' 상태, 친밀도 0, 구조 시바 Lv1, 시작 멍코인 0. 시작 하트 10은 1.4 '기본 소지 10개'로 읽음.
+16. **시작값 미정**: 코인·게이지·친밀도 null 유지. 구조견 데려오기 비활성. 임의 끝값을 사용하지 않음.
 17. **알바 쿨타임**은 '쿨타임이 끝난 시바만' 맡길 수 있음(123-4 문장), 쿨타임 제거권은 유료(다이아)라 결제 미연결.
 18. **탭이 5초 넘게 숨겨졌다가 돌아오면** 앱을 닫았다 연 것과 같이 오프라인 규칙으로 따라잡는다.
 19. **저장**: 새 키 `shibaCafe.save.v3`. v1/v2 저장(등급·구 재화 모델)은 건드리지 않고 이어받지 않는다.
@@ -121,24 +121,24 @@ Source: `shiba-cafe-docs/spec-v3-build/spec-v3.md` (최신 갱신 140-1 기준; 
 
 | config key | spec ref | build behaviour |
 |---|---|---|
-| `start.coins` (no key; 0) | 시작 멍코인 미정 | 0으로 시작 |
-| `gaugeStart` | 1.2-3 질문 | 116 가득 상태로 시작 |
+| `start.coins` | §1.4 시작 멍코인 미정 | null, 미정 표시, 코인 지출 비활성 |
+| `gaugeStart` | §1.2-3 질문 | 각 게이지 null, 미정 표시, 상태 증감·질병 판정 비활성 |
 | `decayPerHour.{full,dirt,happy,boredom,fatigue}` | 1.2-3 '줄어드는 속도' | 게이지가 저절로 변하지 않음 (집 시바 1/4 배율·얼룩 가속·휴무 중 배고픔도 효과 없음) |
 | `care.feed.{full,cost}` | 1.2-3 | 밥 주기 버튼 비활성 "미정" |
 | `care.snack.{fatigue,cost}` | 1.10.0 질문 9(다-2·다-3) | 간식 버튼 비활성 |
 | `care.bath.{dirt,cost}` | 내 시바 목욕 효과·비용 | 목욕 버튼 비활성 |
 | `care.sleep.fatiguePerHour` | 1.10.0 질문 9(다-1) | 재우기 비활성, 피로 100% 시바는 휴무 전까지 깨지 않음 |
-| `intimacy.start` | — | 0 |
+| `intimacy.start` | 갱신 82·90 시작값 없음 | null, 미정 표시, 증감 없음 |
 | `neglect.intimacyDrop`, `neglect.donguIntimacyDrop` | 갱신 112 | 친밀도 감소 없음 (동구 입원은 동작) |
-| `rescueLevel` | 질문 9(사) | Lv1, 화면에 "레벨 규칙 미정 → Lv1" |
+| `rescueLevel` | 질문 9(사) | 데려오기 비활성, 레벨 미정 |
 | `walk.stopRule` | 질문 1-4 | 멈추기 버튼 비활성 "규칙 미정" |
-| `walk.events.extraCoins` | 갱신 82 '소량' | 추가 보상은 하트 1개만 |
+| `walk.events.extraCoins` | 갱신 82 소량 | 추가 보상 선택 방식도 미정 → 비활성 |
 | `itemIncome.priceDia` | 갱신 97 | 수익 1.2배 아이템 판매 불가 (효과 로직은 있음) |
 | `cafe.paidSlotUnlockDia` | 갱신 87·132 | 칸 미리 해제 "미정" |
 | `cafe.expansion2FCost` | 갱신 56 | 2층 없음 |
 | `gacha.breedOdds` | 질문 9(바) | 4종 균등(1/4)으로 뽑음 (personalities와 같은 처리) |
 | `gacha.priceCoins` | 갱신 57 | 멍코인 뽑기 없음(137은 다이아 가격만) |
-| `accessory.starterItem` | 139-6 | 시작 시바의 반다나 = 목록 첫 항목(클래식 삼각형·빨강) (`START_FALLBACK.starterItem`) |
+| `accessory.starterItem` | 139-6 | 미정, 칸만 열고 특정 아이템은 지급하지 않음 |
 | `accessory.special.items` | 갱신 140 | 특별 액세서리(300다이아) 종류·디자인 미정 → 상점에 빈 칸 1개, 구매 비활성 |
 | ~~`gacha.startLevel`~~ | (was UNSET, 질문 9(바)) | 이제 1 — 갱신 137·138에서 읽음(해석 22) |
 | ~~`accessories`~~ | (was 질문 9(가)) | 갱신 139-5~140-1로 정해짐 → `accessory.*` |
@@ -234,12 +234,39 @@ Run `npm run test:browser` and `node capture-main-screen.mjs` on a Chrome-capabl
 QUESTIONS (all corresponding spec config values remain null):
 
 1. Furniture prices / purchase rules: `furniture.items[*].price = null` (1.3, F p6·9; notes §3 interior unresolved). Current furniture is editable; no purchases invented.
-2. Which starting accessory? `accessory.starterItem = null` (139-6). Existing explicitly documented pending first-sheet-cell fallback remains; not a new confirmed choice.
+2. Which starting accessory? `accessory.starterItem = null` (139-6). No accessory identity is guessed; slot stays open.
 3. Bandana colour names/order? `accessory.bandana.colorNames = null` (1.5, 140). Use neutral cell1–cell9 identifiers and confirmed sheets.
 4. Special accessory types/designs? `accessory.special.items = null` (140). Empty slot, disabled purchase.
 5. Gacha breed odds and starting level? `gacha.breedOdds`, `gacha.startLevel = null` (137, notes red-team question 9(바); 138's Lv1 calculation is an inference). Disabled 준비 중, no sampled odds.
 6. Feeding/bathing quantities and costs, snack cost/recovery, sleep recovery speed? `care.feed.*`, `care.bath.*`, `care.snack.*`, `care.sleep.fatiguePerHour = null` (1.2-3, 1.10.0 questions 9(다-1/2/3)). Disabled 미정.
-7. Walk stop/refund/partial reward rules and extra coin reward amount? `walk.stopRule`, `walk.events.extraCoins = null` (1.10.3 question 1-4; 82). Existing stop button disabled; existing documented heart outcome retained.
-8. Starting gauges/intimacy, personality odds, decay rates, neglect intimacy loss and rescue starting level? `gaugeStart`, `intimacy.start`, `personalityOdds`, `decayPerHour.*`, `neglect.intimacyDrop`, `neglect.donguIntimacyDrop`, `rescueLevel = null` (1.2-3, 38/39, 112, notes question 9(다/사)). Existing documented core fallbacks retained; no new values.
+7. Walk stop/refund/partial reward rules and extra coin reward amount? `walk.stopRule`, `walk.events.extraCoins = null` (1.10.3 question 1-4; 82). Existing stop button disabled; extra reward branch disabled until decided.
+8. Starting gauges/intimacy, personality odds, decay rates, neglect intimacy loss and rescue starting level? `gaugeStart`, `intimacy.start`, `personalityOdds`, `decayPerHour.*`, `neglect.intimacyDrop`, `neglect.donguIntimacyDrop`, `rescueLevel = null` (1.2-3, 38/39, 112, notes question 9(다/사)). All unsupported core fallbacks removed in the config audit below.
 9. Starting coins / paid slot / expansion / income and XP booster diamond prices? `start.coins`, `cafe.paidSlotUnlockDia`, `cafe.expansion2FCost`, `itemIncome.priceDia`, `stub.expBoost.priceDia = null` (56, 87/132-3, 97/98). Relevant UI shows 미정; payment actions stay disabled.
 10. Meeting-level income aggregation? `income.levelAggregation = null` (75/120, prior red-team #7). No payment formula guessed. Café level thresholds themselves are confirmed by 98, so no unknown café threshold is filled in.
+
+## Config audit (unit 3 pre-step)
+
+Audited every numeric config line against `/workspace/shiba-cafe-docs/handoff-v1/spec-v3.md` and this file's updates through 140-1. The handoff document ends at update 36; later references use the recorded v3 build notes. Added trailing citations to table rows and continuation lines. Gameplay numbers already supported by those records remain; care feed/snack/bath/sleep, decay, neglect amounts and other existing UNSET keys remain null.
+
+| Key | Old value | Origin | Why removed |
+|---|---|---|---|
+| `pending.startCoins` | 0 | build placeholder, “nothing given” | §1.4 does not decide starting coins; `start.coins` remains null |
+| `pending.intimacyStart` | 0 | range-minimum placeholder | 82·90 give range, not start; `intimacy.start` remains null |
+| `pending.gaugeStart.full` | 100 | reused potion refill (116) | §1.2-3 starting gauges undecided |
+| `pending.gaugeStart.dirt` | 0 | reused potion refill (116) | potion effect does not define new-game gauges |
+| `pending.gaugeStart.fatigue` | 0 | reused potion refill (116) | potion effect does not define new-game gauges |
+| `pending.gaugeStart.happy` | 100 | reused potion refill (116) | potion effect does not define new-game gauges |
+| `pending.gaugeStart.boredom` | 0 | reused potion refill (116) | potion effect does not define new-game gauges |
+| `pending.rescueLevel` | 1 | minimum-level placeholder | question 9(사) undecided; bring rescue disabled |
+| `pending.starterAccessory` | bandana-triangle-cell1 | first catalog item | 139-6 decides one accessory, not identity; no guessed item |
+| `pending.walkExtraReward` | heart | only quantified option in 82 | reward branch undecided; extra reward disabled |
+
+`pending.gaugeStart` itself is now null, like `gaugeStart`; each newly stored gauge is null. Unknown values cannot be coerced to zero by care effects, decay, illness checks, spending, offline totals, condition or training calculations. UI shows 미정; direct training requires known bonus stats. Potion effects (116) and closure fatigue reset (126-3) remain confirmed ways to set a gauge. Pure mechanics tests use explicitly declared fixtures; production audit tests assert null and disabled behavior.
+
+Exempt categories: pixel/layout dimensions, sprite-sheet crop geometry (`bandana.grid`), animation/capture timing; engine integration step (`offline.stepSec`), save schema version, array indices/bounds, counters, time-unit conversions, RNG internals and floating-point precision. These are implementation metadata, not balance defaults. No starting/care/decay/gauge/intimacy value is exempt.
+
+Default new game: choose exactly one of the four breeds at Lv21 (90·109; sit/wait stage 3: 100·133). TEMP mode does not save to production storage. Only `?temp=1` adds two test dogs to make the three-dog roster; capture-main-screen.mjs explicitly navigates with that flag and no longer adds dogs independently. The default-state test covers all four player choices and repeated start attempts.
+
+Changed files: config.js, sim.js, main.js, capture-main-screen.mjs, tests/spec-v3.test.mjs, SPEC-V3-NOTES.md. No Chrome execution in this sandbox.
+
+Validation: `npm test` passed (94/94 spec tests plus timeline/map/edit suites); JavaScript syntax checks passed. `diff -r --exclude=node_modules start-room-3d preview/start-room-3d` verified the deletion-aware mirror.

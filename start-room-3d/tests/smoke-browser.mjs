@@ -18,7 +18,9 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  const steps=(await import('./smoke-steps.mjs')).default;
  const go=async(fresh,view='')=>{await c('Page.navigate',{url:'file://'+resolve(ROOT,'index.html')+'?still=1&seed=7'+(fresh?'&fresh=1':'')+view});await sleep(300);
   for(let i=0;i<300&&!(await ev('Boolean(window.__ready)'));i++)await sleep(100);};
- await go(true);await steps({ev,check,sleep,reload:()=>go(false)});
+ await go(true);
+ await check('fresh save keeps unspecified starting coins null','__game.state.coins===null&&__game.state.coinFrac===0');
+ await steps({ev,check,sleep,reload:()=>go(false)});
  await ev('__game.ui.modals=[];__game.close();__game.state.settings.language="ko";__game.refresh();true');
  for(const [tab,title] of [['menu','메뉴 개발'],['shiba','시바'],['furniture','가구'],['store','가게']]){await ev(`document.querySelector('[data-main-tab=${tab}]').click();true`);await check('Unit 2 '+tab+' header',`document.querySelector('.menu-heading').firstChild.textContent.trim()===${JSON.stringify(title)}`);}
  await ev('document.querySelector("[data-main-tab=shiba]").click();__game.state.shibas[0].paws=420;__game.refresh();document.querySelector("#menuList [data-act=levelUp]").click();true');

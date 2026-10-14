@@ -6,9 +6,10 @@ import {existsSync,readFileSync} from 'node:fs';import {createHash} from 'node:c
 const ROOT=join(dirname(fileURLToPath(import.meta.url)),'..');
 
 let pass=0;const fails=[];
-// Explicit fixture for decided payment mechanics only; production aggregation stays UNSET.
+// Explicit fixtures for isolated mechanics tests; production audit/start tests use unchanged null config.
+// The wrapper sets coins/gauges/intimacy/rescue level only for mechanics unrelated to start defaults.
 const fixtureAggregation=lvs=>lvs.length?lvs.reduce((a,b)=>a+b,0)/lvs.length:1;
-function test(name,fn){const old=CFG.income.levelAggregation;if(!name.startsWith('red-team #7'))CFG.income.levelAggregation=fixtureAggregation;try{fn();pass++;}catch(e){fails.push([name,e]);}finally{CFG.income.levelAggregation=old;}}
+function test(name,fn){const old=CFG.income.levelAggregation;if(!name.startsWith('red-team #7'))CFG.income.levelAggregation=fixtureAggregation;try{const production=/red-team #2|gauges do not|UNSET features|139-6|fresh default|audit null/.test(name);if(production)fn();else withCfg(CFG.start,{coins:0},()=>withCfg(CFG,{gaugeStart:{full:100,dirt:0,fatigue:0,happy:100,boredom:0},rescueLevel:1},()=>withCfg(CFG.intimacy,{start:0},fn)));pass++;}catch(e){fails.push([name,e]);}finally{CFG.income.levelAggregation=old;}}
 const H=3600e3,MIN=60e3;
 const near=(a,b,eps=1e-9,msg)=>assert.ok(Math.abs(a-b)<=eps,`${msg||''} ${a} ≉ ${b}`);
 const freshGame=(breed='red',now=0,seed=1)=>{const r=S.rng(seed),s=S.newState(now);S.chooseStart(s,breed,'',r,now);return {s,r,sh:s.shibas[0],w:S.newWorld(s,r)};};
@@ -19,6 +20,8 @@ const withCfg=(obj,patch,fn)=>{const bak={};for(const k in patch){bak[k]=obj[k];
 const TEST_ODDS={red:1,sesame:1,kuro:1,white:1}; // test fixtures only — the spec's gacha odds and start level are UNSET (질문 9(바))
 const gachaOn=fn=>withCfg(CFG.gacha,{breedOdds:TEST_ODDS,startLevel:1},fn);
 const run=(s,w,sec,t0=0,dt=.5)=>{let t=t0;const ev=[];for(let k=0;k<sec/dt;k++){t+=dt*1000;S.tick(s,w,dt,t);ev.push(...w.events.splice(0));}return {t,ev};};
+
+test('fresh default game: exactly one Lv21 shiba of each chosen breed (90·109)',()=>{for(const breed of CFG.breeds){const s=S.newState(0);S.chooseStart(s,breed,'',S.rng(1),0);assert.equal(s.shibas.length,1);assert.equal(s.shibas[0].level,21);assert.equal(s.shibas[0].breed,breed);S.chooseStart(s,'red','');assert.equal(s.shibas.length,1);}});
 
 // ───────── spec numbers used (config ↔ spec) ─────────
 test('갱신 75 pressure table: 50 rows, spot values, cap = ceil(slots×2.2) (70·71)',()=>{
@@ -161,7 +164,7 @@ test('training: ♥1, step N→N+1 needs N+1 successes, fatigue +5 on success (1
  const f=sh.g.fatigue;r=S.train(s,sh.id,'paw',()=>.999,0);assert.ok(!r.ok);assert.equal(sh.g.fatigue,f);assert.equal(s.hearts,96);
  sh.tricks.bow=5;assert.equal(S.trainCheck(s,sh.id,'bow'),'max');});
 test('feed / snack / bath / sleep stay disabled while their amounts are UNSET',()=>{const {s,sh}=freshGame();for(const k of ['feed','snack','bath','sleep'])assert.equal(S.careCheck(s,sh.id,k),'unset',k);});
-test('gauges do not change by themselves while decay rates are UNSET; start gauges = PENDING_CONFIRM 116 full state',()=>{const {s,w,sh}=freshGame();assert.deepEqual(sh.g,CFG.pending.gaugeStart);run(s,w,3600,0,2);assert.equal(sh.g.full,100);assert.equal(sh.g.happy,100);});
+test('gauges do not change while starting values and decay are UNSET',()=>{const {s,w,sh}=freshGame();const unknown=Object.fromEntries(CFG.gauges.map(k=>[k,null]));assert.deepEqual(sh.g,unknown);run(s,w,3600,0,2);assert.deepEqual(sh.g,unknown);assert.equal(sh.zeroSince,null);});
 test('fatigue 100% → only sleeps: no walk, no play, no guests (1.10.0)',()=>{const {s,w,sh}=freshGame();sh.g.fatigue=100;assert.equal(S.statusOf(s,sh),'sleeping');assert.equal(S.walkCheck(s,sh.id,600,0),'sleeping');
  const {ev}=run(s,w,60);assert.equal(ev.filter(e=>e.type==='meet').length,0);});
 test('sick after a 0 gauge for 2 h; hospital needs coins (no credit); 4 h stay; 동구 takes it after 24 h with 2× stay (111·111-1·112)',()=>{const {s,w,sh}=freshGame();
@@ -183,13 +186,13 @@ test('walk: hearts 1 per 10 min, no cooldown, effects by duration, exp +2/10 min
 test('walk outcomes with a scripted RNG: rescue at start, snake/light/extra/capsule at the end (82·83·124-2)',()=>{const {s,sh}=freshGame();
  S.startWalk(s,sh.id,600,0,script([.049,.5]));assert.equal(s.walk.rescueAt,300e3);
  const mid=S.tickWalk(s,300e3,script([.1,.1]));assert.ok(mid.rescued);assert.equal(s.rescues.length,1);
- const h=s.hearts;S.tickWalk(s,600e3,script([1/40-1e-9,.99,.49,1/30-1e-9]));assert.equal(sh.status,'injured');assert.equal(sh.injury,'snake');assert.equal(s.hearts,h+1);assert.equal(s.items.capsule,1);
+ const h=s.hearts;S.tickWalk(s,600e3,script([1/40-1e-9,.99,.49,1/30-1e-9]));assert.equal(sh.status,'injured');assert.equal(sh.injury,'snake');assert.equal(s.hearts,h);assert.equal(s.items.capsule,1);
  const g=freshGame();S.startWalk(g.s,g.sh.id,600,0,()=>.06);assert.equal(g.s.walk.rescueAt,null);S.tickWalk(g.s,600e3,script([.5,1/30-1e-9,.6,.5]));assert.equal(g.sh.injury,'light');assert.equal(g.s.items.capsule,0);});
 test('walk event rates over 20,000 seeded walks ≈ 5% rescue, 2.5% snake, 3.33% light, 50% extra, 3.33% capsule',()=>{const r=S.rng(42);const n=20000,k={rescue:0,snake:0,light:0,extraHeart:0,capsule:0};
  for(let i=0;i<n;i++){const s=S.newState(0);S.chooseStart(s,'red','',r,0);S.startWalk(s,s.shibas[0].id,600,0,r);S.tickWalk(s,600e3,r);for(const e of s.walkResults[0].events)k[e]++;}
- near(k.rescue/n,.05,.006,'rescue');near(k.snake/n,1/40,.004,'snake');near(k.light/n,1/30,.005,'light');near(k.extraHeart/n,.5,.015,'extra');near(k.capsule/n,1/30,.005,'capsule');});
+ near(k.rescue/n,.05,.006,'rescue');near(k.snake/n,1/40,.004,'snake');near(k.light/n,1/30,.005,'light');assert.equal(k.extraHeart,0,'unknown reward branch disabled');near(k.capsule/n,1/30,.005,'capsule');});
 test('walk stop disabled while 질문 1-4 is UNSET; injured / hospital shibas cannot walk',()=>{assert.equal(S.canStopWalk(),false);const {s,sh}=freshGame();sh.status='injured';sh.injury='light';assert.equal(S.walkCheck(s,sh.id,600,0),'injured');});
-test('rescue flow: bath (fixed 200 at Lv1) → reveal → bring (Lv1 while UNSET, café exp +10) or decline; owned cap 50 (65·66·81·131)',()=>{const {s,r}=freshGame();
+test('rescue flow: bath (fixed 200 at Lv1) → reveal → bring (explicit test level fixture, café exp +10) or decline; owned cap 50 (65·66·81·131)',()=>{const {s,r}=freshGame();
  s.rescues.push({rid:'a',foundAt:0,breed:'kuro',pic:1,bathed:false},{rid:'b',foundAt:0,breed:'white',pic:0,bathed:false});
  assert.equal(S.bringCheck(s,'a'),'bath');assert.equal(S.bathRescue(s,'a'),null,'no coins');s.coins=250;assert.ok(S.bathRescue(s,'a'));assert.equal(s.coins,50);
  const o=S.bringRescue(s,'a',r,0);assert.equal(o.breed,'kuro');assert.equal(o.level,1);assert.ok(o.placed,'free slot at Lv1 (2 slots)');assert.equal(s.cafe.exp,10);
@@ -270,7 +273,7 @@ test('137 + 82: a capsule ticket from walks = one free pull',()=>gachaOn(()=>{co
 test('red-team #1: gacha odds UNSET (질문 9(바)) → every pull gated with \'odds\', nothing spent, no shiba',()=>{const {s}=freshGame();assert.equal(CFG.gacha.breedOdds,null);assert.equal(S.gachaOddsSet(),false);
  s.dia=10000;s.items.capsule=3;for(const [n,o] of [[1,{}],[10,{}],[1,{ticket:true}]]){assert.equal(S.gachaCheck(s,n,o),'odds');assert.equal(S.gachaPull(s,n,S.rng(1),0,o),null);}
  assert.equal(s.dia,10000);assert.equal(s.items.capsule,3);assert.equal(s.shibas.length,1);});
-test('red-team #1: personality odds UNSET (질문 9(다)) → no personality is drawn (start and rescue); set odds are followed',()=>{assert.equal(CFG.personalityOdds,null);assert.equal(S.personalityOddsSet(),false);
+test('red-team #1: personality odds UNSET (질문 9(다)) → no personality is drawn (start and explicit rescue-level fixture); set odds are followed',()=>{assert.equal(CFG.personalityOdds,null);assert.equal(S.personalityOddsSet(),false);
  const {s,sh}=freshGame();assert.equal(sh.personality,null);s.coins=1e6;s.rescues.push({rid:'x',foundAt:0,breed:'kuro',pic:0,bathed:false});assert.ok(S.bathRescue(s,'x'));const n=S.bringRescue(s,'x',S.rng(1),0);assert.ok(n,'rescue still works');assert.equal(n.personality,null);
  withCfg(CFG,{personalityOdds:{foodie:1}},()=>{const g=freshGame('red',0,3);assert.equal(g.sh.personality,'foodie');});});
 
@@ -300,11 +303,12 @@ test('140: bandana sheets are byte-identical copies of the Drive ITEM images',()
  for(const [a,b] of Object.entries(map)){const here=join(ROOT,'assets/drive',a);assert.ok(existsSync(here),a);if(existsSync(src+b))assert.equal(h(here),h(src+b),a);}});
 test('140: buying costs 5,000멍 and adds one to the bag; not enough coins → refused',()=>{const {s}=freshGame();const id='bandana-loop-cell6';
  s.coins=4999;assert.equal(S.buyAccCheck(s,id),'coins');assert.equal(S.buyAcc(s,id),false);s.coins=10000;assert.ok(S.buyAcc(s,id));assert.ok(S.buyAcc(s,id));assert.equal(s.coins,0);assert.equal(s.accInv[id],2);});
-test('139-6 + 140: the starting shiba starts wearing one accessory (UNSET which → PENDING_CONFIRM cell1); bought items fit only unlocked slots',()=>{const {s,sh}=freshGame();
- assert.equal(sh.acc,'bandana-triangle-cell1');assert.equal(S.accOwned(s,'bandana-triangle-cell1'),1);
+test('139-6 + 140: the starting shiba starts wearing one accessory (identity UNSET → no accessory); bought items fit only unlocked slots',()=>{const {s,sh}=freshGame();
+ assert.equal(sh.acc,null);assert.equal(S.accOwned(s,'bandana-triangle-cell1'),0);
  const n=S.makeShiba(s,{breed:'kuro',level:1});s.shibas.push(n);s.coins=5000;S.buyAcc(s,'bandana-loop-cell2');assert.equal(S.equipCheck(s,n.id,'bandana-loop-cell2'),'slot');
  n.paws=1000;S.unlockAccSlot(s,n.id,'paws');assert.ok(S.equipAcc(s,n.id,'bandana-loop-cell2'));assert.equal(n.acc,'bandana-loop-cell2');assert.equal(s.accInv['bandana-loop-cell2'],0);});
 test('140-1: one item = one shiba at a time; to move it, take it off first; swapping returns the old one to the bag; counts tracked',()=>{const {s,sh}=freshGame();
+ sh.acc='bandana-triangle-cell1'; // explicit inventory fixture, never a production starter
  const n=S.makeShiba(s,{breed:'white',level:1});n.accUnlocked=true;s.shibas.push(n);s.coins=5000;const id='bandana-frontKnot-cell4';S.buyAcc(s,id);
  assert.ok(S.equipAcc(s,sh.id,id));assert.equal(s.accInv['bandana-triangle-cell1'],1,'old one back to the bag');assert.equal(S.equipCheck(s,n.id,id),'none','already worn by another shiba');
  assert.deepEqual([S.accOwned(s,id),S.accWorn(s,id)],[1,1]);assert.ok(S.unequipAcc(s,sh.id));assert.equal(sh.acc,null);assert.ok(S.equipAcc(s,n.id,id));assert.equal(n.acc,id);
@@ -337,22 +341,13 @@ test('start: choose 1 of 4 breeds, Lv21, 앉아·기다려 3 (109·90·100); 15 
  assert.equal(CFG.personalities.length,15);const s=S.newState(0);assert.equal(S.chooseStart(s,'rare_red','',Math.random,0),null);});
 
 // red-team #2: start values the game needs are PENDING_CONFIRM placeholders (spec keys stay UNSET); unnecessary ones are UNSET and gated
-test('red-team #2: spec keys for start coins / intimacy / gauges / rescue level / starter accessory / extra coins stay UNSET; the game uses CFG.pending',()=>{
- for(const v of [CFG.start.coins,CFG.intimacy.start,CFG.gaugeStart,CFG.rescueLevel,CFG.accessory.starterItem,CFG.walk.events.extraCoins,CFG.gacha.startLevel])assert.equal(v,null);
- const P=CFG.pending;assert.deepEqual(Object.keys(P).sort(),['gaugeStart','intimacyStart','rescueLevel','startCoins','starterAccessory','walkExtraReward']);
- const {s,sh}=freshGame();assert.equal(s.coins,P.startCoins);assert.equal(sh.intimacy,P.intimacyStart);assert.deepEqual(sh.g,P.gaugeStart);assert.equal(sh.acc,P.starterAccessory);
- s.coins=1e6;s.rescues.push({rid:'x',foundAt:0,breed:'kuro',pic:0,bathed:false});S.bathRescue(s,'x');assert.equal(S.bringRescue(s,'x',S.rng(1),0).level,P.rescueLevel);
- withCfg(P,{startCoins:123,intimacyStart:40,rescueLevel:5},()=>{const g=freshGame();assert.equal(g.s.coins,123);assert.equal(g.sh.intimacy,40);g.s.rescues.push({rid:'y',foundAt:0,breed:'kuro',pic:0,bathed:true});assert.equal(S.bringRescue(g.s,'y',S.rng(1),0).level,5);});});
-test('red-team #2: walk extra reward follows pending.walkExtraReward; \'coins\' never pays a guessed amount while extraCoins is UNSET',()=>{
- const go=()=>{const {s,sh}=freshGame();S.startWalk(s,sh.id,600,0,()=>.99);const h=s.hearts,c=s.coins;S.tickWalk(s,600e3,script([.99,.99,0,.99]));return {ev:s.walkResults[0].events,dh:s.hearts-h,dc:s.coins-c};};
- let o=go();assert.deepEqual(o.ev,['extraHeart']);assert.equal(o.dh,1);
- withCfg(CFG.pending,{walkExtraReward:'coins'},()=>{assert.equal(S.extraRewardKind(),null);o=go();assert.deepEqual(o.ev,[]);assert.equal(o.dc,0);
-  withCfg(CFG.walk.events,{extraCoins:7},()=>{o=go();assert.deepEqual(o.ev,['extraCoins']);assert.equal(o.dc,7);});});});
+test('red-team #2: unsupported starts stay null and rescue is disabled',()=>{for(const v of Object.values(CFG.pending))assert.equal(v,null);const {s,sh}=freshGame();assert.equal(s.coins,null);assert.equal(sh.intimacy,null);assert.equal(sh.acc,null);assert.ok(Object.values(sh.g).every(v=>v===null));s.rescues.push({rid:'x',breed:'kuro',bathed:true});assert.equal(S.bringCheck(s,'x'),'unset');assert.equal(S.bringRescue(s,'x'),null);S.playWith(s,sh.id,0);assert.equal(sh.intimacy,null);assert.ok(Object.values(sh.g).every(v=>v===null));assert.equal(S.buyAccCheck(s,'bandana-loop-cell2'),'coins');assert.equal(S.conditionMul(sh),null);assert.equal(S.trainChance(sh),null);assert.equal(S.trainCheck(s,sh.id,'paw'),'unset');});
+test('red-team #2: unknown walk reward branch is disabled',()=>{const {s,sh}=freshGame();S.startWalk(s,sh.id,600,0,()=>.99);const h=s.hearts;S.tickWalk(s,600e3,script([.99,.99,0,.99]));assert.deepEqual(s.walkResults[0].events,[]);assert.equal(s.hearts,h);assert.equal(s.coins,null);});
 test('red-team #2: gacha start level UNSET → gated even when odds are set',()=>withCfg(CFG.gacha,{breedOdds:TEST_ODDS},()=>{const {s}=freshGame();s.dia=1000;assert.equal(S.gachaCheck(s,1),'unset');assert.equal(S.gachaPull(s,1,S.rng(1),0),null);assert.equal(s.dia,1000);}));
 
 // red-team #3: bandana colours are neutral sheet-cell ids, no invented names
 test('red-team #3: bandana colour ids are cell1..cell9 (no colour names); old colour-named saves migrate to the same cell',()=>{const B=CFG.accessory.bandana;
- assert.deepEqual(B.colors,Array.from({length:9},(_,i)=>'cell'+(i+1)));assert.ok(S.bandanaItems().every(x=>/^bandana-\w+-cell[1-9]$/.test(x.id)));assert.equal(CFG.pending.starterAccessory,'bandana-triangle-cell1');
+ assert.deepEqual(B.colors,Array.from({length:9},(_,i)=>'cell'+(i+1)));assert.ok(S.bandanaItems().every(x=>/^bandana-\w+-cell[1-9]$/.test(x.id)));assert.equal(CFG.pending.starterAccessory,null);
  const {s}=freshGame();s.shibas[0].acc='bandana-triangle-red';s.accInv={'bandana-loop-teal':2,'bandana-loop-cell9':1};const mem={v:null,getItem(){return this.v;},setItem(k,v){this.v=v;}};S.save(mem,s,0);
  const L=S.load(mem,0,S.rng(1)).state;assert.equal(L.shibas[0].acc,'bandana-triangle-cell1');assert.deepEqual(L.accInv,{'bandana-loop-cell9':3});});
 
