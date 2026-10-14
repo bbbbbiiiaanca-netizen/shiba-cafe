@@ -19,7 +19,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:+(process.env.DSF||2),mobile:true});await c('Page.enable');await c('Runtime.enable');
  const ev=async x=>{const r=await c('Runtime.evaluate',{expression:x,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(x.slice(0,90)+' -> '+JSON.stringify(r.exceptionDetails).slice(0,3000));return r.result.value;};
  const settle=()=>ev('new Promise(r=>{const imgs=[...document.images].filter(i=>!i.complete);if(!imgs.length)return r(true);let n=imgs.length;for(const i of imgs)i.onload=i.onerror=()=>--n||r(true);setTimeout(()=>r(true),4000);})');
- const shot=async(name,{keepToast=false}={})=>{if(!keepToast)await ev('__game.refresh();__game.ui.toastT=0;document.getElementById("toast").style.opacity=0;document.getElementById("toast").textContent="";true');await settle();await sleep(150);const {data}=await c('Page.captureScreenshot',{format:'png'});writeFileSync(join(out,name),Buffer.from(data,'base64'));shots.push(name);};
+ const shot=async(name,{keepToast=false}={})=>{if(!keepToast)await ev('__game.refresh();__game.ui.toastT=0;document.getElementById("toast").style.opacity=0;document.getElementById("toast").textContent="";true');await settle();await ev(`(()=>{const images=[...document.querySelectorAll('.lp-face img,.mission-btn img,.tab-ico img,#boostChip img')];if(images.some(i=>!i.complete||!i.naturalWidth))throw Error('Approved UI art failed to load');return true;})()`);await sleep(150);const {data}=await c('Page.captureScreenshot',{format:'png'});writeFileSync(join(out,name),Buffer.from(data,'base64'));shots.push(name);};
  const click=sel=>ev(`(()=>{const e=document.querySelector(${JSON.stringify(sel)});if(!e)throw Error('no '+${JSON.stringify(sel)});e.click();return true;})()`);
  const stage=async(edit=false)=>{
  await c('Page.navigate',{url:'file://'+resolve(ROOT,'index.html')+'?temp=1&still=1&fresh=1&seed=7'+(edit?'&edit=1':'')});
@@ -167,7 +167,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
  await stageStarter();
  await click('[data-act=mailbox]');await shot('main-screen-final-mailbox.png');await click('[data-act=modalOk]');
- await ev(`(()=>{const g=__game;g.S.claimMail(g.state,1,g.clock.now());g.CFG.stub.expBoost.mul=1.2;g.refresh();return true;})()`);
+ await ev(`(()=>{const g=__game;g.S.claimMail(g.state,1,g.clock.now());g.refresh();return true;})()`);
  await click('[data-main-tab=shop]');
  if(!(await ev(`!document.querySelector('[data-act=useItem][data-item=expBoost4h]').disabled`)))throw Error('configured EXP boost remains disabled');
  await click('[data-act=useItem][data-item=expBoost4h]');

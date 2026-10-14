@@ -211,3 +211,34 @@ Shown as: top-bar resource pills (coin, heart slots full/empty, diamond, paw), p
 | chars/manager/manager-walk-front-dr-2.png | interior/알바_매니저_걷기_앞_오른쪽아래_2.png | 1xoKLMyWwHxCrH0dy4CYcJ5TH5KDE5yYE | bbc04697a0c4411eda03becf745101a05ae0ca1ba69aae400fb7342836b0c165 |
 | chars/manager/manager-walk-front-dr-3.png | interior/알바_매니저_걷기_앞_오른쪽아래_3.png | 1ZbYchC3BpV2DXp3wygKIdY_eoAFSxbym | 762af46d40d93a5d7ea668448d4c63e3889572d7d50bf4bd0197f59c52b1ca2b |
 | chars/manager/manager-walk-front-dr-4.png | interior/알바_매니저_걷기_앞_오른쪽아래_4.png | 1kGUW4MPNJmPhP4t_HwwR5NmGiXd4R2E1 | c489527b842372dcedb566478285ca1b644bc1475ef4c82cfaf1052a9d039e40 |
+
+## 그림이 icons batch 3 (2026-10-15)
+
+| Local | Source | Drive ID | SHA-256 |
+|---|---|---|---|
+| ui/card-call.png | interior/UI_카드_손님부르기.png | 1Rd-v2pyO7Pgqav5WdsjaHpdyDJ29COsq | 17394d3dfb764d9f0a4bd0f117be8ca7ee3c0e923e2f23bd34ceb6b29a917a4c |
+| ui/card-pet.png | interior/UI_카드_쓰다듬기.png | 1sBepQWefWwrTJSZTqChH4t9pVpUD4Il9 | d094773d2d677be1e9b5555575ce10c71fc9fed9e4b54fd7f47fcdd278803e55 |
+| ui/card-play.png | interior/UI_카드_놀아주기.png | 1wcg_ZmE1JubW9k96V1wJVTpAp9B1lBPP | 62bfaf8076af04607ed810cc3ddf732ad72075d495d8c0fe8c235cdfebbb14ee |
+| ui/card-snack.png | interior/UI_카드_간식.png | 1pk6_zN0WoK2b7KyeadvDaPN9_TB67_ds | 423bf312a9a4cda4771cb0c8a7a0da7de5ead9ea981d349f8313c336e86c280a |
+| ui/card-walk.png | interior/UI_카드_산책.png | 1YFyJJfFj2Drohyxq-2oBYT68K9YXc2tU | 068ecf06b4dd6dbfd5b4a5c0bd29e46386a35fd80240b54dd07a26fba027ead6 |
+| ui/card-praise.png | interior/UI_카드_칭찬해주기.png | 1S-FySTt0BBvj6Ptk_41JwgHzC4bECcm0 | e875418427e169ecf708bc94b4d62cd43e96e5862336ee19fbcfac24455686ea |
+| ui/card-brush.png | interior/UI_카드_빗질마사지.png | 1eakq5XMxANsJe1hq01JQXgaAPne916ly | 3ddc485eb814205c4706acbaea49e24e9b1a34d70b81bd3c460b047e06103dc7 |
+| ui/card-music.png | interior/UI_카드_가게음악.png | 1RUiCinXwqmWISeIL5pzMAh12ZZTq-5ow | 08fb2e433d9f5e496b32f345b9089daf16659799f30acbe6393302c975995f27 |
+| ui/card-nap.png | interior/UI_카드_낮잠이불.png | 1YP8ViQLnqNzwlLjecTzGkXeAo3opEaRN | c00068c0cc5d3b92c378398be217aae4ebc4b8d1ad018118b9f9d172ec7125f9 |
+| ui/card-recommend.png | interior/UI_카드_오늘의추천메뉴.png | 1u07M7sTOu4ewA_8qub08sATFp-c5b9i_ | caac22bdec61e3c292e5dcf8d3c7b74cf40f5a77c6876230fe368a20e17ef7cf |
+| ui/card-tasting.png | interior/UI_카드_메뉴시식회.png | 1w5fJl9i-F4S2OJU6lTXZosqoW3rB51Cr | 20b9293d4326beafccdf45ab491030b56b566c33744a40335e30d3f144e451df |
+| ui/card-cookie.png | interior/UI_카드_행운쿠키.png | 1sZVhCkaSqATTtDFIdkZvZ3K0nk6wPSAR | 3d62035d9c8b60d1a49c0730d9fabacc284873e12f426cead0912a1c558c4bdc |
+| ui/card-vip.png | interior/UI_카드_특별손님초대.png | 1Q49uQYCo9yzooageR9vMh5atLcuTPng4 | 84155197ee45fc0721f18e1c82d6bd04c5b58973953ccf9b26f59f3ad2f8bb1b |
+| ui/card-treat.png | interior/UI_카드_간식손님대접.png | 1LXxvFGUhfKSExacScKxt1Wxfs5CUbH2x | 80c9b8439f16522aa66553f4fe9612eb2ec814f406676d1441a0eebf008de62d |
+| ui/card-talent.png | interior/UI_카드_시바장기자랑.png | 147qxtwhAjXO4_O4WxAGXPZwcbGp4-mZT | 599c6ec2762e5527539293daaa1ce69072171c8752a89f7a59649e293e342fae |
+| ui/card-wish.png | interior/UI_카드_소원상자.png | 1MUjHilzrWZyterzARNWs_-E-bWp6Tjbk | 176856b9a526bf8586e5a47b8378a844ebed7e10efe1a96f56d721c10db359c3 |
+| ui/ui-mailbox.png | interior/UI_우편함.png | 1wWpUUVsIXodk8oYK9DGb_UYOWdiWLEa0 | 6081baca4cbfe6cf3cea7c52040d2abf0f98b9a4aa149eea4f933514a1ad6c34 |
+| ui/item-income-boost.png | interior/UI_수익부스트.png | 1kZ34Bxl30MPLrFH6D8ii2OMzsDhLKZKo | 0b292891bf3e5c70346662709c10223b2f9124c1bcd795d004e229c0eb24ae93 |
+| ui/item-exp-boost.png | interior/UI_경험치부스트.png | 146fyl3n1ghWY57Ss7ttGcvr4DcB1-0Ao | 8e36c2c31325dd17bed394191d97ac574b8f413f747345f9e8df8a95ed8000cf |
+| ui/item-cooldown-ticket.png | interior/UI_쿨타임권.png | 1tF2jD2sZeIugG3Kwh9I0bSW9PixbcHGG | 88b21c763f31cf453b9ed060eb1cd532d1a4601a9e574f7e788139173d47bf63 |
+| ui/tab-alba.png | interior/UI_탭_알바.png | 1LGdvPCGT1ad7RqJ0pmi4pkq2WuhWuW92 | e0c619fc920e035c961a127749369d3bb3351e6b5b5df73bf47d8ea5b2ec63c9 |
+| ui/tab-shop.png | interior/UI_탭_상점.png | 1ytxsp_NCP5M1Y5fydzKwwF0059BN8Ssg | 2e0e3ef9bda5ae089e49b235bc789f622ef786dd241c90482d6a2d3dc5f0ecef |
+| ui/ui-mission.png | interior/UI_미션.png | 1s7iVL8z9FneB2OgyJJWzIw3_3QZbQgEB | 876237a44af8d9a1f798051fbccb6d94c407f837ece93365effbd5ca0464b511 |
+| ui/ui-lv-badge.png | interior/UI_Lv배지.png | 1ZMFyLB9urA8rGh80X4xzqdUgM2ssZCz9 | 38113c8577a71279eb564906fee21bf48be4c77bdcbfb91854bc3560bf27fa2f |
+| tiles/wall-inner.png | interior/벽_안쪽벽.png | 1MXkxbJ6DE2y5euvaL4pZnB7luIjpDEqn | 38921b02edc0c797e47166b0f4d5c407ae3e2507bc4f21b10e5032f810eb6b58 |
+| tiles/wall-inner-flip.png | interior/벽_안쪽벽_반전.png | 1DGGliAacJznf3cqq3PLoIs-GUPPAT0zz | de8809a1c5f9c60744c1eb47eae1a3ffbf2f1f1baf34fe1147df6b48dd75e1d5 |

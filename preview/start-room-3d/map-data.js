@@ -4,7 +4,8 @@ import {CFG} from './config.js';
 // 그림이 will provide back views; unavailable until the art is supplied.
 export const PARTITION={count:3,price:50000}; // starting value 2026-10-15, pending user confirm
 export const SPRITES={
- wall:{file:null,anchor:null,scale:1,back:null,footprint:{cells:1,axis:null}}, // user: one-cell units; no wall art
+ // starting value 2026-10-15, pending user confirm: bbox x6–95/y24–181; bottom contact midpoint (50.5,162.5), scaled to existing 64×32 cell edge and offset to the rear cell edge.
+ wall:{file:'assets/drive/tiles/wall-inner.png',anchor:[50.5,162.5],scale:64/89,back:null,flip:{file:'assets/drive/tiles/wall-inner-flip.png',anchor:[62.5,162.5],scale:64/89},footprint:{cells:1,axis:null}},
  // 그림이 v4 sprites, original size (scale 1). anchor = centre of floor-contact footprint, sprite px (given by 그림이).
  table:{file:'assets/drive/furn-tea-table-v4.png',anchor:[92,93],scale:1,back:null,footprint:{cells:1,axis:null}},
  cushion:{file:'assets/drive/furn-cushion-v4.png',anchor:[90,74],scale:1,back:null,footprint:{cells:1,axis:null}},

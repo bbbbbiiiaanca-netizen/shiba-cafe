@@ -6,7 +6,7 @@ const minute=60e3;
 const fresh=()=>{const s=S.newState(0);S.chooseStart(s,'red','',S.rng(1),0);return s;};
 const item=id=>CFG.heartUse.items.find(x=>x.id===id);
 {
- const list=S.heartItems();assert.equal(list.length,16);assert.deepEqual(list.slice(0,5).map(x=>x.level),[0,0,0,0,0]);assert.deepEqual(list.slice(-3).map(x=>x.level),[30,35,40]);assert.ok(list.every(x=>x.art===null));
+ const list=S.heartItems();assert.equal(list.length,16);assert.deepEqual(list.slice(0,5).map(x=>x.level),[0,0,0,0,0]);assert.deepEqual(list.slice(-3).map(x=>x.level),[30,35,40]);assert.ok(list.every(x=>x.art.startsWith('assets/drive/ui/card-')));
  for(const it of list){const s=fresh(),sh=s.shibas[0];s.cafe.level=CFG.cafe.maxLevel;s.hearts=CFG.hearts.regenCap;s.menus=['M-02'];const ok=S.useHeartItem(s,it.id,it.shiba?sh.id:null,0,it.menu?'M-02':null);assert.equal(ok,it.level!==null&&!['walk','cookie','talent'].includes(it.id),it.id);assert.equal(s.hearts,CFG.hearts.regenCap-(ok?it.cost:0),it.id);}
 }
 {

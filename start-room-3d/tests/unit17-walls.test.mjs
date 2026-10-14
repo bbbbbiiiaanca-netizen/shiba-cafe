@@ -4,7 +4,7 @@ import {preservesEntrance,pathfind,tickManager} from '../navigation.js';
 import {newState,newWorld} from '../sim.js';
 const zone=MAP.zones[0],base=defaultPlacement().slots;
 const wall=(id,origin)=>({id,type:'wall',origin,dir:0});
-assert.equal(SPRITES.wall.file,null);assert.ok(CHAR_SPRITES.manager.file.endsWith('manager-stand-dr.png'));assert.deepEqual(CHAR_SPRITES.manager.anchor,[64,166]);
+assert.ok(SPRITES.wall.file.endsWith('wall-inner.png'));assert.ok(SPRITES.wall.flip.file.endsWith('wall-inner-flip.png'));assert.ok(CHAR_SPRITES.manager.file.endsWith('manager-stand-dr.png'));assert.deepEqual(CHAR_SPRITES.manager.anchor,[64,166]);
 assert.deepEqual(PARTITION,{count:3,price:50000});
 const w=wall('wall-a',[2,2]);assert.deepEqual(footprintCells(w),[[2,2]]);
 assert.equal(validPlacement(w,base,zone),true);

@@ -7,10 +7,10 @@ import * as S from './sim.js';
 
 export const TABS=[
  {id:'shiba',label:'시바',icon:'shiba'}, // 'shiba' = portrait of the first owned shiba (assets/drive/shiba-<breed>.png)
- {id:'alba',label:'알바',icon:null},
+ {id:'alba',label:'알바',icon:'assets/drive/ui/tab-alba.png'},
  {id:'manage',label:'가게 관리',icon:'assets/drive/M-01-iced-americano_512.png',main:true}, // main item (centre): café status + 메뉴 개발 / 업그레이드 / 손익계산서
  {id:'furniture',label:'가구',icon:'assets/drive/ui/ui-icon-tea-table.png'},
- {id:'shop',label:'상점',icon:null}];
+ {id:'shop',label:'상점',icon:'assets/drive/ui/tab-shop.png'}];
 export const DEFAULT_TAB='manage';
 
 // 알바 can be hired right now (same checks as hireAlba; null cost never counts).

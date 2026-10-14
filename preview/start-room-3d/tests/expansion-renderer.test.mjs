@@ -6,7 +6,7 @@ import {createIsoMap} from '../isomap.js';
 import {floatOrigin,FLOAT_LAYOUT,FLOAT_ICONS,cellToScreen} from '../map-data.js';
 import {newState} from '../sim.js';
 const draws=[],loads=[],strokes=[],events={};
-const ctx={setTransform(){},fillRect(){},drawImage(im,...args){draws.push({file:im.file,args});},save(){},restore(){},beginPath(){this.path=[];},moveTo(x,y){this.path.push([x,y]);},lineTo(x,y){this.path.push([x,y]);},closePath(){},stroke(){strokes.push({colour:this.strokeStyle,path:this.path});},createRadialGradient(){return {addColorStop(){}};},getImageData(x,y,w,h){return {width:w,height:h,data:new Uint8ClampedArray(w*h*4).fill(255)};}};
+const ctx={translate(){},scale(){},setTransform(){},fillRect(){},drawImage(im,...args){draws.push({file:im.file,args});},save(){},restore(){},beginPath(){this.path=[];},moveTo(x,y){this.path.push([x,y]);},lineTo(x,y){this.path.push([x,y]);},closePath(){},stroke(){strokes.push({colour:this.strokeStyle,path:this.path});},createRadialGradient(){return {addColorStop(){}};},getImageData(x,y,w,h){return {width:w,height:h,data:new Uint8ClampedArray(w*h*4).fill(255)};}};
 const button={disabled:false};
 globalThis.location={search:''};globalThis.devicePixelRatio=1;
 globalThis.ResizeObserver=class{observe(){}};
@@ -38,16 +38,17 @@ assert.ok(itemIndex>tableIndex,'confirmed item bitmap after adjacent table');
 assert.ok(draws[itemIndex].args[2]<draws[tableIndex].args[2],'item scaled at draw time');
 console.log('Unit 5 renderer: outside grass before room, exact tile ratio, confirmed bitmap above table passed');
 
-// Real renderer editing callbacks: footprint-only wall selection, drag, rejection and removal.
+// Real renderer editing callbacks: approved bitmap wall selection, drag, rejection and removal.
 let blocked='',changed=0;
 const wallIso=createIsoMap(canvas,{onBlocked:message=>blocked=message,onChange:()=>changed++});
 const wallState=newState(0);wallIso.draw(wallState,{});wallIso.setEdit(true);
 assert.equal(wallIso.placeWall([2,2]),true);
 const wallId=wallIso.selected;
-assert.ok(wallIso.hits.find(h=>h.id===wallId)?.footprint);
+assert.ok(wallIso.hits.find(h=>h.id===wallId)&&!wallIso.hits.find(h=>h.id===wallId).footprint);assert.ok(draws.some(d=>d.file.endsWith('wall-inner.png')));
+{const h=wallIso.hits.find(h=>h.id===wallId),p=cellToScreen(2,2,h.view,h.zone);assert.ok(Math.abs(h.x+50.5*(64/89)*h.view.scale-(p.x+h.zone.cell.w*h.view.scale/4))<1e-9);assert.ok(Math.abs(h.y+162.5*(64/89)*h.view.scale-(p.y-h.zone.cell.h*h.view.scale/4))<1e-9);}
 assert.ok(!loads.includes(null));
 wallIso.actions.querySelector('[data-furniture-rotate]').onclick();
-assert.equal(wallState.placement.slots.find(s=>s.id===wallId).dir,1);
+assert.equal(wallState.placement.slots.find(s=>s.id===wallId).dir,1);assert.ok(draws.some(d=>d.file.endsWith('wall-inner-flip.png')));
 const center=()=>{const h=wallIso.hits.find(h=>h.id===wallId);return {h,x:h.x+h.w/2,y:h.y+h.h/2};};
 let p=center();events.pointerdown(pointer(p.x,p.y));
 const delta=[p.h.zone.cell.w*p.h.view.scale/2,p.h.zone.cell.h*p.h.view.scale/2];
@@ -64,7 +65,7 @@ events.pointermove(end);events.pointerup(end);
 assert.equal(JSON.stringify(wallState.placement),snapshot);
 wallIso.actions.querySelector('[data-wall-remove]').onclick();
 assert.ok(!wallState.placement.slots.some(s=>s.type==='wall'));assert.ok(changed>=4);
-console.log('§17 renderer: no wall image, footprint selection, move/rotate/remove and blocked rollback passed');
+console.log('§17 renderer: approved wall images, alpha selection, move/rotate/remove and blocked rollback passed');
 
 // Both axes use approved floor art, full edit grid and clamped drag pan.
 const expandIso=createIsoMap(canvas);

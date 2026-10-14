@@ -143,10 +143,12 @@ button[data-act=levelUp]{background:url(assets/drive/ui/ui-btn-levelup-yellow.pn
 /* §17-4: one short effect line; details only after tapping the card body; locked cards dimmed with 'Lv{N} 해금' and no price button */
 .lp-text,.lp-face{cursor:pointer}.lp-text small.lp-effect{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lp-text .lp-detail{color:#6b4426;background:#fff8ea;border-radius:6px;padding:3px 5px;margin-top:2px}
-.lp-card.locked{opacity:.72}.lp-card.locked .lp-effect{color:#9c4136;font-weight:800}
+.lp-card.disabled{opacity:.72}.lp-card.locked{opacity:.72}.lp-card.locked .lp-effect{color:#9c4136;font-weight:800}
 .lp-price-slot{flex:none;width:92px}
 .heart-footer{display:flex;flex-direction:column;gap:6px;padding:8px}.lp-empty{padding:40px 10px;text-align:center;color:#ad9777;font-weight:800}
 
+/* starting value 2026-10-15, pending user confirm: icon chrome fits existing status buttons. */
+.mission-btn img{width:24px;height:24px;object-fit:contain}.mission-btn{position:relative}#mailDot{position:absolute;right:0;top:0}#lvl{background:url(assets/drive/ui/ui-lv-badge.png) center/contain no-repeat;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;min-width:36px;min-height:36px;border-radius:0;color:#58452b;font-size:13px}
 </style>
 <div id="app">
  <div id="hud" aria-label="카페 자원">
@@ -156,7 +158,7 @@ button[data-act=levelUp]{background:url(assets/drive/ui/ui-btn-levelup-yellow.pn
    <div class="pill"><span class="pill-open" aria-label="다이아"><img class="resource" data-res="dia" src="assets/drive/ui/res-diamond.png" alt="" draggable="false"><span id="dia"></span></span><button class="resource-add" data-act="resourceShop" aria-label="다이아 상점 열기">+</button></div>
    <div class="pill" aria-label="발바닥"><img class="resource" data-res="paw" src="assets/drive/ui/res-paw.png" alt="" draggable="false"><span id="paws"></span></div>
   </div>
-  <div class="row cafe-status"><div class="cafe-progress"><span id="lvl"></span><div class="bar" id="cafeExp" role="progressbar" aria-label="카페 경험치"><i id="expBar"></i></div></div><span id="rep"></span><span id="mgr" hidden></span><small id="boostChip"></small><button class="mission-btn" data-act="mailbox">우편<i id="mailDot" style="color:red">●</i></button><button class="mission-btn" data-act="mission" aria-label="미션">미션</button><button class="gear" data-nav="settings" aria-label="설정"><img src="assets/drive/ui/ui-gear.png" alt="" draggable="false"></button></div>
+  <div class="row cafe-status"><div class="cafe-progress"><span id="lvl"></span><div class="bar" id="cafeExp" role="progressbar" aria-label="카페 경험치"><i id="expBar"></i></div></div><span id="rep"></span><span id="mgr" hidden></span><small id="boostChip"></small><button class="mission-btn" data-act="mailbox" aria-label="우편함"><img src="assets/drive/ui/ui-mailbox.png" alt=""><i id="mailDot" style="color:red">●</i></button><button class="mission-btn" data-act="mission" aria-label="미션"><img src="assets/drive/ui/ui-mission.png" alt=""></button><button class="gear" data-nav="settings" aria-label="설정"><img src="assets/drive/ui/ui-gear.png" alt="" draggable="false"></button></div>
  </div>
  <div id="scene"><canvas id="isomap" aria-label="다다미 카페 지도 · 드래그하여 이동"></canvas><div id="closed" hidden></div></div>
  <section id="mainMenu"><div class="menu-heading">가게 관리 <small>카페 현황 · 메뉴 개발 · 업그레이드</small></div><div id="menuList"></div><nav class="main-tabs" id="mainTabs" aria-label="메뉴"></nav></section>

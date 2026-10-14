@@ -9,6 +9,7 @@ export default async function({ev,check,sleep,reload}){
  await ev('document.querySelector("[data-act=startPick][data-breed=kuro]").click();true');
  await check('breed alone does not enable start','document.querySelector("[data-act=startGo]").disabled');
  await ev('document.getElementById("startName").value="Smoke";document.querySelector("[data-act=startBandana][data-item=bandana-triangle-cell1]").click();true');
+ await check('Task A starter colour names only','[...document.querySelectorAll("[data-act=startBandana]")].every(b=>{const color=b.dataset.item.split("-").at(-1);return b.textContent.trim()===__game.CFG.accessory.bandana.colorNames[__game.CFG.accessory.bandana.colors.indexOf(color)];})');
  await check('bandana selection rerenders and enables start, preserving the name','!document.querySelector("[data-act=startGo]").disabled&&document.querySelector("[data-item=bandana-triangle-cell1]").getAttribute("aria-pressed")==="true"&&document.getElementById("startName").value==="Smoke"');
  await ev('document.querySelector("[data-act=startGo]").click();true');
  await check('start modal closes','__game.state.started&&document.getElementById("modal").hidden');
@@ -82,14 +83,14 @@ export default async function({ev,check,sleep,reload}){
  await ev('document.querySelector("#mbox .lp-close").click();true');
  // §17-7/8: real edit actions and rejected placement, then manager hire using configured values.
  await ev('__game.close();__game.iso.setEdit(true);document.querySelector("[data-wall-add]").click();true');
- await check('wall placed with grid footprint and no sprite art','__game.state.placement.slots.some(s=>s.type==="wall")&&__game.iso.gridCells>0');
+ await check('wall placed with one-cell footprint and approved sprite hit','__game.state.placement.slots.some(s=>s.type==="wall"&&__game.iso.hits.some(h=>h.id===s.id&&!h.footprint))&&__game.iso.gridCells>0');
  await ev('window.wallBefore=JSON.stringify(__game.state.placement);__game.iso.placeWall([0,5]);true');
  await check('entrance blocked toast and rollback','document.getElementById("toast").textContent==="입구가 막혔어요!"&&JSON.stringify(__game.state.placement)===window.wallBefore');
  await ev('document.querySelector("[data-wall-remove]").click();__game.iso.setEdit(false);__game.state.cafe.level=__game.CFG.alba.manager.unlock;__game.state.coins=__game.CFG.alba.manager.cost;__game.S.hireAlba(__game.state,"manager",[],__game.clock.now());__game.step(__game.CFG.navigation.cellStepSec);true');
  await check('only manager has staff navigation presence','__game.world.manager?.role==="manager"&&!__game.world.daycare&&!__game.world.trainer&&!__game.world.walk');
  // §17-9: real HUD → reusable popup → portrait picker → same popup, plus ad countdown.
  await ev('__game.ui.modals=[];__game.state.cafe.level=1;__game.S.heartState(__game.state).seenLevel=1;__game.state.shibas[0].affinity=0;__game.state.hearts=__game.CFG.hearts.regenCap;__game.refresh();document.querySelector("#hud [data-act=hearts]").click();true');
- await check('§17-9 empty art, locked levels, order and live balance','document.querySelectorAll("[data-list-popup=hearts] .lp-card").length===__game.CFG.heartUse.items.length&&!document.querySelector("[data-lp-row=call] .lp-face img")&&document.querySelector("[data-lp-row=praise] .lp-effect").textContent==="Lv5 해금"&&document.querySelector("[data-lp-row=wish] .lp-effect").textContent==="Lv40 해금"');
+ await check('§17-9 approved card art, locked levels, order and live balance','document.querySelectorAll("[data-list-popup=hearts] .lp-card").length===__game.CFG.heartUse.items.length&&document.querySelector("[data-lp-row=call] .lp-face img").getAttribute("src")==="assets/drive/ui/card-call.png"&&document.querySelector("[data-lp-row=praise] .lp-effect").textContent==="Lv5 해금"&&document.querySelector("[data-lp-row=wish] .lp-effect").textContent==="Lv40 해금"');
  await ev('document.querySelector("[data-lp-row=call] .lp-price").click();true');
  await check('§17-9 use stays open and shows active mm:ss','__game.ui.modals[0].list==="hearts"&&__game.state.hearts===__game.CFG.hearts.regenCap-__game.CFG.heartUse.items[0].cost&&/\\d+:\\d+/.test(document.querySelector("[data-heart-active]").textContent)');
  await ev('document.querySelector("[data-lp-row=pet] .lp-price").click();true');
@@ -106,15 +107,18 @@ export default async function({ev,check,sleep,reload}){
  await check('save kept after reload (language, shiba)','__game.state.settings.language==="ko"&&__game.state.shibas.length>=1&&__game.state.shibas[0].breed==="kuro"&&__game.state.started');
 
  await ev('__game.ui.modals=[];__game.refresh();document.querySelector("[data-act=mailbox]").click();true');
+ await check('Task A mailbox boost icon', 'document.querySelector("#mbox img[src=\"assets/drive/ui/item-exp-boost.png\"]").complete');
  await check('final mailbox reachable with unclaimed mail','document.getElementById("mbox").textContent.includes("우편함")&&!!document.querySelector("[data-act=claimMail]:not(:disabled)")');
  await ev('document.querySelector("[data-act=claimMail]:not(:disabled)").click();true');
  await check('final mail claim saved once','__game.state.mailClaimed.length===1&&!!document.querySelector("[data-act=claimMail]:disabled")');
  await ev('document.querySelector("[data-act=modalOk]").click();document.querySelector("[data-main-tab=shop]").click();true');
+ await ev('__game.CFG.stub.expBoost.mul=null;__game.refresh();true');
  await check('final unknown boost multiplier disables use without consumption', 'document.querySelector("[data-item=expBoost4h][data-act=useItem]").disabled&&document.querySelector("[data-item=expBoost4h][data-act=useItem]").textContent.includes("미정")&&__game.state.items.expBoost4h>0');
- // Test-only legacy multiplier; production remains null.
- await ev('__game.CFG.stub.expBoost.mul=1.2;__game.refresh();true');
+ // Check null gating as an explicit test fixture, then restore the approved starting value.
+ await ev('__game.CFG.stub.expBoost.mul=1.5;__game.refresh();true');
  await check('final configured boost enables use immediately', '!document.querySelector("[data-item=expBoost4h][data-act=useItem]").disabled');
  await ev('document.querySelector("[data-item=expBoost4h][data-act=useItem]").click();true');
+ await check('Task A boost chip approved image', 'document.querySelector("#boostChip img").getAttribute("src")=="assets/drive/ui/item-exp-boost.png"');
  await check('final boost use shows remaining time', '__game.state.items.expBoost4h===0&&document.getElementById("boostChip").textContent.includes("경험치")');
  await check('final 2F diamond price stays disabled', 'document.querySelector("[data-kind=floor2][data-via=dia]").disabled&&document.querySelector("[data-kind=floor2][data-via=dia]").textContent.includes("미정")');
  await ev('document.querySelector("[data-main-tab=furniture]").click();true');

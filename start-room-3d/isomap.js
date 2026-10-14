@@ -87,10 +87,12 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
     if(s.character?.role==='manager'){const m=s.character,im=load(managerFrame(m)),p=cellToScreen(...s.origin,view,z);if(im.complete&&im.naturalWidth){const fit=MANAGER.height/MANAGER_OPAQUE_HEIGHT[managerFrame(m).split('/').at(-1)];ctx.drawImage(im,p.x-MANAGER.anchor[0]*fit,p.y-MANAGER.anchor[1]*fit,im.naturalWidth*fit,im.naturalHeight*fit);}return;}
     if(s.character){const meta=CHAR_SPRITES[s.character.role==='manager'?'manager':s.character.kind?'guest':'shiba'];if(meta.file&&meta.anchor)stamp(meta.file,cellToScreen(...s.origin,view,z),meta.anchor);return;}
     const base=SPRITES[s.type];if(!base)return;
-    if(!base.file){if(edit){const p=cellToScreen(...s.origin,view,z);hits.push({id:s.id,x:p.x-z.cell.w*scale/2,y:p.y-z.cell.h*scale/2,w:z.cell.w*scale,h:z.cell.h*scale,footprint:true,view,zone:z});}return;}const sprite=s.dir>=2?base.back:base;if(!sprite)return;
+    if(!base.file){if(edit){const p=cellToScreen(...s.origin,view,z);hits.push({id:s.id,x:p.x-z.cell.w*scale/2,y:p.y-z.cell.h*scale/2,w:z.cell.w*scale,h:z.cell.h*scale,footprint:true,view,zone:z});}return;}const sprite=s.type==='wall'&&s.dir%2?base.flip:s.dir>=2?base.back:base;if(!sprite)return;
     const im=load(sprite.file),p=cellToScreen(...footprintCentre(s),view,z),spriteScale=scale*sprite.scale;
     if(im.complete&&im.naturalWidth){
-     const mirrored=Boolean(s.dir%2),ax=mirrored?im.naturalWidth-sprite.anchor[0]:sprite.anchor[0];
+     // starting value 2026-10-15, pending user confirm: contact midpoint on the matching rear cell edge.
+     if(s.type==='wall'){p.x+=(s.dir%2?-1:1)*z.cell.w*scale/4;p.y-=z.cell.h*scale/4;}
+     const mirrored=s.type!=='wall'&&Boolean(s.dir%2),ax=mirrored?im.naturalWidth-sprite.anchor[0]:sprite.anchor[0];
      const x=p.x-ax*spriteScale,y=p.y-sprite.anchor[1]*spriteScale,w=im.naturalWidth*spriteScale,h=im.naturalHeight*spriteScale;
      ctx.save();if(mirrored){ctx.translate(x+w,y);ctx.scale(-1,1);ctx.drawImage(im,0,0,w,h);}else ctx.drawImage(im,x,y,w,h);ctx.restore();
      hits.push({id:s.id,x,y,w,h,im,mirrored,view,zone:z});
