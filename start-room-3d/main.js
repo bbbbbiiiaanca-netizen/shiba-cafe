@@ -32,8 +32,11 @@ const tfmt=sec=>{sec=Math.max(0,Math.ceil(sec));const h=Math.floor(sec/3600),m=M
 const nameOf=sh=>sh.name||L('shiba.breed.'+sh.breed);
 const bar=(k,col)=>`<div class="bar"><i style="width:${Math.round(Math.max(0,Math.min(1,k))*100)}%${col?';background:'+col:''}"></i></div>`;
 function toast(t){const e=$('toast');e.textContent=t;e.style.opacity=1;ui.toastT=2.2;}
-const reason={coins:'toast.coins',hearts:'toast.hearts',slots:'toast.slots',unset:'toast.unset',last:'toast.last'};
+const reason={coins:'toast.coins',hearts:'toast.hearts',slots:'toast.slots',unset:'toast.unset',last:'toast.last',dia:'toast.dia'};
 function why(code){toast(L(reason[code]||'toast.unset'));}
+// 갱신 135-2: 남은 시간 바로 완료 버튼 (1분당 1다이아, 1분 올림)
+function skipBtn(t){const left=S.skipLeftSec(s,t,clock.now());if(!(left>0))return '';const cost=S.skipCost(left);
+ return `<button class="sec" data-act="skip" data-type="${t.type}" data-id="${t.id??''}" ${s.dia<cost?'disabled':''}>${L('skip.btn',{n:fmt(cost)})}</button>`;}
 
 // ───────── HUD ─────────
 function renderHUD(){const now=clock.now();$('coins').textContent=fmt(s.coins);$('hearts').textContent=fmt(s.hearts);$('dia').textContent=fmt(s.dia);
@@ -95,9 +98,10 @@ P.care=id=>{const sh=S.byId(s,id);if(!sh)return P.shibas();const st=S.statusOf(s
    <button data-act="walkFor" data-id="${id}" ${st!=='ok'?'disabled':''}>${L('care.walk')}</button></div><div class="note">${L('care.feed')}·${L('care.snack')}·${L('care.bath')}·${L('care.sleep')}: ${L('care.unsetNote')}</div>`;
  if(sh.status==='injured'||sh.status==='sick'){const cost=S.hospitalCost(s,sh.status==='sick'?'sick':sh.injury),c=S.hospitalCheck(s,id);h+=`<button class="warn" data-act="hospital" data-id="${id}" ${c?'disabled':''}>${c==='coins'?L('care.hospitalNo',{cost:fmt(cost)}):L('care.hospital',{cost:fmt(cost)})}</button>`;}
  const D=CFG.alba.daycare,dcd=(sh.cd.daycare||0)-now,dc=S.albaCheck(s,'daycare',[id],now);
- h+=`<button class="sec" data-act="daycare" data-id="${id}" ${dc?'disabled':''}>${L('care.daycare')} · ${s.cafe.level<D.unlock?L('app.locked',{lv:D.unlock}):dcd>0?L('app.cooldown',{t:tfmt(dcd/1000)}):L('app.coins',{n:fmt(D.cost)})}</button>
+ if(st==='hospital')h+=`<div class="btns">${skipBtn({type:'hospital',id})}</div>`;
+ h+=`<div class="btns"><button class="sec" data-act="daycare" data-id="${id}" ${dc?'disabled':''}>${L('care.daycare')} · ${s.cafe.level<D.unlock?L('app.locked',{lv:D.unlock}):dcd>0?L('app.cooldown',{t:tfmt(dcd/1000)}):L('app.coins',{n:fmt(D.cost)})}</button>${skipBtn({type:'daycare',id})}</div>
   <div class="note">${L('care.potion',{n:s.items.potionBig,m:s.items.potionSmall})}</div></div>`;
- const T=CFG.alba.trainer;h+=`<div class="card"><h3>${L('care.tricks')}</h3>`;
+ const T=CFG.alba.trainer;h+=`<div class="card"><h3>${L('care.tricks')}</h3>${(sh.cd.trainer||0)>now?`<div class="btns"><span class="note">${L('care.trainer')} ${L('app.cooldown',{t:tfmt((sh.cd.trainer-now)/1000)})}</span>${skipBtn({type:'trainer',id})}</div>`:''}`;
  for(const t of CFG.tricks){const lv=sh.tricks[t.id],c=S.trainCheck(s,id,t.id),tc=S.albaCheck(s,'trainer',[id],now,t.id),tcd=(sh.cd.trainer||0)-now;
   h+=`<div class="trk"><div class="li"><b>${L('trick.'+t.id)}</b><span class="stars">${'★'.repeat(lv)}${'☆'.repeat(CFG.trickMaxLevel-lv)}</span><span class="grow note">${lv<CFG.trickMaxLevel?sh.trickExp[t.id]+'/'+(lv+1):L('care.trainMax')}</span></div>
    ${lv>=CFG.trickMaxLevel?'':`<div class="btns"><button data-act="train" data-id="${id}" data-trick="${t.id}" ${c?'disabled':''}>${L('care.train',{p:Math.round(S.trainChance(sh)*100)})}</button><button class="sec" data-act="trainer" data-id="${id}" data-trick="${t.id}" ${tc?'disabled':''}>${L('care.trainer')} · ${s.cafe.level<T.unlock?L('app.locked',{lv:T.unlock}):tcd>0?tfmt(tcd/1000):L('app.coins',{n:fmt(T.cost)})}</button></div>`}</div>`;}
@@ -117,6 +121,7 @@ P.walk=()=>{const now=clock.now();let h='';const W=s.walk;
  const A=CFG.alba.walk,ids=[...ui.walkAlba].filter(id=>S.byId(s,id)),ac=S.albaCheck(s,'walk',ids,now);
  h+=`<div class="card"><h3>${L('walk.alba')}</h3><div class="note">${L('walk.albaNote',{n:A.maxShibas})}</div>${s.cafe.level<A.unlock?`<div class="note">${L('app.locked',{lv:A.unlock})}</div>`:''}
   <div class="choices">${s.shibas.map(o=>{const cd=(o.cd.walk||0)-now;return `<button class="choice${ui.walkAlba.has(o.id)?' on':''}" data-act="albaPick" data-id="${o.id}" ${s.cafe.level<A.unlock||cd>0?'disabled':''}><span>${nameOf(o)}${cd>0?' · '+tfmt(cd/1000):''}</span></button>`;}).join('')}</div>
+  ${s.shibas.filter(o=>(o.cd.walk||0)>now).map(o=>`<div class="li"><span class="grow note">${nameOf(o)} · ${L('app.cooldown',{t:tfmt((o.cd.walk-now)/1000)})}</span>${skipBtn({type:'walk',id:o.id})}</div>`).join('')}
   <button data-act="albaWalk" ${ac?'disabled':''}>${L('walk.albaGo',{cost:fmt(A.cost)})}</button></div>`;
  return {title:L('walk.title'),html:h};};
 P.shop=()=>{const now=clock.now(),M=CFG.menu,menuImg=f=>`<div class="pt">${img('assets/drive/'+f)}</div>`;
@@ -194,6 +199,7 @@ const act={
  albaPick:d=>{const id=+d.id;if(ui.walkAlba.has(id))ui.walkAlba.delete(id);else if(ui.walkAlba.size<CFG.alba.walk.maxShibas)ui.walkAlba.add(id);},
  albaWalk:()=>{if(S.hireAlba(s,'walk',[...ui.walkAlba],clock.now()))ui.walkAlba.clear();},
  manager:()=>{S.hireAlba(s,'manager',[],clock.now());},
+ skip:d=>{const t={type:d.type,id:d.id===''?null:+d.id};if(S.skipNow(s,t,clock.now())==null)why(S.skipCheck(s,t,clock.now()));},
  dev:d=>{if(!S.developMenu(s,d.id))why(S.menuCheck(s,d.id));},
  heartReset:()=>{S.useHeartReset(s,clock.now());},
  setLang:d=>{s.settings.language=d.lang;applyStatic();},toggle:d=>{s.settings[d.k]=!s.settings[d.k];},

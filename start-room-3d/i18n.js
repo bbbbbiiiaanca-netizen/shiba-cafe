@@ -56,6 +56,7 @@ export const STR={
   'per.boss':'골목대장','per.peopleLover':'사람 바라기','per.dogLover':'댕댕이 바라기','per.tomgirl':'말괄량이','per.zoomies':'우다다 폭주견','per.fighter':'싸움꾼','per.foodie':'먹보','per.walkLover':'산책광',
   'trick.sit':'앉아','trick.paw':'손','trick.wait':'기다려','trick.down':'엎드려','trick.bow':'인사',
   'npc.commuter':'출근길 손님','npc.mom':'엄마','npc.dad':'아빠','npc.girl':'여자아이','npc.boykid':'남자아이','npc.grandma':'할머니','npc.grandpa':'할아버지','npc.coupleman':'연인 남','npc.couplewoman':'연인 여','npc.friend':'친구',
+  'skip.btn':'바로 완료 {n}💎','toast.dia':'다이아가 모자라요','skip.note':'남은 시간 1분당 1다이아(1분 단위 올림)',
  },
  en:{
   'lang.name.ko':'한국어','lang.name.en':'English','lang.select.title':'Choose your language','lang.select.hint':'You can change it any time in Settings','lang.select.confirm':'OK',
@@ -110,6 +111,7 @@ export const STR={
   'per.boss':'Little boss','per.peopleLover':'People lover','per.dogLover':'Dog lover','per.tomgirl':'Tomboy','per.zoomies':'Zoomies','per.fighter':'Scrapper','per.foodie':'Foodie','per.walkLover':'Walk lover',
   'trick.sit':'Sit','trick.paw':'Paw','trick.wait':'Wait','trick.down':'Down','trick.bow':'Bow',
   'npc.commuter':'Commuter','npc.mom':'Mom','npc.dad':'Dad','npc.girl':'Girl','npc.boykid':'Boy','npc.grandma':'Grandma','npc.grandpa':'Grandpa','npc.coupleman':'Couple (him)','npc.couplewoman':'Couple (her)','npc.friend':'Friend',
+  'skip.btn':'Finish now {n}💎','toast.dia':'Not enough diamonds','skip.note':'1 diamond per remaining minute (rounded up)',
  },
 };
 export function makeT(getLang){return (key,vars={})=>{const l=getLang()||'ko';let t=STR[l]?.[key]??STR.en[key]??key;for(const [k,v] of Object.entries(vars))t=t.split('{'+k+'}').join(v);return t;};}

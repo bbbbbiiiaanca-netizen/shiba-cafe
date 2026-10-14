@@ -215,6 +215,21 @@ test('save → load 2 h later runs the café offline once and reports it',()=>{c
 test('walk that ends while away settles once on load',()=>{const {s,sh}=freshGame();S.startWalk(s,sh.id,600,0,()=>.99);const mem={d:{},getItem(k){return this.d[k]??null},setItem(k,v){this.d[k]=v}};
  S.save(mem,s,60e3);const L=S.load(mem,H,()=>.99);assert.equal(L.state.walk,null);assert.equal(L.state.walkResults.length,1);assert.equal(L.state.shibas[0].g.fatigue,15);});
 
+// ───────── 갱신 135-2 남은 시간 바로 완료 ─────────
+test('135-2: instant finish = 1 diamond per remaining minute, rounded up per minute (37 min → 37, 4 h → 240, 30 s → 1)',()=>{
+ assert.equal(CFG.timeSkip.diaPerMin,1);assert.equal(S.skipCost(37*60),37);assert.equal(S.skipCost(4*3600),240);assert.equal(S.skipCost(30),1);assert.equal(S.skipCost(60.001),2);assert.equal(S.skipCost(0),0);
+ assert.equal(S.skipCost(1800),30);assert.equal(S.skipCost(7200),120);});
+test('135-2: hospital stay finishes at once for diamonds; not enough diamonds → refused, nothing spent',()=>{const {s,sh}=freshGame();s.coins=1e6;sh.status='injured';sh.injury='snake';
+ assert.ok(S.sendToHospital(s,sh.id,0));const t={type:'hospital',id:sh.id};assert.equal(S.skipLeftSec(s,t,23*MIN),97*60);
+ s.dia=96;assert.equal(S.skipCheck(s,t,23*MIN),'dia');assert.equal(S.skipNow(s,t,23*MIN),null);assert.equal(s.dia,96);
+ s.dia=100;assert.equal(S.skipNow(s,t,23*MIN),97);assert.equal(s.dia,3);assert.equal(sh.status,'ok');assert.equal(sh.injury,null);assert.equal(S.skipCheck(s,t,23*MIN),'none');});
+test('135-2: part-timer cooldowns (데이케어·산책 알바·훈련사) finish at once; cooled shiba can be booked again',()=>{const {s,sh}=freshGame();s.coins=1e6;s.cafe.level=20;s.dia=1000;
+ assert.ok(S.hireAlba(s,'daycare',[sh.id],0));assert.equal(S.albaCheck(s,'daycare',[sh.id],MIN),'cooldown');
+ assert.equal(S.skipNow(s,{type:'daycare',id:sh.id},MIN+30e3),119);assert.equal(S.albaCheck(s,'daycare',[sh.id],MIN+30e3),null);
+ assert.ok(S.hireAlba(s,'walk',[sh.id],0));assert.equal(S.skipNow(s,{type:'walk',id:sh.id},0),240);
+ assert.ok(S.hireAlba(s,'trainer',[sh.id],0,'paw'));assert.equal(S.skipNow(s,{type:'trainer',id:sh.id},H),180);assert.equal(s.dia,1000-119-240-180);
+ assert.equal(S.skipCheck(s,{type:'manager'},0),'none','manager hire time is not a wait');});
+
 // ───────── UNSET features stay off ─────────
 test('UNSET features are disabled: gacha, paid slot, regulars, walk stop, rescue level → Lv1',()=>{const {s}=freshGame();s.coins=1e9;
  assert.equal(S.gachaCheck(),'unset');assert.equal(S.slotUnlockCheck(),'unset');

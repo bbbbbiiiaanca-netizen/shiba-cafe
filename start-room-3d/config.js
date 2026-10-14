@@ -143,7 +143,7 @@ export const CFG={
  hospital:{stays:{light:1800,snake:7200,sick:14400}, // 갱신 111: 30분, 2시간, 4시간
   // 갱신 131 카페 레벨 구간별 고정 멍코인 [최저레벨, 가벼운 부상, 뱀 물림, 앓아누움, 구조견 목욕]
   costs:[[1,400,1200,2400,200],[10,500,1500,3000,250],[20,800,2400,4700,400],[30,1000,3000,6100,500],[40,1100,3400,6800,550]],
-  speedupDiaPer10Min:U}, // UNSET: 갱신 111·132 치료 앞당기기 다이아 가격
+  }, // 치료 앞당기기 = timeSkip (갱신 135-2)
 
  // ── 알바 (갱신 99·99-2·118·118-1·123-x·124-1·125-1) ──
  alba:{
@@ -152,6 +152,10 @@ export const CFG={
   trainer:{unlock:20,cost:24000,cooldownSec:14400}, // 갱신 125-1 · 99-2 쿨 4시간
   manager:{unlock:25,cost:60000,hireSec:43200,cleanEverySec:600}}, // 갱신 125-1 · 118-1 12시간 · 118 10분마다 얼룩 1개
  cooldownTicketDia:{one:20,five:80}, // 갱신 115-1 (유료 전용, stub)
+
+ // ── 남은 시간 바로 완료 (갱신 135-2, 135·135-1 대체) ──
+ timeSkip:{diaPerMin:1, // 1분당 1다이아(10원), 1분 단위 올림, 버튼 하나로 남은 시간 전부
+  targets:['hospital','daycare','walk','trainer']}, // '치료와 알바 쿨타임 등 남은 시간이 있는 모든 대기' (메뉴 개발은 갱신 136에서 추가)
 
  // ── 얼룩 (갱신 101-3 · 117-2) ──
  stains:{everySecPerShiba:7200,warnAt:3,warnDirtMul:1.5,badAt:6,badDirtMul:2,badRepEverySec:600,badRep:-1},

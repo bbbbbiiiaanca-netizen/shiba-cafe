@@ -126,6 +126,16 @@ function tickHealth(s,now){releaseHospital(s,now);for(const sh of s.shibas){
  if(sh.status==='sick'&&sh.sickSince!=null&&now-sh.sickSince>=CFG.neglect.donguAfterH*H&&s.coins>=hospitalCost(s,'sick')){ // 갱신 112: 동구가 대신 데려감, 입원 2배
   sendToHospital(s,sh.id,now,CFG.neglect.donguStayMul);if(!isUnset(CFG.neglect.donguIntimacyDrop))changeGauges(s,sh,{intimacy:-CFG.neglect.donguIntimacyDrop},now);}}}
 
+// ───────────────────────── 남은 시간 바로 완료 (갱신 135-2) ─────────────────────────
+// 1분당 1다이아, 1분 단위 올림. target: {type:'hospital',id} · {type:'daycare'|'walk'|'trainer',id} (알바 쿨타임)
+export const skipCost=sec=>sec>0?Math.ceil(sec/60)*CFG.timeSkip.diaPerMin:0;
+function skipEnd(s,t){if(!CFG.timeSkip.targets.includes(t.type))return null;
+ const sh=byId(s,t.id);if(!sh)return null;if(t.type==='hospital')return sh.status==='hospital'?sh.hospitalUntil:null;return sh.cd[t.type]||null;}
+export function skipLeftSec(s,t,now=Date.now()){const e=skipEnd(s,t);return e==null?0:Math.max(0,(e-now)/1000);}
+export function skipCheck(s,t,now=Date.now()){const left=skipLeftSec(s,t,now);if(!(left>0))return 'none';if(s.dia<skipCost(left))return 'dia';return null;}
+export function skipNow(s,t,now=Date.now()){if(skipCheck(s,t,now))return null;const cost=skipCost(skipLeftSec(s,t,now));s.dia-=cost;
+ if(t.type==='hospital'){byId(s,t.id).hospitalUntil=now;releaseHospital(s,now);}else byId(s,t.id).cd[t.type]=now;return cost;}
+
 // ───────────────────────── 산책 (1.10, 갱신 82·83·85·87·90·124·125) ─────────────────────────
 export const walkHearts=sec=>CFG.walk.heartsPer10Min*sec/600;
 export function walkCheck(s,id,sec,now=Date.now()){if(s.walk)return 'walking';const sh=byId(s,id);if(!sh)return 'pick';if(!CFG.walk.durationsSec.includes(sec))return 'duration';
