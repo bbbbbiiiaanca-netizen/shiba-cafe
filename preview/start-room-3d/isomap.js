@@ -4,7 +4,7 @@ import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compare
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
- let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,panX=0,panBounds={minX:0,maxX:0},drag=null,last,selected=null,hits=[],gridCells=0,maxScroll=0,markers=[];
+ let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,panX=0,panBounds={minX:0,maxX:0},drag=null,last,selected=null,hits=[],gridCells=0,maxScroll=0,markers=[],markerPhase=null;
  const bar=document.createElement('div');bar.hidden=true;bar.className='furniture-actions';bar.setAttribute('aria-label','가구 편집');
  bar.innerHTML='<button data-furniture-flip>좌우 반전</button><button data-furniture-rotate>회전</button><button data-wall-add hidden>가벽 배치</button><button data-wall-remove>가벽 제거</button><button data-furniture-done>완료/선택 해제</button>';
  function syncBar(){bar.hidden=!edit;for(const button of bar.querySelectorAll('button'))button.disabled=button.hasAttribute('data-wall-add')?false:button.hasAttribute('data-wall-remove')?current()?.type!=='wall':!selected;}
@@ -80,7 +80,8 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
     }
     const strip=nextExpansion(z,state.space.unlockedRows),centre=strip.cells.reduce((p,c)=>p.map((v,k)=>v+c[k]/strip.cells.length),[0,0]);
     const p=cellToScreen(...centre,view,z),meta=MAP_MARKERS.expansion,im=load(meta.file);
-    const ms=Math.max(scale,CFG.expansion.markerMinScale); // marker never drawn smaller than markerMinScale (starting value)
+    const bp=CFG.expansion.markerBounce,ph=markerPhase??((performance.now()/1000)%bp.periodSec)/bp.periodSec; // gentle bounce (starting values)
+    const ms=Math.max(scale,CFG.expansion.markerMinScale)*(bp.minScale+(bp.maxScale-bp.minScale)*Math.sin(Math.PI*ph)); // marker never drawn smaller than markerMinScale (starting value)
     if(im.complete&&im.naturalWidth)ctx.drawImage(im,p.x-meta.anchor[0]*ms,p.y-meta.anchor[1]*ms,im.naturalWidth*ms,im.naturalHeight*ms);
     markers.push({kind:'row',axis:strip.axis,cells:strip.cells,...p,buttonX:p.x,buttonY:p.y-32*ms,
      x0:p.x-meta.anchor[0]*ms,y0:p.y-meta.anchor[1]*ms,w:im.naturalWidth*ms,h:im.naturalHeight*ms});
@@ -163,5 +164,5 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
  canvas.addEventListener('pointercancel',e=>{if(drag?.pointerId===e.pointerId){cancelDrag();repaint();}});
  canvas.addEventListener('lostpointercapture',()=>{cancelDrag();repaint();});
  new ResizeObserver(()=>last&&draw(...last)).observe(canvas);
- return {draw,placeWall,actions:bar,get selected(){return selected;},get gridCells(){return gridCells;},get hits(){return hits.map(({im,...h})=>h);},get edit(){return edit;},setEdit(value){cancelDrag();edit=Boolean(value);if(!edit)selected=null;onEditChange(edit);repaint();},get panX(){return panX;},get panBounds(){return {...panBounds};},panTo(x,y=scroll){panX=x;scroll=y;repaint();},get scroll(){return scroll;},get maxScroll(){return maxScroll;},get markers(){return markers;},scrollTo(value){scroll=value;repaint();},easeBy(dx,dy,ms=CFG.expansion.cameraEaseMs){const sx=panX,sy=scroll,t0=performance.now();const step=t=>{const k=Math.min(1,(t-t0)/Math.max(1,ms)),e=1-(1-k)**3;panX=sx+dx*e;scroll=sy+dy*e;repaint();if(k<1)requestAnimationFrame(step);};requestAnimationFrame(step);}};
+ return {draw,placeWall,actions:bar,get selected(){return selected;},get gridCells(){return gridCells;},get hits(){return hits.map(({im,...h})=>h);},get edit(){return edit;},setEdit(value){cancelDrag();edit=Boolean(value);if(!edit)selected=null;onEditChange(edit);repaint();},get panX(){return panX;},get panBounds(){return {...panBounds};},panTo(x,y=scroll){panX=x;scroll=y;repaint();},get scroll(){return scroll;},get maxScroll(){return maxScroll;},get markers(){return markers;},scrollTo(value){scroll=value;repaint();},setMarkerPhase(v){markerPhase=v;repaint();},easeBy(dx,dy,ms=CFG.expansion.cameraEaseMs){const sx=panX,sy=scroll,t0=performance.now();const step=t=>{const k=Math.min(1,(t-t0)/Math.max(1,ms)),e=1-(1-k)**3;panX=sx+dx*e;scroll=sy+dy*e;repaint();if(k<1)requestAnimationFrame(step);};requestAnimationFrame(step);}};
 }

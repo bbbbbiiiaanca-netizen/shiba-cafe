@@ -824,3 +824,4 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - Camera eases (ease-out cubic, `CFG.expansion.cameraEaseMs` 400, starting value) to centre the newly bought strip after purchase; clamped by pan bounds (smoke check).
 - Edit grid on new cells, placement on new cells and save/reload: covered by existing §12 checks (grid 0..3, "expansion and new-cell placement survive reload").
 - Known flake: smoke "Task A mailbox boost icon" (image `.complete` timing) failed once, passed on rerun.
+- 08:27 똑또기: cameraEaseMs 400 and markerMinScale 0.6 approved. + marker art stays unmodified; gentle bounce added (`CFG.expansion.markerBounce` periodSec 1.2, scale 1.0→1.1→1.0 via sin, starting values). `iso.setMarkerPhase(v)` pins the phase for captures/pixel tests.
