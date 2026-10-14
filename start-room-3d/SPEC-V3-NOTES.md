@@ -358,3 +358,17 @@ Art request list — interior §13-2/13-3, §5 directions/anchors:
 - Every sprite: transparent PNG, foot-contact anchor, foot-shadow art/anchor, frame sequence and timing. `CHAR_SPRITES` files/anchors/directional slots remain null until provided. Dongu art/animation likewise remains null; no invented figure drawn.
 
 Validation: `npm test` includes 94 acceptance tests, timeline/map/edit/Unit 3/renderer/11 Unit 4 tests and 9 new Unit 5 tests. Legacy tests use explicit speed/behaviour fixtures, keeping production null gates tested separately. Browser smoke adds table-slot/confirmed-image state and button-rect-inside-card checks. Chrome is deliberately not launched here. On Chrome host run `npm run test:browser` and `node capture-main-screen.mjs`; DPR2 output adds main-screen-u5-table-item.png (TEMP seated drink), main-screen-u5-grass.png, main-screen-u5-menu.png (M-02 developing), and re-captures main-screen-u4-order.png with one-line toast. No captures generated in the sandbox.
+
+
+### Top bar §14 art requests
+
+- Optional cafe Lv badge image: no supplied badge found in assets/drive or the local Drive image mirror. Current badge uses a CSS circle and text only.
+- Settings gear image: no supplied gear image found. The small accessible settings button uses text `설정` until art is supplied; the previous code-drawn SVG gear has been removed to respect the image-only icon requirement.
+- No + image required by §14: the shared end-of-row button uses CSS and text `+`.
+- Existing `icons-final-check.jpg` supplies coin (last tile), heart, diamond and paw via CSS background positioning, without changing the image. Separate transparent resource PNGs would remove the sheet's baked-in background, but are optional art requests.
+
+§14 supplement implementation: four 26px-high dark translucent pills in one row, small contained 16px image icons, centered values, one common end + (toast only). Coin body remains a native button for the existing income screen. Full large values remain available in title text and accessible content while visual text truncates. The 24px Lv/EXP/status strip sits immediately below; total overlay height is 57px and the map starts at the top of the app. §98 cafe thresholds already exist, so EXP uses state/config values; unknown threshold retains an empty bar and `미정`. Land expansion, camera and character logic are untouched.
+
+Capture: `node capture-main-screen.mjs --u14` generates only `/workspace/shiba-cafe-docs/spec-v3-build/main-screen-u14-topbar.png`, 390×844 CSS px, DPR2, 메뉴 tab. Chrome cannot launch in this sandbox and no remote browser tool is available, so the screenshot and runtime browser smoke are pending on a Chrome-capable host; no substitute screenshot was fabricated. Browser smoke checks four pills in a row, 390px overflow (including long values), contained existing icons, thin map overlay, settings, 평판, and toast-only + behaviour.
+
+Validation for §14: `npm test` passed all existing suites; `node --check` passed main.js, smoke-browser.mjs and capture-main-screen.mjs. Preview is mirrored deletion-aware with node_modules excluded and verified using `diff -r --exclude=node_modules`.

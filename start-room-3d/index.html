@@ -55,8 +55,6 @@ button.warn{background:#d9695a;box-shadow:0 2px 0 #9c4136}
 input[type=text]{font:inherit;font-size:15px;padding:8px;border-radius:10px;border:2px solid #e3c9a3;width:100%}
 #toast{position:absolute;left:50%;top:96px;transform:translateX(-50%);background:#4a2e1c;color:#fff;font-weight:800;font-size:13px;padding:7px 12px;border-radius:12px;z-index:30;pointer-events:none;transition:opacity .3s;max-width:90%;text-align:center}
 
-#hud{padding:10px 10px 8px;gap:8px;border:0;background:#fffaf0}
-.resources{gap:5px}.pill{position:relative;display:grid;grid-template-columns:18px 1fr;gap:2px;padding:6px;border:1px solid #e5d8bf;border-radius:11px;font-size:12px;background:#f6efdf}.pill small{font-size:8px}.pill span{grid-column:2;text-align:left}.resource{grid-row:1/3;width:15px;height:15px;display:block;position:relative;align-self:center}.coin{border-radius:50%;background:#e8b64e;border:2px solid #be8a2f}.heart{background:#d8817a;transform:rotate(-45deg);width:11px;height:11px;margin-left:2px}.heart:before,.heart:after{content:'';position:absolute;width:11px;height:11px;border-radius:50%;background:inherit}.heart:before{top:-5px}.heart:after{left:5px}.diamond{background:#82bfc2;clip-path:polygon(25% 0,75% 0,100% 35%,50% 100%,0 35%)}.paw{background:#ac9476;border-radius:60% 60% 45% 45%;width:12px;height:10px;margin-top:5px}.paw:before{content:'';position:absolute;width:5px;height:5px;background:inherit;border-radius:50%;left:-2px;top:-6px;box-shadow:6px -2px #ac9476,12px 0 #ac9476}
 #scene{flex:none;height:calc(55% - 94px);background:#e9eddf}#isomap{width:100%;height:100%;display:block;touch-action:none}
 #mainMenu{flex:1;min-height:0;display:flex;flex-direction:column;background:#fffaf0;border-radius:20px 20px 0 0;z-index:2;box-shadow:0 -3px 10px #67765915}.main-tabs{display:flex;padding:10px 12px 0;gap:5px;border-bottom:1px solid #e5dac6}.main-tabs button{flex:1;background:transparent;color:#95856c;border-radius:10px 10px 0 0;box-shadow:none;font-size:13px;padding:10px}.main-tabs .active{background:#e7b65c;color:#533b22}.menu-heading{padding:12px 15px 8px;font-size:15px;font-weight:900}.menu-heading small{float:right;font-size:10px;font-weight:500;color:#a08b70;margin-top:4px}#menuList{overflow:auto;padding:0 12px 12px;flex:1;min-height:0}.menu-card{display:flex;align-items:center;gap:9px;border:1px solid #e9decb;border-radius:13px;background:#fffdf7;padding:8px;margin-bottom:7px;min-height:98px}.menu-card>img{width:64px;height:64px;object-fit:contain;border-radius:9px}.menu-info{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}.menu-info small{font-size:8px;color:#ad9777}.menu-info strong{font-size:12px}.menu-info span{font-size:9px;color:#947f62}.menu-action{width:75px;text-align:center;font-size:9px;color:#aa9273}.menu-action button{font-size:10px;padding:7px;line-height:1.5}.preparing{text-align:center;padding:55px;color:#ad9777}#panel{bottom:0}#pbody{min-height:0}#pbody>.card{flex-shrink:0}.gear{flex:none;width:30px;height:32px;padding:4px;background:transparent;box-shadow:none;color:#826b4e}.gear svg{width:22px;height:22px;display:block}.menu-action{width:90px}
 
@@ -81,14 +79,34 @@ button[data-act=levelUp]{background:url(assets/drive/ui/ui-btn-levelup-yellow.pn
 #menuList:not(.tab-list){grid-auto-rows:180px}.menu-card{aspect-ratio:auto;min-height:0;height:100%;padding-bottom:12px;box-sizing:border-box}.menu-info{flex:none}.menu-action{margin-top:auto;flex-shrink:0;min-height:30px}.menu-action button{max-width:100%;box-sizing:border-box}.menu-action button.instant{width:70%;height:21px;font-size:7px;white-space:nowrap}
 #toast{white-space:nowrap;font-size:12px}
 
+/* §14 supplement: compact portrait HUD overlays the map without reserving space. */
+#hud{position:absolute;inset:0 0 auto;padding:5px 6px;gap:3px;background:transparent;border:0;pointer-events:none}
+#hud .resources{gap:4px;flex-wrap:nowrap;pointer-events:auto}
+#hud .pill{display:flex;flex:1;min-width:0;height:26px;gap:3px;padding:3px 5px;border:0;border-radius:999px;background:rgba(37,32,30,.76);color:#fff;box-shadow:none;font-size:10px;line-height:1;font-weight:800}
+#hud .pill span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+#hud .ico{width:16px;height:16px;border-radius:0}.ico.coin{background-position:100% 0}
+#hud .resource-add{flex:none;width:26px;height:26px;padding:0;border-radius:50%;background:rgba(37,32,30,.8);color:#fff;box-shadow:none;font-size:20px;line-height:26px}
+#hud .cafe-status{gap:6px;height:24px;justify-content:flex-end}
+.cafe-progress{display:flex;align-items:center;gap:0;margin-right:auto;pointer-events:auto}
+#lvl{display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex:none;border-radius:50%;background:#58452be6;color:#fff;font-size:7px;white-space:normal;text-align:center;line-height:1.1;z-index:1}
+#cafeExp{flex:none;width:54px;height:6px;margin-left:-2px;background:#25201ecc}#expBar{background:#edc671}
+#rep{font-size:10px;padding:3px 6px;border-radius:999px;background:#25201ecc;color:#fff;pointer-events:auto}
+#hud .gear{width:30px;height:24px;padding:0;background:#25201ecc;color:#fff;font-size:9px;border-radius:999px;box-shadow:none;pointer-events:auto}
+#hud button:focus-visible{outline:2px solid #ffd77b;outline-offset:2px}
+#scene{height:calc(55% - 20px)}
+
 </style>
 <div id="app">
- <div id="hud"><div class="row resources">
- <div class="pill" data-act="income"><i class="resource coin"></i><small>멍코인</small><span id="coins"></span></div>
- <div class="pill"><i class="resource heart"></i><small>하트</small><span id="hearts"></span></div>
- <div class="pill"><i class="resource diamond"></i><small>다이아</small><span id="dia"></span></div>
- <div class="pill"><i class="resource paw"></i><small>발바닥</small><span id="paws"></span></div>
- <button class="gear" data-nav="settings" aria-label="설정"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 1h4l1 4 3-1 3 3-2 3 4 1v4l-4 1 2 3-3 3-3-2-1 4h-4l-1-4-3 2-3-3 2-3-4-1v-4l4-1-2-3 3-3 3 1z"/><circle cx="12" cy="12" r="4" fill="#fffaf0"/></svg></button></div><div class="row"><span id="lvl"></span><div class="bar"><i id="expBar"></i></div><span id="rep"></span><span id="mgr"></span><small id="heartT" hidden></small></div></div>
+ <div id="hud" aria-label="카페 자원">
+  <div class="row resources" aria-label="재화">
+   <button class="pill" data-act="income" aria-label="멍코인 · 손익계산서"><i class="ico coin" aria-hidden="true"></i><span id="coins"></span></button>
+   <div class="pill" aria-label="하트"><i class="ico heart" aria-hidden="true"></i><span id="hearts"></span></div>
+   <div class="pill" aria-label="다이아"><i class="ico dia" aria-hidden="true"></i><span id="dia"></span></div>
+   <div class="pill" aria-label="발바닥"><i class="ico paw" aria-hidden="true"></i><span id="paws"></span></div>
+   <button class="resource-add" data-act="resourceShop" aria-label="재화 상점 열기">+</button>
+  </div>
+  <div class="row cafe-status"><div class="cafe-progress"><span id="lvl"></span><div class="bar" id="cafeExp" role="progressbar" aria-label="카페 경험치"><i id="expBar"></i></div></div><span id="rep"></span><span id="mgr" hidden></span><small id="heartT" hidden></small><button class="gear" data-nav="settings" aria-label="설정">설정</button></div>
+ </div>
  <div id="scene"><canvas id="isomap" aria-label="다다미 카페 지도 · 드래그하여 이동"></canvas><div id="closed" hidden></div></div>
  <section id="mainMenu"><div class="main-tabs"><button data-main-tab="menu" class="active">메뉴</button><button data-main-tab="shiba">시바</button><button data-main-tab="furniture">가구</button><button data-main-tab="store">가게</button></div><div class="menu-heading">메뉴 개발 <small>새로운 맛을 준비해요</small></div><div id="menuList"></div></section>
  <div id="panel" hidden><div id="phead"><h2 id="ptitle"></h2><button class="sec" data-act="close" data-i18n="app.close"></button></div><div id="pbody"></div></div>

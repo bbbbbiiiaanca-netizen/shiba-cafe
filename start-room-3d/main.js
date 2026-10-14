@@ -45,8 +45,10 @@ function skipBtn(t){const left=S.skipLeftSec(s,t,clock.now());if(!(left>0))retur
 // ───────── HUD ─────────
 function renderHUD(){const now=clock.now();$('coins').textContent=fmt(s.coins);$('hearts').textContent=fmt(s.hearts);$('dia').textContent=fmt(s.dia);
  const nh=S.nextHeartInSec(s,now);$('heartT').textContent=nh==null?'':tfmt(nh);
- const C=s.cafe,need=S.cafeNeed(C.level);$('lvl').textContent=L('hud.level',{lv:C.level});$('expBar').style.width=(C.level>=CFG.cafe.maxLevel?100:need==null?0:Math.min(100,C.exp/need*100))+'%';
+ const C=s.cafe,need=S.cafeNeed(C.level);$('lvl').textContent='Lv '+C.level;$('lvl').setAttribute('aria-label',L('hud.level',{lv:C.level}));$('expBar').style.width=(C.level>=CFG.cafe.maxLevel?100:need==null?0:Math.min(100,C.exp/need*100))+'%';
  $('expBar').parentElement.title=C.level>=CFG.cafe.maxLevel?'최고 레벨':need==null?'미정':`${fmt(C.exp)} / ${fmt(need)}`;
+ const exp=$('cafeExp');exp.setAttribute('aria-valuemin','0');exp.setAttribute('aria-valuemax',String(need??100));exp.setAttribute('aria-valuetext',exp.title=$('expBar').parentElement.title);if(need==null)exp.removeAttribute('aria-valuenow');else exp.setAttribute('aria-valuenow',String(Math.min(C.exp,need)));
+ for(const id of ['coins','hearts','dia','paws']){const el=$(id);el.parentElement.title=el.parentElement.getAttribute('aria-label')+' '+el.textContent;}
  $('rep').textContent=L('hud.rep',{rep:Math.round(C.rep)});$('mgr').textContent=S.managerActive(s,now)?L('hud.manager',{t:tfmt((C.managerUntil-now)/1000)}):'';
  $('closed').hidden=!C.closed;$('closed').textContent=L('hud.closed');}
 
@@ -56,7 +58,7 @@ function renderScene(){iso.draw(s,w);renderMainMenu();}
 let menuSig='',mainTab=iso.edit?'furniture':'menu';
 function renderMainMenu(){
  document.querySelectorAll('[data-main-tab]').forEach(b=>b.classList.toggle('active',b.dataset.mainTab===mainTab));
- $('paws').textContent=fmt(s.shibas.reduce((n,sh)=>n+(sh.paws||0),0));
+ $('paws').textContent=fmt(s.shibas.reduce((n,sh)=>n+(sh.paws||0),0));$('paws').parentElement.title='발바닥 '+$('paws').textContent;
  const now=clock.now(),sig=JSON.stringify([mainTab,s,w.custs.map(c=>[c.phase,c.request]),w.queue.length,w.recent,ui.accType,iso.edit,s.settings.language,Math.floor(now/1000)]);
  if(sig===menuSig)return;menuSig=sig;
  const headers={menu:['메뉴 개발','새로운 맛을 준비해요'],shiba:['시바','돌봄 · 레벨업 · 산책'],furniture:['가구','보유 가구 · 배치'],store:['가게','반다나 · 액세서리 · 가방']};const [title,hint]=headers[mainTab];document.querySelector('.menu-heading').innerHTML=title+' <small>'+hint+'</small>'+ (mainTab==='menu'?`<div data-customer-status style="font-size:11px;font-weight:normal">손님 · 착석 ${w.custs.filter(c=>c.phase==='seated').length} / 대기 ${w.queue.length} · 이동 ${w.custs.filter(c=>c.phase!=='seated').length}<br>${w.custs.some(c=>c.phase==='seated')?'요구 · 시바 만나기 / 재주 보기 · ':''}${w.recent.map(x=>`${x.order} · ${x.pending?'결제 미정':'+'+f2(x.coins)+' 멍코인'}`).join(' / ')}</div>`:'');
@@ -217,7 +219,7 @@ if(L0.offline&&(L0.offline.sec>=60||L0.reopened))ui.modals.push({kind:'offline',
 
 // ───────── actions ─────────
 const act={
- close,income:()=>open('income'),care:d=>open('care',+d.id),
+ close,resourceShop:()=>toast('상점 준비 중이에요'),income:()=>open('income'),care:d=>open('care',+d.id),
  place:d=>{if(!S.setPlaced(s,+d.id,d.on==='1'))why(S.placeCheck(s,+d.id));},
  dongu:()=>{s.dongu.placed=!s.dongu.placed;},
  play:d=>{if(!S.playWith(s,+d.id,clock.now()))why(S.careCheck(s,+d.id,'play'));},

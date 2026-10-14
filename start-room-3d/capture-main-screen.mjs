@@ -3,7 +3,7 @@
 // Default OUTDIR: /workspace/shiba-cafe-docs/spec-v3-build
 import {spawn} from 'node:child_process';import {mkdirSync,writeFileSync,readFileSync,rmSync} from 'node:fs';import {resolve,dirname,join} from 'node:path';import {fileURLToPath} from 'node:url';
 const ROOT=dirname(fileURLToPath(import.meta.url));
-const out=resolve(process.argv[2]||'/workspace/shiba-cafe-docs/spec-v3-build');mkdirSync(out,{recursive:true});
+const out=resolve(process.argv.slice(2).find(x=>!x.startsWith('--'))||'/workspace/shiba-cafe-docs/spec-v3-build');mkdirSync(out,{recursive:true});
 const prof='/tmp/shiba-main-cap-'+process.pid;
 const chrome=spawn('google-chrome',['--headless','--no-sandbox','--disable-dev-shm-usage','--user-data-dir='+prof,'--remote-debugging-pipe','--allow-file-access-from-files','--hide-scrollbars'],{stdio:['ignore','ignore','pipe','pipe','pipe']});
 let id=0,buf='';const pend=new Map(),errors=[];for(const p of [chrome.stdio[3],chrome.stdio[4]])p.on('error',()=>{});
@@ -28,6 +28,13 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev(`(()=>{const g=__game;g.state.cafe.level=5;g.state.coins=30000;g.state.dia=30;for(let i=0;i<250;i++)g.step(.1);g.world.custs=g.world.custs.slice(0,2);g.S.developMenu(g.state,'M-02',g.clock.now());g.refresh();return true;})()`);
  await sleep(1600);
  };
+ // Capture only §14 with --u14; preserve prior approved artifacts.
+ if(process.argv.includes('--u14')){
+  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+  await click('[data-main-tab=menu]');await shot('main-screen-u14-topbar.png');
+  if(errors.length)throw Error(errors.join('\n'));
+  console.log('§14: 390×844, DPR2, 메뉴 tab → '+join(out,'main-screen-u14-topbar.png'));
+ }else{
  // v6 artifacts are approved references: do not overwrite them.
  await stage();
  for(const dsf of [1,2]){await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:dsf,mobile:true});await shot(dsf===1?'main-screen-v7.png':'main-screen-v7@2x.png');}
@@ -72,5 +79,6 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await shot('main-screen-u5-table-item.png');
  writeFileSync(join(out,'main-screen-v7-state.txt'),'Same normal staging as v6; edit: counter origin [0,1], dir1, footprint (0,1)-(0,2); stairs unchanged; 가구 tab active with action bar in bottom panel. 390x844, normal DPR1/DPR2, edit DPR2.\n');
  console.log('Staged capture: cafe level 5, M-02 developing; coins 21,500, diamonds 30; 390x844 CSS px, DPR 1 and 2.');
+ }
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}
 console.log(`${shots.length} screens → ${out}`);for(const s of shots)console.log('  '+s);for(const e of errors)console.log('  ERROR',e);process.exitCode=errors.length?1:0;

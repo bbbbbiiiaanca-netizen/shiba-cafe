@@ -58,7 +58,7 @@ export default async function({ev,check,sleep,reload}){
  await check('edit toggle returns to normal and keeps furniture tab','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="false"&&document.querySelector("[data-main-tab=furniture]").classList.contains("active")');
 
  await ev('document.querySelector("[data-main-tab=menu]").click();true');
- await check('v3: no bottom nav; basic menu has no development line; gear is present','!document.getElementById("nav")&&!/개발비|시간/.test(document.querySelector("[data-main-menu=M-01]").textContent)&&!!document.querySelector(".gear svg")');
+ await check('v3: no bottom nav; basic menu has no development line; gear is present','!document.getElementById("nav")&&!/개발비|시간/.test(document.querySelector("[data-main-menu=M-01]").textContent)&&!!document.querySelector(".gear[data-nav=settings]")');
  await ev('__game.state.cafe.level=9;__game.state.coins=8500;__game.refresh();true');
  await check('v3: configured cost and disabled insufficient-coins button','document.querySelector("#menuList [data-id=M-04]").disabled&&/개발 15,000/.test(document.querySelector("[data-main-menu=M-04]").textContent)');
  await ev('const list=document.getElementById("menuList");list.scrollTop=list.scrollHeight;true');
