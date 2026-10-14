@@ -1,10 +1,10 @@
 # Spec v3 build notes (start-room-3d)
 
-Source: `shiba-cafe-docs/spec-v3-build/spec-v3.md` (최신 갱신 134-1 기준; 높은 갱신 번호가 앞의 내용을 대체, ~~취소선~~은 폐지로 처리),
+Source: `shiba-cafe-docs/spec-v3-build/spec-v3.md` (최신 갱신 140-1 기준; 높은 갱신 번호가 앞의 내용을 대체, ~~취소선~~은 폐지로 처리),
 `docs/` (decisions, guest 검수메모, onboarding, sound list), `image-list.md`. Built on branch `codex/spec-v3-core`.
 
 - Run: open `start-room-3d/index.html` (portrait 390×844; `?fresh=1` new save, `?seed=N` fixed RNG, `?still=1` no auto-tick).
-- Tests: `cd start-room-3d && npm test` (56 spec tests + legacy timeline test) · `npm run test:browser` (17 headless-Chrome checks).
+- Tests: `cd start-room-3d && npm test` (78 spec tests + legacy timeline test) · `npm run test:browser` (22 headless-Chrome checks).
 - Screens: `node start-room-3d/capture-spec-v3.mjs [OUTDIR]` → default `/workspace/shiba-cafe-docs/spec-v3-build/screens/`.
 - Files: `config.js` (all numbers, UNSET = `null`), `sim.js` (pure rules), `main.js` + `index.html` (UI), `i18n.js` (ko/en),
   `assets/drive/` (confirmed Drive images, mapping in `assets/drive/MAP.md`).
@@ -37,6 +37,8 @@ Source: `shiba-cafe-docs/spec-v3-build/spec-v3.md` (최신 갱신 134-1 기준; 
 | 메뉴 | M-01 아이스 아메리카노 = 처음부터 있는 기본 커피 1멍; 일반 음료 M-02·03·04 (3멍), 일반 디저트 M-05·06·07·08 (5멍), 프리미엄 P-01~06 (8멍) | 갱신 120·134 |
 | 메뉴 | 해금 카페 Lv(2·3·5·7·9·12·15·20·25·30·35·40·45)과 판매가는 134 표, 개발비는 134-1 표(8,500 … 35,500멍; 134 표의 개발비는 대체됨) | 갱신 134·134-1 |
 | 메뉴 | 개발은 멍코인으로, 해금 레벨 이상에서, 메뉴마다 한 번 | 갱신 129·134 |
+| 메뉴 | 개발비를 내면 개발 시간이 지나야 완성: 라테 30분·치즈케이크 1시간·딸기라테 2·쿠키 3·유자 4·크루아상 6·파르페 8·티라미수 12·홀케이크 18·몽블랑 24·퐁당 30·마카롱 36·파블로바 48시간(최대 2일). 한 번에 1개. 앱을 닫아도 실시간으로 진행(휴무 중·12시간 정산 밖에서도) | 갱신 136 |
+| 시간 | 남은 시간 바로 완료: 1분당 1다이아, 1분 단위 올림, 버튼 하나로 전부 — 입원(치료), 데이케어·산책 알바·훈련사 쿨타임, 메뉴 개발 | 갱신 135-2 (135·135-1 대체), 136 |
 | 결제 | 고급 메뉴 확률 5% + 개발한 일반 메뉴 1개당 1%p + (평판−50)×0.3%p, 요구 충족 만족 +15%p, 최대 40%; 음료:디저트 2:1 | 갱신 120·134 |
 | 결제 | 고급 음료(3멍)는 일반 음료 1개 이상, 고급 디저트(5멍)는 일반 디저트 1개 이상 개발해야 주문; 아니면 그 주문은 기본 커피 | 갱신 134 |
 | 결제 | 고급 디저트 주문은 프리미엄을 1개 이상 개발했으면 30% 확률로 프리미엄(8멍) | 갱신 134 |
@@ -47,8 +49,12 @@ Source: `shiba-cafe-docs/spec-v3-build/spec-v3.md` (최신 갱신 134-1 기준; 
 | 오프라인 | 임시휴무: 오프라인 중 평판이 30까지 떨어지면 문 닫음 → 손님·수익·평판 변화 멈춤, 시바 피로 0, 앓아눕기·방치 시계 멈춤; 다시 켜면 평판 30으로 엶 | 갱신 126-1~4 |
 | 시바 | 시작: 4종 중 1마리 선택, Lv21, 앉아·기다려 3단계 (이름은 입력, 비우면 견종 이름) | 갱신 90·100·109·133 |
 | 시바 | 성격: 15개 중 무작위, 변경 불가 | 1.2, 갱신 38·39·52 |
-| 시바 | 레벨 최대 30, Lv N→N+1 발바닥 10×N(누적 4,350), 수익 효과 ×(1+0.05×(L−1)) | 갱신 81 |
-| 시바 | 액세서리 칸: Lv5 1, Lv15 2, Lv25 3 (아이템 목록은 UNSET → 빈 칸) | 갱신 90 |
+| 시바 | 레벨 최대 30, Lv N→N+1 발바닥 20×N(누적 8,700 = 중복 870마리), 수익 효과 ×(1+0.05×(L−1)); 발바닥은 시바별 잔고, 레벨업 버튼으로 씀 | 갱신 138 (81의 10×N 대체), 81 |
+| 시바 | 활동 발바닥(하루 최대 없음): 직접 산책 1회 2 · 놀아주기 1 · 카페 근무 1시간 1(매니저 운영 시간·오프라인 12시간 정산 포함) · 재주 1단계 완료 3; 알바도 같음: 산책 알바 2 · 데이케어 1 · 훈련사 3 | 갱신 139-1·139-2 |
+| 뽑기 | 1회 100다이아, 10연차 900다이아; 4종; 새 견종 = Lv1 새 시바(자리 있으면 배치), 이미 가진 견종 = 그 견종의 첫 시바에게 발바닥 10; 산책 뽑기권 1장 = 1회 | 갱신 137 (132-3 200다이아 대체)·81·82 |
+| 액세서리 | 시바마다 칸 1개, 그 시바의 발바닥 1,000개 또는 1,000다이아로 해금해야 찰 수 있음(레벨로 열리지 않음); 첫 시작 시바만 칸이 열린 채 액세서리 1개를 찬 상태로 시작 | 갱신 139-5·139-6 (90·139-3·139-4 대체) |
+| 액세서리 | 상점: 반다나 4종(클래식 삼각형·루프 스누드형·매듭 테일형·앞 매듭형) × 원색 9 = 36개, 1개 5,000멍; 특별 액세서리 1개 300다이아(종류 UNSET → 빈 칸); 칸 해금된 시바만 참 | 갱신 140, 1.5 |
+| 액세서리 | 1개 = 한 번에 시바 1마리. 가방은 개수로 관리(보유·착용 표시), 옮기려면 벗김, 다른 것을 채우면 찬 것은 가방으로 | 갱신 140-1 |
 | 시바 | 좋아하는 간식 칸 기본 2 + 레어 1, 처음엔 잠김 | 갱신 40·42·43 |
 | 돌봄 | 게이지 5개: 배고픔(포만)·더러움(청결)·피로도(졸림)·행복(기분)·지루함(놀고 싶음), 0~100 | 1.2-3, 갱신 53·85·86·116 |
 | 돌봄 | 놀아주기: ♥1, 지루함 −28, 더러움 +3, 피로 +5, 행복 +7, 친밀도 +3, 카페 경험치 +1, 사고·랜덤 보상 없음 | 갱신 84·88·90 |
@@ -101,6 +107,15 @@ Source: `shiba-cafe-docs/spec-v3-build/spec-v3.md` (최신 갱신 134-1 기준; 
 17. **알바 쿨타임**은 '쿨타임이 끝난 시바만' 맡길 수 있음(123-4 문장), 쿨타임 제거권은 유료(다이아)라 결제 미연결.
 18. **탭이 5초 넘게 숨겨졌다가 돌아오면** 앱을 닫았다 연 것과 같이 오프라인 규칙으로 따라잡는다.
 19. **저장**: 새 키 `shibaCafe.save.v3`. v1/v2 저장(등급·구 재화 모델)은 건드리지 않고 이어받지 않는다.
+20. **바로 완료 대상**(135-2 '남은 시간이 있는 모든 대기'): 입원, 알바 쿨타임 3종, 메뉴 개발. 산책 진행 시간은 대기가 아니라 활동이라 넣지 않음(멈추기 규칙도 UNSET), 매니저 고용 시간은 서비스 기간이라 넣지 않음, 하트 회복은 111 '하트로 시간 못 줄임'과 별개로 대상 아님.
+21. **발바닥 = 시바별 잔고, 레벨업은 버튼**: 139가 발바닥을 칸 해금에도 쓰게 해서('그만큼 레벨업에 쓸 발바닥이 줄어든다') 자동 레벨업을 없앰. Lv30에서도 발바닥은 쌓임.
+22. **뽑기 새 시바 Lv1**: 137 '레벨이 랜덤으로 나오는 방식은 쓰지 않는다'와 138 'Lv1→30 = 중복 870마리' 계산에서 읽음 (`gacha.startLevel:1`).
+23. **'중복' = 이미 가진 견종**(4종뿐이라 견종 기준). 발바닥 10은 그 견종 중 가장 먼저 온 시바에게. 10연차 안에서 새로 나온 견종이 또 나오면 그 새 시바에게 감. 보유 50마리가 꽉 차고 없는 견종이 남아 있으면 뽑기 비활성.
+24. **뽑기권**(산책 1/30, 온보딩 캡슐)은 다이아 없이 1회 뽑기.
+25. **카페 근무 발바닥**: 배치되어 실제 일하는(산책·입원·잠·휴무 아님) 시간만 1시간마다 1. '매니저가 운영하는 시간'은 매니저가 있는 동안의 근무 시간도 똑같이 센다는 뜻으로 읽음(추가 지급 없음).
+26. **재주 1단계 완료 3**: 직접 훈련 실패·단계 중간 성공은 0. 훈련사가 단계를 채우면 3.
+27. **액세서리 가방**: `accInv` = 차지 않은 개수, 시바의 `acc` = 찬 1개. 파양한 시바가 찬 것은 가방으로 돌아옴. 반다나 색 이름(빨강·파랑·초록·노랑·분홍·남색·주황·보라·청록)은 시트 그림을 보고 붙임(스펙에 색 이름 없음).
+28. **이전 v3 저장**: 칸 필드가 없으면 첫 시바를 시작 시바로 보고 칸 열림 + 시작 반다나; 개발 중 메뉴(`menuDev`)는 저장·불러오기 후에도 이어짐.
 
 ## 3. UNSET (config `null`, "UNSET: <ref>") and what the build does
 
@@ -121,9 +136,12 @@ Source: `shiba-cafe-docs/spec-v3-build/spec-v3.md` (최신 갱신 134-1 기준; 
 | `itemIncome.priceDia` | 갱신 97 | 수익 1.2배 아이템 판매 불가 (효과 로직은 있음) |
 | `cafe.paidSlotUnlockDia` | 갱신 87·132 | 칸 미리 해제 "미정" |
 | `cafe.expansion2FCost` | 갱신 56 | 2층 없음 |
-| `hospital.speedupDiaPer10Min` | 갱신 111·132 | 치료 앞당기기 없음 |
-| `gacha.priceCoins`, `gacha.startLevel`, `gacha.breedOdds` | 갱신 57, 질문 9(바) | 뽑기 버튼 "미정"; 산책에서 얻은 뽑기권은 쌓이기만 함; 중복 → 발바닥 10(갱신 81)·'같은 시바' 기준(2-3 라)도 미정이라 발바닥을 얻을 길이 아직 없음 |
-| `accessories` | 질문 9(가) | 액세서리 칸만 표시 |
+| `gacha.breedOdds` | 질문 9(바) | 4종 균등(1/4)으로 뽑음 (personalities와 같은 처리) |
+| `gacha.priceCoins` | 갱신 57 | 멍코인 뽑기 없음(137은 다이아 가격만) |
+| `accessory.starterItem` | 139-6 | 시작 시바의 반다나 = 목록 첫 항목(클래식 삼각형·빨강) (`START_FALLBACK.starterItem`) |
+| `accessory.special.items` | 갱신 140 | 특별 액세서리(300다이아) 종류·디자인 미정 → 상점에 빈 칸 1개, 구매 비활성 |
+| ~~`gacha.startLevel`~~ | (was UNSET, 질문 9(바)) | 이제 1 — 갱신 137·138에서 읽음(해석 22) |
+| ~~`accessories`~~ | (was 질문 9(가)) | 갱신 139-5~140-1로 정해짐 → `accessory.*` |
 | `likes.toys`, `likes.list` | 질문 9(카) | 간식 칸 3개 잠김 + 장난감 칸 "미정" |
 | `stub.regulars.population` | 갱신 102·108·122 | 단골·최애 없음 (파양 확인창에 "미정") |
 | `stub.expBoost.priceDia` | 갱신 98 | 판매 불가 |
@@ -150,12 +168,16 @@ Shown to the player as "준비 중" (settings) or disabled shop rows ("미정" /
 - The old catalog PNGs in `assets/*.png` are no longer referenced by the v3 build (spec §4: replace with F / `이미지/` confirmed images). They were left in place, not deleted.
 
 ## 6. Missing images (dashed placeholder slots in the build)
+Bandana sheets copied in this round (byte-identical, see `assets/drive/MAP.md`): 삼각형·루프·매듭·앞매듭 원색 (used), 앞 매듭형 single + 옐로그린·웜 차트 (copied, not shown: pastel/solid charts vs 1.5 '원색 9, 파스텔 안 씀').
 | Needed for | Where in the build | image-list ref |
 |---|---|---|
 | 멍코인 아이콘 | HUD coin pill | I-04 (`final-check.jpg` has heart reset/heart/paw/diamond/stamp only) |
 | 밥 주기·목욕 버튼 아이콘 | care screen | 1.2-3 '게이지·버튼 아이콘' |
-| 시바뽑기 캡슐/뽑기권 아이콘 | bag | I-02 |
-| 액세서리 아이콘 | care › 액세서리 칸 | A-01~ (8eb5d737 accessory sheet exists; unlock list UNSET) |
+| 시바뽑기 캡슐/뽑기권 아이콘, 뽑기 연출(영상은 있으나 미사용) | bag, shop › 시바뽑기 | I-02 |
+| 반다나 색별 낱장 그림(4종 × 9색 = 36) | shop › 액세서리, care › 액세서리 칸 | 갱신 140 — 시트 4장(3×3)을 CSS 영역으로 보여 줌, 그림은 그대로 |
+| 반다나를 찬 시바 그림(견종 × 36) | café·care (찬 반다나는 초상 옆 아이콘으로만) | 갱신 140-1 — 초상에는 반다나가 이미 그려져 있음 |
+| 특별 액세서리(300다이아) | shop › 특별 액세서리 (빈 칸) | 갱신 140 — 종류·디자인 미정, 지어내지 않음 |
+| 액세서리 칸 잠김 아이콘 | care › 액세서리 칸 (🔒 점선 칸) | 갱신 139-6 |
 | 좋아하는 간식·장난감 잠김 칸 아이콘 | care › 좋아하는 간식·장난감 | U-L |
 | 적색·백시바 걷기/잠들기 포즈 | walk & sleeping state (portrait shown instead) | E-07~E-14 |
 | 시바·손님 걷기 프레임 + 프레임 수/영역 데이터 | all movement (cuts instead) | 갱신 50·51 |
@@ -167,14 +189,16 @@ Shown to the player as "준비 중" (settings) or disabled shop rows ("미정" /
 | 다이아 상점 상품 아이콘(쿨타임권, 수익·경험치 1.2배, 칸 해제) | shop › 다이아 | 갱신 103·115·97 |
 
 ## 7. Tests
-- `tests/spec-v3.test.mjs` (56 tests; 갱신 134/134-1 added: menu table incl. 134-1 dev costs and image files, development gating/cost, +1%p per normal menu with the 40% cap, drink/dessert slot → coffee fallback, 2:1 split, 30% premium upgrade only with a premium developed, random picture among developed, prices paid by guests): spec tables and numbers, formulas (income, intelligence = 합×4 ≤100, paw & café exp curves, premium chance, condition, training chance, reputation damping/arrival), customer flow and timing, queue anger, satisfaction/requests, drag-to-guest, manager share, walks with scripted RNG and seeded rate checks (20,000 walks), rescue flow, part-timers, max 10 placed, stains, reputation drift, 12 h offline cap, 임시휴무 and reopen, save/load, walk settled once on load, UNSET features disabled.
-- `tests/smoke-browser.mjs` + `tests/smoke-steps.mjs` (rewritten, 17 checks in headless Chrome, incl. 14 menu rows with images and developing M-02 at Lv2 for 8,500멍).
+- `tests/spec-v3.test.mjs` (78 tests; 갱신 135-2~140-1 added 22: instant-finish cost per minute with rounding and every target (hospital, 3 part-timer cooldowns, menu dev), dev-time table, timed development/one-at-a-time/offline completion/save-load, gacha prices/dup paws/new Lv1/equal odds/ticket, 20×N paw curve and manual level-up, activity paws incl. part-timers/café hours/offline, one slot + unlock by paws or diamonds, starter slot & bandana, 36 bandanas at 5,000멍, byte-identical bandana sheets, one item per shiba/take off/swap/abandon. Earlier: 갱신 134/134-1 menu table incl. 134-1 dev costs and image files, development gating/cost, +1%p per normal menu with the 40% cap, drink/dessert slot → coffee fallback, 2:1 split, 30% premium upgrade only with a premium developed, random picture among developed, prices paid by guests): spec tables and numbers, formulas (income, intelligence = 합×4 ≤100, paw & café exp curves, premium chance, condition, training chance, reputation damping/arrival), customer flow and timing, queue anger, satisfaction/requests, drag-to-guest, manager share, walks with scripted RNG and seeded rate checks (20,000 walks), rescue flow, part-timers, max 10 placed, stains, reputation drift, 12 h offline cap, 임시휴무 and reopen, save/load, walk settled once on load, UNSET features disabled.
+- `tests/smoke-browser.mjs` + `tests/smoke-steps.mjs` (22 checks in headless Chrome: language/start, café loop, all screens, care, walk, shop with 14 menu rows, gacha 100/900 disabled at 0 diamonds then 1 pull, accessory shop 4 types × 9 CSS cells + buy + equip on the starter, M-02 development in progress (30 min) and finish-now for 30 diamonds, language switch, reload).
 - Removed `tests/sim.test.mjs` and `tests/handoff.test.mjs`: they assert the abolished grade system (bands, S 2%, same-grade merge, promotion), the old customer pay model and 도감 — contradicted by v3.
 - Kept `tests/timeline.test.mjs` (legacy 3D first check, unaffected).
 
 ## 8. Findings worth a decision
-- **One shiba cannot carry the café past Lv3.** With the spec tables, a single Lv21 shiba reaches café Lv3–6 within ~1–2 h; guests then outnumber what one shiba can meet, reputation falls, and offline the café hits 임시휴무 in ~2 h (`tests` › "one shiba, 20 h away"). Because 뽑기 (start level/odds) and the 구조 level are UNSET, the only way to get a 2nd shiba is the 5% rescue per walk.
+- **One shiba cannot carry the café past Lv3.** With the spec tables, a single Lv21 shiba reaches café Lv3–6 within ~1–2 h; guests then outnumber what one shiba can meet, reputation falls, and offline the café hits 임시휴무 in ~2 h (`tests` › "one shiba, 20 h away"). Without diamonds (no payment yet) a 2nd shiba comes only from the 5% rescue per walk or a capsule ticket (1/30 per walk → 137 pull, 3/4 chance of a new breed).
 - **Care can only make gauges worse.** Walks/play/training add dirt and fatigue, but 밥·간식·목욕·수면 amounts are UNSET, so nothing lowers dirt or fatigue except a paid potion or 임시휴무 (fatigue → 0). After three 30-minute walks a shiba sleeps until the next closure.
-- **Paws have no source** while 뽑기 is UNSET, so shiba levels never rise in this build.
+- **Paws now have sources (139)**, but the numbers are slow next to 138: a café shiba earns ~24 paws a day from work + a few from walks/play; Lv21→22 needs 420. The 1,000-paw accessory slot costs that shiba ~40 days of café work.
+- **Diamonds have no source in the build.** They are paid-only (132-2) and payment is not connected, so gacha, slot unlock by diamonds, finish-now and special accessories are visible but disabled at 0 diamonds (screens stage diamonds to show them). Walk capsule tickets are the only free gacha.
+- **Second shiba's accessory.** Every non-starter shiba needs 1,000 paws or 1,000 diamonds before it can wear even a 5,000멍 bandana (139-6 + 140) — confirm this is intended.
 - **Menus are expensive for the early café.** The first menu (M-02, Lv2) costs 8,500멍 (134-1, 6 hours of planned income). With one Lv21 shiba the café earns about 2멍 per guest, so in the capture run it had ~280멍 after 15 minutes; 134-1 already notes the cost basis (282 × 상한 per hour) — worth checking against play.
 - 갱신 86 '1.5 = 만족' vs 갱신 106 '요구 충족만 만족' — confirm interpretation 2.1.

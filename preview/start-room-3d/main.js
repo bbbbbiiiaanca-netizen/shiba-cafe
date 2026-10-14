@@ -32,8 +32,11 @@ const tfmt=sec=>{sec=Math.max(0,Math.ceil(sec));const h=Math.floor(sec/3600),m=M
 const nameOf=sh=>sh.name||L('shiba.breed.'+sh.breed);
 const bar=(k,col)=>`<div class="bar"><i style="width:${Math.round(Math.max(0,Math.min(1,k))*100)}%${col?';background:'+col:''}"></i></div>`;
 function toast(t){const e=$('toast');e.textContent=t;e.style.opacity=1;ui.toastT=2.2;}
-const reason={coins:'toast.coins',hearts:'toast.hearts',slots:'toast.slots',unset:'toast.unset',last:'toast.last'};
+const reason={slot:'toast.slot',none:'toast.none',ticket:'toast.ticket',owned:'rescue.full',busy:'toast.devBusy',coins:'toast.coins',hearts:'toast.hearts',slots:'toast.slots',unset:'toast.unset',last:'toast.last',dia:'toast.dia'};
 function why(code){toast(L(reason[code]||'toast.unset'));}
+// 갱신 135-2: 남은 시간 바로 완료 버튼 (1분당 1다이아, 1분 올림)
+function skipBtn(t){const left=S.skipLeftSec(s,t,clock.now());if(!(left>0))return '';const cost=S.skipCost(left);
+ return `<button class="sec" data-act="skip" data-type="${t.type}" data-id="${t.id??''}" ${s.dia<cost?'disabled':''}>${L('skip.btn',{n:fmt(cost)})}</button>`;}
 
 // ───────── HUD ─────────
 function renderHUD(){const now=clock.now();$('coins').textContent=fmt(s.coins);$('hearts').textContent=fmt(s.hearts);$('dia').textContent=fmt(s.dia);
@@ -68,6 +71,7 @@ function popAt(el,text,orderImg){if(!el)return;const sc=$('scene').getBoundingCl
  if(orderImg){const i=document.createElement('img');i.src='assets/drive/'+orderImg;p.prepend(i);} // 갱신 134: the ordered menu's picture
  p.style.left=(b.left-sc.left+4)+'px';p.style.top=(b.bottom-sc.top-30)+'px';$('scene').appendChild(p);setTimeout(()=>p.remove(),1500);}
 function handleEvents(){for(const e of w.events.splice(0)){
+ if(e.type==='menuDone')toast(L('toast.menuDone',{name:L('menu.'+e.id)}));
  if(e.type==='leave'){const el=document.querySelector(`[data-seat="${e.seat}"],[data-cust="${e.id}"]`);popAt(el,`+${f2(e.coins)} ${L('out.'+e.outcome)}`,e.orderImg);}
 }
  while(s.walkResults.length)ui.modals.push({kind:'walkResult',res:s.walkResults.shift()});}
@@ -81,10 +85,35 @@ P.shibas=()=>{const n=S.placedShibas(s).length;let h=`<div class="card"><div cla
   <button class="${s.dongu.placed?'sec':''}" data-act="dongu">${s.dongu.placed?L('care.unplace'):L('care.place')}</button></div></div>`;return {title:L('shibas.title'),html:h};};
 function statusText(sh,st){if(st==='hospital')return L('st.hospital',{t:tfmt((sh.hospitalUntil-clock.now())/1000)})+' · '+L('inj.'+sh.hospitalKind);if(st==='injured')return L('st.injured')+' · '+L('inj.'+sh.injury);
  if(st==='ok'&&!sh.placed)return L('st.home');return L('st.'+st);}
+// 갱신 140: 반다나 = 3×3 시트의 한 칸을 CSS로만 보여 줌 (그림은 그대로)
+function bandHtml(id,cls=''){const it=S.accItem(id);if(!it)return slot(L('app.missingImg'),42,28);const B=CFG.accessory.bandana,i=B.colors.indexOf(it.color),[cols,rows]=B.grid;
+ return `<span class="band ${cls}" data-band="${id}" title="${accName(id)}" style="background-image:url(assets/drive/${B.sheet[it.type]});background-position:${(i%cols)*100/(cols-1)}% ${Math.floor(i/cols)*100/(rows-1)}%"></span>`;}
+const accName=id=>{const it=S.accItem(id);return it?L('acc.name',{c:L('acc.color.'+it.color),t:L('acc.type.'+it.type)}):id;};
+// 갱신 139-5·139-6: 액세서리 칸 1개 — 잠김이면 발바닥 1,000 / 1,000다이아로 해금
+function accCard(sh){const A=CFG.accessory,id=sh.id;let h=`<div class="card" data-acc="${id}"><h3>${L('care.acc')}</h3>`;
+ if(!sh.accUnlocked)return h+`<div class="li">${slot('🔒 '+L('care.locked'))}<div class="grow note">${L('care.accLockedNote')}</div></div>
+  <div class="btns"><button data-act="accUnlock" data-id="${id}" data-via="paws" ${S.accUnlockCheck(s,id,'paws')?'disabled':''}>${L('care.accUnlockPaws',{n:fmt(A.unlockPaws),have:fmt(sh.paws)})}</button>
+  <button data-act="accUnlock" data-id="${id}" data-via="dia" ${S.accUnlockCheck(s,id,'dia')?'disabled':''}>${L('care.accUnlockDia',{n:fmt(A.unlockDia)})}</button></div></div>`;
+ h+=sh.acc?`<div class="li">${bandHtml(sh.acc)}<div class="grow"><div class="nm">${accName(sh.acc)}</div><div class="sub">${L('care.accWorn')}</div></div><button class="sec" data-act="unequip" data-id="${id}">${L('care.accOff')}</button></div>`
+  :`<div class="li">${slot(L('care.accEmpty'))}<div class="grow note">${L('care.accOpen')}</div></div>`;
+ const bag=Object.entries(s.accInv).filter(([,n])=>n>0);
+ h+=bag.length?`<div class="note">${L('care.accBag')}</div>`+bag.map(([k,n])=>`<div class="li">${bandHtml(k,'sm')}<div class="grow note">${accName(k)} ×${n}</div><button data-act="equip" data-id="${id}" data-item="${k}" ${S.equipCheck(s,id,k)?'disabled':''}>${L('care.accOn')}</button></div>`).join('')
+  :`<div class="note">${L('care.accNone')}</div>`;
+ return h+'</div>';}
+// 갱신 140·140-1 액세서리 상점: 반다나 4종 × 9색 (5,000멍), 특별 액세서리 300다이아(종류 미정 → 빈 칸)
+function accShop(){const B=CFG.accessory.bandana,t=ui.accType||B.types[0],items=S.bandanaItems().filter(x=>x.type===t);
+ let h=`<div class="card" data-accshop><h3>${L('shop.acc')}</h3><div class="note">${L('shop.accRule')}</div>
+  <div class="tabs">${B.types.map(k=>`<button class="${k===t?'':'sec'}" data-act="accType" data-type="${k}">${L('acc.type.'+k)}</button>`).join('')}</div><div class="accgrid">`;
+ for(const it of items){const c=S.buyAccCheck(s,it.id),own=S.accOwned(s,it.id),worn=S.accWorn(s,it.id);
+  h+=`<div class="ai" data-accitem="${it.id}">${bandHtml(it.id)}<span>${L('acc.color.'+it.color)}</span><span class="note">${L('shop.accOwned',{n:own,w:worn})}</span><button data-act="buyAcc" data-item="${it.id}" ${c?'disabled':''}>${L('app.coins',{n:fmt(it.price)})}</button></div>`;}
+ const SP=CFG.accessory.special;
+ h+=`</div><h3>${L('shop.accSpecial')}</h3><div class="li">${slot(L('app.unset'))}<div class="grow note">${L('shop.accSpecialNote',{dia:SP.priceDia})}</div><button disabled>${SP.priceDia}💎 · ${L('app.unset')}</button></div></div>`;
+ return h;}
 P.care=id=>{const sh=S.byId(s,id);if(!sh)return P.shibas();const st=S.statusOf(s,sh),now=clock.now(),need=S.pawsToNext(sh.level);
  let h=`<div class="card"><div class="big">${img(shibaImg(sh),nameOf(sh))}</div><div style="text-align:center"><div class="nm" style="font-size:18px;font-weight:900">${nameOf(sh)}</div>
   <div class="note">${L('shiba.breed.'+sh.breed)} · ${L('care.personality')}: ${L('per.'+sh.personality)} · ${statusText(sh,st)}</div></div>
-  <div class="g"><span>${L('care.level')} ${sh.level}</span>${bar(need?sh.paws/need:1)}<span class="ico paw"></span></div><div class="note">${need?L('care.paws',{n:sh.paws,need}):L('care.pawsMax')} · ${L('care.levelEff',{m:f2(S.levelEffect(sh.level))})}</div>
+  <div class="g"><span>${L('care.level')} ${sh.level}</span>${bar(need?sh.paws/need:1)}<span class="ico paw"></span></div><div class="btns"><span class="note grow">${need?L('care.paws',{n:fmt(sh.paws),need:fmt(need)}):L('care.pawsMax',{n:fmt(sh.paws)})} · ${L('care.levelEff',{m:f2(S.levelEffect(sh.level))})}</span>
+   ${need?`<button data-act="levelUp" data-id="${id}" ${S.levelUpCheck(s,id)?'disabled':''}>${L('care.levelUp',{n:fmt(need)})}</button>`:''}</div><div class="note">${L('care.pawsSrc')}</div>
   <div class="g"><span>${L('care.intimacy')}</span>${bar(sh.intimacy/100,'#e98aa0')}<span>${Math.round(sh.intimacy)}</span></div>
   <div class="g"><span>${L('care.intel')}</span>${bar(S.intelligence(sh)/100,'#6aa5d8')}<span>${S.intelligence(sh)}</span></div></div>`;
  h+=`<div class="card">${CFG.gauges.map(k=>`<div class="g"><span>${L('g.'+k)}</span>${bar(sh.g[k]/100,(k==='dirt'||k==='fatigue'||k==='boredom')?'#b58a5a':'#7fbf6a')}<span>${Math.round(sh.g[k])}</span></div>`).join('')}
@@ -95,13 +124,14 @@ P.care=id=>{const sh=S.byId(s,id);if(!sh)return P.shibas();const st=S.statusOf(s
    <button data-act="walkFor" data-id="${id}" ${st!=='ok'?'disabled':''}>${L('care.walk')}</button></div><div class="note">${L('care.feed')}·${L('care.snack')}·${L('care.bath')}·${L('care.sleep')}: ${L('care.unsetNote')}</div>`;
  if(sh.status==='injured'||sh.status==='sick'){const cost=S.hospitalCost(s,sh.status==='sick'?'sick':sh.injury),c=S.hospitalCheck(s,id);h+=`<button class="warn" data-act="hospital" data-id="${id}" ${c?'disabled':''}>${c==='coins'?L('care.hospitalNo',{cost:fmt(cost)}):L('care.hospital',{cost:fmt(cost)})}</button>`;}
  const D=CFG.alba.daycare,dcd=(sh.cd.daycare||0)-now,dc=S.albaCheck(s,'daycare',[id],now);
- h+=`<button class="sec" data-act="daycare" data-id="${id}" ${dc?'disabled':''}>${L('care.daycare')} · ${s.cafe.level<D.unlock?L('app.locked',{lv:D.unlock}):dcd>0?L('app.cooldown',{t:tfmt(dcd/1000)}):L('app.coins',{n:fmt(D.cost)})}</button>
+ if(st==='hospital')h+=`<div class="btns">${skipBtn({type:'hospital',id})}</div>`;
+ h+=`<div class="btns"><button class="sec" data-act="daycare" data-id="${id}" ${dc?'disabled':''}>${L('care.daycare')} · ${s.cafe.level<D.unlock?L('app.locked',{lv:D.unlock}):dcd>0?L('app.cooldown',{t:tfmt(dcd/1000)}):L('app.coins',{n:fmt(D.cost)})}</button>${skipBtn({type:'daycare',id})}</div>
   <div class="note">${L('care.potion',{n:s.items.potionBig,m:s.items.potionSmall})}</div></div>`;
- const T=CFG.alba.trainer;h+=`<div class="card"><h3>${L('care.tricks')}</h3>`;
+ const T=CFG.alba.trainer;h+=`<div class="card"><h3>${L('care.tricks')}</h3>${(sh.cd.trainer||0)>now?`<div class="btns"><span class="note">${L('care.trainer')} ${L('app.cooldown',{t:tfmt((sh.cd.trainer-now)/1000)})}</span>${skipBtn({type:'trainer',id})}</div>`:''}`;
  for(const t of CFG.tricks){const lv=sh.tricks[t.id],c=S.trainCheck(s,id,t.id),tc=S.albaCheck(s,'trainer',[id],now,t.id),tcd=(sh.cd.trainer||0)-now;
   h+=`<div class="trk"><div class="li"><b>${L('trick.'+t.id)}</b><span class="stars">${'★'.repeat(lv)}${'☆'.repeat(CFG.trickMaxLevel-lv)}</span><span class="grow note">${lv<CFG.trickMaxLevel?sh.trickExp[t.id]+'/'+(lv+1):L('care.trainMax')}</span></div>
    ${lv>=CFG.trickMaxLevel?'':`<div class="btns"><button data-act="train" data-id="${id}" data-trick="${t.id}" ${c?'disabled':''}>${L('care.train',{p:Math.round(S.trainChance(sh)*100)})}</button><button class="sec" data-act="trainer" data-id="${id}" data-trick="${t.id}" ${tc?'disabled':''}>${L('care.trainer')} · ${s.cafe.level<T.unlock?L('app.locked',{lv:T.unlock}):tcd>0?tfmt(tcd/1000):L('app.coins',{n:fmt(T.cost)})}</button></div>`}</div>`;}
- h+=`</div><div class="card"><h3>${L('care.acc',{n:S.accessorySlots(sh.level)})}</h3><div class="btns">${Array.from({length:S.accessorySlots(sh.level)},()=>slot(L('care.accEmpty'))).join('')}</div>
+ h+=`</div>${accCard(sh)}<div class="card">
   <h3>${L('care.likes')}</h3><div class="btns">${Array.from({length:CFG.likes.snacks.basic+CFG.likes.snacks.rare},()=>slot('🔒 '+L('care.locked'))).join('')}${slot('🔒 '+L('app.unset'))}</div></div>
   <div class="card"><div class="btns"><button class="${sh.placed?'sec':''}" data-act="place" data-id="${id}" data-on="${sh.placed?0:1}" ${!sh.placed&&S.placeCheck(s,id)?'disabled':''}>${sh.placed?L('care.unplace'):L('care.place')}</button>
    <button class="warn" data-act="abandon" data-id="${id}" ${S.abandonCheck(s,id)?'disabled':''}>${L('care.abandon')}</button></div></div>`;
@@ -117,21 +147,30 @@ P.walk=()=>{const now=clock.now();let h='';const W=s.walk;
  const A=CFG.alba.walk,ids=[...ui.walkAlba].filter(id=>S.byId(s,id)),ac=S.albaCheck(s,'walk',ids,now);
  h+=`<div class="card"><h3>${L('walk.alba')}</h3><div class="note">${L('walk.albaNote',{n:A.maxShibas})}</div>${s.cafe.level<A.unlock?`<div class="note">${L('app.locked',{lv:A.unlock})}</div>`:''}
   <div class="choices">${s.shibas.map(o=>{const cd=(o.cd.walk||0)-now;return `<button class="choice${ui.walkAlba.has(o.id)?' on':''}" data-act="albaPick" data-id="${o.id}" ${s.cafe.level<A.unlock||cd>0?'disabled':''}><span>${nameOf(o)}${cd>0?' · '+tfmt(cd/1000):''}</span></button>`;}).join('')}</div>
+  ${s.shibas.filter(o=>(o.cd.walk||0)>now).map(o=>`<div class="li"><span class="grow note">${nameOf(o)} · ${L('app.cooldown',{t:tfmt((o.cd.walk-now)/1000)})}</span>${skipBtn({type:'walk',id:o.id})}</div>`).join('')}
   <button data-act="albaWalk" ${ac?'disabled':''}>${L('walk.albaGo',{cost:fmt(A.cost)})}</button></div>`;
  return {title:L('walk.title'),html:h};};
+const hm=sec=>{const h=Math.floor(sec/3600),m=Math.round(sec%3600/60);return h&&m?L('app.hm',{h,m}):h?L('app.h',{h}):L('app.m',{m});};
+// 갱신 136: 개발 중인 메뉴 1개 — 남은 시간, 진행 막대, 바로 완료(135-2)
+function devCard(now){const D=s.menuDev;if(!D)return `<div class="note">${L('shop.devIdle')}</div>`;const m=S.menuItem(D.id),left=(D.until-now)/1000;
+ return `<div class="li dev" data-dev="${D.id}"><div class="pt">${img('assets/drive/'+m.img)}</div><div class="grow"><div class="nm">${L('shop.developing',{name:L('menu.'+D.id)})}</div>
+  ${bar((now-D.startAt)/(D.until-D.startAt))}<div class="sub">${L('shop.devLeft',{t:tfmt(left)})} · ${L('skip.note')}</div></div>${skipBtn({type:'menu'})}</div>`;}
 P.shop=()=>{const now=clock.now(),M=CFG.menu,menuImg=f=>`<div class="pt">${img('assets/drive/'+f)}</div>`;
  let h=`<div class="card"><h3>${L('shop.menu')}</h3><div class="note">${L('shop.menuRule',{n:S.normalDeveloped(s),p:f2(S.premiumChance(s.cafe.rep,false,S.normalDeveloped(s))*100)})}</div>
-  <div class="li" data-menu="${M.coffee.id}">${menuImg(M.coffee.img)}<div class="grow"><div class="nm">${L('menu.'+M.coffee.id)}</div><div class="sub">${L('shop.coffee',{p:M.coffee.price})}</div></div><button disabled>✓</button></div>`;
+  ${devCard(now)}<div class="li" data-menu="${M.coffee.id}">${menuImg(M.coffee.img)}<div class="grow"><div class="nm">${L('menu.'+M.coffee.id)}</div><div class="sub">${L('shop.coffee',{p:M.coffee.price})}</div></div><button disabled>✓</button></div>`;
  for(const m of M.items){const c=S.menuCheck(s,m.id);
-  h+=`<div class="li" data-menu="${m.id}">${menuImg(m.img)}<div class="grow"><div class="nm">${L('menu.'+m.id)}</div><div class="sub">${L('menu.kind.'+m.kind)} · ${L('shop.sell',{p:m.price})} · ${L('app.lv',{lv:m.unlockLevel})}</div></div>
-   <button data-act="dev" data-id="${m.id}" ${c?'disabled':''}>${c==='owned'?'✓':c==='locked'?L('app.locked',{lv:m.unlockLevel}):L('app.coins',{n:fmt(m.devCost)})}</button></div>`;}
+  h+=`<div class="li" data-menu="${m.id}">${menuImg(m.img)}<div class="grow"><div class="nm">${L('menu.'+m.id)}</div><div class="sub">${L('menu.kind.'+m.kind)} · ${L('shop.sell',{p:m.price})} · ${L('app.lv',{lv:m.unlockLevel})} · ${L('shop.devTime',{t:hm(m.devSec)})}</div></div>
+   <button data-act="dev" data-id="${m.id}" ${c?'disabled':''}>${c==='owned'?'✓':c==='developing'?L('shop.developingShort'):c==='locked'?L('app.locked',{lv:m.unlockLevel}):L('app.coins',{n:fmt(m.devCost)})}</button></div>`;}
  h+='</div>';
  const G=CFG.alba.manager,mc=S.albaCheck(s,'manager',[],now);
  h+=`<div class="card"><h3>${L('shop.manager')}</h3><div class="note">${L('shop.managerNote')}</div><button data-act="manager" ${mc?'disabled':''}>${s.cafe.level<G.unlock?L('app.locked',{lv:G.unlock}):S.managerActive(s,now)?L('hud.manager',{t:tfmt((s.cafe.managerUntil-now)/1000)}):L('shop.hire',{cost:fmt(G.cost)})}</button></div>
-  <div class="card"><h3>${L('shop.bag')}</h3><div class="li"><span class="ico reset" style="width:34px;height:34px"></span><div class="grow nm">${L('shop.heartReset',{n:s.items.heartReset})}</div><button data-act="heartReset" ${S.canUseHeartReset(s)?'':'disabled'}>${L('shop.use')}</button></div>
+  ${accShop()}<div class="card"><h3>${L('shop.bag')}</h3><div class="li"><span class="ico reset" style="width:34px;height:34px"></span><div class="grow nm">${L('shop.heartReset',{n:s.items.heartReset})}</div><button data-act="heartReset" ${S.canUseHeartReset(s)?'':'disabled'}>${L('shop.use')}</button></div>
    <div class="li">${slot(L('app.missingImg'),34,34)}<div class="grow nm">${L('shop.capsule',{n:s.items.capsule})}</div></div>
    <div class="li">${img(IMG.potion)}<div class="grow nm">${L('dia.potionBig')} ×${s.items.potionBig} · ${L('dia.potionSmall')} ×${s.items.potionSmall}</div></div></div>
-  <div class="card"><h3>${L('shop.gacha')}</h3><div class="note">${L('shop.gachaNote',{dia:CFG.gacha.priceDia})}</div><button disabled>${L('app.unset')}</button></div>
+  <div class="card" data-gacha><h3>${L('shop.gacha')}</h3><div class="note">${L('shop.gachaNote',{p:CFG.gacha.dupPaws})}</div><div class="btns">
+   <button data-act="gacha" data-n="1" ${S.gachaCheck(s,1)?'disabled':''}>${L('shop.gacha1',{dia:CFG.gacha.priceDia})}</button>
+   <button data-act="gacha" data-n="${CFG.gacha.tenCount}" ${S.gachaCheck(s,CFG.gacha.tenCount)?'disabled':''}>${L('shop.gacha10',{n:CFG.gacha.tenCount,dia:fmt(CFG.gacha.tenDia)})}</button>
+   <button class="sec" data-act="gacha" data-n="1" data-ticket="1" ${S.gachaCheck(s,1,{ticket:true})?'disabled':''}>${L('shop.gachaTicket',{n:s.items.capsule})}</button></div></div>
   <div class="card"><h3>${L('shop.dia')}</h3><div class="note">${L('shop.diaRate',{won:CFG.stub.diaPriceWon})} · ${L('app.payment')}</div>
    ${[['cooldown1',CFG.cooldownTicketDia.one],['cooldown5',CFG.cooldownTicketDia.five],['potionBig',CFG.potion.bigDia],['potionSmall',CFG.potion.smallDia],['boost',CFG.itemIncome.priceDia],['expBoost',CFG.stub.expBoost.priceDia],['slot',CFG.cafe.paidSlotUnlockDia]]
     .map(([k,p])=>`<div class="li"><span class="ico dia"></span><div class="grow">${L('dia.'+k)}</div><button disabled>${p==null?L('app.unset'):p+'💎'}</button></div>`).join('')}</div>`;
@@ -168,11 +207,12 @@ function renderModal(){const m=ui.modals[0]||(!s.settings.language?{kind:'lang'}
  if(m.kind==='offline'){const o=m.o,mins=Math.round(o.sec/60);h=`<h2>${L('off.title')}</h2><div class="note" style="font-size:14px">${L('off.body',{h:Math.floor(mins/60),m:mins%60,n:o.served,coins:fmt(o.coins),r0:Math.round(o.repFrom),r1:Math.round(o.repTo)})}</div>
   ${o.sec>CFG.offline.capHours*3600?`<div class="note">${L('off.cap')}</div>`:''}${m.closed?`<div class="note" style="font-size:13px;color:#9c4136">${L('off.closed')}</div>`:''}<button data-act="modalOk">${L('app.ok')}</button>`;}
  if(m.kind==='walkResult'){const sh=S.byId(s,m.res.shibaId);h=`<h2>${L('walk.back',{name:sh?nameOf(sh):'?'})}</h2><div class="big" style="width:120px;height:120px">${sh?img(IMG.shiba(sh.breed)):''}</div>
-  <div class="note" style="text-align:center">${m.res.events.length?m.res.events.map(e=>L('walk.ev.'+e)).join(' · '):''}</div><button data-act="modalOk">${L('app.ok')}</button>`;}
+  <div class="note" style="text-align:center">${[m.res.paws?L('walk.paws',{n:m.res.paws}):'',...m.res.events.map(e=>L('walk.ev.'+e))].filter(Boolean).join(' · ')}</div><button data-act="modalOk">${L('app.ok')}</button>`;}
  if(m.kind==='rescue'){const x=m.x,cost=S.hospitalCost(s,'rescueBath');
   h=x.bathed?`<h2>${L('rescue.reveal',{breed:L('shiba.breed.'+x.breed)})}</h2><div class="big">${img(IMG.shiba(x.breed))}</div><div class="note" style="text-align:center">${L('rescue.lvNote')}</div>
     <button data-act="rescueBring" ${S.bringCheck(s,x.rid)?'disabled':''}>${L('rescue.bring')}</button>${S.bringCheck(s,x.rid)==='owned'?`<div class="note">${L('rescue.full')}</div>`:''}<button class="sec" data-act="rescueDecline">${L('rescue.decline')}</button>`
    :`<h2>${L('rescue.found')}</h2><div class="big">${img(IMG.rescue[x.pic])}</div><button data-act="rescueBath" ${s.coins<cost?'disabled':''}>${L('rescue.bath',{cost:fmt(cost)})}</button><button class="sec" data-act="rescueDecline">${L('rescue.decline')}</button>`;}
+ if(m.kind==='gacha')h=`<h2>${L('gacha.title')}</h2><div class="gres">${m.res.map(x=>`<div class="gi${x.dup?' dup':''}">${img(IMG.shiba(x.breed))}<span>${x.dup?L('gacha.dup',{name:nameOf(S.byId(s,x.toId)||{breed:x.breed}),p:x.paws}):L('gacha.new',{breed:L('shiba.breed.'+x.breed),lv:CFG.gacha.startLevel})}</span></div>`).join('')}</div><button data-act="modalOk">${L('app.ok')}</button>`;
  if(m.kind==='confirm')h=`<div class="note" style="font-size:14px">${m.text}</div><div class="btns"><button class="warn" data-act="confirmYes">${L('app.ok')}</button><button class="sec" data-act="modalOk">${L('app.cancel')}</button></div>`;
  $('mbox').innerHTML=h;$('modal').hidden=false;}
 if(L0.offline&&(L0.offline.sec>=60||L0.reopened))ui.modals.push({kind:'offline',o:L0.offline,closed:!!L0.reopened});
@@ -194,7 +234,13 @@ const act={
  albaPick:d=>{const id=+d.id;if(ui.walkAlba.has(id))ui.walkAlba.delete(id);else if(ui.walkAlba.size<CFG.alba.walk.maxShibas)ui.walkAlba.add(id);},
  albaWalk:()=>{if(S.hireAlba(s,'walk',[...ui.walkAlba],clock.now()))ui.walkAlba.clear();},
  manager:()=>{S.hireAlba(s,'manager',[],clock.now());},
- dev:d=>{if(!S.developMenu(s,d.id))why(S.menuCheck(s,d.id));},
+ skip:d=>{const t={type:d.type,id:d.id===''?null:+d.id};if(S.skipNow(s,t,clock.now())==null)why(S.skipCheck(s,t,clock.now()));},
+ levelUp:d=>{if(S.levelUp(s,+d.id))toast(L('toast.levelUpShiba',{lv:S.byId(s,+d.id).level}));else toast(L('toast.paws'));},
+ gacha:d=>{const res=S.gachaPull(s,+d.n,r,clock.now(),{ticket:!!d.ticket});if(res)ui.modals.push({kind:'gacha',res});else why(S.gachaCheck(s,+d.n,{ticket:!!d.ticket}));},
+ accUnlock:d=>{if(!S.unlockAccSlot(s,+d.id,d.via))why(S.accUnlockCheck(s,+d.id,d.via));},
+ accType:d=>{ui.accType=d.type;},buyAcc:d=>{if(S.buyAcc(s,d.item))toast(L('toast.accBought',{name:accName(d.item)}));else why(S.buyAccCheck(s,d.item));},
+ equip:d=>{if(!S.equipAcc(s,+d.id,d.item))why(S.equipCheck(s,+d.id,d.item));},unequip:d=>{S.unequipAcc(s,+d.id);},
+ dev:d=>{if(!S.developMenu(s,d.id,clock.now()))why(S.menuCheck(s,d.id));},
  heartReset:()=>{S.useHeartReset(s,clock.now());},
  setLang:d=>{s.settings.language=d.lang;applyStatic();},toggle:d=>{s.settings[d.k]=!s.settings[d.k];},
  reset:()=>ui.modals.unshift({kind:'confirm',text:L('set.resetQ'),yes:()=>{localStorage.removeItem(CFG.saveKey);s=S.newState(clock.now());w=S.newWorld(s,r);close();}}),

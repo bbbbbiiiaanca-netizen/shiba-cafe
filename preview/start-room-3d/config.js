@@ -68,36 +68,49 @@ export const CFG={
   managerChance:.3,managerRepMul:.5}, // 갱신 118
  // 갱신 120 결제 · 129 메뉴 개발(멍코인) · 134 메뉴 목록·주문 규칙 · 134-1 개발비 (134 표의 개발비는 134-1로 대체)
  menu:{coffee:{id:'M-01',price:1,img:'M-01-iced-americano_512.png'}, // 갱신 134: M-01 아이스 아메리카노 = 처음부터 있는 기본 커피 1멍 (120)
-  // kind: drink/dessert = 일반 메뉴, premium = 프리미엄. unlockLevel·price = 갱신 134 표, devCost = 갱신 134-1 표
+  // kind: drink/dessert = 일반 메뉴, premium = 프리미엄. unlockLevel·price = 갱신 134 표, devCost = 갱신 134-1 표, devSec = 갱신 136 개발 시간
   items:[
-   {id:'M-02',kind:'drink',unlockLevel:2,devCost:8500,price:3,img:'M-02-hot-latte_512.png'},            // 따뜻한 라테
-   {id:'M-05',kind:'dessert',unlockLevel:3,devCost:10000,price:5,img:'M-05-cheesecake_512.png'},        // 치즈케이크
-   {id:'M-03',kind:'drink',unlockLevel:5,devCost:12000,price:3,img:'M-03-strawberry-latte_512.png'},    // 딸기 라테
-   {id:'M-06',kind:'dessert',unlockLevel:7,devCost:13500,price:5,img:'M-06-chocochip-cookie_512.png'},  // 초코칩 쿠키
-   {id:'M-04',kind:'drink',unlockLevel:9,devCost:15000,price:3,img:'M-04-yuja-ade_512.png'},            // 유자 에이드
-   {id:'M-07',kind:'dessert',unlockLevel:12,devCost:17000,price:5,img:'M-07-croissant_512.png'},        // 크루아상
-   {id:'M-08',kind:'dessert',unlockLevel:15,devCost:18500,price:5,img:'M-08-strawberry-parfait_512.png'},// 딸기 파르페
-   {id:'P-01',kind:'premium',unlockLevel:20,devCost:23500,price:8,img:'P-01-gold-tiramisu_512.png'},    // 골드 티라미수
-   {id:'P-02',kind:'premium',unlockLevel:25,devCost:27000,price:8,img:'P-02-strawberry-whole-cake_512.png'}, // 딸기 홀케이크
-   {id:'P-03',kind:'premium',unlockLevel:30,devCost:30500,price:8,img:'P-03-montblanc_512.png'},        // 몽블랑
-   {id:'P-04',kind:'premium',unlockLevel:35,devCost:32000,price:8,img:'P-04-choco-fondant_512.png'},    // 초코 퐁당
-   {id:'P-05',kind:'premium',unlockLevel:40,devCost:34000,price:8,img:'P-05-macaron-trio_512.png'},     // 마카롱 3종
-   {id:'P-06',kind:'premium',unlockLevel:45,devCost:35500,price:8,img:'P-06-pavlova_512.png'}],         // 파블로바
+   {id:'M-02',kind:'drink',unlockLevel:2,devCost:8500,devSec:1800,price:3,img:'M-02-hot-latte_512.png'},            // 따뜻한 라테
+   {id:'M-05',kind:'dessert',unlockLevel:3,devCost:10000,devSec:3600,price:5,img:'M-05-cheesecake_512.png'},        // 치즈케이크
+   {id:'M-03',kind:'drink',unlockLevel:5,devCost:12000,devSec:7200,price:3,img:'M-03-strawberry-latte_512.png'},    // 딸기 라테
+   {id:'M-06',kind:'dessert',unlockLevel:7,devCost:13500,devSec:10800,price:5,img:'M-06-chocochip-cookie_512.png'},  // 초코칩 쿠키
+   {id:'M-04',kind:'drink',unlockLevel:9,devCost:15000,devSec:14400,price:3,img:'M-04-yuja-ade_512.png'},            // 유자 에이드
+   {id:'M-07',kind:'dessert',unlockLevel:12,devCost:17000,devSec:21600,price:5,img:'M-07-croissant_512.png'},        // 크루아상
+   {id:'M-08',kind:'dessert',unlockLevel:15,devCost:18500,devSec:28800,price:5,img:'M-08-strawberry-parfait_512.png'},// 딸기 파르페
+   {id:'P-01',kind:'premium',unlockLevel:20,devCost:23500,devSec:43200,price:8,img:'P-01-gold-tiramisu_512.png'},    // 골드 티라미수
+   {id:'P-02',kind:'premium',unlockLevel:25,devCost:27000,devSec:64800,price:8,img:'P-02-strawberry-whole-cake_512.png'}, // 딸기 홀케이크
+   {id:'P-03',kind:'premium',unlockLevel:30,devCost:30500,devSec:86400,price:8,img:'P-03-montblanc_512.png'},        // 몽블랑
+   {id:'P-04',kind:'premium',unlockLevel:35,devCost:32000,devSec:108000,price:8,img:'P-04-choco-fondant_512.png'},    // 초코 퐁당
+   {id:'P-05',kind:'premium',unlockLevel:40,devCost:34000,devSec:129600,price:8,img:'P-05-macaron-trio_512.png'},     // 마카롱 3종
+   {id:'P-06',kind:'premium',unlockLevel:45,devCost:35500,devSec:172800,price:8,img:'P-06-pavlova_512.png'}],         // 파블로바
   premiumDrinkPrice:3,premiumDessertPrice:5, // 갱신 120 고급 음료 3멍·고급 디저트 5멍 (134: 일반 음료/디저트를 1개 이상 개발해야 주문, 아니면 기본 커피)
   premiumBase:.05,premiumPerRepAbove50:.003,premiumSatisfiedBonus:.15,premiumCap:.4, // 갱신 120
   premiumPerNormalDeveloped:.01, // 갱신 134: 개발한 일반 메뉴 1개마다 고급 메뉴 기본 확률 +1%p (상한 40% 그대로)
   premiumUpgradeChance:.3, // 갱신 134: 고급 디저트 주문 → 프리미엄 1개 이상 개발 시 30% 확률로 프리미엄(8멍)
-  drinkToDessert:[2,1]}, // 갱신 120: 음료:디저트 2:1
+  drinkToDessert:[2,1], // 갱신 120: 음료:디저트 2:1
+  devAtOnce:1,devMaxSec:172800}, // 갱신 136: 개발 시간이 지나야 완성, 최대 2일, 한 번에 1개
  itemIncome:{boostMul:1.2,boostHours:4,boostMaxHours:24,paidCapMul:1.5,priceDia:U}, // 갱신 97 시간제 수익 1.2배 · UNSET: 가격(다이아)
  offline:{capHours:12,stepSec:1}, // 갱신 56: 오프라인 수익 최대 12시간분. stepSec = simulation step (engine, not a game number)
 
  // ── 시바 ──
  breeds:['red','sesame','kuro','white'], // 1.2 기본 4종 (레어 4종 ⏸️ 보류)
  personalities:['prankster','shy','tomboy','sweet','mopey','lazy','curious','boss','peopleLover','dogLover','tomgirl','zoomies','fighter','foodie','walkLover'], // 1.2 13개 + 갱신 52 먹보·산책광 = 15. 확률: 균등(성격별 확률 UNSET: 질문 9(다))
- level:{max:30,pawsPerLevel:10,dupPaws:10, // 갱신 81: Lv N→N+1 발바닥 10×N, 중복 1마리당 10
+ level:{max:30,pawsPerLevel:20,dupPaws:10, // 갱신 138: Lv N→N+1 발바닥 20×N (81의 10×N 대체, 누적 8,700) · 81: 중복 1마리당 10
   incomePerLevel:.05}, // 갱신 81: ×(1 + 0.05×(레벨−1))
- accessorySlots:[[25,3],[15,2],[5,1]], // 갱신 90: Lv5 1칸, Lv15 2칸, Lv25 3칸
- accessories:U, // UNSET: 1.2 / 질문 9(가) 어떤 액세서리가 열리는지
+ // 갱신 139-1·139-2 활동 발바닥 (시바 개인, 하루 최대 없음). 알바가 대신한 활동도 똑같이, 매니저 운영 시간도 카페 근무
+ activityPaws:{walk:2,play:1,cafeWorkHour:1,trickLevel:3, // 139-1: 직접 산책 1회 2, 놀아주기 1회 1, 카페 근무 1시간 1, 훈련 1단계 완료 3
+  walkAlba:2,daycare:1,trainer:3,dailyCap:null}, // 139-2: 산책 알바 = 산책 2, 데이케어 = 놀아주기 1, 훈련사 = 훈련 1단계 3 · dailyCap null = '하루 최대 없음'(정해진 값)
+ // 갱신 139-5·139-6 액세서리 칸: 시바마다 1칸, 해금해야 찰 수 있음 (90의 Lv5/15/25 칸, 139-3·139-4의 2·3칸 삭제)
+ accessory:{slots:1,unlockPaws:1000,unlockDia:1000, // 139-5: 발바닥 1,000개 또는 1,000다이아(10,000원)
+  starterSlotOpen:true,starterItems:1, // 139-6: 첫 시작 시바만 칸이 열린 채로 액세서리 1개 제공
+  starterItem:U, // UNSET: 139-6 첫 시바에게 주는 액세서리가 어느 것인지 → 목록의 첫 항목(삼각형·빨강)을 씀 (START_FALLBACK)
+  // 갱신 140 액세서리 상점 · 140-1 액세서리 1개 = 한 번에 시바 1마리 (시바 수만큼 따로 사고, 옮기려면 벗김)
+  bandana:{priceCoins:5000, // 140: 무료템 반다나 4종(F p11) × 원색 9색, 1개 5,000멍
+   types:['triangle','loop','knotTail','frontKnot'], // 1.5 / F p11: 클래식 삼각형, 루프 스누드형, 매듭 테일형, 앞 매듭형
+   colors:['red','blue','green','yellow','pink','navy','orange','purple','teal'], // 원색 9색 — 이름은 그림(3×3 시트, 왼쪽 위부터)을 보고 붙임
+   sheet:{triangle:'bandana-triangle-sheet.webp',loop:'bandana-loop-sheet.webp',knotTail:'bandana-knottail-sheet.webp',frontKnot:'bandana-frontknot-sheet.webp'},
+   grid:[3,3]}, // 시트 1장 = 3×3, 색 1개 = 칸 1개 (CSS 영역 표시만, 그림은 그대로)
+  special:{priceDia:300,items:U}}, // 140: 유료템 특별 액세서리 1개 300다이아(3,000원) · UNSET: 종류·디자인(그림 없음) → 빈 칸
  likes:{snacks:{basic:2,rare:1},toys:U,list:U}, // 갱신 40: 좋아하는 간식 기본 2 + 레어 1 · UNSET: 장난감 구조(제안), 간식·장난감 목록(질문 9(카))
  startShiba:{level:21,tricks:{sit:3,wait:3}}, // 갱신 90 레벨 21 · 갱신 100·109·133 앉아·기다려 3단계 · 갱신 109 4종 중 선택
  rescueLevel:U, // UNSET: 질문 9(사) 구조한 시바의 레벨 → Lv1(범위 최저) 사용, notes 참고
@@ -143,7 +156,7 @@ export const CFG={
  hospital:{stays:{light:1800,snake:7200,sick:14400}, // 갱신 111: 30분, 2시간, 4시간
   // 갱신 131 카페 레벨 구간별 고정 멍코인 [최저레벨, 가벼운 부상, 뱀 물림, 앓아누움, 구조견 목욕]
   costs:[[1,400,1200,2400,200],[10,500,1500,3000,250],[20,800,2400,4700,400],[30,1000,3000,6100,500],[40,1100,3400,6800,550]],
-  speedupDiaPer10Min:U}, // UNSET: 갱신 111·132 치료 앞당기기 다이아 가격
+  }, // 치료 앞당기기 = timeSkip (갱신 135-2)
 
  // ── 알바 (갱신 99·99-2·118·118-1·123-x·124-1·125-1) ──
  alba:{
@@ -153,15 +166,22 @@ export const CFG={
   manager:{unlock:25,cost:60000,hireSec:43200,cleanEverySec:600}}, // 갱신 125-1 · 118-1 12시간 · 118 10분마다 얼룩 1개
  cooldownTicketDia:{one:20,five:80}, // 갱신 115-1 (유료 전용, stub)
 
+ // ── 남은 시간 바로 완료 (갱신 135-2, 135·135-1 대체) ──
+ timeSkip:{diaPerMin:1, // 1분당 1다이아(10원), 1분 단위 올림, 버튼 하나로 남은 시간 전부
+  targets:['hospital','daycare','walk','trainer','menu']}, // '치료와 알바 쿨타임 등 남은 시간이 있는 모든 대기' · menu = 메뉴 개발(갱신 136)
+
  // ── 얼룩 (갱신 101-3 · 117-2) ──
  stains:{everySecPerShiba:7200,warnAt:3,warnDirtMul:1.5,badAt:6,badDirtMul:2,badRepEverySec:600,badRep:-1},
 
  // ── 동구 (갱신 78·79·80) ──
  dongu:{takesSlot:false,earns:false,canWalk:false,canAbandon:false},
 
- // ── 뽑기 (갱신 57·132) — 시작 레벨·확률·멍코인 가격 UNSET이라 꺼 둠 ──
- gacha:{priceDia:200, // 갱신 132-3
-  priceCoins:U,startLevel:U,breedOdds:U, // UNSET: 갱신 57 멍코인 가격, 질문 9(바) 시작 레벨·확률표
+ // ── 시바뽑기 (갱신 137: 132-3의 200다이아 대체) ──
+ gacha:{priceDia:100,tenDia:900,tenCount:10, // 갱신 137: 1회 100다이아(1,000원), 10연차 900다이아(9,000원)
+  startLevel:1, // 갱신 137 '레벨이 랜덤으로 나오는 방식은 쓰지 않는다' + 138 'Lv1→30 = 중복 870마리' → 새 시바 Lv1 (notes 참고)
+  dupPaws:10, // 갱신 137·81: 이미 가진 견종이 또 나오면 발바닥 10개 (레벨업 재료)
+  priceCoins:U, // UNSET: 갱신 57 멍코인 뽑기 가격 → 멍코인 뽑기 없음
+  breedOdds:U, // UNSET: 질문 9(바) 4종 확률표 → 균등(1/4)으로 뽑음 (notes 참고)
   video:'drive-images/영상/media-generation-gacha-reveal-video-v7-with-sfx.mp4'}, // not copied: 뽑기 disabled
 
  // ── stubs: confirmed systems outside the core, kept as config only ──
@@ -190,7 +210,8 @@ export const CFG={
 };
 
 // UNSET start values: the code uses these documented range endpoints (never a guessed middle value).
-export const START_FALLBACK={gauges:'gaugeFull (갱신 116 full state)',intimacy:'0 (range minimum)',rescueLevel:'1 (level range minimum, 갱신 81)',coins:'0'};
+export const START_FALLBACK={gauges:'gaugeFull (갱신 116 full state)',intimacy:'0 (range minimum)',rescueLevel:'1 (level range minimum, 갱신 81)',coins:'0',
+ starterItem:'first item of the bandana list (classic triangle · red) — 139-6 gives one accessory but does not say which'};
 
 // helpers that only read CFG
 export const isUnset=v=>v===null||v===undefined;
