@@ -81,6 +81,20 @@ export default async function({ev,check,sleep,reload}){
  await check('entrance blocked toast and rollback','document.getElementById("toast").textContent==="입구가 막혔어요!"&&JSON.stringify(__game.state.placement)===window.wallBefore');
  await ev('document.querySelector("[data-wall-remove]").click();__game.iso.setEdit(false);__game.state.cafe.level=__game.CFG.alba.manager.unlock;__game.state.coins=__game.CFG.alba.manager.cost;__game.S.hireAlba(__game.state,"manager",[],__game.clock.now());__game.step(__game.CFG.navigation.cellStepSec);true');
  await check('only manager has staff navigation presence','__game.world.manager?.role==="manager"&&!__game.world.daycare&&!__game.world.trainer&&!__game.world.walk');
+ // §17-9: real HUD → reusable popup → portrait picker → same popup, plus ad countdown.
+ await ev('__game.ui.modals=[];__game.state.cafe.level=1;__game.state.shibas[0].affinity=0;__game.state.hearts=__game.CFG.hearts.regenCap;__game.refresh();document.querySelector("#hud [data-act=hearts]").click();true');
+ await check('§17-9 empty art, locked levels, order and live balance','document.querySelectorAll("[data-list-popup=hearts] .lp-card").length===__game.CFG.heartUse.items.length&&!document.querySelector("[data-lp-row=call] .lp-face img")&&document.querySelector("[data-lp-row=praise] .lp-effect").textContent==="Lv5 해금"&&document.querySelector("[data-lp-row=wish] .lp-effect").textContent==="미정"');
+ await ev('document.querySelector("[data-lp-row=call] .lp-price").click();true');
+ await check('§17-9 use stays open and shows active mm:ss','__game.ui.modals[0].list==="hearts"&&__game.state.hearts===__game.CFG.hearts.regenCap-__game.CFG.heartUse.items[0].cost&&/\\d+:\\d+/.test(document.querySelector("[data-heart-active]").textContent)');
+ await ev('document.querySelector("[data-lp-row=pet] .lp-price").click();true');
+ await check('§17-9 daycare portrait picker reused','__game.ui.modals[0].list==="heartShiba"&&!!document.querySelector(".lp-face.portrait img")');
+ await ev('document.querySelector("[data-list-popup=heartShiba] .lp-price").click();true');
+ await check('§17-9 selected shiba affinity updates','__game.state.shibas[0].affinity===__game.CFG.heartUse.items.find(x=>x.id==="pet").affinity&&__game.ui.modals[0].list==="hearts"');
+ await ev('for(let i=0;i<__game.CFG.heartUse.ads.burst;i++)__game.S.claimHeartAd(__game.state,__game.clock.now());__game.state.hearts=0;__game.state.heartRegenAt=__game.clock.now();__game.refresh();true');
+ await check('§17-9 insufficient heart dim and ad cooldown','document.querySelector("[data-lp-row=call] .lp-price").disabled&&document.querySelector("[data-act=heartAd]").disabled&&document.querySelector("[data-act=heartAd]").textContent.includes(":")');
+ await ev('__game.state.cafe.level=5;__game.refresh();true');
+ await check('§17-9 level unlock toast','document.getElementById("toast").textContent.includes("칭찬해 주기 해금")');
+ await ev('__game.ui.modals=[];__game.refresh();true');
  // persisted across reload, offline report path
  await reload();await ev('__game.step(.2);true');
  await check('save kept after reload (language, shiba)','__game.state.settings.language==="ko"&&__game.state.shibas.length>=1&&__game.state.shibas[0].breed==="kuro"&&__game.state.started');

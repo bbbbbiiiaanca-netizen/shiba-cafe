@@ -46,6 +46,27 @@ export const CFG={
  hearts:{regenCap:10, // 1.4 / 갱신 28·31, confirmed by user 2026-10-15: natural regen stops at 10
   slots:5, // confirmed by user 2026-10-15: top bar shows 5 heart slots; hearts above 5 → 5 full + '+N'
   regenEverySec:1800}, // 1.4 / 갱신 28·31: 30분당 1개; 보상 하트는 상한을 넘어 무제한 적립
+ // §17-9: all numeric values below are starting value 2026-10-15, pending user confirm.
+ heartUse:{affinity:{min:0,max:100,start:0,guestMul:null},walkAffinity:1,
+  ads:{grant:1,burst:3,cooldownSec:1800,daily:10},buy:{hearts:5,dia:50},visit:{daily:3,hearts:1},invite:{daily:1,hearts:2},
+  items:[
+   {id:'call',name:'손님 부르기',level:0,cost:1,sec:600,guests:1.5,line:'손님 더 많이'},
+   {id:'pet',name:'쓰다듬기',level:0,cost:1,shiba:true,affinity:3,daily:3,line:'친밀도 올리기'},
+   {id:'play',name:'놀아 주기',level:0,cost:1,shiba:true,affinity:2,happy:10,line:'친밀도 · 행복'},
+   {id:'snack',name:'간식',level:0,cost:1,shiba:true,happy:15,fatigue:-10,line:'행복 · 피로 회복'},
+   {id:'walk',name:'산책',level:0,cost:null,line:'산책 · 친밀도'},
+   {id:'praise',name:'칭찬해 주기',level:5,cost:1,sec:1800,satisfaction:1.5,line:'손님 만족 증가'},
+   {id:'brush',name:'빗질·마사지',level:8,cost:1,shiba:true,sec:1800,affinity:null,fatigue:null,cleanliness:null,shibaMul:1.2,line:'시바 효과 증가'},
+   {id:'music',name:'가게 음악',level:12,cost:1,sec:1800,stay:null,extraOrders:1,line:'머무르며 추가 주문'},
+   {id:'blanket',name:'낮잠 이불',level:16,cost:1,happy:null,recovery:null,line:'행복 · 피로 회복'},
+   {id:'recommend',name:'오늘의 추천 메뉴',level:20,cost:1,sec:3600,sales:null,price:null,menu:true,line:'추천 메뉴 고르기'},
+   {id:'tasting',name:'메뉴 시식회',level:25,cost:2,sec:600,price:1.2,line:'메뉴 판매가 증가'},
+   {id:'cookie',name:'행운 쿠키',level:30,cost:1,daily:3,rewards:{coins:null,paws:null,item:null},odds:null,line:'행운의 선물 미정'},
+   {id:'special',name:'특별 손님 초대',level:35,cost:3,guestsCount:3,tip:null,guestOdds:null,line:'특별 손님 초대'},
+   {id:'talent',name:'시바 장기자랑',level:null,cost:2,tip:null,line:'관람 손님 팁'},
+   {id:'treat',name:'간식 손님 대접',level:null,cost:1,line:'모두 완전 만족'},
+   {id:'wish',name:'소원상자',level:null,cost:3,daily:1,choices:5,items:null,line:'다음 접속 선물'}
+  ].map(x=>({...x,art:null}))},
  heartReset:{fillTo:10}, // 1.4 / 갱신 32: 10개 미만일 때만 10개까지, 10개 이상이면 사용 불가(소모 없음)
 
  expansion:{rowCost:U}, // UNSET: interior §1 / spec v3 §1.3 land row cost

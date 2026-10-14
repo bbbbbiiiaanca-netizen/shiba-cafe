@@ -142,7 +142,7 @@ P.care=id=>{const sh=S.byId(s,id);if(!sh)return P.shibas();const st=S.statusOf(s
    ${need?`<button data-act="levelUp" data-id="${id}" ${S.levelUpCheck(s,id)?'disabled':''}>${L('care.levelUp',{n:ico('paw')+fmt(need)})}</button>`:''}</div><div class="note">${L('care.pawsSrc')}</div>
   <div class="g"><span>${L('care.intimacy')}</span>${bar(isUnset(sh.intimacy)?null:sh.intimacy/100,'#e98aa0')}<span>${f2(sh.intimacy)}</span></div>
   <div class="g"><span>${L('care.intel')}</span>${bar(S.intelligence(sh)/100,'#6aa5d8')}<span>${S.intelligence(sh)}</span></div></div>`;
- h+=`<div class="card">${CFG.gauges.map(k=>`<div class="g"><span>${L('g.'+k)}</span>${bar(isUnset(sh.g[k])?null:sh.g[k]/100,(k==='dirt'||k==='fatigue'||k==='boredom')?'#b58a5a':'#7fbf6a')}<span>${f2(sh.g[k])}</span></div>`).join('')}
+ h+=`<div class="card"><div class="note">친밀도 ${sh.affinity??CFG.heartUse.affinity.start} / ${CFG.heartUse.affinity.max}</div>${CFG.gauges.map(k=>`<div class="g"><span>${L('g.'+k)}</span>${bar(isUnset(sh.g[k])?null:sh.g[k]/100,(k==='dirt'||k==='fatigue'||k==='boredom')?'#b58a5a':'#7fbf6a')}<span>${f2(sh.g[k])}</span></div>`).join('')}
   <div class="note">${L('care.cond',{m:f2(S.conditionMul(sh))})}</div>
   <div class="btns"><button data-act="play" data-id="${id}" ${S.careCheck(s,id,'play')?'disabled':''}>${img(IMG.toy)}${L('care.play',{n:CFG.care.play.hearts})}</button>
    <button disabled>${islot()}${L('care.feed')} · ${L('app.unset')}</button><button disabled>${img(IMG.snack)}${L('care.snack')} · ${L('app.unset')}</button>
@@ -226,6 +226,12 @@ function navState(){document.querySelectorAll('[data-nav]').forEach(b=>b.classLi
 //  tapping the card body), locked (→ effect 'Lv{N} 해금' only, no price button), price (config value; null → '미정' disabled),
 //  unit 'coin'|'dia', label (button text instead of price), disabled, act, data}. Prices come from CFG only.
 const LP={};
+const heartRow=(it,sh=null)=>{const now=clock.now(),locked=it.level==null||s.cafe.level<it.level,c=S.heartUseCheck(s,it.id,sh?.id,now),walk=it.id==='walk';return {key:sh?'shiba-'+sh.id:it.id,face:sh?IMG.shiba(sh.breed):it.art,portrait:!!sh,name:sh?nameOf(sh):it.name,effect:locked?(it.level==null?'미정':lockedLine(it.level)):sh?`친밀도 ${sh.affinity??CFG.heartUse.affinity.start}`:it.line,locked,price:walk?CFG.walk.heartsPer10Min:it.cost,unit:'heart',label:walk?'산책 고르기':c==='daily'?'오늘 사용 완료':null,disabled:!walk&&(s.hearts<it.cost||(!!c&&!(c==='pick'&&it.shiba)&&!(c==='menu'&&it.menu))),act:walk?'heartWalk':it.shiba&&!sh?'heartPick':it.menu?'heartMenu':'heartUse',data:{item:it.id,id:sh?.id??''}};};
+LP.hearts=()=>{const now=clock.now(),a=S.heartAdStatus(s,now),active=S.activeHeartEffects(s,now),ad=S.heartItems().some(it=>it.level!=null&&it.level<=s.cafe.level&&it.cost>s.hearts)?`<button data-act="heartAd" ${a.left||!a.remaining?'disabled':''}>광고 보고 하트 ${CFG.heartUse.ads.grant}${a.left?' · '+mmss(a.left):!a.remaining?' · 오늘 완료':''}</button>`:'';return {title:'하트 쓰기',top:`<div data-heart-balance>하트 ${ico('heart')}${s.hearts}</div><div data-heart-active>${active.map(e=>`<div>${CFG.heartUse.items.find(x=>x.id===e.id).name}${e.shibaId?' · '+nameOf(S.byId(s,e.shibaId)||{name:'시바'}):''} ${mmss(Math.ceil((e.until-now)/1000))}</div>`).join('')}</div>${ad}`,rows:S.heartItems().map(it=>heartRow(it)),footer:`<button data-act="heartBuy" ${s.dia<CFG.heartUse.buy.dia?'disabled':''}>${CFG.heartUse.buy.hearts}하트 = ${priceText(CFG.heartUse.buy.dia,'dia')}</button><button data-act="heartStub">다른 카페 방문 · 하루 ${CFG.heartUse.visit.daily}회 · ${CFG.heartUse.visit.hearts}하트</button><button data-act="heartStub">초대 메시지 · 하루 ${CFG.heartUse.invite.daily}회 · ${CFG.heartUse.invite.hearts}하트</button>`};};
+// Reuse the daycare list frame and portrait row, including the same existing shiba images.
+LP.heartShiba=id=>({title:'시바 고르기',rows:s.shibas.map(sh=>heartRow(CFG.heartUse.items.find(x=>x.id===id),sh))});
+LP.heartMenu=id=>({title:'추천 메뉴 고르기',rows:s.menus.map(key=>{const m=CFG.menu.items.find(x=>x.id===key);return {key,face:m?'assets/drive/'+m.img:null,name:L('menu.'+key),effect:'추천 효과 미정',price:CFG.heartUse.items.find(x=>x.id===id).cost,unit:'heart',disabled:s.hearts<CFG.heartUse.items.find(x=>x.id===id).cost,act:'heartUse',data:{item:id,menu:key}};})});
+
 const priceText=(p,unit='coin')=>p==null?L('app.unset'):ico(unit)+fmt(p); // unit = RES key: coin · dia · paw
 const lockedLine=lv=>L('app.locked',{lv}); // 'Lv15 해금' — the real unlock level from CFG
 // §17-4 exact short lines (수인님 2026-10-14); numbers inside come from CFG
@@ -259,7 +265,7 @@ LP.upgrade=()=>({title:'가게 관리 업그레이드',rows:UPGRADES.map(k=>{con
 function listPopupHtml(m){const v=LP[m.list](m.arg),openKey=ui.lpOpen?.[m.list+(m.arg||'')];
  const row=x=>{const open=openKey===x.key&&!!x.detail;return `<article class="lp-card${x.locked?' locked':''}${open?' open':''}" data-lp-row="${x.key}"><span class="lp-face${x.portrait?' portrait':''}" data-act="lpToggle" data-key="${x.key}">${x.face?img(x.face):''}</span><div class="lp-text" data-act="lpToggle" data-key="${x.key}" aria-expanded="${open}"><strong>${x.name}</strong><small class="lp-effect">${x.effect}</small>${open?`<small class="lp-detail">${x.detail}</small>`:''}</div>`
   +(x.locked?'<span class="lp-price-slot" aria-hidden="true"></span>':`<button class="lp-price" data-act="${x.act}" ${Object.entries(x.data||{}).map(([k,val])=>`data-${k}="${val}"`).join(' ')} ${x.price==null||x.disabled?'disabled':''}>${x.price==null?L('app.unset'):x.label||priceText(x.price,x.unit)}</button>`)+'</article>';};
- return `<div class="lp-ribbon"><h2>${v.title}</h2></div><button class="lp-close" data-act="modalOk" aria-label="닫기">×</button><div class="lp-list" data-list-popup="${m.list}">${v.rows.length?v.rows.map(row).join(''):`<div class="lp-empty">${v.empty||L('app.unset')}</div>`}</div>`;}
+ return `<div class="lp-ribbon"><h2>${v.title}</h2></div><button class="lp-close" data-act="modalOk" aria-label="닫기">×</button><div class="lp-list" data-list-popup="${m.list}">${v.top||''}${v.rows.length?v.rows.map(row).join(''):`<div class="lp-empty">${v.empty||L('app.unset')}</div>`}${v.footer?`<div class="heart-footer">${v.footer}</div>`:''}</div>`;}
 
 // ───────── modals ─────────
 let modalSig='';
@@ -293,6 +299,12 @@ if(L0.offline&&(L0.offline.sec>=60||L0.reopened))ui.modals.push({kind:'offline',
 
 // ───────── actions ─────────
 const act={
+ hearts:()=>{S.heartState(s);ui.modals.unshift({kind:'list',list:'hearts'});},
+ heartPick:d=>ui.modals.unshift({kind:'list',list:'heartShiba',arg:d.item}),
+ heartMenu:d=>ui.modals.unshift({kind:'list',list:'heartMenu',arg:d.item}),
+ heartUse:d=>{if(S.useHeartItem(s,d.item,d.id?+d.id:null,clock.now(),d.menu||null,w)){if(ui.modals[0].list!=='hearts')ui.modals.shift();toast(['cookie','special','blanket','recommend'].includes(d.item)?'사용했어요 · 미정 효과 준비 중':'사용했어요');}},
+ heartAd:()=>{S.claimHeartAd(s,clock.now());},heartBuy:()=>{S.buyHearts(s);},heartStub:()=>toast('준비 중'),
+ heartWalk:()=>{ui.modals=[];open('walk');},
  listOpen:d=>{if(d.list==='menu')ui.seen.menuDone=false;ui.lpOpen={};ui.modals.unshift({kind:'list',list:d.list,arg:d.kind||null});},
  lpToggle:d=>{const m=ui.modals[0];if(m?.kind!=='list')return;const k=m.list+(m.arg||'');ui.lpOpen[k]=ui.lpOpen[k]===d.key?null:d.key;},
  albaWalkOpen:()=>{ui.modals=ui.modals.filter(m=>m.kind!=='list');open('walk');},
@@ -342,7 +354,7 @@ $('scene').addEventListener('pointerdown',e=>{const t=e.target.closest('[data-ac
 addEventListener('pointerup',e=>{if(!drag)return;const d=drag;drag=null;if(Math.hypot(e.clientX-d.x,e.clientY-d.y)<12)return;
  const seat=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-cust]');if(seat&&S.deliver(s,w,d.id,+seat.dataset.cust,clock.now())){ui.sel=null;refresh();}});
 function applyStatic(){document.documentElement.lang=s.settings.language||'ko';document.title=L('app.title');document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=L(e.dataset.i18n));sceneSig='';panelSig='';modalSig='';}
-function refresh(){if(Q.get('debug')==='1'){let debug=document.getElementById('manager-debug');if(!debug){debug=document.createElement('output');debug.id='manager-debug';debug.style.cssText='position:absolute;top:70px;left:8px;color:white;background:#222;z-index:5';$('isomap').parentElement.append(debug);}debug.textContent=w.manager?'매니저 '+w.manager.phase+' ['+w.manager.cell.join(',')+']':'';}handleEvents();renderHUD();renderScene();renderPanel();renderModal();}
+function refresh(){for(const it of S.heartUnlocks(s))toast(it.name+' 해금');if(Q.get('debug')==='1'){let debug=document.getElementById('manager-debug');if(!debug){debug=document.createElement('output');debug.id='manager-debug';debug.style.cssText='position:absolute;top:70px;left:8px;color:white;background:#222;z-index:5';$('isomap').parentElement.append(debug);}debug.textContent=w.manager?'매니저 '+w.manager.phase+' ['+w.manager.cell.join(',')+']':'';}handleEvents();renderHUD();renderScene();renderPanel();renderModal();}
 
 // ───────── loop ─────────
 let last=performance.now(),saveT=0;

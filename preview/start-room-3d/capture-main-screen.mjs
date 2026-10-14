@@ -1,5 +1,5 @@
 // Main cafe capture using capture-spec-v3.mjs Chrome CDP pipe approach, portrait 390×844.
-// Usage (from the repo root or start-room-3d/): node start-room-3d/capture-main-screen.mjs [OUTDIR] [--u12 | --rf]
+// Usage (from the repo root or start-room-3d/): node start-room-3d/capture-main-screen.mjs [OUTDIR] [--u179 | --u12 | --rf]
 // Default OUTDIR: /workspace/shiba-cafe-docs/spec-v3-build
 import {spawn} from 'node:child_process';import {mkdirSync,writeFileSync,readFileSync,rmSync} from 'node:fs';import {resolve,dirname,join} from 'node:path';import {fileURLToPath} from 'node:url';
 const ROOT=dirname(fileURLToPath(import.meta.url));
@@ -154,7 +154,18 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.alba.manager.unlock;g.state.coins=g.CFG.alba.manager.cost;g.S.hireAlba(g.state,'manager',[],g.clock.now());g.step(g.CFG.navigation.cellStepSec);g.refresh();if(!g.world.manager||document.getElementById('manager-debug'))throw Error('manager fixture');return true;})()`);
   await shot('main-screen-rf-manager.png');
  };
- if(process.argv.includes('--rf')){await rf();if(errors.length)throw Error(errors.join('\n'));}
+ if(process.argv.includes('--u179')){
+  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+  await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.heartUse.items.find(x=>x.id==='praise').level;g.state.hearts=g.CFG.hearts.regenCap;g.S.useHeartItem(g.state,'call',null,g.clock.now());g.refresh();return true;})()`);
+  await click('#hud [data-act=hearts]');await shot('main-screen-u179-hearts.png');
+  await ev(`(()=>{const g=__game;for(let i=0;i<g.CFG.heartUse.ads.burst;i++)g.S.claimHeartAd(g.state,g.clock.now());g.state.hearts=0;g.state.heartRegenAt=g.clock.now();g.refresh();return true;})()`);
+  await ev(`document.querySelector('.lp-list').scrollTop=0;true`);
+  await shot('main-screen-u179-noheart.png');
+  await ev(`__game.state.hearts=__game.CFG.hearts.regenCap;__game.refresh();document.querySelector('.lp-list').scrollTop=0;true`);
+  await click('[data-lp-row=pet] .lp-price');await shot('main-screen-u179-pick.png');
+  if(errors.length)throw Error(errors.join('\n'));
+ }
+ else if(process.argv.includes('--rf')){await rf();if(errors.length)throw Error(errors.join('\n'));}
  else if(process.argv.includes('--u12')){await u12();if(errors.length)throw Error(errors.join('\n'));}
  else if(process.argv.includes('--u141')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});

@@ -61,7 +61,7 @@ export function makeShiba(s,{breed,level=null,name=null,tricks={},r=Math.random,
  const g=Object.fromEntries(CFG.gauges.map(k=>[k,CFG.gaugeStart?.[k]??null])); // §1.2-3: unknown remains null
  const tr={},te={};for(const t of CFG.tricks){tr[t.id]=clamp(tricks[t.id]||0,0,CFG.trickMaxLevel);te[t.id]=0;}
  return {id:s.nextId++,breed,name,personality:drawPersonality(r),level:isUnset(level)?null:clamp(level,1,CFG.level.max),paws:0,
-  intimacy:CFG.intimacy.start,g,tricks:tr,trickExp:te,placed:false,status:'ok',injury:null,hospitalUntil:0,hospitalKind:null,
+  affinity:CFG.heartUse.affinity.start,intimacy:CFG.intimacy.start,g,tricks:tr,trickExp:te,placed:false,status:'ok',injury:null,hospitalUntil:0,hospitalKind:null,
   zeroSince:null,sickSince:null,cd:{},joinedAt:now,acc:null,accUnlocked:false,likesFound:{snacks:[],toys:[]}};
 }
 export const byId=(s,id)=>s.shibas.find(o=>o.id===id);
@@ -110,7 +110,7 @@ export function addCafeExp(s,n){if(!(n>0))return 0;const C=s.cafe;let up=0;if(C.
 export const slotsOf=s=>Math.min(CFG.cafe.maxPlaced,pressureAt(s.cafe.level).slots);
 export const capOf=s=>pressureAt(s.cafe.level).cap+upgradeAdd(s,'seat'); // 좌석 추가 upgrade: +effect guests per level
 export function arrivalMul(rep){for(const [at,m] of CFG.rep.arrivalMul)if(rep>=at)return m;return CFG.rep.arrivalMul.at(-1)[1];}
-export const arrivalInterval=s=>3600/(CFG.cafe.customersPerHourPerCap*capOf(s))*arrivalMul(s.cafe.rep)*upgradeMul(s,'interval');
+export const arrivalInterval=s=>3600/(CFG.cafe.customersPerHourPerCap*capOf(s))*arrivalMul(s.cafe.rep)*upgradeMul(s,'interval')/heartMultiplier(s,'guests',s.heartUseNow??s.lastSeen);
 export function satisfiedGain(rep,base=CFG.rep.satisfied){for(const [at,m] of CFG.rep.damp)if(rep>=at)return base*m;return base;}
 // offline: if a drop reaches the floor the café closes for the day (갱신 126-1)
 export function addRep(s,d,ctx={}){const C=s.cafe;C.rep=clamp(C.rep+d,CFG.rep.min,CFG.rep.max);
@@ -208,6 +208,7 @@ export const canStopWalk=()=>!isUnset(CFG.walk.stopRule); // UNSET 질문 1-4
 export const extraRewardKind=()=>{const k=CFG.pending.walkExtraReward;return k==='coins'&&isUnset(CFG.walk.events.extraCoins)?null:k;};
 export function tickWalk(s,now=Date.now(),r=Math.random){const W=s.walk;if(!W)return null;const out={};
  if(now>=W.walkStartAt+W.walkDurationSec*1000){const sh=byId(s,W.shibaId),E=CFG.walk.events,sec=W.walkDurationSec,res={shibaId:W.shibaId,sec,at:now,events:[]};s.walk=null;
+  if(sh)addAffinity(sh,CFG.heartUse.walkAffinity);
   if(sh){const fx=CFG.walkEffect[sec];changeGauges(s,sh,fx,now);addCafeExp(s,CFG.cafeExp.walkPer10Min*sec/600);addPaws(sh,CFG.activityPaws.walk);res.paws=CFG.activityPaws.walk; // 139-1 직접 산책 1회 2
    // 갱신 82·83 independent rolls
    if(r()<E.snake){sh.status='injured';sh.injury='snake';res.events.push('snake');}
@@ -267,9 +268,9 @@ export function chooseOrder(s,satisfied,r){const M=CFG.menu,p=premiumChance(s.ca
 // confirmed 수인님 2026-10-14: max meeting effect; no-meeting starting x1 pending confirm.
 export function payFor(s,met,order,now=Date.now()){
  const aggregate=CFG.income.levelAggregation,item=itemIncomeMul(s,now);
- const effects=met.map(id=>byId(s,id)).filter(Boolean).map(o=>levelEffect(o.level));
+ const effects=met.map(id=>byId(s,id)).filter(Boolean).map(o=>isUnset(levelEffect(o.level))?null:levelEffect(o.level)*heartMultiplier(s,'shibaMul',now,o.id));
  const lvMul=typeof aggregate==='function'&&effects.every(Number.isFinite)?aggregate(effects):null;
- const base=order.price*upgradeMul(s,'price'); // 메뉴 판매가 인상 upgrade (effect UNSET → ×1)
+ const base=order.price*upgradeMul(s,'price')*heartMultiplier(s,'price',now); // 메뉴 판매가 인상 upgrade (effect UNSET → ×1)
  const pending=!Number.isFinite(lvMul)||!Number.isFinite(base)||!Number.isFinite(item);return {base,lvMul:pending?null:lvMul,item,total:pending?null:base*lvMul*item,pending};}
 
 // ───────────────────────── 가게 관리 업그레이드 (§16 answer 2026-10-14) ─────────────────────────
@@ -295,7 +296,7 @@ export function reopenCafe(s,now){const C=s.cafe;if(!C.closed)return null;const 
 
 // ───────────────────────── the café floor (runtime world) ─────────────────────────
 export const NPC_NORMAL=['commuter','mom','dad','girl','boykid','grandma','grandpa','coupleman','couplewoman','friend']; // 갱신 51 (진상·부동산 제외)
-export function newWorld(s,r=Math.random,navigation=null){return {navigation,behaviour:null,r,t:0,custs:[],queue:[],nextCust:1,spawnT:arrivalInterval(s),sh:{},events:[],recent:[],lastPay:null};}
+export function newWorld(s,r=Math.random,navigation=null){s.heartUseNow=s.lastSeen;return {navigation,behaviour:null,r,t:0,custs:[],queue:[],nextCust:1,spawnT:arrivalInterval(s),sh:{},events:[],recent:[],lastPay:null};}
 function makeRequest(s,w){const T=[];const working=s.shibas.filter(o=>canWork(s,o));
  if(working.length)T.push('meetShiba');const known=CFG.tricks.filter(t=>working.some(o=>o.tricks[t.id]>0));if(known.length)T.push('seeTrick');
  if(!T.length)return null;const type=pick(w.r,T);return type==='meetShiba'?{type,shibaId:pick(w.r,working).id}:{type,trick:pick(w.r,known).id};}
@@ -327,11 +328,11 @@ function endMeeting(w,sh){const c=w.custs.find(c=>c.id===sh.cust);if(c&&c.with==
 function managerCanFulfil(s,c){const q=c.request;if(!q)return false;const working=s.shibas.filter(o=>canWork(s,o));
  return q.type==='meetShiba'?working.some(o=>o.id===q.shibaId):q.type==='seeTrick'?working.some(o=>o.tricks[q.trick]>0):false;} // 갱신 118: 인테리어·진상 요구는 못 함
 function leave(s,w,c,ctx){const V=CFG.visit,E=CFG.cafeExp;let outcome,repD=0,exp=0,byManager=false;
- if(c.fulfilled){outcome='satisfied';repD=satisfiedGain(s.cafe.rep,CFG.requests.metRep);exp=E.custSatisfied;} // price unchanged: the order was fixed at sit
+ if(c.fulfilled){outcome='satisfied';repD=satisfiedGain(s.cafe.rep,CFG.requests.metRep*heartMultiplier(s,'satisfaction',ctx.now));exp=E.custSatisfied;} // price unchanged: the order was fixed at sit
  else if(managerActive(s,ctx.now)&&managerCanFulfil(s,c)&&w.r()<CFG.requests.managerChance){outcome='satisfied';byManager=true;repD=satisfiedGain(s.cafe.rep,CFG.rep.satisfied*CFG.requests.managerRepMul);exp=0;}
  else if(!isUnset(c.score)&&c.score<V.scoreDisappointedBelow){outcome='disappointed';repD=!c.met.length&&s.cafe.level<CFG.rep.unmetFreeBelowLevel?0:CFG.rep.disappointed;exp=E.custDisappointed;} // starting value 2026-10-14: unmet guests cost no reputation below café Lv5
  else{outcome='normal';repD=CFG.rep.normal;exp=E.custNormal;}
- const order=c.order||chooseOrder(s,outcome==='satisfied',w.r);const pay=payFor(s,c.met,order,ctx.now);recordPayment(s,pay,ctx.now,ctx);
+ const order=c.order||chooseOrder(s,outcome==='satisfied',w.r);const pay=payFor(s,c.met,order,ctx.now);recordPayment(s,pay,ctx.now,ctx);for(const effect of activeHeartEffects(s,ctx.now)){const extra=CFG.heartUse.items.find(x=>x.id===effect.id)?.extraOrders??0;for(let i=0;i<extra;i++){const extraOrder=chooseOrder(s,outcome==='satisfied',w.r),extraPay=payFor(s,c.met,extraOrder,ctx.now);recordPayment(s,extraPay,ctx.now,ctx);if(Number.isFinite(pay.total)&&Number.isFinite(extraPay.total)){pay.total+=extraPay.total;pay.base+=extraPay.base;}else{pay.pending=true;pay.total=null;}w.events.push({type:'order',id:c.id,order:extraOrder.id,orderImg:extraOrder.img,cell:c.cell&&[...c.cell]},{type:'serve',id:c.id,order:extraOrder.id});}}
  s.stats.served++;s.stats[outcome]++;addCafeExp(s,exp);w.lastPay={...pay,order:order.id,orderImg:order.img,outcome,met:[...c.met]};
  w.events.push({type:'leave',id:c.id,outcome,coins:pay.total,order:order.id,orderImg:order.img,byManager,requestMet:outcome==='satisfied',metShiba:c.met.length>0,seat:c.seat,cell:c.cell&&[...c.cell]});
  w.recent.push({id:c.id,order:order.id,coins:pay.total,pending:pay.pending});w.recent=w.recent.slice(-3);c.phase='exiting';routeTo(s,w,c,layout(s,w).entrance);if(repD)addRep(s,repD,{...ctx,world:w});}
@@ -352,7 +353,7 @@ export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};settleLedger(s,now);syn
  // 갱신 106: 1시간마다 50 쪽으로 1점
  C.driftAcc+=dt;while(C.driftAcc>=3600){C.driftAcc-=3600;const d=CFG.rep.driftTo-C.rep;if(d)C.rep+=Math.sign(d)*Math.min(Math.abs(d),CFG.rep.driftPerHour);}
  // customers
- w.spawnT-=dt;while(w.spawnT<=0){w.spawnT+=arrivalInterval(s);spawn(s,w,now);}
+ s.heartUseNow=now;w.spawnT-=dt;while(w.spawnT<=0){w.spawnT+=arrivalInterval(s);spawn(s,w,now);}
  for(const c of [...w.queue]){c.t-=dt;if(c.t<0){w.queue=w.queue.filter(x=>x!==c);s.stats.angry++;w.events.push({type:'angry',id:c.id,cell:c.cell&&[...c.cell]});addRep(s,CFG.navigation.queueReputation,{...ctx,world:w});if(C.closed)return w;}} // answer 똑또기 2026-10-14: timeout leaves, reputation unchanged
  for(const c of [...w.custs]){
   if(c.phase==='exiting'){if(moveCell(c,dt,CFG.navigation.cellStepSec)){w.custs=w.custs.filter(x=>x!==c);w.events.push({type:'exit',id:c.id});}continue;}
@@ -419,7 +420,7 @@ export function load(storage,now=Date.now(),r=Math.random){let s=null;try{s=JSON
  const B=CFG.accessory.bandana,cellId=id=>{const m=/^bandana-(\w+)-(\w+)$/.exec(id||'');const i=m?B.legacyColorIds.indexOf(m[2]):-1;return i<0?id:`bandana-${m[1]}-${B.colors[i]}`;};
  const inv={};for(const [k,n] of Object.entries(s.accInv||{})){const k2=cellId(k);inv[k2]=(inv[k2]||0)+n;}s.accInv=inv;for(const sh of s.shibas)if(sh.acc)sh.acc=cellId(sh.acc);
  // older v3 saves: 90's level slots → 139-6 one slot (the first shiba is the starter)
- for(const sh of s.shibas){if(!('accUnlocked' in sh)){sh.starter=sh.id===Math.min(...s.shibas.map(o=>o.id));sh.accUnlocked=sh.starter;sh.acc=sh.starter?starterItem():null;delete sh.accessories;}}let offline=null;if(s.started&&now>s.lastSeen){const w=newWorld(s,r);offline=fastForward(s,w,s.lastSeen,now,{offline:true});}
+ for(const sh of s.shibas){sh.affinity??=CFG.heartUse.affinity.start;if(!('accUnlocked' in sh)){sh.starter=sh.id===Math.min(...s.shibas.map(o=>o.id));sh.accUnlocked=sh.starter;sh.acc=sh.starter?starterItem():null;delete sh.accessories;}}let offline=null;if(s.started&&now>s.lastSeen){const w=newWorld(s,r);offline=fastForward(s,w,s.lastSeen,now,{offline:true});}
  settleLedger(s,now);const reopened=reopenCafe(s,now);s.lastSeen=now;return {state:s,fresh:false,offline,reopened};}
 
 // ───────────────────────── UNSET-gated features (stubs) ─────────────────────────
@@ -467,3 +468,24 @@ export function behaviourReady(B){const W=B?.weights,ws=W?Object.values(W):[];if
 
 // Only flooring with approved tile art can be selected; no generated fallback.
 export function selectFlooring(s,id){if(!Object.hasOwn(FLOOR_ART,id)||!s.space.themes.includes(id))return false;s.space.flooring=id;return true;}
+
+// §17-9 state is lazy so older v3 saves retain compatibility; daily limits use the existing KST ledger day.
+export const heartItems=()=>[...CFG.heartUse.items].sort((a,b)=>(a.level??Infinity)-(b.level??Infinity));
+export function heartState(s){return s.heartUse??={effects:[],days:{},unlocks:[],seenLevel:s.cafe.level};}
+export function heartDay(s,now){const h=heartState(s),day=ledgerDay(now);for(const key of Object.keys(h.days))if(+key!==day)delete h.days[key];return h.days[day]??={uses:{},ads:0,adUntil:0};}
+export function addAffinity(sh,n){if(Number.isFinite(n))sh.affinity=clamp((sh.affinity??CFG.heartUse.affinity.start)+n,CFG.heartUse.affinity.min,CFG.heartUse.affinity.max);}
+export function activeHeartEffects(s,now=Date.now()){const h=heartState(s);h.effects=h.effects.filter(e=>e.until>now);return h.effects;}
+export function heartMultiplier(s,key,now=Date.now(),id=null){return activeHeartEffects(s,now).filter(e=>id==null||e.shibaId===id).reduce((m,e)=>m*(CFG.heartUse.items.find(x=>x.id===e.id)?.[key]??1),1);}
+export function heartUnlocks(s){const h=heartState(s),items=heartItems().filter(x=>x.level>h.seenLevel&&x.level<=s.cafe.level);h.seenLevel=Math.max(h.seenLevel,s.cafe.level);return items;}
+export function heartUseCheck(s,id,shibaId=null,now=Date.now(),menuId=null){const it=heartItems().find(x=>x.id===id);if(!it)return 'pick';if(it.level==null||s.cafe.level<it.level)return 'locked';if(id==='walk')return 'walk';
+ if(it.shiba&&!byId(s,shibaId))return 'pick';if(it.menu&&!s.menus.includes(menuId))return 'menu';
+ const d=heartDay(s,now),key=id+':'+(it.shiba?shibaId:'all');if(it.daily&&(d.uses[key]||0)>=it.daily)return 'daily';settleHearts(s,now);return s.hearts<it.cost?'hearts':null;}
+export function useHeartItem(s,id,shibaId=null,now=Date.now(),menuId=null,w=null){if(heartUseCheck(s,id,shibaId,now,menuId))return false;const it=heartItems().find(x=>x.id===id),sh=byId(s,shibaId),d=heartDay(s,now);spendHearts(s,it.cost,now);const key=id+':'+(it.shiba?shibaId:'all');d.uses[key]=(d.uses[key]||0)+1;
+ if(sh){addAffinity(sh,it.affinity);const delta={};for(const k of ['happy','fatigue'])if(Number.isFinite(it[k]))delta[k]=it[k];changeGauges(s,sh,delta,now);}
+ if(it.sec){const h=heartState(s);h.effects=h.effects.filter(e=>e.id!==id||e.shibaId!==shibaId);h.effects.push({id,shibaId,menuId,until:now+it.sec*1000});}
+ if(id==='special'&&w&&it.guestOdds!=null)for(let i=0;i<it.guestsCount;i++)spawn(s,w,now); // UNSET guest identity odds: no guessed normal visitors or random weights.
+ if(id==='treat'&&w)for(const c of w.custs)if(c.phase==='seated')c.fulfilled=true;
+ return true;}
+export function heartAdStatus(s,now=Date.now()){const d=heartDay(s,now);return {left:Math.max(0,Math.ceil((d.adUntil-now)/1000)),remaining:Math.max(0,CFG.heartUse.ads.daily-d.ads)};}
+export function claimHeartAd(s,now=Date.now()){const a=heartAdStatus(s,now);if(a.left||!a.remaining)return false;const d=heartDay(s,now),c=CFG.heartUse.ads;s.hearts+=c.grant;d.ads++;if(d.ads>=c.burst)d.adUntil=now+c.cooldownSec*1000;return true;}
+export function buyHearts(s){const b=CFG.heartUse.buy;if(s.dia<b.dia)return false;s.dia-=b.dia;s.hearts+=b.hearts;return true;}

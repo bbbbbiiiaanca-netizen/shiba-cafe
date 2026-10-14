@@ -608,3 +608,41 @@ Questions: the final sprite head anchor remains **null** pending guest art. What
 Art requests: 그림이 to draw matching floor-plate edge/corner pieces for expanded tatami (flat land without a plate border is accepted meanwhile); manager sprite/anchor and guest sprites with foot/head anchors remain pending. No substitute characters or plate shapes are drawn.
 
 Validation: `npm test` passes. Chrome smoke/capture scripts updated and syntax checked only; intentionally not launched in this sandbox. User runs `npm run test:browser`, `node capture-main-screen.mjs --rf`, and `node capture-main-screen.mjs --u12` on the Chrome-capable host.
+
+## §17-9 하트 쓰기 — 2026-10-15
+
+- Interior §17-9 and the user task are the source. §16 list frame, res-heart, existing daycare portrait presentation reused. Empty action icon slots (`art:null`); no substitute drawings. Top-bar opens the list; spending keeps it open, per-shiba picker returns to it. Active effects show mm:ss; level unlocks toast. Insufficient balance dims buttons and exposes the immediate-grant ad stub with countdown. Purchase footer works; visit/invite buttons say `준비 중` and grant nothing until those flows exist.
+- All new tuning below: **starting value 2026-10-15, pending user confirm**. `level:0` means available from start (a sorting sentinel, not a new café level). Time conversion ms/sec and neutral multiplier 1 are engine arithmetic, not additional tuning.
+
+| Item | Unlock | Cost | Starting effects / limits |
+| --- | --- | --- | --- |
+| 손님 부르기 | start | 1♥ | 10min, arrivals ×1.5 |
+| 쓰다듬기 | start | 1♥ | affinity +3, 3/day/shiba |
+| 놀아 주기 | start | 1♥ | affinity +2, existing happy +10 |
+| 간식 | start | 1♥ | existing happy +15, fatigue −10 |
+| 산책 | start | existing | unchanged walk, affinity +1 on completion |
+| 칭찬해 주기 | Lv5 | 1♥ | satisfaction reputation gain ×1.5, 30min |
+| 빗질·마사지 | Lv8 | 1♥ | that shiba's income effect ×1.2, 30min; affinity/fatigue/cleanliness magnitudes null |
+| 가게 음악 | Lv12 | 1♥ | 30min; one additional order payment per guest; stay extension null |
+| 낮잠 이불 | Lv16 | 1♥ | happiness / recovery magnitudes null |
+| 오늘의 추천 메뉴 | Lv20 | 1♥ | choose developed menu, 1h; demand / price magnitudes null |
+| 메뉴 시식회 | Lv25 | 2♥ | 10min menu price ×1.2 |
+| 행운 쿠키 | Lv30 | 1♥ | 3/day; coins/paws/item amounts and draw odds null |
+| 특별 손님 초대 | Lv35 | 3♥ | 3 guests configured; guest selection odds/types and tip null, generation no-op pending decisions |
+| 시바 장기자랑 | null | 2♥ | locked 미정; tip null |
+| 간식 손님 대접 | null | 1♥ | locked 미정; all seated guests fully satisfied when unlocked |
+| 소원상자 | null | 3♥ | locked 미정; 1/day, choose 1 of 5 next-login items; contents null, delivery unavailable until level/content confirmed |
+
+- Affinity: separate per-shiba 0–100, starting 0; older saves migrate to 0. At 100, multiplier magnitude `null` → neutral. Existing intimacy unchanged. Happy/fatigue reuse existing gauges; unknown starting gauges stay null.
+- Ads: 1♥ immediately, initial 3 consecutive claims, then 30min between claims, 10/day. Buy: 5♥ for 50 dia. Visit config: 3/day ×1♥; invite config: 1/day ×2♥ (both stubs). Existing regeneration: 1/30min to cap 10; rewards/purchases can exceed cap. No non-use penalty.
+- Limits use existing KST ledger day and persist. Reusing a timed item refreshes its timer (same item + same shiba), without stacking; different actions coexist. This behavior is an implementation assumption pending confirmation, not a new magnitude.
+
+Questions (all unspecified magnitudes remain null):
+- Confirm all starting values above? What are brush affinity, fatigue or cleanliness amounts and which branch applies? Blanket happiness/recovery amounts (and duration/target)? Music stay extension? Recommended menu demand and price boosts? Affinity-100 guest multiplier?
+- Cookie reward amounts, item identities and selection probabilities? Special guest regular/big-tip identities and selection probabilities, and tip amount? Talent tips and which guests qualify?
+- Unlock levels for talent/treat/wish? Wish's five item identities and next-login delivery rule?
+- Is praise's satisfaction multiplier intended for reputation gain (current hook) or a different satisfaction score/chance? Is brush's shiba effect the income multiplier (current hook) or a guest-arrival multiplier? Confirm refresh-without-stacking timing policy.
+
+Art requests: 16 heart-action card icons (including walk) as supplied bitmap art; all reserved slots remain null. No guest/staff/character art added; invisible figures remain invisible.
+
+Validation: `npm test` includes `tests/unit179.test.mjs`; browser smoke updated, not executed (Chrome sandbox limitation). Capture script updated, not executed: `node start-room-3d/capture-main-screen.mjs --u179` writes DPR2 `main-screen-u179-hearts.png`, `main-screen-u179-noheart.png`, `main-screen-u179-pick.png` under `/workspace/shiba-cafe-docs/spec-v3-build/`. Capture fixtures are unsaved; no output written outside the allowed workspace during this task.
