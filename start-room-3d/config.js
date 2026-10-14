@@ -102,7 +102,15 @@ export const CFG={
   walkAlba:2,daycare:1,trainer:3,dailyCap:null}, // 139-2: 산책 알바 = 산책 2, 데이케어 = 놀아주기 1, 훈련사 = 훈련 1단계 3 · dailyCap null = '하루 최대 없음'(정해진 값)
  // 갱신 139-5·139-6 액세서리 칸: 시바마다 1칸, 해금해야 찰 수 있음 (90의 Lv5/15/25 칸, 139-3·139-4의 2·3칸 삭제)
  accessory:{slots:1,unlockPaws:1000,unlockDia:1000, // 139-5: 발바닥 1,000개 또는 1,000다이아(10,000원)
-  starterSlotOpen:true,starterItems:1}, // 139-6: 첫 시작 시바만 칸이 열린 채로 액세서리 1개 제공
+  starterSlotOpen:true,starterItems:1, // 139-6: 첫 시작 시바만 칸이 열린 채로 액세서리 1개 제공
+  starterItem:U, // UNSET: 139-6 첫 시바에게 주는 액세서리가 어느 것인지 → 목록의 첫 항목(삼각형·빨강)을 씀 (START_FALLBACK)
+  // 갱신 140 액세서리 상점 · 140-1 액세서리 1개 = 한 번에 시바 1마리 (시바 수만큼 따로 사고, 옮기려면 벗김)
+  bandana:{priceCoins:5000, // 140: 무료템 반다나 4종(F p11) × 원색 9색, 1개 5,000멍
+   types:['triangle','loop','knotTail','frontKnot'], // 1.5 / F p11: 클래식 삼각형, 루프 스누드형, 매듭 테일형, 앞 매듭형
+   colors:['red','blue','green','yellow','pink','navy','orange','purple','teal'], // 원색 9색 — 이름은 그림(3×3 시트, 왼쪽 위부터)을 보고 붙임
+   sheet:{triangle:'bandana-triangle-sheet.webp',loop:'bandana-loop-sheet.webp',knotTail:'bandana-knottail-sheet.webp',frontKnot:'bandana-frontknot-sheet.webp'},
+   grid:[3,3]}, // 시트 1장 = 3×3, 색 1개 = 칸 1개 (CSS 영역 표시만, 그림은 그대로)
+  special:{priceDia:300,items:U}}, // 140: 유료템 특별 액세서리 1개 300다이아(3,000원) · UNSET: 종류·디자인(그림 없음) → 빈 칸
  likes:{snacks:{basic:2,rare:1},toys:U,list:U}, // 갱신 40: 좋아하는 간식 기본 2 + 레어 1 · UNSET: 장난감 구조(제안), 간식·장난감 목록(질문 9(카))
  startShiba:{level:21,tricks:{sit:3,wait:3}}, // 갱신 90 레벨 21 · 갱신 100·109·133 앉아·기다려 3단계 · 갱신 109 4종 중 선택
  rescueLevel:U, // UNSET: 질문 9(사) 구조한 시바의 레벨 → Lv1(범위 최저) 사용, notes 참고
@@ -202,7 +210,8 @@ export const CFG={
 };
 
 // UNSET start values: the code uses these documented range endpoints (never a guessed middle value).
-export const START_FALLBACK={gauges:'gaugeFull (갱신 116 full state)',intimacy:'0 (range minimum)',rescueLevel:'1 (level range minimum, 갱신 81)',coins:'0'};
+export const START_FALLBACK={gauges:'gaugeFull (갱신 116 full state)',intimacy:'0 (range minimum)',rescueLevel:'1 (level range minimum, 갱신 81)',coins:'0',
+ starterItem:'first item of the bandana list (classic triangle · red) — 139-6 gives one accessory but does not say which'};
 
 // helpers that only read CFG
 export const isUnset=v=>v===null||v===undefined;

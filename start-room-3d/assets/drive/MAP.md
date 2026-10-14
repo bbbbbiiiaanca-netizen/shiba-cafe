@@ -52,6 +52,13 @@ drawn, edited, cropped or recoloured. Where the UI shows only part of an image i
 | `P-04-choco-fondant_512.png` | `이미지/카페아이템/P-04-choco-fondant_512.png` | `d687d656c49de404` |
 | `P-05-macaron-trio_512.png` | `이미지/카페아이템/P-05-macaron-trio_512.png` | `3c10cbbb85cfb04e` |
 | `P-06-pavlova_512.png` | `이미지/카페아이템/P-06-pavlova_512.png` | `fc05be9daccc294a` |
+| `bandana-triangle-sheet.webp` | `이미지/ITEM/삼각형 원색.webp` | `ac12293fc62d4811` |
+| `bandana-loop-sheet.webp` | `이미지/ITEM/루프 원색.webp` | `990edc7c63fde78d` |
+| `bandana-knottail-sheet.webp` | `이미지/ITEM/매듭 원색.webp` | `333c894ff3811665` |
+| `bandana-frontknot-sheet.webp` | `이미지/ITEM/앞매듭 원색.webp` | `f42a2613e7d0c979` |
+| `bandana-frontknot-single.webp` | `이미지/ITEM/앞 매듭형.webp` | `9381470ef839e5f4` |
+| `bandana-chart-yellowgreen.webp` | `이미지/ITEM/옐로그린 차트.webp` | `c988b087be34c711` |
+| `bandana-chart-warm.webp` | `이미지/ITEM/웜 차트.webp` | `7829d7cb0bcec3e8` |
 
 ## How each image is displayed
 - `shiba-{red,sesame,kuro,white}.png` — breed portraits (1.2 기본 4종). Shown whole in cards; round café tokens use `object-fit:cover` (display crop only).
@@ -67,15 +74,26 @@ drawn, edited, cropped or recoloured. Where the UI shows only part of an image i
 - `mung-potion_256.png`, `mung-potion-small_256.png` — 멍포션 (갱신 116) in the bag.
 - `T-01-basic-snack_256.png` — on the 간식 button; `T-03-rope-toy_256.png` — on the 놀아주기 button.
 - `M-01…M-08`, `P-01…P-06` (14 카페아이템, 갱신 134) — menu-development list in the shop; M-01 아이스 아메리카노 = 기본 커피. A leaving guest's order shows one of the developed images of the ordered kind, picked at random (134).
+- `bandana-{triangle,loop,knottail,frontknot}-sheet.webp` (갱신 140, 1.5 / F p11 반다나 4종: 클래식 삼각형 · 루프 스누드형 · 매듭 테일형 · 앞 매듭형) — each sheet is 1920×1280 with
+  9 bandanas in a 3×3 grid of primary colours. One shop item = one cell, shown with CSS only: `background-size:300% 300%`, `background-position:(col×50%) (row×50%)`
+  on a 3:2 box. Cell order (left→right, top→bottom), named by looking at the sheets: red, blue, green, yellow, pink, navy, orange, purple, teal — the same order in
+  all four sheets. Used in the shop's accessory grid, the care screen's accessory slot and the bag. **No separate per-colour image files exist** (see "Missing").
+- `bandana-frontknot-single.webp` — single teal front-knot bandana (wave pattern); copied as requested, not shown (the front-knot sheet already has the teal cell).
+- `bandana-chart-{yellowgreen,warm}.webp` — solid-colour charts (12 shades each, incl. pastel tones); copied as requested, not shown: 1.5 says 원색 9가지, 파스텔은 쓰지 않는다.
+
+## Missing (needed by 갱신 139-6·140, not in Drive)
+- Per-colour bandana image files (36) — the build crops the 4 sheets by CSS instead.
+- A shiba wearing the chosen bandana (per breed × 36) — the portraits have a bandana baked in, so the worn item is shown as its icon next to the portrait, not on the shiba.
+- 특별 액세서리 (300 diamonds) — kinds and designs undecided; shown as an empty dashed slot.
+- Locked accessory-slot icon — dashed slot with 🔒 text.
 
 ## Drive images present but not used (and why)
 - `이미지/결과 카드 v2.webp` — N/R/SR grade cards; the grade system is abolished (1.6, image-list §2).
 - `이미지/b019f241.png` — mock-up screenshot with baked-in UI text; not an asset.
 - `이미지/interior/9e648de4.png`, `063b9153.png` — dioramas with characters baked in; unusable as an empty café background.
 - `이미지/interior/preview-rooms-v2.png`, `fuji-7-preview.jpg`, `night-*.jpg`, `대나무 회랑.webp`, `실내 인테리어 세트.webp`, `정원 소품 세트.webp` — themes/interior (out of core scope; interior score and theme prices are UNSET).
-- `이미지/ITEM/8eb5d737-….png` — accessory set; which accessory unlocks where is UNSET (질문 9(가)).
-- `이미지/ITEM/삼각형 원색.webp` — bandana colours; equipping is not in core scope.
+- `이미지/ITEM/8eb5d737-….png` — accessory set; not in the 140 shop (bandanas only; the 300-diamond special accessories are undecided and the spec says not to invent them from images).
 - `이미지/ITEM/request-icon-interior_256.png` — interior requests are disabled (갱신 113 interior system UNSET).
 - `이미지/CH/NPC/guest-a4-kid-final.png`, `guest-floor-*` — not needed while guests are only shown seated; `guest-sitting-{realtor,rudeman,rudewoman}` — 부동산·진상손님 are stubs.
 - `이미지/CH/시바캐릭터/*_charset_A4.png`, `동구_캐릭터시트_v2.png` — expression/turnaround sheets; expression switching needs frame/region data (UNSET).
-- `영상/media-generation-gacha-reveal-video-v7-with-sfx.mp4` — 뽑기 is disabled (start level / odds UNSET).
+- `영상/media-generation-gacha-reveal-video-v7-with-sfx.mp4` — not copied: the 137 gacha shows a plain result card (a video reveal is not in the spec rules; can be added later).

@@ -25,6 +25,12 @@ export default async function({ev,check,sleep,reload}){
  await ev('__game.state.dia=100;__game.refresh();document.querySelector("[data-act=gacha][data-n=\'1\']:not([data-ticket])").click();true');
  await check('1 pull for 100 diamonds shows the result card (137)','__game.state.dia===0&&!!document.querySelector("#mbox .gres .gi")');
  await ev('document.querySelector("#mbox [data-act=modalOk]").click();true');
+ await check('accessory shop: 4 bandana types, 9 colour cells from the sheet (CSS area), special = UNSET slot (140)','document.querySelectorAll("[data-act=accType]").length===4&&document.querySelectorAll("[data-accitem] .band").length===9&&getComputedStyle(document.querySelector("[data-accitem] .band")).backgroundImage.includes("bandana-triangle-sheet.webp")&&/300💎/.test(document.querySelector("[data-accshop]").textContent)');
+ await ev('__game.state.coins=5000;__game.refresh();document.querySelector("[data-act=accType][data-type=loop]").click();document.querySelector("[data-act=buyAcc][data-item=bandana-loop-teal]").click();true');
+ await check('buy a loop bandana for 5,000 멍코인 → bag 1','__game.state.accInv["bandana-loop-teal"]===1&&__game.state.coins===0&&/1/.test(document.querySelector("[data-accitem=bandana-loop-teal]").textContent)');
+ await ev('__game.open("care",__game.state.shibas[0].id);document.querySelector("[data-act=equip][data-item=bandana-loop-teal]").click();true');
+ await check('starter wears it; the starter bandana goes back to the bag (139-6·140-1)','__game.state.shibas[0].acc==="bandana-loop-teal"&&__game.state.accInv["bandana-triangle-red"]===1&&!!document.querySelector("[data-acc] [data-band=bandana-loop-teal]")');
+ await ev('document.querySelector("[data-nav=shop]").click();true');
  await ev('__game.state.cafe.level=2;__game.state.coins=8500;__game.refresh();document.querySelector("[data-act=dev][data-id=M-02]").click();true');
  await check('developing M-02 at Lv2 costs 8,500 멍코인 and shows 30 min in progress (136)','__game.state.menuDev?.id==="M-02"&&!__game.state.menus.includes("M-02")&&__game.state.coins===0&&!!document.querySelector("[data-dev=M-02]")&&document.querySelector("[data-act=dev][data-id=M-05]")?.disabled');
  await ev('__game.state.dia=30;__game.refresh();document.querySelector("[data-act=skip][data-type=menu]").click();true');

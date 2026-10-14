@@ -12,7 +12,7 @@ export function newState(now=Date.now()){
  return {v:CFG.saveVersion,started:false,coins:CFG.start.coins,coinFrac:0,hearts:CFG.start.hearts,heartRegenAt:now,dia:CFG.start.dia,
   items:{heartReset:0,capsule:0,potionBig:0,potionSmall:0,cooldownTicket:0},
   cafe:{level:1,exp:0,rep:CFG.rep.start,stains:0,stainAcc:0,badStainAcc:0,driftAcc:0,closed:false,closedAt:null,managerUntil:0,managerCleanAcc:0,boostUntil:0},
-  shibas:[],nextId:1,dongu:{placed:true},walk:null,rescues:[],walkResults:[],menus:[],menuDev:null,lastAbandonAt:null,
+  shibas:[],nextId:1,dongu:{placed:true},walk:null,rescues:[],walkResults:[],menus:[],menuDev:null,accInv:{},lastAbandonAt:null,
   stats:{served:0,satisfied:0,normal:0,disappointed:0,angry:0,lost:0},
   settings:{language:null,sound:true,music:true},lastSeen:now};
 }
@@ -35,6 +35,17 @@ export function levelUp(s,id){if(levelUpCheck(s,id))return false;const sh=byId(s
 // 갱신 139-5·139-6: 액세서리 칸 1개, 시바마다 발바닥 1,000개(그 시바의 발바닥) 또는 1,000다이아로 해금
 export function accUnlockCheck(s,id,via){const sh=byId(s,id);if(!sh)return 'pick';if(sh.accUnlocked)return 'done';const A=CFG.accessory;
  if(via==='paws')return sh.paws<A.unlockPaws?'paws':null;if(via==='dia')return s.dia<A.unlockDia?'dia':null;return 'via';}
+// 갱신 140·140-1 액세서리: accInv = 차지 않은 개수, sh.acc = 찬 액세서리 1개
+export const bandanaItems=()=>{const B=CFG.accessory.bandana;return B.types.flatMap(t=>B.colors.map(c=>({id:`bandana-${t}-${c}`,type:t,color:c,price:B.priceCoins})));};
+export const accItem=id=>bandanaItems().find(x=>x.id===id)||null;
+export const starterItem=()=>CFG.accessory.starterItem??bandanaItems()[0].id; // UNSET → 첫 항목 (START_FALLBACK)
+export const accWorn=(s,id)=>s.shibas.filter(o=>o.acc===id).length;
+export const accOwned=(s,id)=>(s.accInv[id]||0)+accWorn(s,id);
+export function buyAccCheck(s,id){const it=accItem(id);if(!it)return isUnset(CFG.accessory.special.items)?'unset':'pick';if(s.coins<it.price)return 'coins';return null;}
+export function buyAcc(s,id){if(buyAccCheck(s,id))return false;s.coins-=accItem(id).price;s.accInv[id]=(s.accInv[id]||0)+1;return true;}
+export function equipCheck(s,shId,id){const sh=byId(s,shId);if(!sh)return 'pick';if(!sh.accUnlocked)return 'slot';if(sh.acc===id)return 'worn';if(!(s.accInv[id]>0))return 'none';return null;}
+export function equipAcc(s,shId,id){if(equipCheck(s,shId,id))return false;const sh=byId(s,shId);if(sh.acc)s.accInv[sh.acc]=(s.accInv[sh.acc]||0)+1;s.accInv[id]--;sh.acc=id;return true;}
+export function unequipAcc(s,shId){const sh=byId(s,shId);if(!sh||!sh.acc)return false;s.accInv[sh.acc]=(s.accInv[sh.acc]||0)+1;sh.acc=null;return true;}
 export function unlockAccSlot(s,id,via){if(accUnlockCheck(s,id,via))return false;const sh=byId(s,id);if(via==='paws')sh.paws-=CFG.accessory.unlockPaws;else s.dia-=CFG.accessory.unlockDia;sh.accUnlocked=true;return true;}
 export const trickSum=sh=>CFG.tricks.reduce((a,t)=>a+(sh.tricks[t.id]||0),0);
 export const intelligence=sh=>Math.min(CFG.intelligenceMax,trickSum(sh)*CFG.intelligencePerLevel); // 갱신 133
@@ -78,7 +89,7 @@ function addCoins(s,x){const t=s.coinFrac+x,w=Math.floor(t+1e-9);s.coins+=w;s.co
 // 갱신 109: the player picks one of the 4 breeds; it starts at Lv21 (갱신 90) with 앉아·기다려 3단계 (갱신 100·133)
 export function chooseStart(s,breed,name,r=Math.random,now=Date.now()){if(s.started||!CFG.breeds.includes(breed))return null;
  const sh=makeShiba(s,{breed,name:name||null,level:CFG.startShiba.level,tricks:CFG.startShiba.tricks,r,now});sh.placed=true;
- sh.starter=true;sh.accUnlocked=!!CFG.accessory.starterSlotOpen; // 139-6: 첫 시작 시바만 칸이 열려 있음
+ sh.starter=true;sh.accUnlocked=!!CFG.accessory.starterSlotOpen;if(CFG.accessory.starterItems>0)sh.acc=starterItem(); // 139-6: 첫 시작 시바만 칸이 열려 있고 액세서리 1개를 찬 채로
  s.shibas.push(sh);s.started=true;return sh;}
 export const placedShibas=s=>s.shibas.filter(o=>o.placed);
 export function placeCheck(s,id){const sh=byId(s,id);if(!sh)return 'pick';if(sh.placed)return null;if(placedShibas(s).length>=slotsOf(s))return 'slots';return null;}
@@ -87,7 +98,8 @@ export function abandonCheck(s,id){if(!byId(s,id))return 'pick';if(s.shibas.leng
 // 갱신 76·82: 남은 시바 전원 친밀도 −15, 24시간 안에 다시 하면 −20. 동구는 목록에 없어 파양할 수 없다(갱신 78).
 export function abandon(s,id,now=Date.now()){if(abandonCheck(s,id))return null;const I=CFG.intimacy;
  const d=s.lastAbandonAt!=null&&now-s.lastAbandonAt<I.abandonRepeatWithinH*H?I.abandonShockRepeat:I.abandonShock;
- const gone=byId(s,id);s.shibas=s.shibas.filter(o=>o.id!==id);for(const o of s.shibas)changeGauges(s,o,{intimacy:d},now);s.lastAbandonAt=now;return {gone,shock:d};}
+ const gone=byId(s,id);if(gone.acc)unequipAcc(s,id); // 찬 액세서리는 가방으로 돌아옴
+ s.shibas=s.shibas.filter(o=>o.id!==id);for(const o of s.shibas)changeGauges(s,o,{intimacy:d},now);s.lastAbandonAt=now;return {gone,shock:d};}
 
 // ───────────────────────── care (1.2-3) ─────────────────────────
 export function careCheck(s,id,kind){const sh=byId(s,id);if(!sh)return 'pick';const st=statusOf(s,sh);
@@ -316,7 +328,7 @@ export function load(storage,now=Date.now(),r=Math.random){let s=null;try{s=JSON
  const d=newState(now);s={...d,...s,items:{...d.items,...s.items},cafe:{...d.cafe,...s.cafe},stats:{...d.stats,...s.stats},settings:{...d.settings,...s.settings}};
  s.menus=(s.menus||[]).filter(id=>menuItem(id));if(s.menuDev&&!menuItem(s.menuDev.id))s.menuDev=null;
  // older v3 saves: 90's level slots → 139-6 one slot (the first shiba is the starter)
- for(const sh of s.shibas){if(!('accUnlocked' in sh)){sh.starter=sh.id===Math.min(...s.shibas.map(o=>o.id));sh.accUnlocked=sh.starter;sh.acc=null;delete sh.accessories;}}let offline=null;if(s.started&&now>s.lastSeen){const w=newWorld(s,r);offline=fastForward(s,w,s.lastSeen,now,{offline:true});}
+ for(const sh of s.shibas){if(!('accUnlocked' in sh)){sh.starter=sh.id===Math.min(...s.shibas.map(o=>o.id));sh.accUnlocked=sh.starter;sh.acc=sh.starter?starterItem():null;delete sh.accessories;}}let offline=null;if(s.started&&now>s.lastSeen){const w=newWorld(s,r);offline=fastForward(s,w,s.lastSeen,now,{offline:true});}
  const reopened=reopenCafe(s,now);s.lastSeen=now;return {state:s,fresh:false,offline,reopened};}
 
 // ───────────────────────── UNSET-gated features (stubs) ─────────────────────────

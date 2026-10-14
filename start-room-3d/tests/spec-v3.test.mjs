@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import {CFG,pressureAt} from '../config.js';
 import * as S from '../sim.js';
-import {existsSync} from 'node:fs';import {join,dirname} from 'node:path';import {fileURLToPath} from 'node:url';
+import {existsSync,readFileSync} from 'node:fs';import {createHash} from 'node:crypto';import {join,dirname} from 'node:path';import {fileURLToPath} from 'node:url';
 const ROOT=join(dirname(fileURLToPath(import.meta.url)),'..');
 
 let pass=0;const fails=[];
@@ -274,6 +274,28 @@ test('139-1: café work 1 paw per hour per working shiba (online and offline, no
 test('139-2: part-timers give the same paws: walk part-timer 2, daycare 1, trainer 3 per step; manager hours count as café work',()=>{const {s,w,sh}=freshGame();s.coins=1e6;s.cafe.level=25;
  S.hireAlba(s,'walk',[sh.id],0);assert.equal(sh.paws,2);S.hireAlba(s,'daycare',[sh.id],0);assert.equal(sh.paws,3);S.hireAlba(s,'trainer',[sh.id],0,'paw');assert.equal(sh.paws,6);
  S.hireAlba(s,'manager',[],0);w.spawnT=1e12;run(s,w,2*3600,0,10);assert.equal(sh.paws,8);});
+
+// ───────── 갱신 140·140-1 액세서리 상점 ─────────
+test('140: bandana 4 types (F p11) × 9 primary colours = 36 items at 5,000멍; special accessories 300 diamonds with kinds UNSET',()=>{const B=CFG.accessory.bandana,items=S.bandanaItems();
+ assert.deepEqual(B.types,['triangle','loop','knotTail','frontKnot']);assert.equal(B.colors.length,9);assert.equal(items.length,36);assert.ok(items.every(x=>x.price===5000));assert.equal(new Set(items.map(x=>x.id)).size,36);
+ assert.equal(CFG.accessory.special.priceDia,300);assert.equal(CFG.accessory.special.items,null);const {s}=freshGame();s.dia=1e4;assert.equal(S.buyAccCheck(s,'special-1'),'unset');});
+test('140: bandana sheets are byte-identical copies of the Drive ITEM images',()=>{const src='/workspace/shiba-cafe-docs/spec-v3-build/drive-images/이미지/ITEM/';
+ const map={'bandana-triangle-sheet.webp':'삼각형 원색.webp','bandana-loop-sheet.webp':'루프 원색.webp','bandana-knottail-sheet.webp':'매듭 원색.webp','bandana-frontknot-sheet.webp':'앞매듭 원색.webp',
+  'bandana-frontknot-single.webp':'앞 매듭형.webp','bandana-chart-yellowgreen.webp':'옐로그린 차트.webp','bandana-chart-warm.webp':'웜 차트.webp'};
+ const h=f=>createHash('sha256').update(readFileSync(f)).digest('hex');for(const f of Object.values(CFG.accessory.bandana.sheet))assert.ok(map[f],f);
+ for(const [a,b] of Object.entries(map)){const here=join(ROOT,'assets/drive',a);assert.ok(existsSync(here),a);if(existsSync(src+b))assert.equal(h(here),h(src+b),a);}});
+test('140: buying costs 5,000멍 and adds one to the bag; not enough coins → refused',()=>{const {s}=freshGame();const id='bandana-loop-navy';
+ s.coins=4999;assert.equal(S.buyAccCheck(s,id),'coins');assert.equal(S.buyAcc(s,id),false);s.coins=10000;assert.ok(S.buyAcc(s,id));assert.ok(S.buyAcc(s,id));assert.equal(s.coins,0);assert.equal(s.accInv[id],2);});
+test('139-6 + 140: the starting shiba starts wearing one accessory (UNSET which → first item); bought items fit only unlocked slots',()=>{const {s,sh}=freshGame();
+ assert.equal(sh.acc,'bandana-triangle-red');assert.equal(S.accOwned(s,'bandana-triangle-red'),1);
+ const n=S.makeShiba(s,{breed:'kuro',level:1});s.shibas.push(n);s.coins=5000;S.buyAcc(s,'bandana-loop-blue');assert.equal(S.equipCheck(s,n.id,'bandana-loop-blue'),'slot');
+ n.paws=1000;S.unlockAccSlot(s,n.id,'paws');assert.ok(S.equipAcc(s,n.id,'bandana-loop-blue'));assert.equal(n.acc,'bandana-loop-blue');assert.equal(s.accInv['bandana-loop-blue'],0);});
+test('140-1: one item = one shiba at a time; to move it, take it off first; swapping returns the old one to the bag; counts tracked',()=>{const {s,sh}=freshGame();
+ const n=S.makeShiba(s,{breed:'white',level:1});n.accUnlocked=true;s.shibas.push(n);s.coins=5000;const id='bandana-frontKnot-yellow';S.buyAcc(s,id);
+ assert.ok(S.equipAcc(s,sh.id,id));assert.equal(s.accInv['bandana-triangle-red'],1,'old one back to the bag');assert.equal(S.equipCheck(s,n.id,id),'none','already worn by another shiba');
+ assert.deepEqual([S.accOwned(s,id),S.accWorn(s,id)],[1,1]);assert.ok(S.unequipAcc(s,sh.id));assert.equal(sh.acc,null);assert.ok(S.equipAcc(s,n.id,id));assert.equal(n.acc,id);
+ assert.ok(S.equipAcc(s,sh.id,'bandana-triangle-red'));assert.deepEqual([s.accInv[id],s.accInv['bandana-triangle-red']],[0,0]);
+ s.coins=5000;S.buyAcc(s,id);assert.equal(S.accOwned(s,id),2,'buy one per shiba');S.abandon(s,n.id,0);assert.equal(s.accInv[id],2,'abandoned shiba\'s accessory returns to the bag');});
 
 // ───────── 갱신 135-2 남은 시간 바로 완료 ─────────
 test('135-2: instant finish = 1 diamond per remaining minute, rounded up per minute (37 min → 37, 4 h → 240, 30 s → 1)',()=>{
