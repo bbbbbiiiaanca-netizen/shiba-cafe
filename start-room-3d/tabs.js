@@ -5,12 +5,14 @@
 import {CFG,isUnset} from './config.js';
 import * as S from './sim.js';
 
+// 2026-10-15 user request: 마을 / 시바들 / 가게관리 (centre) / 상점 / 가방. 알바 lives in 가게관리; 가구·아이템 inventory lives in 가방.
+// Icons: no approved 마을/가방 tab art yet (icon:null → label only; art request in SPEC-V3-NOTES.md).
 export const TABS=[
- {id:'shiba',label:'시바',icon:'shiba'}, // 'shiba' = portrait of the first owned shiba (assets/drive/shiba-<breed>.png)
- {id:'alba',label:'알바',icon:'assets/drive/ui/tab-alba.png'},
- {id:'manage',label:'가게 관리',icon:'assets/drive/M-01-iced-americano_512.png',main:true}, // main item (centre): café status + 메뉴 개발 / 업그레이드 / 손익계산서
- {id:'furniture',label:'가구',icon:'assets/drive/ui/ui-icon-tea-table.png'},
- {id:'shop',label:'상점',icon:'assets/drive/ui/tab-shop.png'}];
+ {id:'village',label:'마을',icon:null},
+ {id:'shiba',label:'시바들',icon:'shiba'}, // 'shiba' = portrait of the first owned shiba (assets/drive/shiba-<breed>.png)
+ {id:'manage',label:'가게관리',icon:'assets/drive/M-01-iced-americano_512.png',main:true}, // café status + 메뉴 개발 / 업그레이드 / 손익계산서 + 알바
+ {id:'shop',label:'상점',icon:'assets/drive/ui/tab-shop.png'},
+ {id:'bag',label:'가방',icon:null}];
 export const DEFAULT_TAB='manage';
 
 // 알바 can be hired right now (same checks as hireAlba; null cost never counts).
@@ -25,4 +27,4 @@ export function albaAvailable(s,now){
 export function tabBadges(s,now,seen={}){
  const manage=!!seen.menuDone||(!s.menuDev&&CFG.menu.items.some(m=>!S.menuCheck(s,m.id)))||Object.keys(CFG.upgrades).some(k=>!S.upgradeCheck(s,k));
  const shiba=s.shibas.some(sh=>sh.status==='injured'||sh.status==='sick'||!S.levelUpCheck(s,sh.id))||s.walkResults.length>0;
- return {shiba,alba:albaAvailable(s,now),manage,furniture:false,shop:false};}
+ return {village:s.walkResults.length>0,shiba,manage:manage||albaAvailable(s,now),shop:false,bag:false};}

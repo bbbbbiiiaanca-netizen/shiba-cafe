@@ -40,9 +40,9 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
   await ev(`(()=>{const g=__game,sh=g.state.shibas[0];g.state.cafe.level=10;g.state.coins=Math.max(g.state.coins,g.CFG.alba.daycare.cost);sh.paws=g.S.pawsToNext(sh.level);g.refresh();return true;})()`);
   await click('[data-main-tab=manage]');
-  if(!(await ev(`document.querySelectorAll('.main-tabs').length===1&&!document.querySelector('[data-main-tab=shiba] .tab-dot').hidden&&!document.querySelector('[data-main-tab=alba] .tab-dot').hidden`)))throw Error('§16 tab dots missing');
+  if(!(await ev(`document.querySelectorAll('.main-tabs').length===1&&!document.querySelector('[data-main-tab=shiba] .tab-dot').hidden&&!document.querySelector('[data-main-tab=manage] .tab-dot').hidden`)))throw Error('§16 tab dots missing');
   await shot('main-screen-u16-tabs.png');
-  await click('[data-main-tab=alba]');await click('[data-act=listOpen][data-list=alba]');
+  await click('[data-main-tab=manage]');await click('[data-act=listOpen][data-list=alba]');
   if(!(await ev(`document.querySelectorAll('#mbox .lp-card').length===4`)))throw Error('§16 alba popup missing');
   await shot('main-screen-u16-popup-alba.png');
   await click('#mbox .lp-close');await click('[data-main-tab=manage]');await click('[data-act=listOpen][data-list=menu]');
@@ -82,7 +82,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   if(!(await ev(`/^착석 \\d+ · 대기 \\d+/.test(document.querySelector('[data-customer-status]').textContent)`)))throw Error('§17-4 manage summary missing');
   await ev('document.getElementById("menuList").scrollTop=0;true');await shot('main-screen-u17-manage.png');
   await shot('main-screen-u17-tabs.png');
-  await click('[data-main-tab=alba]');await click('[data-act=listOpen][data-list=alba]');
+  await click('[data-main-tab=manage]');await click('[data-act=listOpen][data-list=alba]');
   if(!(await ev(`document.querySelector('[data-lp-row=daycare] .lp-effect').textContent==='시바랑 놀아줘요'&&document.querySelectorAll('#mbox .lp-card.locked').length===3`)))throw Error('§17-4 alba popup missing');
   await shot('main-screen-u17-alba.png');
   await click('#mbox .lp-close');await click('[data-main-tab=manage]');await click('[data-act=listOpen][data-list=menu]');
@@ -163,7 +163,15 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await shot('main-screen-rf-manager.png');
  };
  // Unsaved capture fixture: legacy spec boost multiplier 1.2 exercises the timer; production multiplier stays null.
- if(process.argv.includes('--final')){
+ if(process.argv.includes('--nav')){
+ await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+ await stageStarter();
+ await ev(`(()=>{const g=__game;g.state.cafe.level=10;g.state.coins=150000;g.refresh();return true;})()`);
+ await shot('main-screen-nav-main.png');
+ for(const t of ['village','shiba','shop','bag']){await click('[data-main-tab='+t+']');await shot('main-screen-nav-'+t+'.png');}
+ await click('[data-main-tab=manage]');await click('[data-act=listOpen][data-list=menu]');await shot('main-screen-nav-popup.png');
+ }
+ else if(process.argv.includes('--final')){
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
  await stageStarter();
  await click('[data-act=mailbox]');await shot('main-screen-final-mailbox.png');await click('[data-act=modalOk]');
@@ -174,7 +182,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  if(!(await ev(`__game.state.items.expBoost4h===0&&document.getElementById('boostChip').textContent.includes('경험치')`)))throw Error('EXP boost consumption/timer missing');
  await click('[data-main-tab=manage]').catch(()=>{});await ev(`__game.ui.modals=[];__game.refresh();true`);await shot('main-screen-final-boost.png');
  await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.cafe.seatRewards.findIndex(n=>n>=6)+1;g.S.grantSeatRewards(g.state);const before=g.S.seatCount(g.state);const want=[[2,2],[3,3],[1,3],[3,1],[4,2],[2,4],[4,4],[1,1]];for(const c of want)g.S.placeFurniture(g.state,'cushion',c);if(g.S.seatCount(g.state)<=before)throw Error('Reward seats not placed');g.refresh();return true;})()`);
- await click('[data-main-tab=furniture]');await shot('main-screen-final-seats.png');
+ await click('[data-main-tab=bag]');await shot('main-screen-final-seats.png');
 
  await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.themes.find(t=>t.id==='bamboo').unlockLevel;g.state.coins=g.CFG.cafe.expansion2FCost;g.state.dia=g.CFG.themes.find(t=>t.id==='bamboo').unlockDia;g.refresh();return true;})()`);await click('[data-main-tab=shop]');await click('[data-act=unlockPopup]');if(!(await ev(`document.querySelector('#mbox [data-kind=floor2][data-via=coins]')&&document.querySelector('#mbox [data-kind=theme][data-via=dia]')`)))throw Error('Unlock popup choices missing');await shot('main-screen-final-unlock.png');
  if(errors.length)throw Error(errors.join('\n'));
@@ -204,7 +212,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
    if(pos&&!seen.has(pos)&&(seen.size!==1||!facings.has(pos.split(':')[1]))){seen.add(pos);facings.add(pos.split(':')[1]);await shot('main-screen-u18-manager-'+seen.size+'.png');}
   }if(seen.size!==3)throw Error('u18 manager needs three distinct walking positions/directions');
   await ev(`(()=>{const g=__game;g.state.cafe.level=40;g.ui.modals=[];g.refresh();return true;})()`);await click('#hud [data-act=hearts]');await shot('main-screen-u18-hearts.png');
-  await click('#mbox .lp-close');await ev('__game.state.wallOwned=3;__game.iso.setEdit(false);__game.refresh();true');await click('[data-main-tab=furniture]');await shot('main-screen-u18-walls-inv.png');
+  await click('#mbox .lp-close');await ev('__game.state.wallOwned=3;__game.iso.setEdit(false);__game.refresh();true');await click('[data-main-tab=bag]');await shot('main-screen-u18-walls-inv.png');
  }
  else if(process.argv.includes('--u179')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
@@ -259,7 +267,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  const p=await ev(`(async()=>{const h=__game.iso.hits.find(h=>h.id==='counter'),im=new Image();im.src='assets/drive/furn-counter-v4.png';await im.decode();const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const ctx=c.getContext('2d');ctx.drawImage(im,0,0);const d=ctx.getImageData(0,0,c.width,c.height).data,r=document.getElementById('isomap').getBoundingClientRect();for(let y=Math.floor(c.height/2);y<c.height;y++)for(let x=Math.floor(c.width/2);x<c.width;x++)if(d[(y*c.width+x)*4+3])return {x:r.left+h.x+(c.width-1-x)/c.width*h.w,y:r.top+h.y+y/c.height*h.h};throw Error('no counter pixel');})()`);
  for(const type of ['mousePressed','mouseReleased'])await c('Input.dispatchMouseEvent',{type,...p,button:'left',buttons:type==='mousePressed'?1:0,clickCount:1});
  if(!(await ev('__game.iso.selected==="counter"')))throw Error('counter selection failed');
- if(!(await ev(`document.querySelector('[data-main-tab=furniture]').classList.contains('active')&&document.getElementById('menuList').contains(document.querySelector('.furniture-actions'))&&!document.querySelector('.furniture-actions').hidden`)))throw Error('edit action bar missing from furniture panel');
+ if(!(await ev(`document.querySelector('[data-main-tab=bag]').classList.contains('active')&&document.getElementById('menuList').contains(document.querySelector('.furniture-actions'))&&!document.querySelector('.furniture-actions').hidden`)))throw Error('edit action bar missing from furniture panel');
  await shot('main-screen-v7-edit.png');
  // Unit 2 captures are separate from the reproducible v7 stages above.
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
@@ -267,7 +275,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await click('[data-main-tab=shiba]');await ev('__game.state.shibas[0].paws=__game.S.pawsToNext(__game.state.shibas[0].level);__game.refresh();true');
  await click('#menuList [data-act=levelUp]');await shot('main-screen-u2-levelup.png');
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
- await click('[data-main-tab=furniture]');await ev('document.getElementById("menuList").scrollTop=0;true');await shot('main-screen-u3-inventory.png');
+ await click('[data-main-tab=bag]');await ev('document.getElementById("menuList").scrollTop=0;true');await shot('main-screen-u3-inventory.png');
  await click('[data-main-tab=manage]');
  await ev('__game.iso.scrollTo(__game.iso.maxScroll);true');await shot('main-screen-u3-locked-row.png');
  const expansionPoint=await ev('(()=>{const m=__game.iso.markers.find(m=>m.kind==="row"),r=document.getElementById("isomap").getBoundingClientRect();return {x:r.left+m.buttonX,y:r.top+m.buttonY};})()');

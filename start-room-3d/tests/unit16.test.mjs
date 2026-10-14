@@ -6,7 +6,7 @@ const now=Date.UTC(2026,9,14,3);
 const fresh=()=>{const s=S.newState(now);S.chooseStart(s,'red','',()=>.9,now);return s;};
 
 // §16-1 / §17: one row of five, no duplicate ids/labels, the old list tabs are all merged, one main item in the centre, icons only existing files or null.
-assert.deepEqual(TABS.map(t=>t.id),['shiba','alba','manage','furniture','shop']);assert.equal(TABS.findIndex(t=>t.main),2);
+assert.deepEqual(TABS.map(t=>t.id),['village','shiba','manage','shop','bag']);assert.equal(TABS.findIndex(t=>t.main),2);
 assert.equal(new Set(TABS.map(t=>t.label)).size,TABS.length);
 assert.equal(TABS.filter(t=>t.main).length,1);assert.equal(DEFAULT_TAB,'manage');
 const {existsSync}=await import('node:fs');const root=new URL('..',import.meta.url).pathname;
@@ -15,7 +15,7 @@ for(const b of CFG.breeds)assert.ok(existsSync(root+`assets/drive/shiba-${b}.png
 
 // Production fresh game (café Lv1): start coins 30,000 (밸런스_2년.md §5) but every menu/알바 is level-locked → no red dots.
 let s=fresh();assert.equal(s.coins,30000);
-assert.deepEqual(tabBadges(s,now),{shiba:false,alba:false,manage:false,furniture:false,shop:false});
+assert.deepEqual(tabBadges(s,now),{village:false,shiba:false,manage:false,shop:false,bag:false});
 
 // 가게 관리: a developable menu, or an unseen finished development.
 s=fresh();s.coins=S.menuItem('M-02').devCost-1;s.cafe.level=2;assert.equal(tabBadges(s,now).manage,false);s.coins++;assert.equal(tabBadges(s,now).manage,true);

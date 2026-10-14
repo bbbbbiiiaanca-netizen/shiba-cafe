@@ -22,7 +22,7 @@ export default async function({ev,check,sleep,reload}){
  // screens
  for(const n of ['shibas','walk','shop','settings']){await ev(n==='shibas'?'document.querySelector("[data-main-tab=shiba]").click();true':n==='shop'?'document.querySelector("[data-main-tab=shop]").click();true':n==='walk'?'document.querySelector("[data-main-tab=shiba]").click();document.querySelector("[data-open=walk]").click();true':`document.querySelector("[data-nav=${n}]").click();true`);await check(`${n} screen opens`,'document.getElementById("panel").hidden?document.getElementById("menuList").children.length>0:document.getElementById("pbody").children.length>0');}
  // §16-1: every bottom tab fills the list panel above the single tab row
- for(const tab of ['manage','shiba','alba','furniture','shop']){await ev(`document.querySelector("[data-main-tab=${tab}]").click();true`);await check(`§16 tab ${tab} opens content above the tab row`,`document.querySelector("[data-main-tab=${tab}]").classList.contains("active")&&document.querySelectorAll(".main-tabs .active").length===1&&document.getElementById("menuList").children.length>0&&document.getElementById("menuList").getBoundingClientRect().bottom<=document.querySelector(".main-tabs").getBoundingClientRect().top+1`);}
+ for(const tab of ['manage','shiba','village','bag','shop']){await ev(`document.querySelector("[data-main-tab=${tab}]").click();true`);await check(`§16 tab ${tab} opens content above the tab row`,`document.querySelector("[data-main-tab=${tab}]").classList.contains("active")&&document.querySelectorAll(".main-tabs .active").length===1&&document.getElementById("menuList").children.length>0&&document.getElementById("menuList").getBoundingClientRect().bottom<=document.querySelector(".main-tabs").getBoundingClientRect().top+1`);}
  await ev('document.querySelector("[data-main-tab=shiba]").click();document.querySelector("[data-act=care]").click();true');
  await check('care: feed/snack/bath/sleep disabled (UNSET), play enabled','[...document.querySelectorAll("#pbody button[disabled]")].filter(b=>/Feed|Snack|Bath|Put to bed/.test(b.textContent)).length===4&&!document.querySelector("[data-act=play]").disabled');
  await ev('document.querySelector("[data-act=play]").click();true');await check('play costs 1 heart','__game.state.hearts===9');
@@ -40,7 +40,8 @@ export default async function({ev,check,sleep,reload}){
  await check('141: choosing owned shiba gives personal paws, keeps level and spends stamps','__game.state.gachaStamps===0&&__game.state.shibas[0].paws===window.u141Paws+__game.CFG.gacha.dupPaws&&__game.state.shibas[0].level===window.u141Level&&!!document.querySelector("[data-act=modalOk]")');
  await ev('document.querySelector("[data-act=modalOk]").click();const old=JSON.parse(window.u141Before);Object.assign(__game.state,old);__game.CFG.gacha.startLevel=window.u141Start;__game.refresh();true');
  await ev('__game.state.dia=0;__game.state.items.capsule=0;__game.refresh();true');
- await check('shop inventory; gacha (unlocked Lv1) disabled only when unaffordable','!!document.querySelector("[data-inventory]")&&__game.CFG.gacha.startLevel===1&&[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled)');
+ await check('shop inventory; gacha (unlocked Lv1) disabled only when unaffordable','__game.CFG.gacha.startLevel===1&&[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled)');
+ await ev('document.querySelector("[data-main-tab=bag]").click();true');await check('가방 holds inventory + consumables','!!document.querySelector("[data-inventory]")&&!!document.querySelector("[data-consumables]")');await ev('document.querySelector("[data-main-tab=shop]").click();true');
  await ev('__game.state.dia=1000;__game.state.items.capsule=1;__game.refresh();document.querySelector("[data-act=gacha][data-n=\'1\']:not([data-ticket])").click();true');
  await check('gacha unlocked from Lv1: an affordable single pull spends diamonds and adds a Lv1 shiba or paws','__game.state.dia<1000&&__game.state.items.capsule===1&&(__game.state.shibas.length===2?__game.state.shibas[1].level===1:true)');
  await ev('__game.state.shibas.length=1;__game.ui.modals=[];__game.refresh();true');
@@ -66,7 +67,7 @@ export default async function({ev,check,sleep,reload}){
  await check('menu popup development charges configured cost and offers the diamond skip','__game.state.coins===0&&__game.state.menuDev.id==="M-03"&&/즉시 완료 120/.test(document.querySelector("[data-lp-row=M-03] .lp-price").textContent)');
  await ev('__game.state.dia=120;__game.refresh();document.querySelector("[data-lp-row=M-03] .lp-price").click();document.querySelector("#mbox .lp-close").click();true');
  await check('main menu instant finish hooks simulation','__game.state.dia===0&&__game.state.menus.includes("M-03")&&!__game.state.menuDev');
- await ev('document.querySelector("[data-main-tab=furniture]").click();true');
+ await ev('document.querySelector("[data-main-tab=bag]").click();true');
  await check('furniture tab shows four approved icons','document.querySelectorAll(".furniture-icon").length===4');
  await check('furniture grid has four equal square columns and contained icons',`(()=>{const grid=document.querySelector('.furniture-grid'),cards=[...grid.querySelectorAll('.furniture-card')].filter(e=>e.dataset.furnitureCard!=='wall'),rects=cards.map(e=>e.getBoundingClientRect()),style=getComputedStyle(grid);return style.display==='grid'&&style.gridTemplateColumns.split(' ').length===4&&cards.length===4&&rects.every(r=>Math.abs(r.width-r.height)<1&&Math.abs(r.width-rects[0].width)<1&&Math.abs(r.top-rects[0].top)<1)&&rects[3].right<=grid.getBoundingClientRect().right+1&&cards.every(e=>getComputedStyle(e.querySelector('img')).objectFit==='contain'&&e.querySelector('strong').textContent&&!e.querySelector('span'))&&document.getElementById('furniture-heading').textContent==='가구 · 좌석 '+__game.S.seatCount(__game.state)&&document.querySelectorAll('[data-space-card]').length===0;})()`);
  await check('edit starts disabled','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="false"&&document.querySelector("[data-edit-toggle]").textContent==="배치 편집"');
@@ -74,7 +75,7 @@ export default async function({ev,check,sleep,reload}){
  await check('edit bar is in furniture panel','document.getElementById("menuList").contains(document.querySelector(".furniture-actions"))&&!document.getElementById("scene").contains(document.querySelector(".furniture-actions"))');
  await check('edit toggle enables outlines','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="true"&&document.querySelector("[data-edit-toggle]").textContent==="편집 끝"');
  await ev('document.querySelector("[data-edit-toggle]").click();true');
- await check('edit toggle returns to normal and keeps furniture tab','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="false"&&document.querySelector("[data-main-tab=furniture]").classList.contains("active")');
+ await check('edit toggle returns to normal and keeps furniture tab','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="false"&&document.querySelector("[data-main-tab=bag]").classList.contains("active")');
 
  await ev('document.querySelector("[data-main-tab=manage]").click();true');
  await check('v3: no bottom nav; gear and 미션 buttons are present','!document.getElementById("nav")&&!!document.querySelector(".gear[data-nav=settings]")&&!!document.querySelector("#hud [data-act=mission]")');
@@ -114,7 +115,7 @@ await new Promise(r=>setTimeout(r,500));await ev('__game.refresh&&__game.refresh
  await check('final mailbox reachable with unclaimed mail','document.getElementById("mbox").textContent.includes("우편함")&&!!document.querySelector("[data-act=claimMail]:not(:disabled)")');
  await ev('document.querySelector("[data-act=claimMail]:not(:disabled)").click();true');
  await check('final mail claim saved once','__game.state.mailClaimed.length===1&&!!document.querySelector("[data-act=claimMail]:disabled")');
- await ev('document.querySelector("[data-act=modalOk]").click();document.querySelector("[data-main-tab=shop]").click();true');
+ await ev('document.querySelector("[data-act=modalOk]").click();document.querySelector("[data-main-tab=bag]").click();true');
  await ev('__game.CFG.stub.expBoost.mul=null;__game.refresh();true');
  await check('final unknown boost multiplier disables use without consumption', 'document.querySelector("[data-item=expBoost4h][data-act=useItem]").disabled&&document.querySelector("[data-item=expBoost4h][data-act=useItem]").textContent.includes("미정")&&__game.state.items.expBoost4h>0');
  // Check null gating as an explicit test fixture, then restore the approved starting value.
@@ -123,8 +124,9 @@ await new Promise(r=>setTimeout(r,500));await ev('__game.refresh&&__game.refresh
  await ev('document.querySelector("[data-item=expBoost4h][data-act=useItem]").click();true');
  await check('Task A boost chip approved image', 'document.querySelector("#boostChip img").getAttribute("src")=="assets/drive/ui/item-exp-boost.png"');
  await check('final boost use shows remaining time', '__game.state.items.expBoost4h===0&&document.getElementById("boostChip").textContent.includes("경험치")');
+await ev('document.querySelector("[data-main-tab=shop]").click();true');
  await check('final 2F diamond price stays disabled', 'document.querySelector("[data-kind=floor2][data-via=dia]").disabled&&document.querySelector("[data-kind=floor2][data-via=dia]").textContent.includes("미정")');
- await ev('document.querySelector("[data-main-tab=furniture]").click();true');
+ await ev('document.querySelector("[data-main-tab=bag]").click();true');
  await check('final furniture inventory preserves wall controls', '!!document.querySelector("[data-wall-inventory-place]")&&!!document.querySelector("[data-act=placeFurniture]")');
 
  await ev(`(()=>{const g=__game;g.ui.modals=[];const before=g.state.items.expBoost4h;Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));g.clock.offset+=60000;Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));delete document.hidden;return true;})()`);

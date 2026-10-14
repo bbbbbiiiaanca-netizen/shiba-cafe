@@ -780,3 +780,12 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - `--u12b`: DPR2, real '+' confirmation/purchases; writes `main-screen-u12b-confirm.png` and `main-screen-u12b-expand-1.png`, `-2.png`, `-3.png` to the existing default `/workspace/shiba-cafe-docs/spec-v3-build/` when the user runs it. Scripts and smoke tests updated, not launched in this sandbox.
 - Questions: confirm 30,000 start coins and expansion starting values/rounding; confirm the ledger line above. 2F diamond unlock cost stays null: what should it be?
 - Validation: `npm test` in `start-room-3d` passed all suites, including production price progression, rounding, funds failure atomicity, day-hidden land expense, Lv1 arrivals/Lv21 starter and renderer image/draw-order checks. `node --check` passed for main, browser smoke and capture scripts. Browser smoke and screenshots were deliberately not run.
+
+## 2026-10-15 nav restructure + fonts (user request)
+- Bottom tabs: 마을 / 시바들 / 가게관리 (centre) / 상점 / 가방. 알바 moved into 가게관리 (below café status); 가구 inventory, boosts/tickets/walls, heart reset, potions and accessory bag moved to 가방. 상점 keeps unlocks, bandana shop, gacha, diamond list.
+- 마을: place slots (병원 → opens 시바들 for treatment, 산책, 데이케어, 훈련소) on an empty cream area; existing card icons reused; no scenery drawn.
+- Fonts: Jua (titles/buttons/tabs/numbers) + Gowun Dodum (body), both SIL OFL 1.1, bundled as WOFF2 in assets/fonts (LICENSES.md).
+- Global centring CSS layer for buttons/pills/badges/tabs/popup titles.
+### Art requests
+- Village map background + building art: 병원, 산책로, 데이케어, 훈련소.
+- Tab icons: 마을, 시바들 (currently first-shiba portrait), 가게관리 (currently M-01 drink), 가방; 병원 place icon.
