@@ -1,10 +1,10 @@
-import {MAP,SPRITES,cellToImage,cellToScreen} from './map-data.js';
+import {MAP,SPRITES,cellToImage,cellToScreen,footprintCentre,compareDepth} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas){
- const ctx=canvas.getContext('2d'),images=new Map(),grid=new URLSearchParams(location.search).get('grid')==='1';
- let scroll=0,drag=null,last;
+ const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
+ let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,drag=null,last;
  const load=path=>{if(!images.has(path)){const im=new Image();im.onload=()=>last&&draw(...last);im.src=path;images.set(path,im);}return images.get(path);};
- MAP.zones.forEach(z=>{load(z.image);z.slots.forEach(s=>load(SPRITES[s.type].path));});
+ MAP.zones.forEach(z=>{load(z.image);z.slots.forEach(s=>load(SPRITES[s.type].file));});
  function draw(state,world){
   last=[state,world];const W=canvas.clientWidth,H=canvas.clientHeight,dpr=devicePixelRatio||1;
   if(canvas.width!==Math.round(W*dpr)||canvas.height!==Math.round(H*dpr)){canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);}
@@ -20,15 +20,16 @@ export function createIsoMap(canvas){
    const glow=ctx.createRadialGradient(W/2,y+heights[index]*.84,0,W/2,y+heights[index]*.84,W*.55);
    glow.addColorStop(0,'#b9854540');glow.addColorStop(1,'#b9854500');ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);
    const room=load(z.image);if(room.complete&&room.naturalWidth)ctx.drawImage(room,view.x,view.y,room.naturalWidth*scale,room.naturalHeight*scale);
-   if(grid){ctx.strokeStyle='#7de7ffb0';ctx.lineWidth=.8;
+   if(edit){const occupied=new Set(z.slots.flatMap(s=>s.cells.map(c=>c.join(','))));
     for(let r=0;r<z.rows;r++)for(let c=0;c<z.cols;c++){
+     ctx.strokeStyle=occupied.has(`${c},${r}`)?'#ffd36b':'#7de7ffb0';ctx.lineWidth=occupied.has(`${c},${r}`)?1.5:.8;
      const p=cellToScreen(c,r,view,z),hw=z.cell.w*scale/2,hh=z.cell.h*scale/2;
      ctx.beginPath();ctx.moveTo(p.x,p.y-hh);ctx.lineTo(p.x+hw,p.y);ctx.lineTo(p.x,p.y+hh);ctx.lineTo(p.x-hw,p.y);ctx.closePath();ctx.stroke();
     }
    }
-   [...z.slots].sort((a,b)=>(a.i+a.j)-(b.i+b.j)).forEach(s=>{
-    const sprite=SPRITES[s.type];if(!sprite)return;const im=load(sprite.path),p=cellToScreen(s.i,s.j,view,z);
-    if(im.complete&&im.naturalWidth)ctx.drawImage(im,p.x-sprite.anchor[0]*scale,p.y-sprite.anchor[1]*scale,im.naturalWidth*scale,im.naturalHeight*scale);
+   [...z.slots].sort(compareDepth).forEach(s=>{
+    const sprite=SPRITES[s.type];if(!sprite)return;const im=load(sprite.file),p=cellToScreen(...footprintCentre(s),view,z),spriteScale=scale*sprite.scale;
+    if(im.complete&&im.naturalWidth)ctx.drawImage(im,p.x-sprite.anchor[0]*spriteScale,p.y-sprite.anchor[1]*spriteScale,im.naturalWidth*spriteScale,im.naturalHeight*spriteScale);
    });
    y+=heights[index]+24;
   });
@@ -38,5 +39,5 @@ export function createIsoMap(canvas){
  canvas.addEventListener('pointermove',e=>{if(drag===null)return;scroll+=drag-e.clientY;drag=e.clientY;last&&draw(...last);});
  canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('pointercancel',()=>drag=null);
  new ResizeObserver(()=>last&&draw(...last)).observe(canvas);
- return {draw,get scroll(){return scroll;}};
+ return {draw,get edit(){return edit;},setEdit(value){edit=Boolean(value);last&&draw(...last);},get scroll(){return scroll;}};
 }

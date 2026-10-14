@@ -55,7 +55,7 @@ function renderMainMenu(){
  const now=clock.now(),sig=JSON.stringify([mainTab,s.cafe.level,s.coins,s.dia,s.menus,s.menuDev,Math.ceil((s.menuDev?.until-now)/1000)]);
  if(mainTab==='menu'&&sig===menuSig)return;menuSig=sig;
  $('menuList').classList.toggle('tab-list',mainTab!=='menu');
- if(mainTab!=='menu'){const content=mainTab==='shiba'?P.shibas().html:mainTab==='store'?P.shop().html:`<div class="note">가구 배치 · 가격 미정</div>${[['tea-table','찻상'],['zabuton','방석'],['counter','카운터'],['stairs','계단']].map(([id,name])=>`<div class="card li"><img class="furniture-icon" src="assets/drive/ui/ui-icon-${id}.png" alt=""><strong>${name}</strong></div>`).join('')}`;$('menuList').innerHTML=content;return;}
+ if(mainTab!=='menu'){const content=mainTab==='shiba'?P.shibas().html:mainTab==='store'?P.shop().html:`<button data-edit-toggle aria-pressed="${iso.edit}">${iso.edit?'편집 끝':'배치 편집'}</button><div class="note">가구 배치 · 가격 미정</div>${[['tea-table','찻상'],['zabuton','방석'],['counter','카운터'],['stairs','계단']].map(([id,name])=>`<div class="card li"><img class="furniture-icon" src="assets/drive/ui/ui-icon-${id}.png" alt=""><strong>${name}</strong></div>`).join('')}`;$('menuList').innerHTML=content;$('menuList').querySelector('[data-edit-toggle]')?.addEventListener('click',()=>{iso.setEdit(!iso.edit);renderMainMenu();});return;}
  const items=[CFG.menu.coffee,...CFG.menu.items].sort((a,b)=>a.id.localeCompare(b.id));
  const value=n=>n==null?'미정':fmt(n);
  $('menuList').innerHTML=items.map(m=>{const basic=m.id===CFG.menu.coffee.id,locked=!basic&&s.cafe.level<m.unlockLevel,dev=s.menuDev?.id===m.id,owned=s.menus.includes(m.id);
