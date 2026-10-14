@@ -1,121 +1,231 @@
-// 2D isometric cafe drawn only with art cut from the user's 「시바견 카페 에셋 카탈로그」 (assets/*.png).
-import {CFG} from './config.js';
+// Spec v3 UI: DOM screens over the pure core in sim.js. Images are the confirmed Drive files in assets/drive/ (see MAP.md), shown
+// unmodified (sub-regions via CSS only). A needed image that does not exist is a dashed placeholder slot.
+// 갱신 50: no "sticker" sliding — without walk frames (frame data UNSET) characters change place as a cut, never by gliding.
+import {CFG,pressureAt,isUnset} from './config.js';
 import * as S from './sim.js';
-import {SDK} from './sdk-stubs.js';
-import {UI} from './ui.js';
-import * as HL from './healing.js';
+import {makeT,LANGS} from './i18n.js';
+
 const Q=new URLSearchParams(location.search);
-// test build only: exactly ?temp=1 switches on every CFG.TEMP placeholder (values the docs leave 미정) and moves saves to a separate ':temp' key. Never on by default.
-S.applyBuildMode(location.search);
-const cv=document.getElementById('scene'),g=cv.getContext('2d');const DPR=Math.min(2,devicePixelRatio||1);
-let W=0,H=0;function resize(){W=cv.clientWidth;H=cv.clientHeight;cv.width=W*DPR;cv.height=H*DPR;}resize();addEventListener('resize',resize);
-const IMG={};const names=['donggu','shiba_red','shiba_sesame','shiba_kuro','shiba_white','cust_girl','cust_man','shelf','table','zabuton','lantern','counter','sign','tatami','stone_lantern','bonsai','sakura','pond','fence','gravel_path','stepping','flowers','teapot','teacup','dango','showcase','bell','menu_board','bed','toy_basket','ball','bone_cushion','cushion_pink','scroll','bonsai_pot','mini_lantern','windbell','maneki','tile_construction'];
-const ready=Promise.all(names.map(n=>new Promise(r=>{const i=new Image();i.onload=i.onerror=r;i.src=`assets/${n}.png`;IMG[n]=i;})));
-// ---- camera: iso projection, horizontal swipe + pinch zoom ----
-let U=64,zoom=+(Q.get("zoom")||1.35),pan=0;const TOP=92,BOT=84;
-const P=(x,z,y=0)=>[W/2+((x-z)+1.4)*U*zoom*.87+pan,TOP+(H-TOP-BOT)*.47+((x+z)+.8)*U*zoom*.5-y*U*zoom];
-function clampPan(){const lim=U*zoom*.87*7;pan=Math.max(-lim*.95,Math.min(lim*.75,pan));}
-const pts=new Map();let pinch0=0,zoom0=1,moved=0;
-cv.addEventListener('pointerdown',e=>{pts.set(e.pointerId,[e.clientX,e.clientY]);if(pts.size===2){const [a,b]=[...pts.values()];pinch0=Math.hypot(a[0]-b[0],a[1]-b[1]);zoom0=zoom;}});
-cv.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;const p=pts.get(e.pointerId);pts.set(e.pointerId,[e.clientX,e.clientY]);if(pts.size===1){pan+=e.clientX-p[0];moved+=Math.abs(e.clientX-p[0]);clampPan();hideHint();}else{const [a,b]=[...pts.values()];zoom=Math.max(.8,Math.min(1.7,zoom0*Math.hypot(a[0]-b[0],a[1]-b[1])/Math.max(1,pinch0)));clampPan();}});
-for(const ev of ['pointerup','pointercancel','pointerleave'])cv.addEventListener(ev,e=>pts.delete(e.pointerId));
-cv.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.8,Math.min(1.7,zoom*Math.exp(-e.deltaY*.001)));clampPan();},{passive:false});
-const hint=document.getElementById('hint');function hideHint(){hint.style.opacity=0;}
-document.getElementById('al').onclick=()=>{pan+=160;clampPan();hideHint();};document.getElementById('ar').onclick=()=>{pan-=160;clampPan();hideHint();};
-// ---- drawing helpers ----
-function poly(pts,fill,stroke){g.beginPath();pts.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.fillStyle=fill;g.fill();if(stroke){g.strokeStyle=stroke;g.lineWidth=2;g.stroke();}}
-const quad=(x0,z0,x1,z1,y=0)=>[P(x0,z0,y),P(x1,z0,y),P(x1,z1,y),P(x0,z1,y)];
-// sprite: anchor bottom-centre at ground (x,z), lifted by y; w = width in world units
-function spr(n,x,z,w,{y=0,flip=false,crop=1,dy=0,alpha=1}={}){const im=IMG[n];if(!im||!im.width)return;const [sx,sy]=P(x,z,y);const pw=w*U*zoom,ph=pw*im.height/im.width;
- g.save();g.globalAlpha=alpha;g.translate(sx,sy+dy*U*zoom);if(flip)g.scale(-1,1);g.drawImage(im,0,0,im.width,im.height*crop,-pw/2,-ph,pw,ph*crop);g.restore();}
-function shadow(x,z,r){const [sx,sy]=P(x,z);g.save();g.fillStyle='rgba(70,40,15,.18)';g.beginPath();g.ellipse(sx,sy-2,r*U*zoom*.62,r*U*zoom*.24,0,0,7);g.fill();g.restore();}
-function heart(x,y,s,a){g.save();g.globalAlpha=a;g.translate(x,y);g.scale(s,s);g.beginPath();g.moveTo(0,4);g.bezierCurveTo(-9,-3,-6,-11,0,-6);g.bezierCurveTo(6,-11,9,-3,0,4);g.fillStyle='#ef7f8c';g.fill();g.lineWidth=1.4;g.strokeStyle='#fff';g.stroke();g.restore();}
-// ---- static layout (world units; room x -4.6..1.3, z -2.6..2.6; garden around) ----
-const RX0=-4.6,RX1=1.3,RZ0=-2.6,RZ1=2.6;
-const props=[
- ['shelf',-3.6,-2.25,1.55],['counter',-1.45,-1.95,2.1],['showcase',.35,-2.1,.95],['lantern',.95,-2.3,.48],['bell',-1.0,-1.95,.34,{y:.78}],['teapot',-1.9,-1.95,.42,{y:.78}],['maneki',-2.35,-1.95,.38,{y:.78}],
- ['menu_board',1.05,1.9,.55],['bonsai_pot',-4.2,-1.6,.55],['cushion_pink',-4.05,1.9,.7],['bed',-3.0,2.1,1.1],['toy_basket',-1.7,2.25,.55],['ball',-1.05,2.35,.3],
- // garden (catalog p12 정원 소품)
- ['stone_lantern',2.4,-2.2,.75],['bonsai',3.7,-2.0,.95],['sakura',4.5,-.3,1.15],['pond',3.1,.6,1.6],['flowers',2.2,-.8,.85],['stepping',2.3,2.5,1.1],['gravel_path',2.8,3.8,1.4],['flowers',4.3,2.6,.8],['mini_lantern',4.6,1.3,.45],
- ['sakura',-5.2,3.4,1.1],['flowers',-3.6,3.6,.8],['bonsai',-1.2,3.9,.85],['tile_construction',5.7,3.9,1.4,{alpha:.9}],['tile_construction',-6.2,-1.0,1.4,{alpha:.9}],
-];
-const fences=[];for(let x=1.9;x<5.4;x+=.95)fences.push(['fence',x,-2.95,1.0]);
-function drawGround(){
- g.fillStyle='#e9dcc0';g.fillRect(0,0,W,H);
- // garden lot (moss + white gravel like p17)
- poly(quad(-6.6,-3.4,5.8,4.8),'#a8b884');poly(quad(-6.6,-3.4,5.8,4.8,0).map(([x,y])=>[x,y]),'rgba(0,0,0,0)','#8c9c66');
- poly(quad(1.6,1.6,5.6,4.6),'#ece6d8');poly(quad(-6.4,2.8,1.4,4.7),'#ece6d8');
- let s=11;const r=()=>(s=(s*16807)%2147483647)/2147483647;g.fillStyle='rgba(150,140,120,.35)';for(let i=0;i<420;i++){const x=1.6+r()*4,z=1.6+r()*3;const [px,py]=P(x,z);g.fillRect(px,py,2,2);}for(let i=0;i<500;i++){const x=-6.4+r()*7.8,z=2.8+r()*1.9;const [px,py]=P(x,z);g.fillRect(px,py,2,2);}
- // expansion slots (tycoon: land grows up/down/left/right)
- for(const [x0,z0,x1,z1] of [[5.0,3.2,6.6,4.8],[-7.0,-1.8,-5.4,-.2]]){g.setLineDash([6,5]);poly(quad(x0,z0,x1,z1),'rgba(255,250,235,.35)','#c9a06a');g.setLineDash([]);}
- // raised wooden floor of the cafe
- const e=.22;poly([P(RX0,RZ1),P(RX1,RZ1),P(RX1,RZ1,-e),P(RX0,RZ1,-e)],'#7a4a2e');poly([P(RX1,RZ0),P(RX1,RZ1),P(RX1,RZ1,-e),P(RX1,RZ0,-e)],'#5e3820');
- poly(quad(RX0,RZ0,RX1,RZ1),'#a8724a');
- // tatami (catalog tatami tile), 4 x 4 mats
- const nx=4,nz=4,dx=(RX1-RX0-.3)/nx,dz=(RZ1-RZ0-.3)/nz;const im=IMG.tatami;
- for(let i=0;i<nx;i++)for(let j=0;j<nz;j++){const x0=RX0+.15+i*dx,z0=RZ0+.15+j*dz;const a=P(x0,z0),b=P(x0+dx,z0),c=P(x0+dx,z0+dz),d=P(x0,z0+dz);
-  const L=Math.min(a[0],d[0]),R=Math.max(b[0],c[0]),T=Math.min(a[1],b[1]),B=Math.max(c[1],d[1]);g.drawImage(im,L-(R-L)*.02,T-(B-T)*.03,(R-L)*1.04,(B-T)*1.12);}
- // walls (back-left x=RX0, back-right z=RZ0): cream plaster + wood beams, open front like a diorama
- // D-12 temporary themes: colour only (walls + a floor tint) until the R-01/R-02 backgrounds exist; the basic theme keeps the catalog look
- const th=S.currentTheme(state),plain=th.id==='basic';if(!plain)poly(quad(RX0,RZ0,RX1,RZ1),th.tatami+'66');
- const h=1.75;poly([P(RX0,RZ0),P(RX0,RZ1),P(RX0,RZ1,h),P(RX0,RZ0,h)],plain?'#eedfc4':th.wall);poly([P(RX0,RZ0),P(RX1,RZ0),P(RX1,RZ0,h),P(RX0,RZ0,h)],plain?'#f5e8d0':th.light);
- g.strokeStyle='#6b4126';g.lineWidth=6*zoom;for(const y of [.05,h-.05]){g.beginPath();g.moveTo(...P(RX0,RZ1,y));g.lineTo(...P(RX0,RZ0,y));g.lineTo(...P(RX1,RZ0,y));g.stroke();}
- g.lineWidth=7*zoom;for(const x of [RX0,-2.0,.6,RX1]){g.beginPath();g.moveTo(...P(x,RZ0,0));g.lineTo(...P(x,RZ0,h));g.stroke();}for(const z of [RZ0,0,RZ1]){g.beginPath();g.moveTo(...P(RX0,z,0));g.lineTo(...P(RX0,z,h));g.stroke();}
- // wall decor: sign, scroll, wind bell
- spr('scroll',RX0+.02,-1.2,.62,{y:.55});spr('sign',-.7,RZ0+.02,.7,{y:1.0});spr('windbell',.95,RZ0+.3,.42,{y:.95});
+const $=id=>document.getElementById(id);
+if(Q.get('fresh'))localStorage.removeItem(CFG.saveKey);
+const r=Q.get('seed')?S.rng(+Q.get('seed')):Math.random;
+const clock={offset:0,now(){return Date.now()+this.offset;}};
+const L0=S.load(localStorage,clock.now(),r);let s=L0.state,w=S.newWorld(s,r);
+const L=makeT(()=>s.settings.language);
+const ui={nav:'cafe',panel:null,arg:null,sel:null,modals:[],toastT:0,walkPick:null,walkAlba:new Set(),trainPick:{}};
+
+// ───────── images (assets/drive, MAP.md) ─────────
+const IMG={shiba:b=>`assets/drive/shiba-${b}.png`,dongu:'assets/drive/dongu.webp',four:'assets/drive/shiba-four.webp',
+ guest:k=>`assets/drive/guest-sitting-${k}-final.png`,rescue:['assets/drive/rescue-brown.png','assets/drive/rescue-gray.png'],
+ walkPose:{sesame:'assets/drive/pose-sesame-walk.png',kuro:'assets/drive/pose-kuro-walk.png'},sleepPose:{sesame:'assets/drive/pose-sesame-sleep.png',kuro:'assets/drive/pose-kuro-sleep.png'},
+ reqShiba:'assets/drive/request-icon-shiba_256.png',reqTrick:'assets/drive/request-icon-trick_256.png',snack:'assets/drive/T-01-basic-snack_256.png',toy:'assets/drive/T-03-rope-toy_256.png',
+ potion:'assets/drive/mung-potion_256.png',potionSmall:'assets/drive/mung-potion-small_256.png'};
+const slot=(label,wpx=54,hpx=54)=>`<span class="slot" style="width:${wpx}px;height:${hpx}px">${label}</span>`;
+const islot=()=>`<span class="slot" style="width:20px;height:20px" title="${L('app.missingImg')}"></span>`;
+const img=(src,alt='')=>`<img src="${src}" alt="${alt}" draggable="false">`;
+const shibaImg=sh=>{const st=S.statusOf(s,sh);if(st==='sleeping'&&IMG.sleepPose[sh.breed])return IMG.sleepPose[sh.breed];if(st==='walking'&&IMG.walkPose[sh.breed])return IMG.walkPose[sh.breed];return IMG.shiba(sh.breed);};
+
+// ───────── formatting ─────────
+const fmt=n=>Math.floor(n).toLocaleString(s.settings.language==='en'?'en-US':'ko-KR');
+const f2=n=>(Math.round(n*100)/100).toString();
+const tfmt=sec=>{sec=Math.max(0,Math.ceil(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),x=sec%60;return h?`${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`:`${m}:${String(x).padStart(2,'0')}`;};
+const nameOf=sh=>sh.name||L('shiba.breed.'+sh.breed);
+const bar=(k,col)=>`<div class="bar"><i style="width:${Math.round(Math.max(0,Math.min(1,k))*100)}%${col?';background:'+col:''}"></i></div>`;
+function toast(t){const e=$('toast');e.textContent=t;e.style.opacity=1;ui.toastT=2.2;}
+const reason={coins:'toast.coins',hearts:'toast.hearts',slots:'toast.slots',unset:'toast.unset',last:'toast.last'};
+function why(code){toast(L(reason[code]||'toast.unset'));}
+
+// ───────── HUD ─────────
+function renderHUD(){const now=clock.now();$('coins').textContent=fmt(s.coins);$('hearts').textContent=fmt(s.hearts);$('dia').textContent=fmt(s.dia);
+ const nh=S.nextHeartInSec(s,now);$('heartT').textContent=nh==null?'':tfmt(nh);
+ const C=s.cafe,need=S.cafeNeed(C.level);$('lvl').textContent=L('hud.level',{lv:C.level});$('expBar').style.width=(need?Math.min(100,C.exp/need*100):100)+'%';
+ $('rep').textContent=L('hud.rep',{rep:Math.round(C.rep)});$('mgr').textContent=S.managerActive(s,now)?L('hud.manager',{t:tfmt((C.managerUntil-now)/1000)}):'';
+ $('closed').hidden=!C.closed;$('closed').textContent=L('hud.closed');}
+
+// ───────── café scene (keyed DOM, rebuilt only when its signature changes) ─────────
+let sceneSig='';
+function renderScene(){const cap=S.capOf(s),bySeat={};for(const c of w.custs)bySeat[c.seat]=c;
+ const tokens={};for(const sh of Object.values(w.sh))if(sh.phase==='meet')tokens[sh.cust]=sh.id;
+ const sig=JSON.stringify([cap,w.custs.map(c=>[c.id,c.seat,c.met.length,c.fulfilled,c.with]),Object.values(w.sh).map(x=>[x.id,x.phase]),w.queue.map(c=>c.id),s.cafe.stains,s.dongu.placed,ui.sel,s.settings.language]);
+ if(sig!==sceneSig){sceneSig=sig;let h='';
+  for(let i=0;i<cap;i++){const c=bySeat[i];
+   if(!c){h+=`<div class="seat" data-seat="${i}"></div>`;continue;}
+   const q=c.request,reqHtml=q?`<div class="req${c.fulfilled?' ok':''}">${img(q.type==='meetShiba'?IMG.reqShiba:IMG.reqTrick)}<b>${q.type==='meetShiba'?nameOf(S.byId(s,q.shibaId)||{breed:'red'}):L('trick.'+q.trick)}</b></div>`:'';
+   const tok=c.with!=null?(()=>{const o=S.byId(s,c.with);return o?`<div class="tok">${img(IMG.shiba(o.breed))}</div>`:''})():'';
+   h+=`<div class="seat cust${ui.sel!=null&&c.with==null?' sel':''}" data-act="seat" data-cust="${c.id}"><div class="who">${img(IMG.guest(c.kind),L('npc.'+c.kind))}</div>${reqHtml}<span class="met">${'♥'.repeat(c.met.length)}</span>${tok}<div class="tm">${bar(c.t/CFG.cafe.stayingSec)}</div></div>`;}
+  $('seats').innerHTML=h;
+  let rh='';for(const x of Object.values(w.sh))if(x.phase==='roam'){const o=S.byId(s,x.id);if(o)rh+=`<div class="tok${ui.sel===x.id?' sel':''}" data-act="pickShiba" data-shiba="${x.id}">${img(IMG.shiba(o.breed),nameOf(o))}</div>`;}
+  if(s.dongu.placed)rh+=`<div style="flex:1"></div><div class="tok dongu" title="${L('char.dongu.name')}">${img(IMG.dongu)}</div>`;
+  $('roam').innerHTML=rh;
+  let sh='';const n=Math.min(s.cafe.stains,12);for(let i=0;i<n;i++){const x=(i*73+17)%86,y=(i*41+23)%60;sh+=`<div class="stain" data-act="stain" style="left:${x}%;top:${8+y*.9}%"></div>`;}
+  $('stains').innerHTML=sh;
+  let qh=`<span class="lab">${L('cafe.queue',{n:w.queue.length,max:CFG.cafe.queueMax})}</span>`;for(const c of w.queue)qh+=`<div class="q" data-q="${c.id}">${img(IMG.guest(c.kind))}<div class="bar"><i></i></div></div>`;
+  $('queue').innerHTML=qh;}
+ // per-frame values without rebuilding
+ for(const c of w.custs){const e=document.querySelector(`[data-cust="${c.id}"] .tm i`);if(e)e.style.width=Math.max(0,c.t/CFG.cafe.stayingSec*100)+'%';}
+ for(const c of w.queue){const e=document.querySelector(`[data-q="${c.id}"] .bar i`);if(e){e.style.width=Math.max(0,c.t/CFG.cafe.queueWaitSec*100)+'%';e.style.background=c.t<10?'#d9695a':'';}}}
+function popAt(el,text){if(!el)return;const sc=$('scene').getBoundingClientRect(),b=el.getBoundingClientRect();const p=document.createElement('div');p.className='pop';p.textContent=text;
+ p.style.left=(b.left-sc.left+4)+'px';p.style.top=(b.bottom-sc.top-30)+'px';$('scene').appendChild(p);setTimeout(()=>p.remove(),1500);}
+function handleEvents(){for(const e of w.events.splice(0)){
+ if(e.type==='leave'){const el=document.querySelector(`[data-seat="${e.seat}"],[data-cust="${e.id}"]`);popAt(el,`+${f2(e.coins)} ${L('out.'+e.outcome)}`);}
 }
-// ---- game state ----
-if(Q.has('fresh'))localStorage.removeItem(CFG.saveKey);
-const loaded=S.load(localStorage,Date.now());const state=loaded.state;const world=S.newWorld(state,+(Q.get('seed')||7));if(loaded.returned!=null)S.returnToFloor(world,state,loaded.returned); // walk settled while closed → back on the floor even when it is full
-// D-13 healing runtime (inert unless the CFG.FEATURES switches are on)
-const tod=HL.newTod(new Date(),!!state.settings.todLock);world.tod=tod.key;const obs=HL.newObserve();
-addEventListener('pointerdown',()=>HL.touch(obs),true);
-const obsBtn=document.getElementById('obs');
-let obsK='';function showObs(){const k=obs.phase==='active'?obs.ev:'';if(!obsBtn||k===obsK)return;obsK=k;obsBtn.hidden=!k;if(k)obsBtn.textContent=CFG.healing.observe.events[k].icon;}
-if(obsBtn)obsBtn.onclick=()=>{const r=HL.tapObserve(obs,state,Date.now());showObs();if(r){const got=Object.entries(r.got).map(([k,v])=>`+${v}${{coins:'🪙',hearts:'💗'}[k]}`).join(' ');popAt(got||'✓',obsBtn);S.save(localStorage,state,Date.now());}};
-// tap a playing shiba → small heart reward, the play continues
-let down=null;cv.addEventListener('pointerdown',e=>{down=[e.clientX,e.clientY];});
-cv.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>8)return;down=null;const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
- for(const sh of world.shibas){if(sh.phase!=='play')continue;const [sx,sy]=P(sh.x,sh.z,.4);if(Math.hypot(sx-x,sy-y)<40){const n=S.tapPlay(world,state,sh.id);if(n)pop(`+${n}💗`,sh.x,sh.z);break;}}});
-const popLayer=document.getElementById('pops');
-function popAt(text,el){const b=el.getBoundingClientRect(),d=document.createElement('div');d.className='pop';d.textContent=text;d.style.left=(b.left+b.width/2)+'px';d.style.top=b.top+'px';popLayer.appendChild(d);setTimeout(()=>d.remove(),1600);}
-function pop(text,x,z){const [px,py]=P(x,z,1.9);const d=document.createElement('div');d.className='pop';d.textContent=text;d.style.left=px+'px';d.style.top=py+'px';popLayer.appendChild(d);setTimeout(()=>d.remove(),1600);}
-let incomeFrac=0;
-function step(dt){const now=Date.now();S.settleHearts(state,now);S.markVisit(state,now);S.sleepRecover(state,dt);
- const wr=S.tickWalk(state,now);if(wr&&wr.returned!=null)S.returnToFloor(world,state,wr.returned); // no completion notice: the shiba is simply back in the cafe (reclaims its slot from the stand-in)
- // D-13: time of day feeds the play rules (no chase at night) and, with FEATURES.healingTimeOfDay, the light + guest mix
- tod.locked=!!state.settings.todLock;HL.stepTod(tod,dt,new Date());world.tod=tod.key;
- S.tick(world,state,dt);
- HL.stepObserve(obs,dt,{overlay:ui.isOverlay(),tod:world.tod,month:new Date().getMonth()+1,owns:[],r:Math.random});showObs();incomeFrac+=S.incomePerSec(state)*dt;if(incomeFrac>=1){const n=Math.floor(incomeFrac);state.coins+=n;incomeFrac-=n;}
- for(const e of world.events.splice(0)){if(e.type==='playStart')SDK.sfx('play');if(e.type==='pay')pop(`+${e.coins}🪙 +${e.paws}🐾`,e.x,e.z);if(e.type==='pet')SDK.sfx('pet');}ui.tick();}
-const lastX=new Map();
-function draw(){g.setTransform(DPR,0,0,DPR,0,0);drawGround();const t=world.t;const L=[];
- for(const p of [...props,...fences])L.push({d:p[1]+p[2],f:()=>{shadow(p[1],p[2],p[3]*.5);spr(p[0],p[1],p[2],p[3],p[4]||{});}});
- for(const [i,tb] of CFG.tables.entries())L.push({d:tb.x+tb.z,f:()=>{shadow(tb.x,tb.z,.9);spr('table',tb.x,tb.z,1.45);spr('teacup',tb.x+.3,tb.z+.1,.32,{y:.52});spr('dango',tb.x-.25,tb.z+.15,.38,{y:.5});}});
- for(const sd of CFG.seats)L.push({d:sd.x+sd.z-.3,f:()=>spr('zabuton',sd.x,sd.z,.78)});
- L.push({d:-1.25-1.3,f:()=>{shadow(-.25,-1.3,.7);spr('donggu',-.25,-1.3,1.05,{dy:.02,y:Math.sin(performance.now()/700)*.004});}}); // 동구: always seated by the counter
- for(const c of world.customers){const n=c.kind==='boy'?'cust_man':'cust_girl';const walking=c.phase==='enter'||c.phase==='leave';const px=lastX.get('c'+c.id)??c.x-c.z;const flip=(c.x-c.z)<px-1e-4;lastX.set('c'+c.id,c.x-c.z);
-  if(walking)L.push({d:c.x+c.z,f:()=>{shadow(c.x,c.z,.5);spr(n,c.x,c.z,1.0,{y:Math.abs(Math.sin(t*8))*.05,flip});}});
-  else L.push({d:c.x+c.z,f:()=>{spr(n,c.x,c.z,1.0,{crop:.6,dy:-.06,y:.62*.0+(c.petting?Math.abs(Math.sin(t*6))*.03:0)+(-.0)});}});} // seated: legs hidden behind the low table
- for(const sh of world.shibas){const n='shiba_'+sh.coat;const sx=sh.x-sh.z;const px=lastX.get('s'+sh.id)??sx;const moving=Math.abs(sx-px)>1e-4;const fl=moving?sx<px:(sh._fl||false);sh._fl=fl;lastX.set('s'+sh.id,sx);
-  const onTable=sh.y>.01;const lift=sh.y/.55*.62;
-  L.push({d:sh.x+sh.z+(onTable?.9:0),f:()=>{if(!onTable)shadow(sh.x,sh.z,.45);const hop=(sh.phase==='roam'||sh.phase==='toTable')?Math.abs(Math.sin(t*10+sh.id))*.05:0;
-   spr(n,sh.x,sh.z,.82,{y:lift+hop,flip:fl});
-   if(sh.phase==='play'){const pr=world.play.pairs.find(p=>p.ids.includes(sh.id));if(pr&&pr.ids[0]===sh.id){const [hx,hy]=P(sh.x+.15,sh.z,1.35);g.font='20px sans-serif';g.textAlign='center';g.fillText(PLAY_ICON[pr.type]||'💞',hx,hy-Math.abs(Math.sin(t*3))*6);}}
-   if(sh.phase==='pet'){const [hx,hy]=P(sh.x,sh.z,lift+1.25);for(let i=0;i<3;i++){const k=(t*.6+i/3)%1;heart(hx+(i-1)*18,hy-k*34,1.1+Math.sin(k*Math.PI)*.4,1-k*.7);}}}});}
- L.sort((a,b)=>a.d-b.d);for(const o of L)o.f();
- if(CFG.FEATURES.healingTimeOfDay){const k=HL.currentLook(tod);g.fillStyle=`rgba(${k.r|0},${k.g|0},${k.b|0},${k.tintA})`;g.fillRect(0,0,W,H);if(k.dark>0){g.fillStyle=`rgba(20,25,60,${k.dark})`;g.fillRect(0,0,W,H);}}}
-const PLAY_ICON={chase:'💨',sniff:'👃',napLean:'💤',tug:'🪢',sitTogether:'💞'};
-// ---- gacha / panels ----
-const thumb=(coat,expr)=>`assets/${CFG.exprs[expr]?expr:coat+'_smile'}.png`;
-const ui=UI({state,world,CFG,S,SDK,thumb,loaded,applyTheme:()=>{},addToCafe:o=>S.addShiba(world,o),removeFromCafe:id=>S.leaveFloor(world,state,id),returnToCafe:id=>S.returnToFloor(world,state,id),save:()=>S.save(localStorage,state,Date.now()),
- journalHtml:L=>{if(!CFG.FEATURES.healingObserve)return '';const E=CFG.healing.observe.events,j=state.observeJournal||{};return `<h4>${L('observe.journal',{count:Object.keys(j).length,total:Object.keys(E).length})}</h4><p class="sub">${Object.entries(E).map(([k,e])=>j[k]?`${e.icon}×${j[k].count}`:'❔').join(' ')}</p>`;},
- settingsExtra:(L,onoff)=>CFG.FEATURES.healingTimeOfDay?`<div class="row"><b>${L('settings.todLock')}</b><button data-k="todLock">${onoff(!!state.settings.todLock)}</button></div>`:''});
-let manual=Q.has('still');let last=performance.now();
-function frame(now){ui.frame();const dt=Math.min(.1,(now-last)/1000);last=now;if(!manual){let left=dt;while(left>1e-6){const d=Math.min(1/30,left);step(d);left-=d;}}draw();requestAnimationFrame(frame);}
-setInterval(()=>{if(!manual)S.save(localStorage,state,Date.now());},10000);
-addEventListener('visibilitychange',()=>{if(document.hidden)S.save(localStorage,state,Date.now());});
-document.getElementById('gear').onclick=()=>ui.open('settings');
-ready.then(()=>{draw();requestAnimationFrame(frame);window.__ready=true;});
-window.__game={state,world,CFG,ui,S,HL,tod,obs,step(sec){manual=true;for(let i=0;i<Math.round(sec*30);i++)step(1/30);draw();ui.tick();return {t:world.t,customers:world.customers.map(c=>c.phase),shibas:world.shibas.map(s=>s.phase)};},
- draw,open:n=>ui.open(n),close:()=>ui.close(),gachaShow:(coat,expr,t,r)=>ui.gachaShow(coat,expr,t,r),setPan(p,z){pan=p;zoom=z||zoom;clampPan();draw();}};
+ while(s.walkResults.length)ui.modals.push({kind:'walkResult',res:s.walkResults.shift()});}
+
+// ───────── panels ─────────
+const P={};
+P.shibas=()=>{const n=S.placedShibas(s).length;let h=`<div class="card"><div class="note">${L('shibas.slots',{n,max:S.slotsOf(s),own:s.shibas.length,ownMax:CFG.cafe.maxOwned})}</div>`;
+ for(const sh of s.shibas){const st=S.statusOf(s,sh);h+=`<div class="li"><div class="pt" data-act="care" data-id="${sh.id}">${img(shibaImg(sh))}</div><div class="grow" data-act="care" data-id="${sh.id}"><div class="nm">${nameOf(sh)} · ${L('app.lv',{lv:sh.level})}</div><div class="sub">${statusText(sh,st)}</div></div>
+  <button class="${sh.placed?'sec':''}" data-act="place" data-id="${sh.id}" data-on="${sh.placed?0:1}" ${!sh.placed&&S.placeCheck(s,sh.id)?'disabled':''}>${sh.placed?L('care.unplace'):L('care.place')}</button></div>`;}
+ h+=`</div><div class="card"><div class="li"><div class="pt">${img(IMG.dongu)}</div><div class="grow"><div class="nm">${L('char.dongu.name')}</div><div class="sub">${L('shibas.dongu')}</div></div>
+  <button class="${s.dongu.placed?'sec':''}" data-act="dongu">${s.dongu.placed?L('care.unplace'):L('care.place')}</button></div></div>`;return {title:L('shibas.title'),html:h};};
+function statusText(sh,st){if(st==='hospital')return L('st.hospital',{t:tfmt((sh.hospitalUntil-clock.now())/1000)})+' · '+L('inj.'+sh.hospitalKind);if(st==='injured')return L('st.injured')+' · '+L('inj.'+sh.injury);
+ if(st==='ok'&&!sh.placed)return L('st.home');return L('st.'+st);}
+P.care=id=>{const sh=S.byId(s,id);if(!sh)return P.shibas();const st=S.statusOf(s,sh),now=clock.now(),need=S.pawsToNext(sh.level);
+ let h=`<div class="card"><div class="big">${img(shibaImg(sh),nameOf(sh))}</div><div style="text-align:center"><div class="nm" style="font-size:18px;font-weight:900">${nameOf(sh)}</div>
+  <div class="note">${L('shiba.breed.'+sh.breed)} · ${L('care.personality')}: ${L('per.'+sh.personality)} · ${statusText(sh,st)}</div></div>
+  <div class="g"><span>${L('care.level')} ${sh.level}</span>${bar(need?sh.paws/need:1)}<span class="ico paw"></span></div><div class="note">${need?L('care.paws',{n:sh.paws,need}):L('care.pawsMax')} · ${L('care.levelEff',{m:f2(S.levelEffect(sh.level))})}</div>
+  <div class="g"><span>${L('care.intimacy')}</span>${bar(sh.intimacy/100,'#e98aa0')}<span>${Math.round(sh.intimacy)}</span></div>
+  <div class="g"><span>${L('care.intel')}</span>${bar(S.intelligence(sh)/100,'#6aa5d8')}<span>${S.intelligence(sh)}</span></div></div>`;
+ h+=`<div class="card">${CFG.gauges.map(k=>`<div class="g"><span>${L('g.'+k)}</span>${bar(sh.g[k]/100,(k==='dirt'||k==='fatigue'||k==='boredom')?'#b58a5a':'#7fbf6a')}<span>${Math.round(sh.g[k])}</span></div>`).join('')}
+  <div class="note">${L('care.cond',{m:f2(S.conditionMul(sh))})}</div>
+  <div class="btns"><button data-act="play" data-id="${id}" ${S.careCheck(s,id,'play')?'disabled':''}>${img(IMG.toy)}${L('care.play',{n:CFG.care.play.hearts})}</button>
+   <button disabled>${islot()}${L('care.feed')} · ${L('app.unset')}</button><button disabled>${img(IMG.snack)}${L('care.snack')} · ${L('app.unset')}</button>
+   <button disabled>${islot()}${L('care.bath')} · ${L('app.unset')}</button><button disabled>${L('care.sleep')} · ${L('app.unset')}</button>
+   <button data-act="walkFor" data-id="${id}" ${st!=='ok'?'disabled':''}>${L('care.walk')}</button></div><div class="note">${L('care.feed')}·${L('care.snack')}·${L('care.bath')}·${L('care.sleep')}: ${L('care.unsetNote')}</div>`;
+ if(sh.status==='injured'||sh.status==='sick'){const cost=S.hospitalCost(s,sh.status==='sick'?'sick':sh.injury),c=S.hospitalCheck(s,id);h+=`<button class="warn" data-act="hospital" data-id="${id}" ${c?'disabled':''}>${c==='coins'?L('care.hospitalNo',{cost:fmt(cost)}):L('care.hospital',{cost:fmt(cost)})}</button>`;}
+ const D=CFG.alba.daycare,dcd=(sh.cd.daycare||0)-now,dc=S.albaCheck(s,'daycare',[id],now);
+ h+=`<button class="sec" data-act="daycare" data-id="${id}" ${dc?'disabled':''}>${L('care.daycare')} · ${s.cafe.level<D.unlock?L('app.locked',{lv:D.unlock}):dcd>0?L('app.cooldown',{t:tfmt(dcd/1000)}):fmt(D.cost)+'멍'}</button>
+  <div class="note">${L('care.potion',{n:s.items.potionBig,m:s.items.potionSmall})}</div></div>`;
+ const T=CFG.alba.trainer;h+=`<div class="card"><h3>${L('care.tricks')}</h3>`;
+ for(const t of CFG.tricks){const lv=sh.tricks[t.id],c=S.trainCheck(s,id,t.id),tc=S.albaCheck(s,'trainer',[id],now,t.id),tcd=(sh.cd.trainer||0)-now;
+  h+=`<div class="trk"><div class="li"><b>${L('trick.'+t.id)}</b><span class="stars">${'★'.repeat(lv)}${'☆'.repeat(CFG.trickMaxLevel-lv)}</span><span class="grow note">${lv<CFG.trickMaxLevel?sh.trickExp[t.id]+'/'+(lv+1):L('care.trainMax')}</span></div>
+   ${lv>=CFG.trickMaxLevel?'':`<div class="btns"><button data-act="train" data-id="${id}" data-trick="${t.id}" ${c?'disabled':''}>${L('care.train',{p:Math.round(S.trainChance(sh)*100)})}</button><button class="sec" data-act="trainer" data-id="${id}" data-trick="${t.id}" ${tc?'disabled':''}>${L('care.trainer')} · ${s.cafe.level<T.unlock?L('app.locked',{lv:T.unlock}):tcd>0?tfmt(tcd/1000):fmt(T.cost)+'멍'}</button></div>`}</div>`;}
+ h+=`</div><div class="card"><h3>${L('care.acc',{n:S.accessorySlots(sh.level)})}</h3><div class="btns">${Array.from({length:S.accessorySlots(sh.level)},()=>slot(L('care.accEmpty'))).join('')}</div>
+  <h3>${L('care.likes')}</h3><div class="btns">${Array.from({length:CFG.likes.snacks.basic+CFG.likes.snacks.rare},()=>slot('🔒 '+L('care.locked'))).join('')}${slot('🔒 '+L('app.unset'))}</div></div>
+  <div class="card"><div class="btns"><button class="${sh.placed?'sec':''}" data-act="place" data-id="${id}" data-on="${sh.placed?0:1}" ${!sh.placed&&S.placeCheck(s,id)?'disabled':''}>${sh.placed?L('care.unplace'):L('care.place')}</button>
+   <button class="warn" data-act="abandon" data-id="${id}" ${S.abandonCheck(s,id)?'disabled':''}>${L('care.abandon')}</button></div></div>`;
+ return {title:nameOf(sh),html:h};};
+P.walk=()=>{const now=clock.now();let h='';const W=s.walk;
+ if(W){const sh=S.byId(s,W.shibaId),left=(W.walkStartAt+W.walkDurationSec*1000-now)/1000;
+  h+=`<div class="card"><div class="li"><div class="pt">${img(shibaImg(sh))}</div><div class="grow"><div class="nm">${L('walk.now',{name:nameOf(sh),t:tfmt(left)})}</div>${bar(S.walkProgress(s,now))}</div></div>
+   <button disabled>${L('walk.stop')}</button></div>`;}
+ const cands=s.shibas;if(ui.walkPick==null||!S.byId(s,ui.walkPick))ui.walkPick=(cands.find(o=>S.statusOf(s,o)==='ok')||{}).id??null;
+ h+=`<div class="card"><h3>${L('walk.pick')}</h3><div class="choices">${cands.map(o=>{const st=S.statusOf(s,o);return `<button class="choice${ui.walkPick===o.id?' on':''}" data-act="walkPick" data-id="${o.id}" ${st!=='ok'?'disabled':''}>${img(IMG.shiba(o.breed))}<span>${nameOf(o)} · ${statusText(o,st)}</span></button>`;}).join('')}</div>
+  ${CFG.walk.durationsSec.map(sec=>{const fx=CFG.walkEffect[sec],c=ui.walkPick!=null?S.walkCheck(s,ui.walkPick,sec,now):'pick';
+   return `<button data-act="walk" data-sec="${sec}" ${c?'disabled':''}>${L('walk.min',{m:sec/60,h:S.walkHearts(sec)})}</button><div class="note">${L('walk.fx',{b:fx.boredom,d:fx.dirt,f:fx.fatigue,h:fx.happy,i:fx.intimacy})}</div>`;}).join('')}</div>`;
+ const A=CFG.alba.walk,ids=[...ui.walkAlba].filter(id=>S.byId(s,id)),ac=S.albaCheck(s,'walk',ids,now);
+ h+=`<div class="card"><h3>${L('walk.alba')}</h3><div class="note">${L('walk.albaNote',{n:A.maxShibas})}</div>${s.cafe.level<A.unlock?`<div class="note">${L('app.locked',{lv:A.unlock})}</div>`:''}
+  <div class="choices">${s.shibas.map(o=>{const cd=(o.cd.walk||0)-now;return `<button class="choice${ui.walkAlba.has(o.id)?' on':''}" data-act="albaPick" data-id="${o.id}" ${s.cafe.level<A.unlock||cd>0?'disabled':''}><span>${nameOf(o)}${cd>0?' · '+tfmt(cd/1000):''}</span></button>`;}).join('')}</div>
+  <button data-act="albaWalk" ${ac?'disabled':''}>${L('walk.albaGo',{cost:fmt(A.cost)})}</button></div>`;
+ return {title:L('walk.title'),html:h};};
+P.shop=()=>{const now=clock.now(),M=CFG.menu;let h=`<div class="card"><h3>${L('shop.menu')}</h3><div class="li">${slot(L('app.missingImg'))}<div class="grow nm">${L('shop.coffee',{p:M.coffee.price})}</div></div>`;
+ for(const m of M.premium){const c=S.menuCheck(s,m.id);h+=`<div class="li">${slot(L('app.missingImg'))}<div class="grow"><div class="nm">${L('shop.'+m.id,{p:m.price})}</div><div class="sub">${c==='unset'?L('shop.devUnset'):c==='owned'?'✓':''}</div></div><button data-act="dev" data-id="${m.id}" ${c?'disabled':''}>${c==='unset'?L('app.unset'):c==='owned'?'✓':fmt(m.devCost)}</button></div>`;}
+ const G=CFG.alba.manager,mc=S.albaCheck(s,'manager',[],now);
+ h+=`</div><div class="card"><h3>${L('shop.manager')}</h3><div class="note">${L('shop.managerNote')}</div><button data-act="manager" ${mc?'disabled':''}>${s.cafe.level<G.unlock?L('app.locked',{lv:G.unlock}):S.managerActive(s,now)?L('hud.manager',{t:tfmt((s.cafe.managerUntil-now)/1000)}):L('shop.hire',{cost:fmt(G.cost)})}</button></div>
+  <div class="card"><h3>${L('shop.bag')}</h3><div class="li"><span class="ico reset" style="width:34px;height:34px"></span><div class="grow nm">${L('shop.heartReset',{n:s.items.heartReset})}</div><button data-act="heartReset" ${S.canUseHeartReset(s)?'':'disabled'}>${L('shop.use')}</button></div>
+   <div class="li">${slot(L('app.missingImg'),34,34)}<div class="grow nm">${L('shop.capsule',{n:s.items.capsule})}</div></div>
+   <div class="li">${img(IMG.potion)}<div class="grow nm">${L('dia.potionBig')} ×${s.items.potionBig} · ${L('dia.potionSmall')} ×${s.items.potionSmall}</div></div></div>
+  <div class="card"><h3>${L('shop.gacha')}</h3><div class="note">${L('shop.gachaNote',{dia:CFG.gacha.priceDia})}</div><button disabled>${L('app.unset')}</button></div>
+  <div class="card"><h3>${L('shop.dia')}</h3><div class="note">${L('shop.diaRate',{won:CFG.stub.diaPriceWon})} · ${L('app.payment')}</div>
+   ${[['cooldown1',CFG.cooldownTicketDia.one],['cooldown5',CFG.cooldownTicketDia.five],['potionBig',CFG.potion.bigDia],['potionSmall',CFG.potion.smallDia],['boost',CFG.itemIncome.priceDia],['expBoost',CFG.stub.expBoost.priceDia],['slot',CFG.cafe.paidSlotUnlockDia]]
+    .map(([k,p])=>`<div class="li"><span class="ico dia"></span><div class="grow">${L('dia.'+k)}</div><button disabled>${p==null?L('app.unset'):p+'💎'}</button></div>`).join('')}</div>`;
+ return {title:L('shop.title'),html:h};};
+P.settings=()=>{const h=`<div class="card"><h3>${L('settings.language')}</h3><div class="btns">${LANGS.map(c=>`<button class="${s.settings.language===c?'':'sec'}" data-act="setLang" data-lang="${c}">${makeT(()=>c)('lang.name.'+c)}</button>`).join('')}</div></div>
+ <div class="card"><div class="btns"><button class="sec" data-act="toggle" data-k="sound">${L('set.sound')}: ${s.settings.sound?'ON':'OFF'}</button><button class="sec" data-act="toggle" data-k="music">${L('set.music')}: ${s.settings.music?'ON':'OFF'}</button></div></div>
+ <div class="card"><button data-act="income">${L('set.income')}</button></div>
+ <div class="card"><h3>${L('set.stubs')}</h3><div class="note">${L('stub.list')}</div></div>
+ <div class="card"><button class="warn" data-act="reset">${L('set.reset')}</button></div>`;return {title:L('set.title'),html:h};};
+P.income=()=>{const now=clock.now(),item=S.itemIncomeMul(s,now),base=CFG.menu.coffee.price;
+ let h=`<div class="card"><h3>${L('inc.formula')}</h3><div class="note">${L('inc.base',{p:base})}</div>
+  <div class="note">${s.menus.length?s.menus.map(id=>L('shop.'+id,{p:CFG.menu.premium.find(m=>m.id===id).price})).join(' · '):L('inc.noPremium')}</div>
+  <div class="note">${L('inc.premium',{p:f2(S.premiumChance(s.cafe.rep,false)*100)})}</div><div class="note">${L('inc.item',{m:item})}</div></div><div class="card">`;
+ for(const sh of S.placedShibas(s)){const e=S.levelEffect(sh.level);h+=`<div class="li"><div class="pt" style="width:40px;height:40px">${img(IMG.shiba(sh.breed))}</div><div class="grow"><div class="nm" style="font-size:12px">${L('inc.row',{name:nameOf(sh),lv:sh.level,base,lv2:f2(e),item,total:f2(base*e*item)})}</div><div class="sub">${L('inc.cond',{m:f2(S.conditionMul(sh))})}</div></div></div>`;}
+ const p=w.lastPay;if(p)h+=`<div class="note">${L('inc.last',{out:L('out.'+p.outcome),base:p.base,lv:f2(p.lvMul),item:p.item,total:f2(p.total)})} ${p.met.length?'':L('inc.metNone')}</div>`;
+ return {title:L('inc.title'),html:h+'</div>'};};
+let panelSig='';
+function renderPanel(force){if(!ui.panel){$('panel').hidden=true;return;}const v=P[ui.panel](ui.arg);const sig=v.title+v.html;if(!force&&sig===panelSig)return;panelSig=sig;
+ const sc=$('pbody').scrollTop;$('ptitle').textContent=v.title;$('pbody').innerHTML=v.html;$('pbody').scrollTop=sc;$('panel').hidden=false;}
+function open(name,arg=null){ui.panel=name;ui.arg=arg;ui.nav=['shibas','care'].includes(name)?'shibas':name==='income'?ui.nav:name;renderPanel(true);navState();}
+function close(){ui.panel=null;ui.nav='cafe';renderPanel();navState();}
+function navState(){document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('on',b.dataset.nav===ui.nav));}
+
+// ───────── modals ─────────
+let modalSig='';
+function renderModal(){const m=ui.modals[0]||(!s.settings.language?{kind:'lang'}:!s.started?{kind:'start'}:s.rescues.length?{kind:'rescue',x:s.rescues[0]}:null);
+ if(!m){$('modal').hidden=true;modalSig='';return;}const sig=JSON.stringify([m.kind,m.x,ui.langPick,ui.startPick,s.settings.language,s.coins>=(m.kind==='rescue'?S.hospitalCost(s,'rescueBath'):0)]);if(sig===modalSig)return;modalSig=sig;
+ let h='';
+ if(m.kind==='lang')h=`<h2>${makeT(()=>ui.langPick||'ko')('lang.select.title')}</h2>${LANGS.map(c=>`<button class="${ui.langPick===c?'':'sec'}" data-act="langPick" data-lang="${c}">${makeT(()=>c)('lang.name.'+c)}</button>`).join('')}
+  <div class="note">${makeT(()=>ui.langPick||'ko')('lang.select.hint')}</div><button data-act="langOk" ${ui.langPick?'':'disabled'}>${makeT(()=>ui.langPick||'ko')('lang.select.confirm')}</button>`;
+ if(m.kind==='start')h=`<h2>${L('start.title')}</h2><div class="banner">${img(IMG.four)}</div><div class="note">${L('start.hint')}</div>
+  <div class="choices">${CFG.breeds.map(b=>`<button class="choice${ui.startPick===b?' on':''}" data-act="startPick" data-breed="${b}">${img(IMG.shiba(b))}<span>${L('shiba.breed.'+b)}</span></button>`).join('')}</div>
+  <input type="text" id="startName" maxlength="12" placeholder="${L('start.name')}" value="${ui.startName||''}"><button data-act="startGo" ${ui.startPick?'':'disabled'}>${L('start.go')}</button>`;
+ if(m.kind==='offline'){const o=m.o,mins=Math.round(o.sec/60);h=`<h2>${L('off.title')}</h2><div class="note" style="font-size:14px">${L('off.body',{h:Math.floor(mins/60),m:mins%60,n:o.served,coins:fmt(o.coins),r0:Math.round(o.repFrom),r1:Math.round(o.repTo)})}</div>
+  ${o.sec>CFG.offline.capHours*3600?`<div class="note">${L('off.cap')}</div>`:''}${m.closed?`<div class="note" style="font-size:13px;color:#9c4136">${L('off.closed')}</div>`:''}<button data-act="modalOk">${L('app.ok')}</button>`;}
+ if(m.kind==='walkResult'){const sh=S.byId(s,m.res.shibaId);h=`<h2>${L('walk.back',{name:sh?nameOf(sh):'?'})}</h2><div class="big" style="width:120px;height:120px">${sh?img(IMG.shiba(sh.breed)):''}</div>
+  <div class="note" style="text-align:center">${m.res.events.length?m.res.events.map(e=>L('walk.ev.'+e)).join(' · '):''}</div><button data-act="modalOk">${L('app.ok')}</button>`;}
+ if(m.kind==='rescue'){const x=m.x,cost=S.hospitalCost(s,'rescueBath');
+  h=x.bathed?`<h2>${L('rescue.reveal',{breed:L('shiba.breed.'+x.breed)})}</h2><div class="big">${img(IMG.shiba(x.breed))}</div><div class="note" style="text-align:center">${L('rescue.lvNote')}</div>
+    <button data-act="rescueBring" ${S.bringCheck(s,x.rid)?'disabled':''}>${L('rescue.bring')}</button>${S.bringCheck(s,x.rid)==='owned'?`<div class="note">${L('rescue.full')}</div>`:''}<button class="sec" data-act="rescueDecline">${L('rescue.decline')}</button>`
+   :`<h2>${L('rescue.found')}</h2><div class="big">${img(IMG.rescue[x.pic])}</div><button data-act="rescueBath" ${s.coins<cost?'disabled':''}>${L('rescue.bath',{cost:fmt(cost)})}</button><button class="sec" data-act="rescueDecline">${L('rescue.decline')}</button>`;}
+ if(m.kind==='confirm')h=`<div class="note" style="font-size:14px">${m.text}</div><div class="btns"><button class="warn" data-act="confirmYes">${L('app.ok')}</button><button class="sec" data-act="modalOk">${L('app.cancel')}</button></div>`;
+ $('mbox').innerHTML=h;$('modal').hidden=false;}
+if(L0.offline&&(L0.offline.sec>=60||L0.reopened))ui.modals.push({kind:'offline',o:L0.offline,closed:!!L0.reopened});
+
+// ───────── actions ─────────
+const act={
+ close,income:()=>open('income'),care:d=>open('care',+d.id),
+ place:d=>{if(!S.setPlaced(s,+d.id,d.on==='1'))why(S.placeCheck(s,+d.id));},
+ dongu:()=>{s.dongu.placed=!s.dongu.placed;},
+ play:d=>{if(!S.playWith(s,+d.id,clock.now()))why(S.careCheck(s,+d.id,'play'));},
+ train:d=>{const res=S.train(s,+d.id,d.trick,r,clock.now());if(res)toast(L(res.ok?'toast.trainOk':'toast.trainFail'));},
+ trainer:d=>{S.hireAlba(s,'trainer',[+d.id],clock.now(),d.trick);},
+ daycare:d=>{S.hireAlba(s,'daycare',[+d.id],clock.now());},
+ hospital:d=>{if(!S.sendToHospital(s,+d.id,clock.now()))why(S.hospitalCheck(s,+d.id));},
+ abandon:d=>{const sh=S.byId(s,+d.id);const now=clock.now(),I=CFG.intimacy,dd=s.lastAbandonAt!=null&&now-s.lastAbandonAt<I.abandonRepeatWithinH*3600e3?I.abandonShockRepeat:I.abandonShock;
+  ui.modals.unshift({kind:'confirm',text:L('care.abandonQ',{name:nameOf(sh),d:dd}),yes:()=>{if(S.abandon(s,+d.id,clock.now()))open('shibas');}});},
+ walkFor:d=>{ui.walkPick=+d.id;open('walk');},walkPick:d=>{ui.walkPick=+d.id;},
+ walk:d=>{if(S.startWalk(s,ui.walkPick,+d.sec,clock.now(),r))S.tick(s,w,0,clock.now());else why(S.walkCheck(s,ui.walkPick,+d.sec,clock.now()));},
+ albaPick:d=>{const id=+d.id;if(ui.walkAlba.has(id))ui.walkAlba.delete(id);else if(ui.walkAlba.size<CFG.alba.walk.maxShibas)ui.walkAlba.add(id);},
+ albaWalk:()=>{if(S.hireAlba(s,'walk',[...ui.walkAlba],clock.now()))ui.walkAlba.clear();},
+ manager:()=>{S.hireAlba(s,'manager',[],clock.now());},
+ dev:d=>{if(!S.developMenu(s,d.id))why(S.menuCheck(s,d.id));},
+ heartReset:()=>{S.useHeartReset(s,clock.now());},
+ setLang:d=>{s.settings.language=d.lang;applyStatic();},toggle:d=>{s.settings[d.k]=!s.settings[d.k];},
+ reset:()=>ui.modals.unshift({kind:'confirm',text:L('set.resetQ'),yes:()=>{localStorage.removeItem(CFG.saveKey);s=S.newState(clock.now());w=S.newWorld(s,r);close();}}),
+ stain:()=>{if(S.cleanStain(s))toast(L('toast.cleaned'));},
+ pickShiba:d=>{const id=+d.shiba;ui.sel=ui.sel===id?null:id;if(ui.sel!=null)toast(L('cafe.pick'));},
+ seat:d=>{if(ui.sel==null)return;if(S.deliver(s,w,ui.sel,+d.cust,clock.now()))ui.sel=null;},
+ langPick:d=>{ui.langPick=d.lang;},langOk:()=>{s.settings.language=ui.langPick;applyStatic();},
+ startPick:d=>{ui.startName=$('startName')?.value||'';ui.startPick=d.breed;},
+ startGo:()=>{const name=($('startName')?.value||'').trim();if(S.chooseStart(s,ui.startPick,name,r,clock.now())){w=S.newWorld(s,r);}},
+ modalOk:()=>{ui.modals.shift();},confirmYes:()=>{const m=ui.modals.shift();m.yes();},
+ rescueBath:()=>{if(!S.bathRescue(s,s.rescues[0].rid))toast(L('toast.coins'));},
+ rescueBring:()=>{S.bringRescue(s,s.rescues[0].rid,r,clock.now());},rescueDecline:()=>{S.declineRescue(s,s.rescues[0].rid);},
+};
+document.addEventListener('click',e=>{const nb=e.target.closest('[data-nav]');if(nb){const n=nb.dataset.nav;if(n==='cafe')close();else open(n);refresh();return;}
+ const el=e.target.closest('[data-act]');if(!el||el.disabled)return;const f=act[el.dataset.act];if(f){f(el.dataset);refresh();}});
+// drag a roaming shiba onto a guest (갱신 105)
+let drag=null;
+$('scene').addEventListener('pointerdown',e=>{const t=e.target.closest('[data-act=pickShiba]');if(t)drag={id:+t.dataset.shiba,x:e.clientX,y:e.clientY};});
+addEventListener('pointerup',e=>{if(!drag)return;const d=drag;drag=null;if(Math.hypot(e.clientX-d.x,e.clientY-d.y)<12)return;
+ const seat=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-cust]');if(seat&&S.deliver(s,w,d.id,+seat.dataset.cust,clock.now())){ui.sel=null;refresh();}});
+function applyStatic(){document.documentElement.lang=s.settings.language||'ko';document.title=L('app.title');document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=L(e.dataset.i18n));sceneSig='';panelSig='';modalSig='';}
+function refresh(){handleEvents();renderHUD();renderScene();renderPanel();renderModal();}
+
+// ───────── loop ─────────
+let last=performance.now(),saveT=0;
+function step(dt){const now=clock.now();
+ if(s.started&&s.settings.language){S.tick(s,w,dt,now);S.settleHearts(s,now);}
+ handleEvents();if(ui.toastT>0&&(ui.toastT-=dt)<=0)$('toast').style.opacity=0;
+ if(ui.sel!=null&&!w.sh[ui.sel])ui.sel=null;refresh();
+ if((saveT+=dt)>=2){saveT=0;S.save(localStorage,s,now);}}
+// a long frame gap means the tab was hidden: the player was away → same offline fast-forward as on launch (임시휴무 rule applies)
+function catchUp(ms){const now=clock.now(),o=S.fastForward(s,w,now-ms,now,{offline:true});
+ if(s.cafe.closed){const re=S.reopenCafe(s,now);ui.modals.push({kind:'offline',o,closed:!!re});w=S.newWorld(s,r);}else if(ms>=60e3)ui.modals.push({kind:'offline',o,closed:false});return o;}
+function advance(ms,offline=false){clock.offset+=ms;if(offline)return catchUp(ms);const now=clock.now(),o=S.fastForward(s,w,now-ms,now,{offline:false});refresh();return o;}
+function frame(t){let dt=(t-last)/1000;last=t;if(Q.get('still')){requestAnimationFrame(frame);return;}
+ if(dt>5&&s.started){catchUp(dt*1000);dt=0;}step(Math.min(dt,.25));requestAnimationFrame(frame);}
+addEventListener('pagehide',()=>S.save(localStorage,s,clock.now()));
+document.addEventListener('visibilitychange',()=>{if(document.hidden)S.save(localStorage,s,clock.now());});
+const game={CFG,S,get state(){return s;},get world(){return w;},step:(dt=.1)=>{step(dt);return {custs:w.custs.length,queue:w.queue.length,coins:s.coins};},advance,open,close,clock,ui,refresh};
+window.__game=game;applyStatic();refresh();requestAnimationFrame(frame);window.__ready=true;
