@@ -15,7 +15,7 @@ function test(name,fn){const savedEntrance=MAP.zones[0].entrance,savedSlots=MAP.
  MAP.zones[0].entrance=[0,5];CFG.navigation.cellStepSec=.001;
  const occupied=new Set(savedSlots.flatMap(x=>footprintCells(x).map(c=>c.join(','))));
  MAP.zones[0].slots=[...savedSlots];for(const j of [0,2,4])for(const i of [1,3,5])if(!occupied.has(`${i},${j}`))MAP.zones[0].slots.push({id:`fixture-${i}-${j}`,type:'cushion',origin:[i,j],dir:0});
- const old=CFG.income.levelAggregation;if(!name.startsWith('red-team #7'))CFG.income.levelAggregation=fixtureAggregation;try{const production=/red-team #2|gauges do not|UNSET features|139-6|fresh default|audit null/.test(name);if(production)fn();else withCfg(CFG.start,{coins:0},()=>withCfg(CFG,{gaugeStart:{full:100,dirt:0,fatigue:0,happy:100,boredom:0},rescueLevel:1},()=>withCfg(CFG.intimacy,{start:0},fn)));pass++;}catch(e){fails.push([name,e]);}finally{CFG.income.levelAggregation=old;MAP.zones[0].entrance=savedEntrance;MAP.zones[0].slots=savedSlots;CFG.navigation.cellStepSec=savedSpeed;CFG.navigation.shibaCellStepSec=savedShibaSpeed;CFG.behaviour=savedBehaviour;}}
+ const old=CFG.income.levelAggregation;if(!name.startsWith('red-team #7'))CFG.income.levelAggregation=fixtureAggregation;try{const production=/red-team #2|gauges do not|UNSET features|139-6|fresh default|audit null/.test(name);if(production)fn();else withCfg(CFG.start,{coins:0,dia:0},()=>withCfg(CFG,{gaugeStart:{full:100,dirt:0,fatigue:0,happy:100,boredom:0},rescueLevel:1},()=>withCfg(CFG.intimacy,{start:0},fn)));pass++;}catch(e){fails.push([name,e]);}finally{CFG.income.levelAggregation=old;MAP.zones[0].entrance=savedEntrance;MAP.zones[0].slots=savedSlots;CFG.navigation.cellStepSec=savedSpeed;CFG.navigation.shibaCellStepSec=savedShibaSpeed;CFG.behaviour=savedBehaviour;}}
 const H=3600e3,MIN=60e3;
 const near=(a,b,eps=1e-9,msg)=>assert.ok(Math.abs(a-b)<=eps,`${msg||''} ${a} ≉ ${b}`);
 const freshGame=(breed='red',now=0,seed=1)=>{const r=S.rng(seed),s=S.newState(now);S.chooseStart(s,breed,'',r,now);return {s,r,sh:s.shibas[0],w:S.newWorld(s,r)};};
@@ -38,8 +38,12 @@ test('갱신 75 pressure table: 50 rows, spot values, cap = ceil(slots×2.2) (70
  for(let lv=1;lv<=50;lv++){const p=pressureAt(lv);assert.equal(p.cap,Math.ceil(+(p.slots*CFG.cafe.capFromSlots).toFixed(6)),'lv'+lv);}
  // slots only grow at the 125% (숨통) levels (73)
  for(let lv=2;lv<=50;lv++)if(pressureAt(lv).slots>pressureAt(lv-1).slots)assert.equal(pressureAt(lv).pct,125,'lv'+lv);});
-test('갱신 98 café exp table: 49 steps, 120 … 37,870, total 676,180; max level 50 (73)',()=>{
- const e=CFG.cafe.expToNext;assert.equal(e.length,49);assert.equal(e[0],120);assert.equal(e[6],1850);assert.equal(e[48],37870);assert.equal(e.reduce((a,b)=>a+b,0),676180);assert.equal(CFG.cafe.maxLevel,50);});
+test('café exp table (밸런스_2년.md §2 starting value 2026-10-15): 49 steps, 11,100 … 1,393,900, total 27,653,000; max level 50 (73)',()=>{
+ const e=CFG.cafe.expToNext;assert.equal(e.length,49);assert.equal(e[0],11100);assert.equal(e[9],133600);assert.equal(e[48],1393900);assert.equal(e.reduce((a,b)=>a+b,0),27653000);assert.equal(CFG.cafe.maxLevel,50);
+ // §2 table checkpoints: [level, exp to next, cumulative to reach that level]
+ const cum=lv=>e.slice(0,lv-1).reduce((a,b)=>a+b,0);for(const [lv,next,c] of [[5,29100,48900],[10,133600,219300],[15,174200,887300],[20,332600,1948700],[25,475200,3802100],[30,641500,6356300],[35,950400,9635100],[40,1188000,14387100],[45,1393900,20683500]]){assert.equal(e[lv-1],next,'lv'+lv);assert.equal(cum(lv),c,'cum lv'+lv);}assert.equal(cum(50),27653000);
+ // unchanged by §2: guest exp, cap, interval, 10 placed shibas
+ assert.deepEqual([CFG.cafeExp.custNormal,CFG.cafeExp.custSatisfied,CFG.cafeExp.custDisappointed,CFG.cafe.customersPerHourPerCap,CFG.cafe.maxPlaced],[1,2,0,100,10]);});
 test('spec numbers: stay/queue/visit/rep/hearts/walk/hospital/part-timers/payment',()=>{
  const C=CFG;assert.equal(C.cafe.stayingSec,30);assert.equal(C.cafe.queueMax,10);assert.equal(C.cafe.queueWaitSec,30);assert.equal(C.cafe.maxPlaced,10);assert.equal(C.cafe.maxOwned,50);
  assert.equal(C.visit.meetSec,5);assert.equal(C.visit.roamSec,3); // starting value 2026-10-14, pending user confirm (was 갱신 70 7 s / 5 s)
@@ -48,7 +52,7 @@ test('spec numbers: stay/queue/visit/rep/hearts/walk/hospital/part-timers/paymen
 assert.deepEqual(C.walk.durationsSec,[600,1200,1800]);assert.equal(C.walk.cooldownSec,0);
  assert.equal(C.walk.events.rescue,.05);assert.equal(C.walk.events.snake,1/40);assert.equal(C.walk.events.light,1/30);assert.equal(C.walk.events.capsule,1/30);assert.equal(C.walk.events.extra,.5);
  assert.deepEqual(C.hospital.stays,{light:1800,snake:7200,sick:14400});assert.equal(C.offline.capHours,12);
- assert.deepEqual([C.alba.daycare.cost,C.alba.walk.cost,C.alba.trainer.cost,C.alba.manager.cost],[8000,18000,24000,60000]);
+ assert.deepEqual([C.alba.daycare.cost,C.alba.walk.cost,C.alba.trainer.cost,C.alba.manager.cost],[120000,270000,360000,900000]); // 밸런스_2년.md §3: 15× 갱신 125-1 (8,000·18,000·24,000·60,000)
  assert.deepEqual([C.alba.daycare.cooldownSec,C.alba.walk.cooldownSec,C.alba.trainer.cooldownSec,C.alba.manager.hireSec],[7200,14400,14400,43200]);
  assert.deepEqual([C.alba.daycare.unlock,C.alba.walk.unlock,C.alba.trainer.unlock,C.alba.manager.unlock],[10,15,20,25]);
  assert.equal(C.alba.walk.maxShibas,4);assert.equal(C.alba.walk.boredom,-50);
@@ -80,24 +84,25 @@ test('139-5: unlock costs that shiba\'s 1,000 paws or 1,000 diamonds; paws used 
  n.paws=999;assert.equal(S.accUnlockCheck(s,n.id,'paws'),'paws');sh.paws=5000;assert.equal(S.accUnlockCheck(s,n.id,'paws'),'paws','another shiba\'s paws do not count');
  n.paws=1020;assert.ok(S.unlockAccSlot(s,n.id,'paws'));assert.equal(n.paws,20);assert.ok(n.accUnlocked);assert.equal(S.accUnlockCheck(s,n.id,'paws'),'done');
  const m=S.makeShiba(s,{breed:'white',level:1});s.shibas.push(m);s.dia=999;assert.equal(S.accUnlockCheck(s,m.id,'dia'),'dia');s.dia=1000;assert.ok(S.unlockAccSlot(s,m.id,'dia'));assert.equal(s.dia,0);assert.ok(m.accUnlocked);});
-test('café exp curve: level ups at table values, Lv7 after 2,970 exp, stops at 50',()=>{const s=S.newState(0);S.addCafeExp(s,119);assert.equal(s.cafe.level,1);S.addCafeExp(s,1);assert.equal(s.cafe.level,2);
- const t=S.newState(0);S.addCafeExp(t,2970);assert.equal(t.cafe.level,7);assert.equal(t.cafe.exp,0);S.addCafeExp(t,1e9);assert.equal(t.cafe.level,50);});
+test('café exp curve: level ups at table values, Lv7 after 107,100 exp, stops at 50',()=>{const s=S.newState(0);S.addCafeExp(s,11099);assert.equal(s.cafe.level,1);S.addCafeExp(s,1);assert.equal(s.cafe.level,2);
+ const t=S.newState(0);S.addCafeExp(t,107100);assert.equal(t.cafe.level,7);assert.equal(t.cafe.exp,0);S.addCafeExp(t,1e9);assert.equal(t.cafe.level,50);});
 test('premium chance 5% + (rep−50)×0.3%p, +15%p satisfied, cap 40% (120)',()=>{near(S.premiumChance(50,false),.05);near(S.premiumChance(30,false),.05);near(S.premiumChance(70,false),.11);near(S.premiumChance(90,false),.17);near(S.premiumChance(90,true),.32);near(S.premiumChance(100,true),.35);
  const bak=CFG.menu.premiumSatisfiedBonus;CFG.menu.premiumSatisfiedBonus=.5;try{near(S.premiumChance(100,true),.4);}finally{CFG.menu.premiumSatisfiedBonus=bak;}});
 test('payment mechanics with explicit test aggregation × item (75·120); fractions kept (120)',()=>{const {s,sh}=freshGame();
  assert.equal(S.payFor(s,[sh.id],{price:1}).total,2);assert.equal(S.payFor(s,[],{price:1}).total,1);
  const o=S.makeShiba(s,{breed:'kuro',level:1});s.shibas.push(o);near(S.payFor(s,[sh.id,o.id],{price:3}).total,3*1.5);
  s.cafe.boostUntil=1e15;near(S.payFor(s,[sh.id],{price:1}).total,2.4);});
-test('갱신 134/134-1 menu table: 13 items, unlock level & price from 134, dev cost from 134-1 (not 134)',()=>{
+test('갱신 134 menu table: 13 items, unlock level & price from 134; dev cost = 15× 134-1 except 라테 15,000 (밸런스_2년.md §3)',()=>{
  const T={'M-02':['drink',2,8500,3],'M-05':['dessert',3,10000,5],'M-03':['drink',5,12000,3],'M-06':['dessert',7,13500,5],'M-04':['drink',9,15000,3],'M-07':['dessert',12,17000,5],'M-08':['dessert',15,18500,5],
-  'P-01':['premium',20,23500,8],'P-02':['premium',25,27000,8],'P-03':['premium',30,30500,8],'P-04':['premium',35,32000,8],'P-05':['premium',40,34000,8],'P-06':['premium',45,35500,8]};
- assert.equal(CFG.menu.items.length,13);for(const m of CFG.menu.items)assert.deepEqual([m.kind,m.unlockLevel,m.devCost,m.price],T[m.id],m.id);
+  'P-01':['premium',20,23500,8],'P-02':['premium',25,27000,8],'P-03':['premium',30,30500,8],'P-04':['premium',35,32000,8],'P-05':['premium',40,34000,8],'P-06':['premium',45,35500,8]}; // [kind, level, 134-1 cost, price]
+ assert.equal(CFG.menu.items.length,13);for(const m of CFG.menu.items){const [kind,lv,cost,price]=T[m.id];assert.deepEqual([m.kind,m.unlockLevel,m.devCost,m.price],[kind,lv,m.id==='M-02'?15000:cost*15,price],m.id);}
+ assert.deepEqual(['M-08','P-06'].map(id=>S.menuItem(id).devCost),[277500,532500],'밸런스_2년.md §3 check table (파르페, 파블로바)');
  const old134=[1500,1500,2000,2500,3000,3500,4000,12000,14000,16000,17000,18000,20000];assert.ok(CFG.menu.items.every((m,i)=>m.devCost!==old134[i]),'134 dev costs replaced by 134-1');
  assert.equal(CFG.menu.premiumPerNormalDeveloped,.01);assert.equal(CFG.menu.premiumUpgradeChance,.3);assert.equal(CFG.menu.premiumCap,.4);
  for(const m of [CFG.menu.coffee,...CFG.menu.items])assert.ok(existsSync(join(ROOT,'assets/drive',m.img)),m.img);});
-test('menu development: 멍코인, gated by café level, once each (129·134)',()=>{const {s}=freshGame();s.coins=8499;
- assert.equal(S.menuCheck(s,'M-02'),'locked','M-02 unlocks at Lv2');s.cafe.level=2;assert.equal(S.menuCheck(s,'M-02'),'coins');s.coins=8500;assert.ok(S.developMenu(s,'M-02',0));assert.equal(s.coins,0);assert.equal(S.menuCheck(s,'M-02'),'developing');S.settleMenuDev(s,30*MIN);assert.equal(S.menuCheck(s,'M-02'),'owned');
- s.coins=1e6;assert.equal(S.menuCheck(s,'M-05'),'locked');s.cafe.level=3;assert.ok(S.developMenu(s,'M-05',0));assert.equal(s.coins,1e6-10000);S.settleMenuDev(s,H);
+test('menu development: 멍코인, gated by café level, once each (129·134)',()=>{const {s}=freshGame();s.coins=14999;
+ assert.equal(S.menuCheck(s,'M-02'),'locked','M-02 unlocks at Lv2');s.cafe.level=2;assert.equal(S.menuCheck(s,'M-02'),'coins');s.coins=15000;assert.ok(S.developMenu(s,'M-02',0));assert.equal(s.coins,0);assert.equal(S.menuCheck(s,'M-02'),'developing');S.settleMenuDev(s,30*MIN);assert.equal(S.menuCheck(s,'M-02'),'owned');
+ s.coins=1e6;assert.equal(S.menuCheck(s,'M-05'),'locked');s.cafe.level=3;assert.ok(S.developMenu(s,'M-05',0));assert.equal(s.coins,1e6-150000);S.settleMenuDev(s,H);
  assert.equal(S.menuCheck(s,'P-01'),'locked');s.cafe.level=20;assert.ok(S.developMenu(s,'P-01',0));assert.equal(S.developMenu(s,'P-01',0),false);assert.equal(S.menuCheck(s,'nope'),'pick');});
 test('premium chance +1%p per developed normal menu, cap 40% unchanged (120·134)',()=>{near(S.premiumChance(50,false,7),.12);near(S.premiumChance(90,true,7),.39);near(S.premiumChance(100,true,7),.4);
  const {s}=freshGame();s.menus=['M-02','M-05','P-01'];assert.equal(S.normalDeveloped(s),2);});
@@ -209,14 +214,14 @@ test('rescue flow: bath (fixed 200 at Lv1) → reveal → bring (explicit test l
  const o=S.bringRescue(s,'a',r,0);assert.equal(o.breed,'kuro');assert.equal(o.level,1);assert.ok(o.placed,'free slot at Lv1 (2 slots)');assert.equal(s.cafe.exp,10);
  assert.ok(S.declineRescue(s,'b'));assert.equal(s.rescues.length,0);
  while(s.shibas.length<50)s.shibas.push(S.makeShiba(s,{breed:'red'}));s.rescues.push({rid:'c',foundAt:0,breed:'red',pic:0,bathed:true});assert.equal(S.bringCheck(s,'c'),'owned');});
-test('walk part-timer: Lv15, 18,000, ≤4 shibas, boredom −50 now, 4 h cooldown each, no hearts/exp (123-x·124-1·125-1)',()=>{const {s,sh}=freshGame();assert.equal(S.albaCheck(s,'walk',[sh.id],0),'locked');
- s.cafe.level=15;s.coins=18000;sh.g.boredom=80;const h=s.hearts;assert.ok(S.hireAlba(s,'walk',[sh.id],0));assert.equal(sh.g.boredom,30);assert.equal(s.coins,0);assert.equal(s.hearts,h);assert.equal(s.cafe.exp,0);assert.equal(s.walk,null,'stays in the café');
+test('walk part-timer: Lv15, 270,000, ≤4 shibas, boredom −50 now, 4 h cooldown each, no hearts/exp (123-x·124-1·125-1)',()=>{const {s,sh}=freshGame();assert.equal(S.albaCheck(s,'walk',[sh.id],0),'locked');
+ s.cafe.level=15;s.coins=270000;sh.g.boredom=80;const h=s.hearts;assert.ok(S.hireAlba(s,'walk',[sh.id],0));assert.equal(sh.g.boredom,30);assert.equal(s.coins,0);assert.equal(s.hearts,h);assert.equal(s.cafe.exp,0);assert.equal(s.walk,null,'stays in the café');
  s.coins=1e6;assert.equal(S.albaCheck(s,'walk',[sh.id],4*H-1),'cooldown');assert.equal(S.albaCheck(s,'walk',[sh.id],4*H),null);
  const ids=[1,2,3,4,5].map(()=>{const o=S.makeShiba(s,{breed:'red'});s.shibas.push(o);return o.id;});assert.equal(S.albaCheck(s,'walk',ids,0),'count');});
-test('daycare / trainer / manager: unlock, price, cooldown, half intimacy, no exp (99·118·125-1)',()=>{const {s,sh}=freshGame();s.coins=1e6;
- assert.equal(S.albaCheck(s,'daycare',[sh.id],0),'locked');s.cafe.level=25;sh.g.boredom=50;S.hireAlba(s,'daycare',[sh.id],0);assert.equal(sh.intimacy,1.5);assert.equal(sh.g.boredom,22);assert.equal(s.cafe.exp,0);assert.equal(s.coins,1e6-8000);
- assert.equal(S.albaCheck(s,'daycare',[sh.id],2*H-1),'cooldown');S.hireAlba(s,'trainer',[sh.id],0,'bow');assert.equal(sh.tricks.bow,1);assert.equal(s.coins,1e6-32000);
- S.hireAlba(s,'manager',[],0);assert.ok(S.managerActive(s,12*H-1));assert.ok(!S.managerActive(s,12*H));assert.equal(S.albaCheck(s,'manager',[],H),'active');});
+test('daycare / trainer / manager: unlock, price, cooldown, half intimacy, no exp (99·118·125-1)',()=>{const {s,sh}=freshGame();s.coins=3e6;
+ assert.equal(S.albaCheck(s,'daycare',[sh.id],0),'locked');s.cafe.level=25;sh.g.boredom=50;S.hireAlba(s,'daycare',[sh.id],0);assert.equal(sh.intimacy,1.5);assert.equal(sh.g.boredom,22);assert.equal(s.cafe.exp,0);assert.equal(s.coins,3e6-120000);
+ assert.equal(S.albaCheck(s,'daycare',[sh.id],2*H-1),'cooldown');S.hireAlba(s,'trainer',[sh.id],0,'bow');assert.equal(sh.tricks.bow,1);assert.equal(s.coins,3e6-480000);
+ assert.ok(S.hireAlba(s,'manager',[],0));assert.equal(s.coins,3e6-1380000);assert.ok(S.managerActive(s,12*H-1));assert.ok(!S.managerActive(s,12*H));assert.equal(S.albaCheck(s,'manager',[],H),'active');});
 
 // ───────── placement / max 10 ─────────
 test('max 10 placed shibas (74); slots follow the café level table; 동구 takes no slot (80)',()=>{const {s}=freshGame();for(let i=0;i<14;i++)s.shibas.push(S.makeShiba(s,{breed:'red'}));
@@ -235,7 +240,8 @@ test('offline income is simulated for at most 12 h (56)',()=>{const {s,r}=freshG
  try{const o=S.fastForward(s,w,0,20*H,{offline:true});assert.equal(o.simSec,12*3600);assert.ok(o.coins>0);}finally{CFG.rep.closureFloor=bak;}});
 // Balance flag (Unit 5 starting values 똑또기 2026-10-14): with full 7 s meetings one Lv1-café shiba meets ~half the guests, the rest are
 // disappointed, so offline reputation reaches 30 within minutes. Previously (meetings cut at departure) the café reached Lv3 first.
-test('one shiba, 20 h away with the spec numbers → guests outgrow one shiba, 임시휴무 before 12 h (75·87·126)',()=>{const {s,r}=freshGame();const o=S.fastForward(s,S.newWorld(s,r),0,20*H,{offline:true});
+test('one shiba, 20 h away with the spec numbers → guests outgrow one shiba, 임시휴무 before 12 h (75·87·126)',()=>{const {s,r}=freshGame();s.cafe.level=CFG.rep.unmetFreeBelowLevel; // 2-year curve (밸런스_2년.md §2): the café no longer leaves the reputation-free early levels within 12 h, so stage the first level where unmet guests count
+ const o=S.fastForward(s,S.newWorld(s,r),0,20*H,{offline:true});
  assert.ok(o.simSec<=12*3600,'income cap respected');assert.ok(o.closed&&o.simSec<12*3600);assert.ok(s.stats.satisfied>0&&s.stats.disappointed>0);});
 test('임시휴무: offline rep reaching 30 closes the café (no guests, income, rep change; fatigue 0); reopen at 30 with frozen sick clock (126)',()=>{const {s,r,sh}=freshGame();
  s.cafe.rep=31;s.cafe.stains=6;sh.g.fatigue=40;S.changeGauges(s,sh,{dirt:100},0);const w=S.newWorld(s,r);w.spawnT=1e12;
@@ -253,13 +259,13 @@ test('walk that ends while away settles once on load',()=>{const {s,sh}=freshGam
 test('136: development times per menu (라테 30분 … 파블로바 48시간), max 2 days',()=>{const t=Object.fromEntries(CFG.menu.items.map(m=>[m.id,m.devSec]));
  assert.deepEqual(t,{'M-02':1800,'M-05':3600,'M-03':7200,'M-06':10800,'M-04':14400,'M-07':21600,'M-08':28800,'P-01':43200,'P-02':64800,'P-03':86400,'P-04':108000,'P-05':129600,'P-06':172800});
  assert.equal(CFG.menu.devMaxSec,2*86400);assert.ok(CFG.menu.items.every(m=>m.devSec<=CFG.menu.devMaxSec));assert.equal(CFG.menu.devAtOnce,1);});
-test('136: paying starts development; the menu is not ordered until the time has passed (tick settles it)',()=>{const {s,w}=freshGame();s.cafe.level=3;s.coins=10000;w.spawnT=1e12;
+test('136: paying starts development; the menu is not ordered until the time has passed (tick settles it)',()=>{const {s,w}=freshGame();s.cafe.level=3;s.coins=150000;w.spawnT=1e12;
  assert.ok(S.developMenu(s,'M-05',0));assert.equal(s.coins,0);assert.deepEqual(s.menus,[]);assert.equal(S.normalDeveloped(s),0);
  S.tick(s,w,1,H-1000);assert.deepEqual(s.menus,[]);S.tick(s,w,1,H);assert.deepEqual(s.menus,['M-05']);assert.equal(s.menuDev,null);assert.ok(w.events.some(e=>e.type==='menuDone'&&e.id==='M-05'));});
 test('136: only one development at a time; the next can start once it is done',()=>{const {s}=freshGame();s.cafe.level=50;s.coins=1e6;
- assert.ok(S.developMenu(s,'M-02',0));assert.equal(S.menuCheck(s,'M-05'),'busy');assert.equal(S.developMenu(s,'M-05',0),false);assert.equal(s.coins,1e6-8500);
+ assert.ok(S.developMenu(s,'M-02',0));assert.equal(S.menuCheck(s,'M-05'),'busy');assert.equal(S.developMenu(s,'M-05',0),false);assert.equal(s.coins,1e6-15000);
  S.settleMenuDev(s,30*MIN);assert.equal(S.menuCheck(s,'M-05'),null);assert.ok(S.developMenu(s,'M-05',30*MIN));});
-test('136 + 135-2: remaining development time finishes at once for 1 diamond per minute (P-06 48 h → 2,880)',()=>{const {s}=freshGame();s.cafe.level=45;s.coins=1e6;
+test('136 + 135-2: remaining development time finishes at once for 1 diamond per minute (P-06 48 h → 2,880)',()=>{const {s}=freshGame();s.cafe.level=45;s.coins=2e6;
  assert.ok(S.developMenu(s,'P-06',0));const t={type:'menu'};assert.equal(S.skipLeftSec(s,t,0),172800);s.dia=5000;assert.equal(S.skipNow(s,t,0),2880);assert.ok(s.menus.includes('P-06'));assert.equal(s.menuDev,null);
  assert.ok(S.developMenu(s,'P-05',0));assert.equal(S.skipNow(s,t,(36*60-37)*MIN+20e3),37);assert.equal(s.dia,5000-2880-37);});
 test('136: development finishes while the app is closed (offline fast-forward, also past the 12 h income cap) and survives save/load',()=>{const {s}=freshGame();s.cafe.level=45;s.coins=1e6;
@@ -354,8 +360,8 @@ test('start: choose 1 of 4 breeds, Lv21, 앉아·기다려 3 (109·90·100); 15 
  assert.equal(CFG.personalities.length,15);const s=S.newState(0);assert.equal(S.chooseStart(s,'rare_red','',Math.random,0),null);});
 
 // red-team #2: start values the game needs are PENDING_CONFIRM placeholders (spec keys stay UNSET); unnecessary ones are UNSET and gated
-test('red-team #2: unsupported starts stay null and rescue is disabled',()=>{for(const v of Object.values(CFG.pending))assert.equal(v,null);const {s,sh}=freshGame();assert.equal(s.coins,null);assert.equal(sh.intimacy,null);assert.equal(sh.acc,null);assert.ok(Object.values(sh.g).every(v=>v===null));s.rescues.push({rid:'x',breed:'kuro',bathed:true});assert.equal(S.bringCheck(s,'x'),'unset');assert.equal(S.bringRescue(s,'x'),null);S.playWith(s,sh.id,0);assert.equal(sh.intimacy,null);assert.ok(Object.values(sh.g).every(v=>v===null));assert.equal(S.buyAccCheck(s,'bandana-loop-cell2'),'coins');assert.equal(S.conditionMul(sh),null);assert.equal(S.trainChance(sh),null);assert.equal(S.trainCheck(s,sh.id,'paw'),'unset');});
-test('red-team #2: unknown walk reward branch is disabled',()=>{const {s,sh}=freshGame();S.startWalk(s,sh.id,600,0,()=>.99);const h=s.hearts;S.tickWalk(s,600e3,script([.99,.99,0,.99]));assert.deepEqual(s.walkResults[0].events,[]);assert.equal(s.hearts,h);assert.equal(s.coins,null);});
+test('red-team #2: unsupported starts stay null and rescue is disabled',()=>{for(const v of Object.values(CFG.pending))assert.equal(v,null);const {s,sh}=freshGame();assert.equal(s.coins,30000,'밸런스_2년.md §5 start coins');assert.equal(s.dia,300,'밸런스_2년.md §5 start diamonds');assert.equal(sh.intimacy,null);assert.equal(sh.acc,null);assert.ok(Object.values(sh.g).every(v=>v===null));s.rescues.push({rid:'x',breed:'kuro',bathed:true});assert.equal(S.bringCheck(s,'x'),'unset');assert.equal(S.bringRescue(s,'x'),null);S.playWith(s,sh.id,0);assert.equal(sh.intimacy,null);assert.ok(Object.values(sh.g).every(v=>v===null));assert.equal(S.buyAccCheck(s,'bandana-loop-cell2'),null,'start coins (밸런스_2년.md §5) cover one 5,000 bandana');assert.equal(S.conditionMul(sh),null);assert.equal(S.trainChance(sh),null);assert.equal(S.trainCheck(s,sh.id,'paw'),'unset');});
+test('red-team #2: unknown walk reward branch is disabled',()=>{const {s,sh}=freshGame();S.startWalk(s,sh.id,600,0,()=>.99);const h=s.hearts;S.tickWalk(s,600e3,script([.99,.99,0,.99]));assert.deepEqual(s.walkResults[0].events,[]);assert.equal(s.hearts,h);assert.equal(s.coins,CFG.start.coins,'no walk coins');});
 test('red-team #2: gacha start level UNSET → gated even when odds are set',()=>withCfg(CFG.gacha,{breedOdds:TEST_ODDS},()=>{const {s}=freshGame();s.dia=1000;assert.equal(S.gachaCheck(s,1),'unset');assert.equal(S.gachaPull(s,1,S.rng(1),0),null);assert.equal(s.dia,1000);}));
 
 // red-team #3: bandana colours are neutral sheet-cell ids, no invented names

@@ -31,7 +31,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  // §16: bottom tab row with real-state red dots, 알바 고르기 and 메뉴 개발 list popups (DPR2, unsaved TEMP staging).
  const u16=async()=>{
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
-  await ev(`(()=>{const g=__game,sh=g.state.shibas[0];g.state.cafe.level=10;sh.paws=g.S.pawsToNext(sh.level);g.refresh();return true;})()`);
+  await ev(`(()=>{const g=__game,sh=g.state.shibas[0];g.state.cafe.level=10;g.state.coins=Math.max(g.state.coins,g.CFG.alba.daycare.cost);sh.paws=g.S.pawsToNext(sh.level);g.refresh();return true;})()`);
   await click('[data-main-tab=manage]');
   if(!(await ev(`document.querySelectorAll('.main-tabs').length===1&&!document.querySelector('[data-main-tab=shiba] .tab-dot').hidden&&!document.querySelector('[data-main-tab=alba] .tab-dot').hidden`)))throw Error('§16 tab dots missing');
   await shot('main-screen-u16-tabs.png');
@@ -41,12 +41,12 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await click('#mbox .lp-close');await click('[data-main-tab=manage]');await click('[data-act=listOpen][data-list=menu]');
   if(!(await ev(`document.querySelectorAll('#mbox .lp-card').length===13`)))throw Error('§16 menu popup missing');
   await shot('main-screen-u16-popup-menu.png');
-  writeFileSync(join(out,'main-screen-u16-state.txt'),'STAGED, unsaved ?temp=1 fixture. 390×844 CSS px, DPR2. Café Lv10, M-02 developing, 21,500 coins, 30 diamonds, starter paws = next level-up cost (시바 dot), daycare affordable (알바 dot). tabs: 가게 관리 active; popup-alba: 알바 고르기; popup-menu: 메뉴 개발 (13 menus).\n');
+  writeFileSync(join(out,'main-screen-u16-state.txt'),'STAGED, unsaved ?temp=1 fixture. 390×844 CSS px, DPR2. Café Lv10, M-02 developing, coins ≥ daycare price (CFG.alba.daycare.cost), 30 diamonds, starter paws = next level-up cost (시바 dot), daycare affordable (알바 dot). tabs: 가게 관리 active; popup-alba: 알바 고르기; popup-menu: 메뉴 개발 (13 menus).\n');
  };
  // §17: five-tab row (가게 관리 centre, 미션 top right), 가게 관리 status screen, 업그레이드 popup (4 kinds, prices 미정) — DPR2, unsaved TEMP staging.
  const u17=async()=>{
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
-  await ev(`(()=>{const g=__game,sh=g.state.shibas[0];g.state.cafe.level=10;sh.paws=g.S.pawsToNext(sh.level);g.refresh();return true;})()`);
+  await ev(`(()=>{const g=__game,sh=g.state.shibas[0];g.state.cafe.level=10;g.state.coins=Math.max(g.state.coins,g.CFG.alba.daycare.cost);sh.paws=g.S.pawsToNext(sh.level);g.refresh();return true;})()`);
   await click('[data-main-tab=manage]');
   if(!(await ev(`document.querySelectorAll('[data-main-tab]').length===5&&!document.querySelector('[data-main-tab=mission]')&&!!document.querySelector('#hud [data-act=mission]')&&document.querySelectorAll('[data-main-tab]')[2].dataset.mainTab==='manage'`)))throw Error('§17 five tabs missing');
   await shot('main-screen-u17-tabs.png');
@@ -55,7 +55,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await click('#menuList [data-act=listOpen][data-list=upgrade]');
   if(!(await ev(`document.querySelectorAll('#mbox .lp-card').length===4&&[...document.querySelectorAll('#mbox .lp-price')].every(b=>b.disabled&&b.textContent==='미정')`)))throw Error('§17 upgrade popup missing');
   await shot('main-screen-u17-upgrades.png');
-  writeFileSync(join(out,'main-screen-u17-state.txt'),'STAGED, unsaved ?temp=1 fixture. 390×844 CSS px, DPR2. Café Lv10, M-02 developing, 21,500 coins, 30 diamonds, starter paws = next level-up cost (시바 dot), daycare affordable (알바 dot). tabs: 5 tabs, 가게 관리 centre + active, 미션 button top right; manage: café status + 메뉴 개발/업그레이드/손익계산서; upgrades: 4 kinds, prices 미정 (disabled).\n');
+  writeFileSync(join(out,'main-screen-u17-state.txt'),'STAGED, unsaved ?temp=1 fixture. 390×844 CSS px, DPR2. Café Lv10, M-02 developing, coins ≥ daycare price (CFG.alba.daycare.cost), 30 diamonds, starter paws = next level-up cost (시바 dot), daycare affordable (알바 dot). tabs: 5 tabs, 가게 관리 centre + active, 미션 button top right; manage: café status + 메뉴 개발/업그레이드/손익계산서; upgrades: 4 kinds, prices 미정 (disabled).\n');
  };
  // §17-1…17-6: heart slots + countdown, ledger lines, short list cards, 가게 관리 summary, payment floats, tab row — DPR2, unsaved TEMP staging.
  const u17b=async()=>{
@@ -65,12 +65,12 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await click('[data-main-tab=manage]');
   if(!(await ev(`document.querySelectorAll('#hud .heart-slot').length===5&&document.querySelectorAll('#hud .heart-slot[data-full="1"]').length===2&&!document.getElementById('heartT').hidden&&/^\\d\\d:\\d\\d$/.test(document.getElementById('heartT').textContent)`)))throw Error('§17-1 heart slots / countdown missing');
   await shot('main-screen-u17-topbar.png');
-  await ev(`(()=>{const g=__game,n=g.clock.now();g.state.cafe.level=30;g.state.coins=300000;g.S.recordPayment(g.state,{pending:false,base:120,total:240},n);g.S.recordPayment(g.state,{pending:false,base:60,total:90},n,{offline:true});g.S.hireAlba(g.state,'manager',[],n);g.state.shibas[0].status='sick';g.S.sendToHospital(g.state,g.state.shibas[0].id,n);g.S.buyAcc(g.state,g.S.bandanaItems()[0].id,n);g.refresh();return true;})()`);
+  await ev(`(()=>{const g=__game,n=g.clock.now();g.state.cafe.level=30;g.state.coins=300000+g.CFG.alba.manager.cost;g.S.recordPayment(g.state,{pending:false,base:120,total:240},n);g.S.recordPayment(g.state,{pending:false,base:60,total:90},n,{offline:true});g.S.hireAlba(g.state,'manager',[],n);g.state.shibas[0].status='sick';g.S.sendToHospital(g.state,g.state.shibas[0].id,n);g.S.buyAcc(g.state,g.S.bandanaItems()[0].id,n);g.refresh();return true;})()`);
   await click('#hud [data-act=income]');
   if(!(await ev(`document.querySelectorAll('.ledger-row[data-ledger-category]').length===9&&!!document.querySelector('[data-ledger-category=furniture]')`)))throw Error('§17-2 ledger lines missing');
   await shot('main-screen-u17-ledger.png');await click('#mbox [data-act=modalOk]');
   await stage();await dpr2();
-  await ev(`(()=>{const g=__game,sh=g.state.shibas[0];g.state.cafe.level=10;sh.paws=g.S.pawsToNext(sh.level);g.refresh();return true;})()`);
+  await ev(`(()=>{const g=__game,sh=g.state.shibas[0];g.state.cafe.level=10;g.state.coins=Math.max(g.state.coins,g.CFG.alba.daycare.cost);sh.paws=g.S.pawsToNext(sh.level);g.refresh();return true;})()`);
   await click('[data-main-tab=manage]');
   if(!(await ev(`/^착석 \\d+ · 대기 \\d+/.test(document.querySelector('[data-customer-status]').textContent)`)))throw Error('§17-4 manage summary missing');
   await ev('document.getElementById("menuList").scrollTop=0;true');await shot('main-screen-u17-manage.png');
@@ -92,7 +92,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  // Capture only §14 with --u14; preserve prior approved artifacts.
  else if(process.argv.includes('--u15')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
-  await ev(`(()=>{const g=__game,n=g.clock.now();g.state.cafe.level=30;g.state.coins=300000;g.S.recordPayment(g.state,{pending:false,base:120,total:240},n);g.S.recordPayment(g.state,{pending:false,base:80,total:160},n-g.CFG.ledger.periodMs);g.S.recordPayment(g.state,{pending:false,base:60,total:90},n,{offline:true});g.S.hireAlba(g.state,'manager',[],n);g.state.shibas[0].status='sick';g.S.sendToHospital(g.state,g.state.shibas[0].id,n);g.S.buyAcc(g.state,g.S.bandanaItems()[0].id,n);g.refresh();return true;})()`);
+  await ev(`(()=>{const g=__game,n=g.clock.now();g.state.cafe.level=30;g.state.coins=300000+g.CFG.alba.manager.cost;g.S.recordPayment(g.state,{pending:false,base:120,total:240},n);g.S.recordPayment(g.state,{pending:false,base:80,total:160},n-g.CFG.ledger.periodMs);g.S.recordPayment(g.state,{pending:false,base:60,total:90},n,{offline:true});g.S.hireAlba(g.state,'manager',[],n);g.state.shibas[0].status='sick';g.S.sendToHospital(g.state,g.state.shibas[0].id,n);g.S.buyAcc(g.state,g.S.bandanaItems()[0].id,n);g.refresh();return true;})()`);
   await click('#hud [data-act=income]');
   if(!(await ev(`!document.getElementById('modal').hidden&&document.querySelector('.ledger-title h2').textContent==='손익계산서'`)))throw Error('pill ledger missing');
   await click('[data-act=ledgerDay][data-day="-1"]');
@@ -100,7 +100,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await click('[data-act=ledgerDay][data-day="0"]');await click('#mbox [data-act=modalOk]');
   await click('[data-main-tab=manage]');await click('#menuList [data-act=ledger]');
   await shot('main-screen-u15-ledger.png');
-  writeFileSync(join(out,'main-screen-u15-ledger-state.txt'),'STAGED, unsaved ?temp=1 fixture. 390×844 CSS px, DPR2. Today: sales 120, meeting extra 120, offline 90, manager wages 60000, hospital sick fee, M-02 development 8500 (normal stage), one bandana purchase. Yesterday: sales 80 + meeting extra 80. Smoke: pill opens, yesterday/today flip, close, store button opens.\n');
+  writeFileSync(join(out,'main-screen-u15-ledger-state.txt'),'STAGED, unsaved ?temp=1 fixture. 390×844 CSS px, DPR2. Today: sales 120, meeting extra 120, offline 90, manager wages (CFG.alba.manager.cost), hospital sick fee, M-02 development (its devCost, normal stage), one bandana purchase. Yesterday: sales 80 + meeting extra 80. Smoke: pill opens, yesterday/today flip, close, store button opens.\n');
   if(errors.length)throw Error(errors.join('\n'));
  }else if(process.argv.includes('--u14')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});

@@ -5,27 +5,32 @@ import {MAP,zonesForSpace,validPlacement,restoreSpace} from '../map-data.js';
 const state=newState(0);state.coins=Number.MAX_SAFE_INTEGER;
 assert.equal(state.space.unlockedRows,0);assert.equal(state.space.floor2Unlocked,false);
 assert.equal(switchFloor(state,2),false);
-for(const [kind,id] of [['row'],['floor2'],['theme','fuji'],['theme','bamboo']]){
- assert.equal(spaceUnlockCheck(state,kind,id),'unset');const before=JSON.stringify(state);assert.equal(unlockSpace(state,kind,id),false);assert.equal(JSON.stringify(state),before);
+// row cost stays UNSET (밸런스_2년.md §3 땅 넓히기 not applied); 2층·themes have starting values and a level gate → at café Lv1 they are 'locked'
+for(const [kind,id,why] of [['row',undefined,'unset'],['floor2',undefined,'locked'],['theme','fuji','locked'],['theme','bamboo','locked']]){
+ assert.equal(spaceUnlockCheck(state,kind,id),why,kind+(id||''));const before=JSON.stringify(state);assert.equal(unlockSpace(state,kind,id),false);assert.equal(JSON.stringify(state),before);
 }
 assert.deepEqual(CFG.themes.map(t=>t.name),['다다미','후지산 벽화 카페','대나무 회랑']);assert.equal(CFG.themes[0].locked,false);
-assert.ok(CFG.themes.filter(t=>t.locked).every(t=>t.art===null&&t.unlockCost===null));
+assert.ok(CFG.themes.filter(t=>t.locked).every(t=>t.art===null));
+// starting values 2026-10-15 (밸런스_2년.md §3), pending user confirm
+assert.equal(CFG.expansion.rowCost,null);assert.deepEqual([CFG.cafe.expansion2FCost,CFG.cafe.expansion2FLevel],[7000000,30]);
+assert.deepEqual(CFG.themes.filter(t=>t.locked).map(t=>[t.id,t.unlockLevel,t.unlockCost,t.unlockDia]),[['fuji',20,2400000,1500],['bamboo',35,5400000,3000]]);
+for(const [kind,id,lv] of [['floor2',undefined,30],['theme','fuji',20],['theme','bamboo',35]]){state.cafe.level=lv-1;assert.equal(spaceUnlockCheck(state,kind,id),'locked');state.cafe.level=lv;assert.equal(spaceUnlockCheck(state,kind,id),null);}
 const second=MAP.zones.find(z=>z.floor===2);assert.equal(second.image,null);assert.ok(second.screenOffset.y<0);assert.deepEqual(second.connects,{zone:'A',slot:'stairs'});
-// Explicit test-only costs; production costs remain null.
-const costs=[CFG.expansion.rowCost,CFG.cafe.expansion2FCost,CFG.themes[1].unlockCost];
+// Explicit test-only row cost (production row cost remains null); 2층 and 후지산 use their configured costs.
+const rowCost=CFG.expansion.rowCost;
 try{
- CFG.expansion.rowCost=500000;CFG.cafe.expansion2FCost=1000000;CFG.themes[1].unlockCost=750000;
+ CFG.expansion.rowCost=500000;state.cafe.level=50;
  state.coins=499999;assert.equal(unlockSpace(state,'row'),false);
- state.coins=2250000;assert.equal(unlockSpace(state,'row'),true);assert.equal(state.space.unlockedRows,1);assert.equal(state.coins,1750000);
+ state.coins=500000+7000000+2400000;assert.equal(unlockSpace(state,'row'),true);assert.equal(state.space.unlockedRows,1);assert.equal(state.coins,9400000);
  const zone=zonesForSpace(state.space)[0],table=state.placement.slots.find(s=>s.type==='table');
  assert.equal(validPlacement({...table,origin:[2,6]},state.placement.slots),false);
  assert.equal(validPlacement({...table,origin:[2,6]},state.placement.slots,zone),true);
  assert.equal(validPlacement({...table,origin:[2,7]},state.placement.slots,zone),false);
- table.origin=[2,6];assert.equal(unlockSpace(state,'floor2'),true);assert.equal(switchFloor(state,2),true);
+ table.origin=[2,6];assert.equal(unlockSpace(state,'floor2'),true);assert.equal(state.coins,2400000);assert.equal(switchFloor(state,2),true);
  assert.equal(unlockSpace(state,'theme','fuji'),true);assert.equal(state.coins,0);assert.equal(unlockSpace(state,'theme','fuji'),false);
  const store={value:null,setItem(k,v){this.value=v;},getItem(){return this.value;}};save(store,state,0);const restored=load(store,0).state;
  assert.deepEqual(restored.space,state.space);assert.deepEqual(restored.placement,state.placement);assert.equal(restored.cafe.floor,2);
  delete state.space;state.cafe.floor=2;save(store,state,0);const migrated=load(store,0).state;assert.equal(migrated.space.unlockedRows,0);assert.equal(migrated.cafe.floor,1);
-}finally{[CFG.expansion.rowCost,CFG.cafe.expansion2FCost,CFG.themes[1].unlockCost]=costs;}
+}finally{CFG.expansion.rowCost=rowCost;}
 assert.equal(restoreSpace({unlockedRows:-1}).unlockedRows,0);
 console.log('Unit 3: transactions, bounds, locks, themes, persistence and migration passed');

@@ -490,3 +490,59 @@ Changed files: config.js, sim.js, tabs.js, main.js, index.html, package.json, te
 Validation: `npm test` — all 10 suites pass (`unit17` now 16 tests: icon files 128×128 RGBA + MAP.md sha256, no CSS shapes/emoji, heart cap/countdown/overflow, ledger order/labels/always-shown 가구/other income/offline, §17-3 padding, leave/angry event fields, float layout + null 빠직 slot; `spec-v3` heart assertions follow the cap). Browser smoke ran here: `node tests/smoke-browser.mjs` → **138/138, 0 page errors** (twice); new checks for icon images + gear, heart slots / `04:32` / cap / `+3`, ledger order + padding, short alba/menu/upgrade lines, locked "Lv{N} 해금", tap-to-expand/collapse, summary line, coin+heart float drawn and gone after 1 s, angry float with nothing drawn, unpaid → no coin. `capture-main-screen.mjs --u17b` writes `main-screen-u17-{topbar,ledger,alba,menu,manage,float,tabs}.png` + `main-screen-u17b-state.txt` (DPR2, `?temp=1` staging); run here into a scratch dir only (`/tmp/u17b`) and inspected — nothing written to `/workspace/shiba-cafe-docs/spec-v3-build/`. `--u16` / `--u17` still run.
 
 Changed files: config.js, sim.js, map-data.js, isomap.js, main.js, i18n.js, index.html, assets/drive/MAP.md, tests/spec-v3.test.mjs, tests/unit17.test.mjs, tests/smoke-browser.mjs, tests/smoke-steps.mjs, capture-main-screen.mjs, SPEC-V3-NOTES.md.
+
+## 밸런스_2년 starting values (2026-10-15)
+Source: `/workspace/shiba-cafe-docs/시바카페_밸런스_2년.md` (final; 시바 배치 최대 10마리 유지). Every value below is marked `starting value 2026-10-15 (밸런스_2년.md §N), pending user confirm` in `config.js`. Supersedes, for these keys: the §3 UNSET rows for `start.coins` and `cafe.expansion2FCost`, Unit 2 question 9 (start coins / 2층 part), Unit 3 questions 2–3 (2층 and theme costs; 2층 now **has** a level requirement from the file), and the '§17 Balance starting values' offline observation (it used the 갱신 98 curve).
+
+| Key | Was | Now | File |
+|---|---|---|---|
+| `cafe.expToNext` (Lv1→50, 49 steps) | 갱신 98, sum 676,180 | `[11100 … 1393900]`, sum **27,653,000** (test checks sum + every §2 checkpoint) | §2 |
+| guest exp / cap / interval / `maxPlaced` | — | **unchanged** (1·2·0, 갱신 75 table, 100 × cap/h, 10) | §2, §4 |
+| `menu.items[].devCost` | 갱신 134-1 (8,500 … 35,500) | **15×** 134-1, except 라테 `M-02` = **15,000** → 150,000 · 180,000 · 202,500 · 225,000 · 255,000 · **277,500** (파르페) · 352,500 · 405,000 · 457,500 · 480,000 · 510,000 · **532,500** (파블로바) | §3, 수인님 확정 |
+| `alba.*.cost` | 갱신 125-1 8,000 / 18,000 / 24,000 / 60,000 | 15× → **120,000 / 270,000 / 360,000 / 900,000** (데이케어 / 산책 / 훈련사 / 매니저) — matches the §3 check table | §3, 수인님 확정 |
+| `cafe.expansion2FCost` | null | **7,000,000멍** | §3 |
+| `cafe.expansion2FLevel` (new) | — | **30** ('Lv30부터') — enforced in `spaceUnlockCheck` → `'locked'` | §3 |
+| `themes.fuji` | cost null | `unlockLevel` **20**, `unlockCost` **2,400,000멍**, `unlockDia` **1,500** | §3 |
+| `themes.bamboo` | cost null | `unlockLevel` **35**, `unlockCost` **5,400,000멍**, `unlockDia` **3,000** | §3 |
+| `start.coins` | null | **30,000** (wired: `newState`) | §5 |
+| `start.dia` | 0 ('유료로만' 132-2) | **300** (wired: `newState`) — see question 5 | §5 |
+| `grants14` (new, config only) | — | `start` {30,000멍, 300다이아, 기본 가구 세트 5, 반다나 1} · `days1to7` daily {15,000멍, 50다이아, 하트 리셋권 1, 경험치 부스트 4h 1} · `days8to14` every 2 days {25,000멍, 100다이아} · `items` 수익 부스트 4h ×3, 쿨타임권 ×5, 큰 물약 ×2 with `day:null` · 캡슐 4·9·11일 stay in `stub.onboarding` (not duplicated) | §5 |
+| `pending.startCoins` | null placeholder | removed (the live value is `start.coins`) | — |
+
+Not applied (instruction): 땅 넓히기 (`expansion.rowCost` stays null), 가구 prices, 가게 업그레이드 prices — the file's suggestions for these are left in the file only.
+
+Wiring: only the start grant has an existing mechanism (`CFG.start` → `newState`). There is no daily/claim mechanism (`stub.onboarding.dayMode` is still UNSET and nothing reads `stub.onboarding`), so day 1–14 grants are config only. Items without a runtime system — 경험치 부스트 (`stub.expBoost` has no effect and no inventory slot), 수익 부스트 as an item (only `cafe.boostUntil` exists), 쿨타임권 (`items.cooldownTicket` exists, no use action), 기본 가구 세트 — are config only. `?temp=1` staging: unaffected (smoke 138/138); only assertions that encoded the old `null` coins and old prices changed, and `capture-main-screen.mjs` fixtures now read `CFG.alba.*.cost` instead of assuming 8,000 / 60,000 were affordable.
+
+### Guest-miss share (`node tests/balance-sim.mjs`, `npm run sim`)
+Production config, default furniture (**2 seats**: `cushion-back`, `cushion-front`), 1 simulated hour per row, mean of 3 seeds, dt 0.1 s. File assumption (§1): served = 90 per cap-hour of 100 × cap arrivals → 10 % missed.
+
+| Lv | shibas | cap | arrivals (expected) | served | turned away | left queue | miss % | served per cap-hour (file: 90) |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 1 | 5 | 549 (500) | 220 | 107 | 216 | 58.8 | 44.1 |
+| 1 | 2 | 5 | 548 (500) | 210 | 102 | 230 | 60.6 | 42.1 |
+| 10 | 1 | 9 | 988 (900) | 221 | 532 | 230 | 77.2 | 24.5 |
+| 10 | 4 | 9 | 982 (900) | 211 | 501 | 264 | 77.9 | 23.4 |
+| 20 | 1 | 14 | 1,536 (1,400) | 221 | 984 | 325 | 85.2 | 15.8 |
+| 20 | 6 | 14 | 1,517 (1,400) | 213 | 976 | 322 | 85.6 | 15.2 |
+| 30 | 1 | 18 | 1,977 (1,800) | 221 | 1,422 | 328 | 88.5 | 12.3 |
+| 30 | 8 | 18 | 1,955 (1,800) | 211 | 1,406 | 332 | 88.9 | 11.7 |
+| 50 | 1 | 22 | 2,415 (2,200) | 222 | 1,860 | 328 | 90.6 | 10.1 |
+| 50 | 10 | 22 | 2,387 (2,200) | 213 | 1,838 | 330 | 90.8 | 9.7 |
+
+Reading: served is flat at ~210–222/h at every level — the 2 seats are the bottleneck (each seat turns over about every 33 s: walk in + 30 s 체류). Guest cap and shiba count do not raise throughput; more shibas slightly lower it (meetings can extend a visit). Arrivals run ~10 % above 100 × cap because 평판 climbs to ≥ 70 within the hour (arrival interval × 0.9, 갱신 87). The file's ×90 assumption therefore holds only if seating grows with the guest cap; with default furniture the measured miss share is 59 % (Lv1) → 91 % (Lv50), and served/hour at Lv30 is ~1/7.5 of the file's 1,620.
+
+Test side effect: '20 h away → 임시휴무' (spec-v3) depended on the old curve passing café Lv5 within minutes. Under the new curve the café is still Lv1 after the 12 h cap (4,758 / 11,100 exp), and below Lv5 unmet guests cost no 평판 (`rep.unmetFreeBelowLevel`), so it no longer closes. The test now stages café Lv5.
+
+### 밸런스_2년 questions
+1. **Seats vs the ×90 assumption.** With the default 2 seats the café serves ~220 guests/h at every level (miss 59–91 %, table above), not 90 × cap. Should the 2-year curve assume default furniture, or a seat count per level (then: how many seats when, and through what — 가구 purchases or the 좌석 추가 upgrade, both unpriced)? Until then real play is far slower than 730 days to Lv50 unless players add seats.
+2. 8~14일 '2일마다' 25,000멍 + 100다이아: which days? Built as `{fromDay:8,toDay:14,everyDays:2}`; days 8·10·12·14 give exactly the file's ~235,000멍 14-day total (30,000 + 7 × 15,000 + 4 × 25,000) and 1,050 diamonds (file: '약 1,000').
+3. 수익 부스트 4h ×3, 쿨타임권 ×5, 큰 물약 ×2 (8~14일 row): which day(s)? `day:null` now.
+4. Day grants need a mechanism that does not exist: how are days counted (calendar day since install vs login days — `stub.onboarding.dayMode` UNSET) and are they auto-given or claimed with a button? The same mechanism would also deliver the existing 하트 리셋권 / 캡슐 onboarding.
+5. Start 300 다이아 contradicts 132-2 ('다이아는 유료로만', previous `start.dia:0`). Built as 300 per the file — confirm.
+6. '기본 가구 세트 5개': is that the existing default placement (카운터, 방석 2, 찻상, 계단 = 5 pieces) or 5 extra items? Which bandana (1.5/139-6 starter accessory identity is still UNSET)?
+7. Items with no system yet — 경험치 부스트 (no effect in `addCafeExp`), 수익 부스트 as an inventory item, 쿨타임권 use action: build them now or keep config only?
+8. Level gates 2층 Lv30 / 후지산 Lv20 / 대나무 Lv35 are enforced in `spaceUnlockCheck` (UI still has no unlock button). The 다이아 price for themes (`unlockDia`) has no purchase path — wanted, and for 2층 too?
+
+Validation: `npm test` — all 10 suites pass (spec-v3 94/94; new exp-table test checks length, sum 27,653,000 and every §2 checkpoint, plus unchanged guest exp/cap/interval/10 shibas; menu table checks 15× + 라테 15,000 + 파르페/파블로바; 알바 costs; unit3 checks 2층/theme values and level gates; unit16 red dots with start coins). `node tests/smoke-browser.mjs` → 138/138, 0 page errors. `node tests/balance-sim.mjs` → table above (~50 s).
+
+Changed files: config.js, sim.js (`spaceUnlockCheck` level gate), package.json (`npm run sim`), README.md, tests/balance-sim.mjs (new), tests/spec-v3.test.mjs, tests/unit3.test.mjs, tests/unit16.test.mjs, tests/smoke-browser.mjs, tests/smoke-steps.mjs, capture-main-screen.mjs (fixtures read config prices), SPEC-V3-NOTES.md.

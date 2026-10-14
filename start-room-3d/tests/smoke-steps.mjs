@@ -10,7 +10,7 @@ export default async function({ev,check,sleep,reload}){
  await check('starter accessory identity UNSET: unlocked slot, nothing worn or given','__game.state.shibas[0].accUnlocked&&__game.state.shibas[0].acc===null&&Object.keys(__game.state.accInv).length===0');
  // café loop runs in the page
  await ev('for(let i=0;i<900;i++)__game.step(.1);true');
- await check('answered entrance enables guests; starting coins and gauges remain null','__game.state.stats.served>0&&__game.state.coins===null&&Object.values(__game.state.shibas[0].g).every(v=>v===null)&&document.getElementById("isomap").width===390');
+ await check('answered entrance enables guests; coins start at 30,000 (밸런스_2년.md §5) and only grow from payments; gauges remain null','__game.state.stats.served>0&&__game.state.coins>=__game.CFG.start.coins&&Object.values(__game.state.shibas[0].g).every(v=>v===null)&&document.getElementById("isomap").width===390');
  await check('no 도감 / dex button anywhere','!/도감|Collection|dex/i.test(document.querySelector(".main-tabs").textContent)');
  // screens
  for(const n of ['shibas','walk','shop','settings']){await ev(n==='shibas'?'document.querySelector("[data-main-tab=shiba]").click();true':n==='shop'?'document.querySelector("[data-main-tab=shop]").click();true':n==='walk'?'document.querySelector("[data-main-tab=shiba]").click();document.querySelector("[data-open=walk]").click();true':`document.querySelector("[data-nav=${n}]").click();true`);await check(`${n} screen opens`,'document.getElementById("panel").hidden?document.getElementById("menuList").children.length>0:document.getElementById("pbody").children.length>0');}
@@ -36,8 +36,8 @@ export default async function({ev,check,sleep,reload}){
  await ev('__game.open("care",__game.state.shibas[0].id);document.querySelector("[data-act=equip][data-item=bandana-loop-cell9]").click();true');
  await check('starter wears purchased bandana; no starter accessory appears in the bag (139-6·140-1)','__game.state.shibas[0].acc==="bandana-loop-cell9"&&__game.state.accInv["bandana-loop-cell9"]===0&&Object.keys(__game.state.accInv).length===1&&__game.S.accOwned(__game.state,"bandana-triangle-cell1")===0&&!!document.querySelector("[data-acc] [data-band=bandana-loop-cell9]")');
  await ev('document.querySelector("[data-main-tab=shop]").click();true');
- await ev('document.querySelector("[data-main-tab=manage]").click();__game.state.cafe.level=2;__game.state.coins=8500;__game.refresh();document.querySelector("[data-act=listOpen][data-list=menu]").click();document.querySelector("[data-lp-row=M-02] .lp-price").click();true');
- await check('developing M-02 at Lv2 costs 8,500 멍코인 and shows 30 min in progress (136)','__game.state.menuDev?.id==="M-02"&&!__game.state.menus.includes("M-02")&&__game.state.coins===0&&/즉시 완료 30/.test(document.querySelector("[data-lp-row=M-02] .lp-price").textContent)&&!document.querySelector("[data-lp-row=M-05] .lp-price")&&/Lv3/.test(document.querySelector("[data-lp-row=M-05] .lp-effect").textContent)&&!!document.querySelector("#menuList [data-manage-dev] [data-dev=M-02]")');
+ await ev('document.querySelector("[data-main-tab=manage]").click();__game.state.cafe.level=2;__game.state.coins=15000;__game.refresh();document.querySelector("[data-act=listOpen][data-list=menu]").click();document.querySelector("[data-lp-row=M-02] .lp-price").click();true');
+ await check('developing M-02 at Lv2 costs 15,000 멍코인 and shows 30 min in progress (136)','__game.state.menuDev?.id==="M-02"&&!__game.state.menus.includes("M-02")&&__game.state.coins===0&&/즉시 완료 30/.test(document.querySelector("[data-lp-row=M-02] .lp-price").textContent)&&!document.querySelector("[data-lp-row=M-05] .lp-price")&&/Lv3/.test(document.querySelector("[data-lp-row=M-05] .lp-effect").textContent)&&!!document.querySelector("#menuList [data-manage-dev] [data-dev=M-02]")');
  await ev('__game.state.dia=30;__game.refresh();document.querySelector("[data-lp-row=M-02] .lp-price").click();document.querySelector("#mbox .lp-close").click();true');
  await check('finish now: 30 diamonds, M-02 developed (135-2)','__game.state.menus.includes("M-02")&&__game.state.dia===0&&!__game.state.menuDev');
  // language switch in settings applies at once
@@ -45,7 +45,7 @@ export default async function({ev,check,sleep,reload}){
  await check('settings → 한국어 switches nav text','document.querySelector(".gear").getAttribute("aria-label")==="설정"&&document.getElementById("ptitle").textContent==="설정"');
  await ev('__game.close();document.querySelector("[data-main-tab=manage]").click();true');
  await check('§17: 가게 관리 has no menu card grid, only café status + 메뉴 개발 / 업그레이드 / 손익계산서 buttons','!document.querySelector("[data-main-menu],.menu-card")&&!!document.querySelector("#menuList [data-cafe-level]")&&["menu","upgrade"].every(k=>document.querySelector(`#menuList [data-act=listOpen][data-list=${k}]`))&&!!document.querySelector("#menuList [data-act=ledger]")');
- await ev('__game.state.cafe.level=5;__game.state.coins=12000;__game.refresh();document.querySelector("#menuList [data-act=listOpen][data-list=menu]").click();document.querySelector("[data-lp-row=M-03] .lp-price").click();true');
+ await ev('__game.state.cafe.level=5;__game.state.coins=180000;__game.refresh();document.querySelector("#menuList [data-act=listOpen][data-list=menu]").click();document.querySelector("[data-lp-row=M-03] .lp-price").click();true');
  await check('menu popup development charges configured cost and offers the diamond skip','__game.state.coins===0&&__game.state.menuDev.id==="M-03"&&/즉시 완료 120/.test(document.querySelector("[data-lp-row=M-03] .lp-price").textContent)');
  await ev('__game.state.dia=120;__game.refresh();document.querySelector("[data-lp-row=M-03] .lp-price").click();document.querySelector("#mbox .lp-close").click();true');
  await check('main menu instant finish hooks simulation','__game.state.dia===0&&__game.state.menus.includes("M-03")&&!__game.state.menuDev');
@@ -61,8 +61,8 @@ export default async function({ev,check,sleep,reload}){
 
  await ev('document.querySelector("[data-main-tab=manage]").click();true');
  await check('v3: no bottom nav; gear and 미션 buttons are present','!document.getElementById("nav")&&!!document.querySelector(".gear[data-nav=settings]")&&!!document.querySelector("#hud [data-act=mission]")');
- await ev('__game.state.cafe.level=9;__game.state.coins=8500;__game.refresh();document.querySelector("#menuList [data-act=listOpen][data-list=menu]").click();true');
- await check('v3: configured cost and disabled insufficient-coins button (popup)','document.querySelector("[data-lp-row=M-04] .lp-price").disabled&&/15,000/.test(document.querySelector("[data-lp-row=M-04] .lp-price").textContent)');
+ await ev('__game.state.cafe.level=9;__game.state.coins=224999;__game.refresh();document.querySelector("#menuList [data-act=listOpen][data-list=menu]").click();true');
+ await check('v3: configured cost and disabled insufficient-coins button (popup)','document.querySelector("[data-lp-row=M-04] .lp-price").disabled&&/225,000/.test(document.querySelector("[data-lp-row=M-04] .lp-price").textContent)');
  await ev('const list=document.querySelector("#mbox .lp-list");list.scrollTop=list.scrollHeight;true');
  await check('v3: last menu row fully visible after scrolling the popup','(()=>{const list=document.querySelector("#mbox .lp-list").getBoundingClientRect(),last=document.querySelector("[data-lp-row=P-06]").getBoundingClientRect();return last.top>=list.top-1&&last.bottom<=list.bottom+1&&list.bottom<=innerHeight;})()');
  await ev('document.querySelector("#mbox .lp-close").click();true');

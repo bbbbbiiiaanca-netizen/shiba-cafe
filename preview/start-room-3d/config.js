@@ -11,10 +11,13 @@ const PRESSURE=[
  [8,18,1.5,95],[8,18,1.4,90],[8,18,1.3,85],[9,20,1.8,125],[9,20,1.6,110],[9,20,1.5,106],[9,20,1.5,102],[9,20,1.4,98],[9,20,1.3,93],[9,20,1.3,89], // 갱신 75 pressure table
  [9,20,1.2,85],[10,22,1.6,125],[10,22,1.4,110],[10,22,1.3,106],[10,22,1.3,103],[10,22,1.2,99],[10,22,1.2,96],[10,22,1.2,92],[10,22,1.1,89],[10,22,1.1,85]]; // 갱신 75 pressure table
 
-// 갱신 98 카페 레벨 경험치 (L→L+1, 갱신 87·91·92 대체; 132-4로 표 그대로 유지)
-const CAFE_EXP=[120,220,370,520,740,1000,1850,1940,2050,2190,2860,3070,3300,3540,3800,5190,5560,5940,6340,6760, // 갱신 98 experience table; 132-4 unchanged
- 8220,8730,9250,9790,10350,10920,12950,13620,14310,15020,15740,16480,17230,19990,20850,21730,22630,23540,24460,25400, // 갱신 98 experience table; 132-4 unchanged
- 26350,30040,31120,32210,33310,34430,35570,36710,37870]; // 갱신 98 experience table; 132-4 unchanged
+// 카페 레벨 경험치 (L→L+1). starting value 2026-10-15 (밸런스_2년.md §2), pending user confirm: 2-year curve to Lv50, sum 27,653,000
+// (replaces 갱신 98 table, sum 676,180; guest XP, guest cap, guest interval and the 10-shiba cap are unchanged)
+const CAFE_EXP=[11100,11100,11100,15600,29100,29100,37400,37400,37400,133600, // starting value 2026-10-15 (밸런스_2년.md §2), pending user confirm
+ 133600,133600,133600,133600,174200,221800,221800,221800,221800,332600, // starting value 2026-10-15 (밸런스_2년.md §2), pending user confirm
+ 380200,380200,380200,380200,475200,475200,534600,534600,534600,641500, // starting value 2026-10-15 (밸런스_2년.md §2), pending user confirm
+ 641500,641500,641500,712800,950400,950400,950400,950400,950400,1188000, // starting value 2026-10-15 (밸런스_2년.md §2), pending user confirm
+ 1188000,1306800,1306800,1306800,1393900,1393900,1393900,1393900,1393900]; // starting value 2026-10-15 (밸런스_2년.md §2), pending user confirm
 
 export const CFG={
  ledger:{periodMs:86400000,dayOffsetMs:32400000,historyDays:7,includeDiamonds:false,openFromPill:true,openFromStore:true}, // §15 starting value 똑또기 2026-10-14, pending user batch confirm: KST midnight day, 7 days kept, 멍코인만, opened from 멍코인 pill and 가게 tab
@@ -22,7 +25,6 @@ export const CFG={
 
  // Removed unsupported build placeholders; null is preserved by the engine.
  pending:{
-  startCoins:U, // UNSET: §1.4 starting coins unspecified
   intimacyStart:U, // UNSET: 갱신 82·90 starting intimacy unspecified
   gaugeStart:U, // UNSET: §1.2-3 starting gauges unspecified
   rescueLevel:U, // UNSET: 질문 9(사) rescue level unspecified
@@ -31,7 +33,15 @@ export const CFG={
  },
 
  // ── 재화 ──
- start:{coins:U,hearts:10,dia:0}, // coins: UNSET 시작 멍코인. hearts: 기본 소지 10 (1.4, 갱신 28). dia: 유료로만 (132-2) → 0
+ start:{coins:30000,hearts:10,dia:300}, // coins: starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm (was UNSET). hearts: 기본 소지 10 (1.4, 갱신 28). dia: starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm (was 0 '유료로만' 132-2)
+ // 처음 14일 뿌리기 (밸런스_2년.md §5). starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm. Only `start` is applied (newState);
+ // no daily claim mechanism exists yet, so the day grants are config only (also stub.onboarding dayMode UNSET). day:null = the file does not say which day.
+ grants14:{
+  start:{coins:30000,dia:300,items:{furnitureSet:5,bandana:1}}, // starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm · coins/dia → CFG.start; 기본 가구 세트 5개·반다나 1개 (확정) are config only (which bandana = accessory.starterItem UNSET)
+  days1to7:{fromDay:1,toDay:7,everyDays:1,coins:15000,dia:50,items:{heartReset:1,expBoost4h:1}}, // starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm · heartReset = the same 확정 grant as stub.onboarding days 1–7 (not extra)
+  days8to14:{fromDay:8,toDay:14,everyDays:2,coins:25000,dia:100}, // starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm · '2일마다' — which days is a question (8·10·12·14 matches the file's ~235,000멍 total)
+  items:[{item:'incomeBoost4h',count:3,day:U},{item:'cooldownTicket',count:5,day:U},{item:'potionBig',count:2,day:U}], // starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm · 8~14일 row, day UNSET
+  capsules:'stub.onboarding'}, // 캡슐 4·9·11일 (확정 온보딩) already live in stub.onboarding.rewards — not duplicated
  hearts:{regenCap:5, // starting value 2026-10-14, pending user confirm: interior §17-1 '최대 5개(시작값)' = natural-regen cap and top-bar slot count. CONFLICT: spec v3 1.4 / 갱신 28·31 say 10 (SPEC-V3-NOTES '§17 questions')
   regenEverySec:1800}, // 1.4 / 갱신 28·31: 30분당 1개; 보상 하트는 상한을 넘어 무제한 적립 (top bar: 5 full + '+N')
  heartReset:{fillTo:10}, // 1.4 / 갱신 32: 10개 미만일 때만 10개까지, 10개 이상이면 사용 불가(소모 없음)
@@ -39,8 +49,9 @@ export const CFG={
  expansion:{rowCost:U}, // UNSET: interior §1 / spec v3 §1.3 land row cost
  themes:[
   {id:'tatami',name:'다다미',locked:false,unlockCost:null,art:'assets/drive/room-tatami-noline.png'}, // §1.3 default
-  {id:'fuji',name:'후지산 벽화 카페',locked:true,unlockCost:U,art:null}, // §1.3 / interior §6 cost and art UNSET
-  {id:'bamboo',name:'대나무 회랑',locked:true,unlockCost:U,art:null} // §1.3 / interior §6 cost and art UNSET
+  // unlockCost (멍코인) / unlockDia / unlockLevel: starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm. art UNSET (interior §6). No theme UI yet; the 다이아 option is config only.
+  {id:'fuji',name:'후지산 벽화 카페',locked:true,unlockCost:2400000,unlockDia:1500,unlockLevel:20,art:null}, // starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: Lv20, 2,400,000멍 or 1,500다이아
+  {id:'bamboo',name:'대나무 회랑',locked:true,unlockCost:5400000,unlockDia:3000,unlockLevel:35,art:null} // starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: Lv35, 5,400,000멍 or 3,000다이아
  ],
  furniture:{items:[{id:'tea-table',name:'찻상',price:U},{id:'zabuton',name:'방석',price:U},{id:'counter',name:'카운터',price:U},{id:'stairs',name:'계단',price:U}]}, // UNSET: 1.3 / F p6·9 furniture prices
  // ── 카페 ──
@@ -56,7 +67,8 @@ export const CFG={
   queueWaitSec:30, // 갱신 68·69: 줄 대기 제한 = 체류 시간
   hourlyCustomersPerCap:100, // 갱신 132-4: 시간당 손님 = 100 × 손님 상한 (planning only; live sim uses customersPerHourPerCap)
   paidSlotUnlockDia:U, // UNSET: 갱신 87 유료 칸 미리 해제 — 다이아 가격 미정(132-3)
-  expansion2FCost:U, // UNSET: 갱신 56 2층 확장 비용 미정
+  expansion2FCost:7000000, // starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 2층 증축 7,000,000멍 (was UNSET, 갱신 56)
+  expansion2FLevel:30, // starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 2층 증축 Lv30부터
  },
  // 갱신 87 카페 경험치
  cafeExp:{custNormal:1,custSatisfied:2,custDisappointed:0,walkPer10Min:2,play:1,feed:1,bath:1,snack:1,rescueAdopt:10, // 갱신 87 café experience
@@ -99,21 +111,22 @@ export const CFG={
  // 갱신 120 결제 · 129 메뉴 개발(멍코인) · 134 메뉴 목록·주문 규칙 · 134-1 개발비 (134 표의 개발비는 134-1로 대체)
  income:{levelAggregation:effects=>effects.length?Math.max(...effects):CFG.income.noMeetingMultiplier,noMeetingMultiplier:1}, // confirmed 수인님 2026-10-14: max · noMeetingMultiplier: starting value 똑또기 2026-10-14, pending user batch confirm (x1.0)
  menu:{coffee:{id:'M-01',price:1,img:'M-01-iced-americano_512.png'}, // 갱신 134: M-01 아이스 아메리카노 = 처음부터 있는 기본 커피 1멍 (120)
-  // kind: drink/dessert = 일반 메뉴, premium = 프리미엄. unlockLevel·price = 갱신 134 표, devCost = 갱신 134-1 표, devSec = 갱신 136 개발 시간
+  // kind: drink/dessert = 일반 메뉴, premium = 프리미엄. unlockLevel·price = 갱신 134 표, devSec = 갱신 136 개발 시간
+  // devCost: starting value 2026-10-15 (밸런스_2년.md §3 수인님 확정), pending user confirm: 15× the 갱신 134-1 cost (in each comment), except 라테 M-02 = 15,000멍
   items:[
-   {id:'M-02',kind:'drink',unlockLevel:2,devCost:8500,devSec:1800,price:3,img:'M-02-hot-latte_512.png'},            // 따뜻한 라테; 갱신 134·134-1·136 (level, cost, time, price)
-   {id:'M-05',kind:'dessert',unlockLevel:3,devCost:10000,devSec:3600,price:5,img:'M-05-cheesecake_512.png'},        // 치즈케이크; 갱신 134·134-1·136 (level, cost, time, price)
-   {id:'M-03',kind:'drink',unlockLevel:5,devCost:12000,devSec:7200,price:3,img:'M-03-strawberry-latte_512.png'},    // 딸기 라테; 갱신 134·134-1·136 (level, cost, time, price)
-   {id:'M-06',kind:'dessert',unlockLevel:7,devCost:13500,devSec:10800,price:5,img:'M-06-chocochip-cookie_512.png'},  // 초코칩 쿠키; 갱신 134·134-1·136 (level, cost, time, price)
-   {id:'M-04',kind:'drink',unlockLevel:9,devCost:15000,devSec:14400,price:3,img:'M-04-yuja-ade_512.png'},            // 유자 에이드; 갱신 134·134-1·136 (level, cost, time, price)
-   {id:'M-07',kind:'dessert',unlockLevel:12,devCost:17000,devSec:21600,price:5,img:'M-07-croissant_512.png'},        // 크루아상; 갱신 134·134-1·136 (level, cost, time, price)
-   {id:'M-08',kind:'dessert',unlockLevel:15,devCost:18500,devSec:28800,price:5,img:'M-08-strawberry-parfait_512.png'},// 딸기 파르페; 갱신 134·134-1·136 (level, cost, time, price)
-   {id:'P-01',kind:'premium',unlockLevel:20,devCost:23500,devSec:43200,price:8,img:'P-01-gold-tiramisu_512.png'},    // 골드 티라미수; 갱신 134·134-1·136 (level, cost, time, price)
-   {id:'P-02',kind:'premium',unlockLevel:25,devCost:27000,devSec:64800,price:8,img:'P-02-strawberry-whole-cake_512.png'}, // 딸기 홀케이크; 갱신 134·134-1·136 (level, cost, time, price)
-   {id:'P-03',kind:'premium',unlockLevel:30,devCost:30500,devSec:86400,price:8,img:'P-03-montblanc_512.png'},        // 몽블랑; 갱신 134·134-1·136 (level, cost, time, price)
-   {id:'P-04',kind:'premium',unlockLevel:35,devCost:32000,devSec:108000,price:8,img:'P-04-choco-fondant_512.png'},    // 초코 퐁당; 갱신 134·134-1·136 (level, cost, time, price)
-   {id:'P-05',kind:'premium',unlockLevel:40,devCost:34000,devSec:129600,price:8,img:'P-05-macaron-trio_512.png'},     // 마카롱 3종; 갱신 134·134-1·136 (level, cost, time, price)
-   {id:'P-06',kind:'premium',unlockLevel:45,devCost:35500,devSec:172800,price:8,img:'P-06-pavlova_512.png'}],         // 파블로바; 갱신 134·134-1·136 (level, cost, time, price)
+   {id:'M-02',kind:'drink',unlockLevel:2,devCost:15000,devSec:1800,price:3,img:'M-02-hot-latte_512.png'},            // 따뜻한 라테; 갱신 134·136 · devCost starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 15,000멍, not 15× (was 8,500)
+   {id:'M-05',kind:'dessert',unlockLevel:3,devCost:150000,devSec:3600,price:5,img:'M-05-cheesecake_512.png'},       // 치즈케이크; 갱신 134·136 · devCost starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 15× 10,000
+   {id:'M-03',kind:'drink',unlockLevel:5,devCost:180000,devSec:7200,price:3,img:'M-03-strawberry-latte_512.png'},   // 딸기 라테; 갱신 134·136 · devCost starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 15× 12,000
+   {id:'M-06',kind:'dessert',unlockLevel:7,devCost:202500,devSec:10800,price:5,img:'M-06-chocochip-cookie_512.png'}, // 초코칩 쿠키; 갱신 134·136 · devCost starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 15× 13,500
+   {id:'M-04',kind:'drink',unlockLevel:9,devCost:225000,devSec:14400,price:3,img:'M-04-yuja-ade_512.png'},           // 유자 에이드; 갱신 134·136 · devCost starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 15× 15,000
+   {id:'M-07',kind:'dessert',unlockLevel:12,devCost:255000,devSec:21600,price:5,img:'M-07-croissant_512.png'},       // 크루아상; 갱신 134·136 · devCost starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 15× 17,000
+   {id:'M-08',kind:'dessert',unlockLevel:15,devCost:277500,devSec:28800,price:5,img:'M-08-strawberry-parfait_512.png'},// 딸기 파르페; 갱신 134·136 · devCost starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 15× 18,500
+   {id:'P-01',kind:'premium',unlockLevel:20,devCost:352500,devSec:43200,price:8,img:'P-01-gold-tiramisu_512.png'},   // 골드 티라미수; 갱신 134·136 · devCost starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 15× 23,500
+   {id:'P-02',kind:'premium',unlockLevel:25,devCost:405000,devSec:64800,price:8,img:'P-02-strawberry-whole-cake_512.png'}, // 딸기 홀케이크; 갱신 134·136 · devCost starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 15× 27,000
+   {id:'P-03',kind:'premium',unlockLevel:30,devCost:457500,devSec:86400,price:8,img:'P-03-montblanc_512.png'},       // 몽블랑; 갱신 134·136 · devCost starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 15× 30,500
+   {id:'P-04',kind:'premium',unlockLevel:35,devCost:480000,devSec:108000,price:8,img:'P-04-choco-fondant_512.png'},   // 초코 퐁당; 갱신 134·136 · devCost starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 15× 32,000
+   {id:'P-05',kind:'premium',unlockLevel:40,devCost:510000,devSec:129600,price:8,img:'P-05-macaron-trio_512.png'},    // 마카롱 3종; 갱신 134·136 · devCost starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 15× 34,000
+   {id:'P-06',kind:'premium',unlockLevel:45,devCost:532500,devSec:172800,price:8,img:'P-06-pavlova_512.png'}],        // 파블로바; 갱신 134·136 · devCost starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 15× 35,500
   premiumDrinkPrice:3,premiumDessertPrice:5, // 갱신 120 고급 음료 3멍·고급 디저트 5멍 (134: 일반 음료/디저트를 1개 이상 개발해야 주문, 아니면 기본 커피)
   premiumBase:.05,premiumPerRepAbove50:.003,premiumSatisfiedBonus:.15,premiumCap:.4, // 갱신 120
   premiumPerNormalDeveloped:.01, // 갱신 134: 개발한 일반 메뉴 1개마다 고급 메뉴 기본 확률 +1%p (상한 40% 그대로)
@@ -205,10 +218,11 @@ export const CFG={
 
  // ── 알바 (갱신 99·99-2·118·118-1·123-x·124-1·125-1) ──
  alba:{
-  daycare:{unlock:10,cost:8000,cooldownSec:7200,intimacyMul:.5}, // 갱신 99 · 125-1 가격 · 99-2 쿨 2시간
-  walk:{unlock:15,cost:18000,cooldownSec:14400,maxShibas:4,boredom:-50}, // 갱신 125-1 가격 · 123-5 쿨 4시간·최대 4마리 · 123-3/124-1 지루함 50 즉시 해소
-  trainer:{unlock:20,cost:24000,cooldownSec:14400}, // 갱신 125-1 · 99-2 쿨 4시간
-  manager:{unlock:25,cost:60000,hireSec:43200,cleanEverySec:600}}, // 갱신 125-1 · 118-1 12시간 · 118 10분마다 얼룩 1개
+  // cost: starting value 2026-10-15 (밸런스_2년.md §3 수인님 확정), pending user confirm: 15× the 갱신 125-1 price
+  daycare:{unlock:10,cost:120000,cooldownSec:7200,intimacyMul:.5}, // 갱신 99 · 99-2 쿨 2시간 · cost starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 15× 8,000
+  walk:{unlock:15,cost:270000,cooldownSec:14400,maxShibas:4,boredom:-50}, // 123-5 쿨 4시간·최대 4마리 · 123-3/124-1 지루함 50 즉시 해소 · cost starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 15× 18,000
+  trainer:{unlock:20,cost:360000,cooldownSec:14400}, // 99-2 쿨 4시간 · cost starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 15× 24,000
+  manager:{unlock:25,cost:900000,hireSec:43200,cleanEverySec:600}}, // 118-1 12시간 · 118 10분마다 얼룩 1개 · cost starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 15× 60,000
  cooldownTicketDia:{one:20,five:80}, // 갱신 115-1 (유료 전용, stub)
 
  // ── 남은 시간 바로 완료 (갱신 135-2, 135·135-1 대체) ──

@@ -6,7 +6,7 @@ walks & rescue, hospital, part-timers, offline 12 h + 임시휴무. Numbers only
 features show "미정". Images: confirmed Drive files in `assets/drive/` (`MAP.md`). No 도감, no grades, no in-game YouTube.
 
 - Rules ↔ spec map, UNSET list, stubs, missing images: **`SPEC-V3-NOTES.md`**
-- Tests: `npm test` · `npm run test:browser` · Screens: `node capture-spec-v3.mjs [OUTDIR]`
+- Tests: `npm test` · `npm run test:browser` · Guest-miss sim: `npm run sim` · Screens: `node capture-spec-v3.mjs [OUTDIR]`
 
 Main café v4 uses the untouched 861×615 room image and five approved furniture placements (four sprite assets), with image-pixel anchors and depth sorting. No tile assembly or map characters; simulation and the v3 panel continue unchanged. `map-data.js` supports zones, added rows, and floor IDs; `cellToImage` / `cellToScreen` share the room transform. `?grid=1` enables the optional debug grid (off by default). `node capture-main-screen.mjs` writes `main-screen-v4.png`, `main-screen-v4@2x.png`, and DPR2 `main-screen-v4-grid.png` to `/workspace/shiba-cafe-docs/spec-v3-build`.
 

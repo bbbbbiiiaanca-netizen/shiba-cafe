@@ -442,6 +442,8 @@ export function spaceUnlockCheck(s,kind,id){
  if(kind==='floor2'&&space.floor2Unlocked||kind==='theme'&&(!theme.locked||space.themes.includes(id)))return 'owned';
  const cost=kind==='row'?CFG.expansion.rowCost:kind==='floor2'?CFG.cafe.expansion2FCost:theme.unlockCost;
  if(!Number.isFinite(cost)||cost<=0)return 'unset';
+ const level=kind==='floor2'?CFG.cafe.expansion2FLevel:kind==='theme'?theme.unlockLevel:null; // 밸런스_2년.md §3 'Lv N부터' (starting values)
+ if(Number.isFinite(level)&&s.cafe.level<level)return 'locked';
  if(!Number.isFinite(s.coins)||s.coins<cost)return 'coins';
  return null;
 }

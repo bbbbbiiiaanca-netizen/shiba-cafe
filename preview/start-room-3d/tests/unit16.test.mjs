@@ -13,12 +13,12 @@ const {existsSync}=await import('node:fs');const root=new URL('..',import.meta.u
 for(const t of TABS)if(t.icon&&t.icon!=='shiba')assert.ok(existsSync(root+t.icon),t.icon);
 for(const b of CFG.breeds)assert.ok(existsSync(root+`assets/drive/shiba-${b}.png`));
 
-// Production fresh game: starting coins UNSET → nothing affordable → no red dots.
-let s=fresh();assert.equal(s.coins,null);
+// Production fresh game (café Lv1): start coins 30,000 (밸런스_2년.md §5) but every menu/알바 is level-locked → no red dots.
+let s=fresh();assert.equal(s.coins,30000);
 assert.deepEqual(tabBadges(s,now),{shiba:false,alba:false,manage:false,furniture:false,shop:false});
 
 // 가게 관리: a developable menu, or an unseen finished development.
-s=fresh();s.coins=8500;s.cafe.level=2;assert.equal(tabBadges(s,now).manage,true);
+s=fresh();s.coins=S.menuItem('M-02').devCost-1;s.cafe.level=2;assert.equal(tabBadges(s,now).manage,false);s.coins++;assert.equal(tabBadges(s,now).manage,true);
 S.developMenu(s,'M-02',now);assert.equal(tabBadges(s,now).manage,false,'in development, nothing else can start');
 assert.equal(tabBadges(s,now,{menuDone:true}).manage,true);
 
