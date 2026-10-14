@@ -14,7 +14,7 @@ const H=3600e3;
 
 // ───────────────────────── state ─────────────────────────
 export function newState(now=Date.now()){
- return {v:CFG.saveVersion,started:false,coins:CFG.start.coins,coinFrac:0,hearts:CFG.start.hearts,heartRegenAt:now,dia:CFG.start.dia,
+ return {v:CFG.saveVersion,started:false,coins:CFG.start.coins??CFG.pending.startCoins,coinFrac:0,hearts:CFG.start.hearts,heartRegenAt:now,dia:CFG.start.dia,
   items:{heartReset:0,capsule:0,potionBig:0,potionSmall:0,cooldownTicket:0},
   cafe:{level:1,exp:0,rep:CFG.rep.start,stains:0,stainAcc:0,badStainAcc:0,driftAcc:0,closed:false,closedAt:null,managerUntil:0,managerCleanAcc:0,boostUntil:0},
   shibas:[],nextId:1,dongu:{placed:true},walk:null,rescues:[],walkResults:[],menus:[],menuDev:null,accInv:{},lastAbandonAt:null,
@@ -24,10 +24,10 @@ export function newState(now=Date.now()){
 
 // ───────────────────────── shibas ─────────────────────────
 export function makeShiba(s,{breed,level=1,name=null,tricks={},r=Math.random,now=Date.now()}){
- const g={...(CFG.gaugeStart??CFG.gaugeFull)}; // UNSET gaugeStart → the 116 full state (START_FALLBACK)
+ const g={...(CFG.gaugeStart??CFG.pending.gaugeStart)}; // spec value UNSET → PENDING_CONFIRM placeholder
  const tr={},te={};for(const t of CFG.tricks){tr[t.id]=clamp(tricks[t.id]||0,0,CFG.trickMaxLevel);te[t.id]=0;}
  return {id:s.nextId++,breed,name,personality:drawPersonality(r),level:clamp(level,1,CFG.level.max),paws:0,
-  intimacy:CFG.intimacy.start??CFG.intimacy.min,g,tricks:tr,trickExp:te,placed:false,status:'ok',injury:null,hospitalUntil:0,hospitalKind:null,
+  intimacy:CFG.intimacy.start??CFG.pending.intimacyStart,g,tricks:tr,trickExp:te,placed:false,status:'ok',injury:null,hospitalUntil:0,hospitalKind:null,
   zeroSince:null,sickSince:null,cd:{},joinedAt:now,acc:null,accUnlocked:false,likesFound:{snacks:[],toys:[]}};
 }
 export const byId=(s,id)=>s.shibas.find(o=>o.id===id);
@@ -43,7 +43,7 @@ export function accUnlockCheck(s,id,via){const sh=byId(s,id);if(!sh)return 'pick
 // 갱신 140·140-1 액세서리: accInv = 차지 않은 개수, sh.acc = 찬 액세서리 1개
 export const bandanaItems=()=>{const B=CFG.accessory.bandana;return B.types.flatMap(t=>B.colors.map(c=>({id:`bandana-${t}-${c}`,type:t,color:c,price:B.priceCoins})));};
 export const accItem=id=>bandanaItems().find(x=>x.id===id)||null;
-export const starterItem=()=>CFG.accessory.starterItem??bandanaItems()[0].id; // UNSET → 첫 항목 (START_FALLBACK)
+export const starterItem=()=>CFG.accessory.starterItem??CFG.pending.starterAccessory; // spec UNSET → PENDING_CONFIRM
 export const accWorn=(s,id)=>s.shibas.filter(o=>o.acc===id).length;
 export const accOwned=(s,id)=>(s.accInv[id]||0)+accWorn(s,id);
 export function buyAccCheck(s,id){const it=accItem(id);if(!it)return isUnset(CFG.accessory.special.items)?'unset':'pick';if(s.coins<it.price)return 'coins';return null;}
@@ -170,6 +170,8 @@ export function startWalk(s,id,sec,now=Date.now(),r=Math.random){if(walkCheck(s,
  const rescueAt=r()<CFG.walk.events.rescue?now+r()*sec*1000:null;s.walk={shibaId:id,walkStartAt:now,walkDurationSec:sec,rescueAt,rescueShown:false};return s.walk;}
 export const walkProgress=(s,now=Date.now())=>s.walk?clamp((now-s.walk.walkStartAt)/(s.walk.walkDurationSec*1000),0,1):null;
 export const canStopWalk=()=>!isUnset(CFG.walk.stopRule); // UNSET 질문 1-4
+// 갱신 82 extra reward: which of '멍코인 소량 / 하트 1' is PENDING_CONFIRM; the coin option needs the UNSET amount, so it never pays a guessed sum
+export const extraRewardKind=()=>{const k=CFG.pending.walkExtraReward;return k==='coins'&&isUnset(CFG.walk.events.extraCoins)?null:k;};
 function newRescue(s,r,now){return {rid:'r'+now+'_'+Math.floor(r()*1e6),foundAt:now,breed:pick(r,CFG.breeds),pic:Math.floor(r()*2),bathed:false};} // 갱신 61: 그림 2장 중 랜덤, 견종과 무관
 // returns {rescued, settled}; settles exactly once (s.walk cleared)
 export function tickWalk(s,now=Date.now(),r=Math.random){const W=s.walk;if(!W)return null;const out={};
@@ -179,7 +181,7 @@ export function tickWalk(s,now=Date.now(),r=Math.random){const W=s.walk;if(!W)re
    // 갱신 82·83 independent rolls
    if(r()<E.snake){sh.status='injured';sh.injury='snake';res.events.push('snake');}
    if(r()<E.light){if(sh.status!=='injured'){sh.status='injured';sh.injury='light';}res.events.push('light');}
-   if(r()<E.extra){if(isUnset(E.extraCoins)){s.hearts+=E.extraHeart;res.events.push('extraHeart');}else{res.events.push('extra');}} // UNSET 멍코인 '소량' → 하트 1만
+   if(r()<E.extra){const kind=extraRewardKind();if(kind==='heart'){s.hearts+=E.extraHeart;res.events.push('extraHeart');}else if(kind==='coins'){addCoins(s,E.extraCoins);res.paidCoins=E.extraCoins;res.events.push('extraCoins');}}
    if(r()<E.capsule){s.items.capsule++;res.events.push('capsule');}
    if(W.rescueAt!=null)res.events.push('rescue');}
   s.walkResults.push(res);out.settled=res;}
@@ -188,7 +190,7 @@ export function tickWalk(s,now=Date.now(),r=Math.random){const W=s.walk;if(!W)re
 export function bathRescue(s,rid){const x=s.rescues.find(x=>x.rid===rid);if(!x||x.bathed)return null;const c=hospitalCost(s,'rescueBath');if(s.coins<c)return null;s.coins-=c;x.bathed=true;return x;}
 export function bringCheck(s,rid){const x=s.rescues.find(x=>x.rid===rid);if(!x)return 'pick';if(!x.bathed)return 'bath';if(s.shibas.length>=CFG.cafe.maxOwned)return 'owned';return null;}
 export function bringRescue(s,rid,r=Math.random,now=Date.now()){if(bringCheck(s,rid))return null;const x=s.rescues.find(x=>x.rid===rid);
- const sh=makeShiba(s,{breed:x.breed,level:CFG.rescueLevel??1,r,now});s.shibas.push(sh);if(placedShibas(s).length<slotsOf(s))sh.placed=true;
+ const sh=makeShiba(s,{breed:x.breed,level:CFG.rescueLevel??CFG.pending.rescueLevel,r,now});s.shibas.push(sh);if(placedShibas(s).length<slotsOf(s))sh.placed=true;
  s.rescues=s.rescues.filter(y=>y!==x);addCafeExp(s,CFG.cafeExp.rescueAdopt);return sh;}
 export function declineRescue(s,rid){const n=s.rescues.length;s.rescues=s.rescues.filter(x=>x.rid!==rid);return s.rescues.length<n;}
 
@@ -196,7 +198,7 @@ export function declineRescue(s,rid){const n=s.rescues.length;s.rescues=s.rescue
 // n = 1 (100다이아 또는 뽑기권 1장) or 10 (900다이아). 견종 4종; 이미 가진 견종이면 그 견종의 가장 먼저 온 시바에게 발바닥 10개.
 export const gachaPrice=n=>n===CFG.gacha.tenCount?CFG.gacha.tenDia:n===1?CFG.gacha.priceDia:null;
 export const gachaOddsSet=()=>!isUnset(CFG.gacha.breedOdds);
-export function gachaCheck(s,n=1,{ticket=false}={}){if(!s.started)return 'pick';if(!gachaOddsSet())return 'odds'; // UNSET 질문 9(바) 확률표 → 뽑기 비활성
+export function gachaCheck(s,n=1,{ticket=false}={}){if(!s.started)return 'pick';if(!gachaOddsSet())return 'odds';if(isUnset(CFG.gacha.startLevel))return 'unset'; // UNSET 질문 9(바) 확률표·시작 레벨 → 뽑기 비활성
  if(ticket){if(n!==1)return 'count';if(!(s.items.capsule>0))return 'ticket';}
  else{const p=gachaPrice(n);if(p==null)return 'count';if(s.dia<p)return 'dia';}
  if(s.shibas.length>=CFG.cafe.maxOwned&&CFG.breeds.some(b=>!s.shibas.some(o=>o.breed===b)))return 'owned';return null;}

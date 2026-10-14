@@ -157,7 +157,7 @@ function devCard(now){const D=s.menuDev;if(!D)return `<div class="note">${L('sho
   ${bar((now-D.startAt)/(D.until-D.startAt))}<div class="sub">${L('shop.devLeft',{t:tfmt(left)})} · ${L('skip.note')}</div></div>${skipBtn({type:'menu'})}</div>`;}
 // 갱신 137 시바뽑기 — 확률표 UNSET(질문 9(바))이면 버튼 3개 모두 비활성 '확률 미정'
 function gachaCard(){const G=CFG.gacha,odds=S.gachaOddsSet(),tag=odds?'':' · '+L('app.oddsUnset'),dis=(n,o)=>S.gachaCheck(s,n,o)?'disabled':'';
- return `<div class="card" data-gacha><h3>${L('shop.gacha')}</h3><div class="note">${L(odds?'shop.gachaNote':'shop.gachaNoteUnset',{p:G.dupPaws})}</div><div class="btns">
+ return `<div class="card" data-gacha><h3>${L('shop.gacha')}</h3><div class="note">${L(odds&&!isUnset(G.startLevel)?'shop.gachaNote':'shop.gachaNoteUnset',{p:G.dupPaws,lv:G.startLevel})}</div><div class="btns">
    <button data-act="gacha" data-n="1" ${dis(1)}>${L('shop.gacha1',{dia:G.priceDia})}${tag}</button>
    <button data-act="gacha" data-n="${G.tenCount}" ${dis(G.tenCount)}>${L('shop.gacha10',{n:G.tenCount,dia:fmt(G.tenDia)})}${tag}</button>
    <button class="sec" data-act="gacha" data-n="1" data-ticket="1" ${dis(1,{ticket:true})}>${L('shop.gachaTicket',{n:s.items.capsule})}${tag}</button></div></div>`;}
@@ -212,7 +212,7 @@ function renderModal(){const m=ui.modals[0]||(!s.settings.language?{kind:'lang'}
  if(m.kind==='walkResult'){const sh=S.byId(s,m.res.shibaId);h=`<h2>${L('walk.back',{name:sh?nameOf(sh):'?'})}</h2><div class="big" style="width:120px;height:120px">${sh?img(IMG.shiba(sh.breed)):''}</div>
   <div class="note" style="text-align:center">${[m.res.paws?L('walk.paws',{n:m.res.paws}):'',...m.res.events.map(e=>L('walk.ev.'+e))].filter(Boolean).join(' · ')}</div><button data-act="modalOk">${L('app.ok')}</button>`;}
  if(m.kind==='rescue'){const x=m.x,cost=S.hospitalCost(s,'rescueBath');
-  h=x.bathed?`<h2>${L('rescue.reveal',{breed:L('shiba.breed.'+x.breed)})}</h2><div class="big">${img(IMG.shiba(x.breed))}</div><div class="note" style="text-align:center">${L('rescue.lvNote')}</div>
+  h=x.bathed?`<h2>${L('rescue.reveal',{breed:L('shiba.breed.'+x.breed)})}</h2><div class="big">${img(IMG.shiba(x.breed))}</div><div class="note" style="text-align:center">${L('rescue.lvNote',{lv:CFG.rescueLevel??CFG.pending.rescueLevel})}</div>
     <button data-act="rescueBring" ${S.bringCheck(s,x.rid)?'disabled':''}>${L('rescue.bring')}</button>${S.bringCheck(s,x.rid)==='owned'?`<div class="note">${L('rescue.full')}</div>`:''}<button class="sec" data-act="rescueDecline">${L('rescue.decline')}</button>`
    :`<h2>${L('rescue.found')}</h2><div class="big">${img(IMG.rescue[x.pic])}</div><button data-act="rescueBath" ${s.coins<cost?'disabled':''}>${L('rescue.bath',{cost:fmt(cost)})}</button><button class="sec" data-act="rescueDecline">${L('rescue.decline')}</button>`;}
  if(m.kind==='gacha')h=`<h2>${L('gacha.title')}</h2><div class="gres">${m.res.map(x=>`<div class="gi${x.dup?' dup':''}">${img(IMG.shiba(x.breed))}<span>${x.dup?L('gacha.dup',{name:nameOf(S.byId(s,x.toId)||{breed:x.breed}),p:x.paws}):L('gacha.new',{breed:L('shiba.breed.'+x.breed),lv:CFG.gacha.startLevel})}</span></div>`).join('')}</div><button data-act="modalOk">${L('app.ok')}</button>`;
