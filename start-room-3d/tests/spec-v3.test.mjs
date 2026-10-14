@@ -10,7 +10,7 @@ let pass=0;const fails=[];
 // Explicit fixtures for isolated mechanics tests; production audit/start tests use unchanged null config.
 // The wrapper sets coins/gauges/intimacy/rescue level only for mechanics unrelated to start defaults.
 const fixtureAggregation=lvs=>lvs.length?lvs.reduce((a,b)=>a+b,0)/lvs.length:1;
-function test(name,fn){const savedEntrance=MAP.zones[0].entrance,savedSlots=MAP.zones[0].slots,savedSpeed=CFG.navigation.cellStepSec,savedShibaSpeed=CFG.navigation.shibaCellStepSec,savedBehaviour=CFG.behaviour;CFG.navigation.shibaCellStepSec=.001;CFG.behaviour={eatSec:0,cooldownSec:0,weights:{approachGuest:1},durations:{walk:0}};
+function test(name,fn){const savedEntrance=MAP.zones[0].entrance,savedSlots=MAP.zones[0].slots,savedSpeed=CFG.navigation.cellStepSec,savedShibaSpeed=CFG.navigation.shibaCellStepSec,savedBehaviour=CFG.behaviour;CFG.navigation.shibaCellStepSec=.001;CFG.behaviour={eatSec:0,weights:{sit:1},durations:{sit:0},walkCells:[2,4]};
  // Explicit geometry/speed fixture preserves the original economy tests' capacity. Production values stay null.
  MAP.zones[0].entrance=[0,5];CFG.navigation.cellStepSec=.001;
  const occupied=new Set(savedSlots.flatMap(x=>footprintCells(x).map(c=>c.join(','))));
@@ -132,21 +132,23 @@ test('hospital & rescue-bath fixed costs by café level band (131)',()=>{const s
 // ───────── customers ─────────
 test('customer flow: arrive → seat → shiba 7 s meeting / 5 s roam → leave after 30 s → pay (69·70·120)',()=>{const {s,w,sh}=freshGame();
  const {ev}=run(s,w,600);const leaves=ev.filter(e=>e.type==='leave');assert.ok(leaves.length>=60,'served '+leaves.length);assert.equal(s.stats.served,leaves.length);
- const paid=leaves.reduce((a,e)=>a+e.coins,0);near(s.coins+s.coinFrac,paid,1e-6);assert.ok(leaves.every(e=>e.coins===2),'coffee 1 × Lv21 2.0');
+ const paid=leaves.reduce((a,e)=>a+e.coins,0);near(s.coins+s.coinFrac,paid,1e-6);
+ // full 7 s meetings (visit extends while playing, starting value 똑또기 2026-10-14): one shiba cannot reach every guest, so pay is 2 only for met guests
+ const metIds=new Set(ev.filter(e=>e.type==='meet').map(e=>e.custId));assert.ok(leaves.every(e=>e.coins===(metIds.has(e.id)?2:1)),'coffee 1 × Lv21 2.0 when met, ×1.0 otherwise');assert.ok(leaves.some(e=>e.coins===2));
  // meeting timing: 7 s at a guest then 5 s roaming
  const g=freshGame();const ws=g.w;let t=0,phase=[];for(let i=0;i<200;i++){t+=100;S.tick(g.s,ws,.1,t);phase.push(ws.sh[g.sh.id]?.phase);}
  const first=phase.indexOf('meet'),endM=phase.indexOf('roam',first);if(endM>0){const nextM=phase.indexOf('meet',endM);assert.ok(endM-first<=71,'meeting ≤7 s (+1 tick float)');if(nextM>0)assert.ok(Math.abs(nextM-endM-50)<=3,'roam 5 s plus route steps: '+(nextM-endM));}});
-test('queue: cap reached → queue (max 10); waiting >30 s → leaves, reputation unchanged, no money (66·68·87)',()=>{const {s,w}=freshGame();s.cafe.rep=50;
+test('queue: cap reached → queue (4 grass cells, starting value 똑또기 2026-10-14; 66 max 10); waiting >30 s → leaves, reputation unchanged, no money (66·68·87)',()=>{const {s,w}=freshGame();s.cafe.rep=50;
  for(const sh of s.shibas)sh.placed=false; // nobody serves → seats stay full
  w.spawnT=1e9;for(let i=0;i<5;i++)w.custs.push({id:100+i,kind:'mom',phase:'seated',seat:i,cell:[1,3],t:999,score:0,met:[],with:null,fulfilled:false,request:null});
- for(let i=0;i<12;i++){w.spawnT=0;S.tick(s,w,0,0);w.spawnT=1e9;}assert.equal(w.queue.length,10);assert.equal(s.stats.lost,2);
- const c0=s.coins;run(s,w,30.5);assert.equal(w.queue.length,0);assert.equal(s.stats.angry,10);assert.equal(s.cafe.rep,50);assert.equal(s.coins,c0);});
+ for(let i=0;i<12;i++){w.spawnT=0;S.tick(s,w,0,0);w.spawnT=1e9;}assert.equal(w.queue.length,CFG.navigation.queueCells);assert.equal(w.queue.length,4);assert.equal(s.stats.lost,8);
+ const c0=s.coins;run(s,w,30.5);assert.equal(w.queue.length,0);assert.equal(s.stats.angry,4);assert.equal(s.cafe.rep,50);assert.equal(s.coins,c0);});
 test('0 meetings → disappointed (rep −1, exp 0); request met → satisfied (+1, exp +2); met but not met-request → normal (+0, exp +1) (70·86·87·106)',()=>{
  const a=freshGame();a.sh.placed=false;const {ev}=run(a.s,a.w,60);const L=ev.filter(e=>e.type==='leave');assert.ok(L.length&&L.every(e=>e.outcome==='disappointed'));assert.equal(a.s.cafe.exp,0);assert.equal(a.s.cafe.rep,50-L.length);assert.ok(L.every(e=>e.coins===1),'coffee still paid ×1');
  const b=freshGame();b.w.spawnT=1e9;b.w.custs.push({id:1,kind:'dad',phase:'seated',seat:0,cell:[1,3],t:30,score:0,met:[],with:null,fulfilled:false,request:{type:'meetShiba',shibaId:b.sh.id}});
- const rb=run(b.s,b.w,31).ev.find(e=>e.type==='leave');assert.equal(rb.outcome,'satisfied');assert.equal(b.s.cafe.exp,2);assert.equal(b.s.cafe.rep,51);
+ const rb=run(b.s,b.w,40).ev.find(e=>e.type==='leave'); // visit may run past 30 s while playing (starting value 똑또기 2026-10-14)assert.equal(rb.outcome,'satisfied');assert.equal(b.s.cafe.exp,2);assert.equal(b.s.cafe.rep,51);
  const c=freshGame();c.w.spawnT=1e9;c.w.custs.push({id:1,kind:'dad',phase:'seated',seat:0,cell:[1,3],t:30,score:0,met:[],with:null,fulfilled:false,request:{type:'seeTrick',trick:'bow'}});
- const rc=run(c.s,c.w,31).ev.find(e=>e.type==='leave');assert.equal(rc.outcome,'normal');assert.equal(c.s.cafe.exp,1);assert.equal(c.s.cafe.rep,50);});
+ const rc=run(c.s,c.w,40).ev.find(e=>e.type==='leave');assert.equal(rc.outcome,'normal');assert.equal(c.s.cafe.exp,1);assert.equal(c.s.cafe.rep,50);});
 test('every normal guest gets a request that the café can meet now (106); none for interior while UNSET (113)',()=>{const {s,w}=freshGame();const {ev}=run(s,w,300);
  for(const c of w.custs)assert.ok(c.request&&['meetShiba','seeTrick'].includes(c.request.type));assert.equal(CFG.requests.interior.enabled,false);
  for(const c of w.custs)if(c.request.type==='seeTrick')assert.ok(['sit','wait'].includes(c.request.trick),'only tricks a placed shiba knows');});
@@ -228,8 +230,10 @@ test('reputation drifts 1 point per hour toward 50 (106)',()=>{const {s,w}=fresh
 // ───────── offline / 임시휴무 ─────────
 test('offline income is simulated for at most 12 h (56)',()=>{const {s,r}=freshGame();const w=S.newWorld(s,r);const bak=CFG.rep.closureFloor;CFG.rep.closureFloor=-1; // isolate the cap from 임시휴무
  try{const o=S.fastForward(s,w,0,20*H,{offline:true});assert.equal(o.simSec,12*3600);assert.ok(o.coins>0);}finally{CFG.rep.closureFloor=bak;}});
-test('one shiba, 20 h away with the spec numbers → café levels up, guests outgrow one shiba, 임시휴무 before 12 h (75·87·126)',()=>{const {s,r}=freshGame();const o=S.fastForward(s,S.newWorld(s,r),0,20*H,{offline:true});
- assert.ok(o.simSec<=12*3600,'income cap respected');assert.ok(s.cafe.level>=3);});
+// Balance flag (Unit 5 starting values 똑또기 2026-10-14): with full 7 s meetings one Lv1-café shiba meets ~half the guests, the rest are
+// disappointed, so offline reputation reaches 30 within minutes. Previously (meetings cut at departure) the café reached Lv3 first.
+test('one shiba, 20 h away with the spec numbers → guests outgrow one shiba, 임시휴무 before 12 h (75·87·126)',()=>{const {s,r}=freshGame();const o=S.fastForward(s,S.newWorld(s,r),0,20*H,{offline:true});
+ assert.ok(o.simSec<=12*3600,'income cap respected');assert.ok(o.closed&&o.simSec<12*3600);assert.ok(s.stats.satisfied>0&&s.stats.disappointed>0);});
 test('임시휴무: offline rep reaching 30 closes the café (no guests, income, rep change; fatigue 0); reopen at 30 with frozen sick clock (126)',()=>{const {s,r,sh}=freshGame();
  s.cafe.rep=31;s.cafe.stains=6;sh.g.fatigue=40;S.changeGauges(s,sh,{dirt:100},0);const w=S.newWorld(s,r);w.spawnT=1e12;
  const o=S.fastForward(s,w,0,10*H,{offline:true});assert.ok(o.closed);assert.equal(s.cafe.rep,30);assert.equal(s.cafe.closedAt,10*MIN);assert.equal(sh.g.fatigue,0);assert.equal(sh.status,'ok','sick clock stopped');

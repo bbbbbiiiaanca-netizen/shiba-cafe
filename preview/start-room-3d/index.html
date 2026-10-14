@@ -89,8 +89,16 @@ button[data-act=levelUp]{background:url(assets/drive/ui/ui-btn-levelup-yellow.pn
 #hud .resources{gap:4px;flex-wrap:nowrap;pointer-events:auto}
 #hud .pill{display:flex;flex:1;min-width:0;height:26px;gap:3px;padding:3px 5px;border:0;border-radius:999px;background:rgba(37,32,30,.76);color:#fff;box-shadow:none;font-size:10px;line-height:1;font-weight:800}
 #hud .pill span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
-#hud .ico{width:16px;height:16px;border-radius:0}.ico.coin{background-position:100% 0}
-#hud .resource-add{flex:none;width:26px;height:26px;padding:0;border-radius:50%;background:rgba(37,32,30,.8);color:#fff;box-shadow:none;font-size:20px;line-height:26px}
+/* Resource icons: the pre-§14 HUD shapes (6ac0bdd), until 그림이 icons arrive. */
+#hud .resource{position:relative;display:block;flex:none;width:15px;height:15px}
+#hud .resource.coin{border-radius:50%;background:#e8b64e;border:2px solid #be8a2f}
+#hud .resource.heart{background:#d8817a;transform:rotate(-45deg);width:11px;height:11px;margin:3px 2px 0}
+#hud .resource.heart:before,#hud .resource.heart:after{content:'';position:absolute;width:11px;height:11px;border-radius:50%;background:inherit}#hud .resource.heart:before{top:-5px;left:0}#hud .resource.heart:after{left:5px;top:0}
+#hud .resource.diamond{background:#82bfc2;clip-path:polygon(25% 0,75% 0,100% 35%,50% 100%,0 35%)}
+#hud .resource.paw{background:#ac9476;border-radius:60% 60% 45% 45%;width:12px;height:10px;margin:5px 1px 0 2px}
+#hud .resource.paw:before{content:'';position:absolute;width:5px;height:5px;background:inherit;border-radius:50%;left:-2px;top:-6px;box-shadow:6px -2px #ac9476,12px 0 #ac9476}
+#hud .pill-open{display:flex;flex:1;align-items:center;gap:3px;min-width:0;height:100%;padding:0;margin:0;border-radius:999px;background:transparent;color:inherit;box-shadow:none;font:inherit;line-height:1}
+#hud .resource-add{flex:none;width:18px;height:18px;margin-right:-2px;padding:0;border-radius:50%;background:#f0a64a;color:#fff;box-shadow:none;font-size:14px;line-height:18px}
 #hud .cafe-status{gap:6px;height:24px;justify-content:flex-end}
 .cafe-progress{display:flex;align-items:center;gap:0;margin-right:auto;pointer-events:auto}
 #lvl{display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex:none;border-radius:50%;background:#58452be6;color:#fff;font-size:7px;white-space:normal;text-align:center;line-height:1.1;z-index:1}
@@ -104,11 +112,10 @@ button[data-act=levelUp]{background:url(assets/drive/ui/ui-btn-levelup-yellow.pn
 <div id="app">
  <div id="hud" aria-label="카페 자원">
   <div class="row resources" aria-label="재화">
-   <button class="pill" data-act="income" aria-label="멍코인 · 손익계산서"><i class="ico coin" aria-hidden="true"></i><span id="coins"></span></button>
-   <div class="pill" aria-label="하트"><i class="ico heart" aria-hidden="true"></i><span id="hearts"></span></div>
-   <div class="pill" aria-label="다이아"><i class="ico dia" aria-hidden="true"></i><span id="dia"></span></div>
-   <div class="pill" aria-label="발바닥"><i class="ico paw" aria-hidden="true"></i><span id="paws"></span></div>
-   <button class="resource-add" data-act="resourceShop" aria-label="재화 상점 열기">+</button>
+   <div class="pill"><button class="pill-open" data-act="income" aria-label="멍코인 · 손익계산서"><i class="resource coin" aria-hidden="true"></i><span id="coins"></span></button><button class="resource-add" data-act="resourceShop" aria-label="멍코인 상점 열기">+</button></div>
+   <div class="pill" aria-label="하트"><i class="resource heart" aria-hidden="true"></i><span id="hearts"></span></div>
+   <div class="pill"><span class="pill-open" aria-label="다이아"><i class="resource diamond" aria-hidden="true"></i><span id="dia"></span></span><button class="resource-add" data-act="resourceShop" aria-label="다이아 상점 열기">+</button></div>
+   <div class="pill" aria-label="발바닥"><i class="resource paw" aria-hidden="true"></i><span id="paws"></span></div>
   </div>
   <div class="row cafe-status"><div class="cafe-progress"><span id="lvl"></span><div class="bar" id="cafeExp" role="progressbar" aria-label="카페 경험치"><i id="expBar"></i></div></div><span id="rep"></span><span id="mgr" hidden></span><small id="heartT" hidden></small><button class="gear" data-nav="settings" aria-label="설정">설정</button></div>
  </div>

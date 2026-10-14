@@ -17,7 +17,7 @@ const CAFE_EXP=[120,220,370,520,740,1000,1850,1940,2050,2190,2860,3070,3300,3540
  26350,30040,31120,32210,33310,34430,35570,36710,37870]; // 갱신 98 experience table; 132-4 unchanged
 
 export const CFG={
- ledger:{periodMs:86400000,dayOffsetMs:32400000,historyDays:7,includeDiamonds:false,openFromPill:true,openFromStore:true}, // §15 starting value 똑또기: 하루(한국 시각 자정), 7일 보관, 멍코인만, 두 진입점
+ ledger:{periodMs:86400000,dayOffsetMs:32400000,historyDays:7,includeDiamonds:false,openFromPill:true,openFromStore:true}, // §15 starting value 똑또기 2026-10-14, pending user batch confirm: KST midnight day, 7 days kept, 멍코인만, opened from 멍코인 pill and 가게 tab
  saveKey:'shibaCafe.save.v3',saveVersion:3, // EXEMPT: save schema version (engine metadata)
 
  // Removed unsupported build placeholders; null is preserved by the engine.
@@ -50,8 +50,8 @@ export const CFG={
   capFromSlots:2.2, // 갱신 70·71: 손님 상한 = 배치 가능 시바 수 × 2.2, 올림 (표 값과 일치; 표가 우선)
   maxPlaced:10, // 갱신 74
   maxOwned:50, // 갱신 75
-  stayingSec:30, // 갱신 69: 손님 체류 시간
-  queueMax:10, // 갱신 66
+  stayingSec:30, // 갱신 69: 손님 체류 시간 · starting value 똑또기 2026-10-14, pending user batch confirm: may be exceeded while eating/playing
+  queueMax:10, // 갱신 66 (live queue is also limited by navigation.queueCells)
   queueWaitSec:30, // 갱신 68·69: 줄 대기 제한 = 체류 시간
   hourlyCustomersPerCap:100, // 갱신 132-4: 시간당 손님 = 100 × 손님 상한 (planning only; live sim uses customersPerHourPerCap)
   paidSlotUnlockDia:U, // UNSET: 갱신 87 유료 칸 미리 해제 — 다이아 가격 미정(132-3)
@@ -70,7 +70,7 @@ export const CFG={
   closureFloor:30}, // 갱신 126-1: 오프라인 중 평판 하한 30 → 임시휴무
 
  // ── 손님 (갱신 70, 86, 100, 105, 106, 113, 120, 124-4, 128, 129) ──
- visit:{meetSec:7,roamSec:5, // 갱신 70: 손님 곁 7초, 5초 돌아다님
+ visit:{meetSec:7,roamSec:5, // 갱신 70: 손님 곁 7초, 5초 돌아다님 · starting value 똑또기 2026-10-14, pending user batch confirm: interaction 7 s, then roam 5 s, then seek a guest
   scoreDisappointedBelow:.5, // 갱신 86: 합계 0.5 미만 실망
   scoreSatisfiedAt:1.5, // 갱신 86 (만족 판정은 갱신 106에서 '요구 충족'으로 바뀜 — notes 참고; 값은 기록용)
   condMin:.25,condMax:1.3, // 갱신 86
@@ -83,9 +83,10 @@ export const CFG={
   {gauge:'happy',atLeast:70,mul:1.2}], // 갱신 86 condition thresholds
  // 갱신 106 일반손님 요구 (124-4: 필수 아님, 안 들어줘도 벌 없음). 113: 인테리어 요구 — 인테리어 점수·아이템 미정이라 꺼 둠.
  requests:{types:['meetShiba','seeTrick'],interior:{enabled:false,minThemeItems:3}, // 갱신 113 '특정 테마 아이템 3개 이상' (인테리어 시스템 UNSET)
+  metRep:1, // starting value 똑또기 2026-10-14, pending user batch confirm: met request → price unchanged (order fixed at sit), reputation +1 (갱신 106 high-reputation damping still applies)
   managerChance:.3,managerRepMul:.5}, // 갱신 118
  // 갱신 120 결제 · 129 메뉴 개발(멍코인) · 134 메뉴 목록·주문 규칙 · 134-1 개발비 (134 표의 개발비는 134-1로 대체)
- income:{levelAggregation:effects=>effects.length?Math.max(...effects):CFG.income.noMeetingMultiplier,noMeetingMultiplier:1}, // confirmed 수인님 2026-10-14: max; no-meeting x1 answer 똑또기 2026-10-14 pending confirm
+ income:{levelAggregation:effects=>effects.length?Math.max(...effects):CFG.income.noMeetingMultiplier,noMeetingMultiplier:1}, // confirmed 수인님 2026-10-14: max · noMeetingMultiplier: starting value 똑또기 2026-10-14, pending user batch confirm (x1.0)
  menu:{coffee:{id:'M-01',price:1,img:'M-01-iced-americano_512.png'}, // 갱신 134: M-01 아이스 아메리카노 = 처음부터 있는 기본 커피 1멍 (120)
   // kind: drink/dessert = 일반 메뉴, premium = 프리미엄. unlockLevel·price = 갱신 134 표, devCost = 갱신 134-1 표, devSec = 갱신 136 개발 시간
   items:[
@@ -109,8 +110,13 @@ export const CFG={
   drinkToDessert:[2,1], // 갱신 120: 음료:디저트 2:1
   devAtOnce:1,devMaxSec:172800}, // 갱신 136: 개발 시간이 지나야 완성, 최대 2일, 한 번에 1개
  itemIncome:{boostMul:1.2,boostHours:4,boostMaxHours:24,paidCapMul:1.5,priceDia:U}, // 갱신 97 시간제 수익 1.2배 · UNSET: 가격(다이아)
- navigation:{cellStepSec:.4,shibaCellStepSec:.5,queueWaitSec:30,queueReputation:0}, // answer 똑또기 2026-10-14: editable starting values
- behaviour:{eatSec:U,cooldownSec:U,weights:{walk:U,lookAround:U,sit:U,nap:U,tailWag:U,approachGuest:U},durations:{walk:U,lookAround:U,sit:U,nap:U,tailWag:U}}, // interior §13; unset production behaviour
+ navigation:{cellStepSec:.4,shibaCellStepSec:.5,queueWaitSec:30,queueReputation:0, // answer 똑또기 2026-10-14: editable starting values; queueWaitSec = the only 30 s limit (waiting for a seat)
+  queueCells:4}, // starting value 똑또기 2026-10-14, pending user batch confirm: up to 4 queue cells on the grass outside the entrance, overflow guests turn back; floors without an entrance (stairs only) have no queue
+ // interior §13 shiba poses. After a meeting the shiba roams visit.roamSec (5 s) then seeks a free guest; the meeting lasts visit.meetSec (7 s).
+ behaviour:{eatSec:8, // starting value 똑또기 2026-10-14, pending user batch confirm: eating 8 s; a visit may run past stayingSec while eating/playing
+  weights:{walk:40,lookAround:15,sit:15,tailWag:15,nap:15}, // starting value 똑또기 2026-10-14, pending user batch confirm: action odds in %
+  walkCells:[2,4], // starting value 똑또기 2026-10-14, pending user batch confirm: a walk covers 2–4 cells
+  durations:{lookAround:2,tailWag:2,sit:4,nap:10}}, // starting value 똑또기 2026-10-14, pending user batch confirm: seconds per pose (walk lasts its route)
  offline:{capHours:12,stepSec:1}, // 갱신 56: 오프라인 수익 최대 12시간분. EXEMPT stepSec = engine integration step
 
  // ── 시바 ──
@@ -239,5 +245,4 @@ export const isUnset=v=>v===null||v===undefined;
 export const pressureAt=lv=>{const p=CFG.cafe.pressure[Math.max(1,Math.min(CFG.cafe.maxLevel,lv))-1];return {slots:p[0],cap:p[1],interval:p[2],pct:p[3]};}; // EXEMPT: array indexing and bounds, uses 갱신 75 table
 
 // income.levelAggregation: confirmed 수인님 2026-10-14 (max single multiplier).
-// income.noMeetingMultiplier: answer 똑또기 2026-10-14, starting value pending confirm.
-export const TEMP_BEHAVIOUR={eatSec:2,cooldownSec:1,weights:{walk:3,lookAround:1,sit:1,nap:1,tailWag:1,approachGuest:6},durations:{walk:2,lookAround:1,sit:2,nap:3,tailWag:1}}; // TEMP tests only, never persisted
+// income.noMeetingMultiplier: starting value 똑또기 2026-10-14, pending user batch confirm.

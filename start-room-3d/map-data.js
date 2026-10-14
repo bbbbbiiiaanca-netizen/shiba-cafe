@@ -4,7 +4,7 @@ import {CFG} from './config.js';
 // 그림이 will provide back views; unavailable until the art is supplied.
 export const SPRITES={
  // 그림이 v4 sprites, original size (scale 1). anchor = centre of floor-contact footprint, sprite px (given by 그림이).
- table:{itemSlots:[{cellIndex:0,offset:[-18,-42]},{cellIndex:0,offset:[18,-42]}],file:'assets/drive/furn-tea-table-v4.png',anchor:[92,93],scale:1,back:null,footprint:{cells:1,axis:null}},
+ table:{file:'assets/drive/furn-tea-table-v4.png',anchor:[92,93],scale:1,back:null,footprint:{cells:1,axis:null}},
  cushion:{file:'assets/drive/furn-cushion-v4.png',anchor:[90,74],scale:1,back:null,footprint:{cells:1,axis:null}},
  counter:{file:'assets/drive/furn-counter-v4.png',anchor:[124,132],scale:1,back:null,footprint:{cells:2,axis:'i'}},
  stairs:{file:'assets/drive/furn-stairs-v4.png',anchor:[121,167],scale:1,back:null,footprint:{cells:2,axis:'i'}}
@@ -20,8 +20,8 @@ export const CHAR_SPRITES={shiba:{file:null,anchor:null,footShadow:null,directio
 export function characterDepthEntries(world){return [...(world?.custs||[]),...(world?.queue||[]),...Object.values(world?.sh||{})].filter(c=>c.cell).map(c=>({character:c,origin:c.cell,cells:[c.cell]}));}
 export const ROOM_BG='assets/drive/room-tatami-noline.png';
 export const MAP={zones:[{
- // answer 똑또기 2026-10-14: front-left entrance; queue layout starting cells editable
- id:'A',entrance:[0,5],queueCells:[[0,6],[0,7],[0,8],[0,9],[0,10],[0,11],[0,12],[0,13],[0,14],[0,15]],image:ROOM_BG,origin:{x:429,y:181},
+ // answer 똑또기 2026-10-14: front-left entrance; queue = CFG.navigation.queueCells grass cells straight out from the entrance
+ id:'A',entrance:[0,5],queueCells:Array.from({length:CFG.navigation.queueCells},(_,n)=>[0,6+n]),image:ROOM_BG,origin:{x:429,y:181},
  // Display placeholder until expansion land art exists. Alpha scan of 방_기본_다다미_선없음 / 시험
  // front-left rim: lowest opaque pixel (429,614); outer edge y-x/2 <= 401. Offset 0 overlaps
  // 18,193 opaque pixels; offset 1 overlaps zero (smallest whole-row offset).
@@ -34,7 +34,8 @@ export const MAP={zones:[{
   {id:'cushion-front',type:'cushion',origin:[3,3],dir:0},
   {id:'stairs',type:'stairs',origin:[4,0],dir:0,connects:[1,2]}
  ]
-},{id:'B',entrance:null,image:null,origin:{x:429,y:181},cols:6,rows:6,cell:{w:128,h:64},locked:true,unlockCost:null,floor:2,screenOffset:{x:0,y:-615},connects:{zone:'A',slot:'stairs'},slots:[]}]};
+},{id:'B',entrance:null,image:null, // other floors: no entrance, reached by stairs only, so no queue
+origin:{x:429,y:181},cols:6,rows:6,cell:{w:128,h:64},locked:true,unlockCost:null,floor:2,screenOffset:{x:0,y:-615},connects:{zone:'A',slot:'stairs'},slots:[]}]};
 // Placement positions are derived solely from whole-cell footprints.
 export function footprintCentre(item){
  const cells=footprintCells(item);return cells.reduce((p,[i,j])=>[p[0]+i/cells.length,p[1]+j/cells.length],[0,0]);
@@ -82,6 +83,8 @@ export function restoreSpace(saved){
 }
 export function zonesForSpace(space){const data=restoreSpace(space);return MAP.zones.map(z=>({...z,rows:z.rows+(z.floor===1?data.unlockedRows:0),locked:z.floor===2?!data.floor2Unlocked:z.locked}));}
 
-// Display size, adjust when 그림이 gives table-item spec. Layout only, not a gameplay number.
-export const TABLE_ITEM_LAYOUT={size:[36,36],offset:[0,-42]};
+// starting value 똑또기 2026-10-14, pending user batch confirm: one item per table cell, centred on that cell's table top,
+// displayed at 35% of the cell width. offset = table-top point above the cell centre (image px; layout only).
+export const TABLE_ITEM_LAYOUT={cellWidthFrac:.35,offset:[0,-25]}; // offset: table-top centre measured from furn-tea-table-v4 opaque top face (top vertex y36, half-width 56.5 => left/right vertices y≈68 => centre y≈68) minus anchor y93
+export const tableItemSize=zone=>zone.cell.w*TABLE_ITEM_LAYOUT.cellWidthFrac;
 export function tableItemEntries(world){return (world?.custs||[]).filter(c=>c.phase==='seated'&&c.itemSlot&&c.order).map(c=>({tableItem:c,origin:c.itemSlot.cell,cells:[c.itemSlot.cell]}));}

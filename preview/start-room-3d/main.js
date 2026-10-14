@@ -273,7 +273,7 @@ function refresh(){if(s.cafe.level>observedCafeLevel){toast(`카페 Lv ${s.cafe.
 
 // ───────── loop ─────────
 let last=performance.now(),saveT=0;
-function step(dt){if(temp&&!w.behaviour)S.enableTempBehaviour(w);const now=clock.now();
+function step(dt){const now=clock.now();
  if(s.started&&s.settings.language){S.consumeElapsed(s,w,dt,now);S.settleHearts(s,now);}
  handleEvents();if(ui.toastT>0&&(ui.toastT-=dt)<=0)$('toast').style.opacity=0;
  if(ui.sel!=null&&!w.sh[ui.sel])ui.sel=null;refresh();

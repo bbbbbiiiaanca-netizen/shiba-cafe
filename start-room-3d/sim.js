@@ -1,4 +1,3 @@
-import {TEMP_BEHAVIOUR} from './config.js';
 import {linkTable,faceCell,layout,seatSlots,pathfind,routeTo,moveCell,syncRoutes} from './navigation.js';
 export {seatSlots,syncRoutes,pathfind};
 // Spec v3 game core — pure logic (no DOM), deterministic with an injected RNG so tests can replay it.
@@ -300,8 +299,10 @@ function spawn(s,w,now){const {zone,slots,entrance}=layout(s,w);
  if(!Number.isFinite(CFG.navigation.cellStepSec)||CFG.navigation.cellStepSec<=0||!pathfind(zone,slots,entrance,entrance))return;
  const c={id:w.nextCust++,kind:pick(w.r,NPC_NORMAL),cell:[...entrance],entryFrom:[entrance[0],entrance[1]+1]};
  if(!w.queue.length&&seat(s,w,c))return;
- if(CFG.cafe.queueMax==null||w.queue.length<CFG.cafe.queueMax){c.phase='queue';c.t=CFG.navigation.queueWaitSec;w.queue.push(c);w.events.push({type:'queue',id:c.id});}
- else{s.stats.lost++;w.events.push({type:'lost'});}}
+ if(w.queue.length<queueLimit(s,w)){c.phase='queue';c.t=CFG.navigation.queueWaitSec;w.queue.push(c);w.events.push({type:'queue',id:c.id});}
+ else{s.stats.lost++;w.events.push({type:'lost'});}} // overflow guests turn back
+// starting value 똑또기 2026-10-14: queue only on the grass cells outside the entrance (capped by 갱신 66 queueMax)
+const queueLimit=(s,w)=>Math.min(CFG.cafe.queueMax??Infinity,layout(s,w).zone.queueCells?.length??0);
 function approach(s,w,sh,c){const {zone,slots}=layout(s,w);const targets=[[1,0],[-1,0],[0,1],[0,-1]].map(([i,j])=>[c.cell[0]+i,c.cell[1]+j]);const target=targets.find(p=>!Object.values(w.sh).some(other=>other!==sh&&(other.target||other.cell)?.join(',')===p.join(','))&&pathfind(zone,slots,sh.cell,p));if(!target)return false;sh.state='approachGuest';sh.phase='approach';sh.cust=c.id;c.with=sh.id;routeTo(s,w,sh,target);return true;}
 function startMeeting(s,w,sh,c,ctx){const o=byId(s,sh.id);
  // 갱신 100: the shiba shows one learned trick — a random learned one, independent of the request
@@ -310,11 +311,11 @@ function startMeeting(s,w,sh,c,ctx){const o=byId(s,sh.id);
  const score=meetingScore(o,shown?o.tricks[shown]:0);c.score=isUnset(c.score)||isUnset(score)?null:c.score+score;c.met.push(o.id);c.with=o.id;
  if(req&&!c.fulfilled&&((req.type==='meetShiba'&&req.shibaId===o.id)||(req.type==='seeTrick'&&shown===req.trick)))c.fulfilled=true;
  c.activity='play';sh.state='play';sh.phase='meet';sh.t=CFG.visit.meetSec;sh.cust=c.id;w.events.push({type:'meet',shibaId:o.id,custId:c.id,trick:shown,fulfilled:c.fulfilled});}
-function endMeeting(w,sh){const c=w.custs.find(c=>c.id===sh.cust);if(c&&c.with===sh.id){c.with=null;c.activity='interact';}sh.state='wander';sh.phase='roam';sh.t=CFG.visit.roamSec;sh.cooldown=behaviour(w).cooldownSec;sh.cust=null;sh.route=null;sh.target=null;}
+function endMeeting(w,sh){const c=w.custs.find(c=>c.id===sh.cust);if(c&&c.with===sh.id){c.with=null;c.activity='interact';}sh.state='wander';sh.phase='roam';sh.t=0;sh.roamT=CFG.visit.roamSec;sh.cust=null;sh.route=null;sh.target=null;}
 function managerCanFulfil(s,c){const q=c.request;if(!q)return false;const working=s.shibas.filter(o=>canWork(s,o));
  return q.type==='meetShiba'?working.some(o=>o.id===q.shibaId):q.type==='seeTrick'?working.some(o=>o.tricks[q.trick]>0):false;} // 갱신 118: 인테리어·진상 요구는 못 함
 function leave(s,w,c,ctx){const V=CFG.visit,E=CFG.cafeExp;let outcome,repD=0,exp=0,byManager=false;
- if(c.fulfilled){outcome='satisfied';repD=satisfiedGain(s.cafe.rep);exp=E.custSatisfied;}
+ if(c.fulfilled){outcome='satisfied';repD=satisfiedGain(s.cafe.rep,CFG.requests.metRep);exp=E.custSatisfied;} // price unchanged: the order was fixed at sit
  else if(managerActive(s,ctx.now)&&managerCanFulfil(s,c)&&w.r()<CFG.requests.managerChance){outcome='satisfied';byManager=true;repD=satisfiedGain(s.cafe.rep,CFG.rep.satisfied*CFG.requests.managerRepMul);exp=0;}
  else if(!isUnset(c.score)&&c.score<V.scoreDisappointedBelow){outcome='disappointed';repD=CFG.rep.disappointed;exp=E.custDisappointed;}
  else{outcome='normal';repD=CFG.rep.normal;exp=E.custNormal;}
@@ -344,7 +345,10 @@ export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};settleLedger(s,now);syn
  for(const c of [...w.custs]){
   if(c.phase==='exiting'){if(moveCell(c,dt,CFG.navigation.cellStepSec)){w.custs=w.custs.filter(x=>x!==c);w.events.push({type:'exit',id:c.id});}continue;}
   if(c.phase==='entering'){if(moveCell(c,dt,CFG.navigation.cellStepSec)){c.phase='seated';c.activity='eat';c.eatRemaining=behaviour(w).eatSec;c.order=chooseOrder(s,false,w.r);linkTable(s,w,c);w.events.push({type:'seat',id:c.id},{type:'order',id:c.id,order:c.order.id,orderImg:c.order.img,cell:[...c.cell]},{type:'serve',id:c.id,order:c.order.id});}continue;}
-  if(c.activity==='eat'&&Number.isFinite(c.eatRemaining)){c.eatRemaining-=dt;if(c.eatRemaining<=0)c.activity='interact';}c.t-=dt;if(c.t<=0){if(c.with!=null&&w.sh[c.with])endMeeting(w,w.sh[c.with]);leave(s,w,c,ctx);if(C.closed)return w;}}
+  const eating=c.activity==='eat'&&Number.isFinite(c.eatRemaining);if(eating){c.eatRemaining-=dt;if(c.eatRemaining<=0)c.activity='interact';}c.t-=dt;
+  // starting value 똑또기 2026-10-14: the visit may run past stayingSec while eating (finite eatSec) or playing; eatSec null keeps the plain 30 s visit
+  if(c.t<=0&&(c.activity==='play'||c.activity==='eat'&&Number.isFinite(c.eatRemaining)))continue;
+  if(c.t<=0){if(c.with!=null&&w.sh[c.with])endMeeting(w,w.sh[c.with]);leave(s,w,c,ctx);if(C.closed)return w;}}
  while(w.queue.length){if(!seat(s,w,w.queue[0]))break;w.queue.shift();}
  // shibas: 갱신 70 손님 곁 7초 → 5초 돌아다님 → 다시 7초
  const work=new Set(s.shibas.filter(o=>canWork(s,o)).map(o=>o.id));
@@ -352,16 +356,22 @@ export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};settleLedger(s,now);syn
  for(const id of work)if(!w.sh[id])w.sh[id]={id,phase:'roam',state:'wander',facing:0,t:0,cust:null,cell:layout(s,w).entrance&&[...layout(s,w).entrance]};
  // 139-1·139-2: 카페 근무 1시간마다 발바닥 1 (매니저가 운영하는 시간 포함, 오프라인 12시간 정산 안에서)
  for(const id of work){const o=byId(s,id);o.workAcc=(o.workAcc||0)+dt;while(o.workAcc>=3600){o.workAcc-=3600;addPaws(o,CFG.activityPaws.cafeWorkHour);}}
- for(const sh of Object.values(w.sh)){if(Number.isFinite(sh.t))sh.t-=dt;if(Number.isFinite(sh.cooldown))sh.cooldown=Math.max(0,sh.cooldown-dt);
+ for(const sh of Object.values(w.sh)){if(Number.isFinite(sh.t))sh.t-=dt;if(Number.isFinite(sh.roamT))sh.roamT-=dt;
   if(sh.phase==='approach'){const c=w.custs.find(c=>c.id===sh.cust&&c.phase==='seated');if(!c){endMeeting(w,sh);continue;}if(moveCell(sh,dt,CFG.navigation.shibaCellStepSec)){faceCell(sh,c.cell);startMeeting(s,w,sh,c,ctx);}continue;}
   if(sh.phase==='meet'&&sh.t<=0)endMeeting(w,sh);
   if(sh.phase==='meet'){sh.state='play';continue;}
-  const B=behaviour(w);if(!Object.values(B.weights).every(Number.isFinite)||!Object.values(B.durations).every(Number.isFinite))continue;
-  if(sh.phase==='roam'&&sh.t<=0){sh.state=weightedState(w,B.weights);sh.t=B.durations[sh.state]??B.cooldownSec;
-   if(sh.state==='approachGuest'&&!(sh.cooldown>0)){const free=w.custs.filter(c=>c.phase==='seated'&&c.activity!=='eat'&&c.with==null);for(const c of free)if(approach(s,w,sh,c))break;}
-   if(sh.state==='walk'){const {zone,slots}=layout(s,w),targets=[];for(let i=0;i<zone.cols;i++)for(let j=0;j<zone.rows;j++)if(pathfind(zone,slots,sh.cell,[i,j])?.length)targets.push([i,j]);if(targets.length)routeTo(s,w,sh,pick(w.r,targets));}
-  }
-  if(sh.state==='walk'&&sh.phase==='roam')moveCell(sh,dt,CFG.navigation.shibaCellStepSec);
+  const B=behaviour(w);if(!behaviourReady(B))continue; // any null odds/duration keeps the shiba still (manual delivery still works)
+  // starting value 똑또기 2026-10-14: after roamSec the shiba seeks a guest who has finished eating and has no shiba
+  // (guests who have met the fewest shibas first, so one shiba spreads its visits)
+  if(!(sh.roamT>0)&&w.custs.filter(c=>c.phase==='seated'&&c.activity!=='eat'&&c.with==null&&c.t>0).sort((a,b)=>(a.met?.length||0)-(b.met?.length||0)).some(c=>approach(s,w,sh,c)))continue;
+  if(sh.state==='walk'&&sh.route?.length){moveCell(sh,dt,CFG.navigation.shibaCellStepSec);continue;}
+  if(sh.t>0)continue;
+  sh.state=weightedState(w,B.weights);sh.route=null;sh.target=null;
+  if(sh.state!=='walk'){sh.t=B.durations[sh.state];continue;}
+  // walk 2–4 cells: a reachable cell exactly n steps away, else any within the range; boxed in → pick again next tick
+  const {zone,slots}=layout(s,w),[lo,hi]=B.walkCells,n=lo+Math.floor(w.r()*(hi-lo+1)),near=[];
+  for(let i=0;i<zone.cols;i++)for(let j=0;j<zone.rows;j++){const len=pathfind(zone,slots,sh.cell,[i,j])?.length;if(len>=lo&&len<=hi)near.push({cell:[i,j],len});}
+  const exact=near.filter(x=>x.len===n),list=exact.length?exact:near;if(list.length)routeTo(s,w,sh,pick(w.r,list).cell);else sh.state='wander';sh.t=0;
  }
  for(let n=0;n<w.queue.length;n++){const c=w.queue[n],cell=layout(s,w).zone.queueCells?.[n];if(cell){if(c.queueTarget?.join(',')!==cell.join(',')){c.queueTarget=[...cell];c.route=[];const direction=Math.sign(cell[1]-c.cell[1]);for(let j=c.cell[1]+direction;direction&&j!==cell[1]+direction;j+=direction)c.route.push([cell[0],j]);c.moveAcc=0;}moveCell(c,dt,CFG.navigation.cellStepSec);}}
 
@@ -437,4 +447,6 @@ export function consumeElapsed(s,w,elapsedSec,now,{maxSteps=240,offline=false}={
 
 function behaviour(w){return w.behaviour||CFG.behaviour;}
 function weightedState(w,weights){let n=w.r()*Object.values(weights).reduce((a,b)=>a+b,0);for(const [state,weight] of Object.entries(weights)){n-=weight;if(n<0)return state;}return 'lookAround';}
-export function enableTempBehaviour(w){w.behaviour=structuredClone(TEMP_BEHAVIOUR);return w;}
+// every state that can be drawn needs its duration (walk: its cell range); otherwise autonomous behaviour stays gated
+export function behaviourReady(B){const W=B?.weights,ws=W?Object.values(W):[];if(!ws.length||!ws.every(Number.isFinite)||!(ws.reduce((a,b)=>a+b,0)>0))return false;
+ return Object.entries(W).every(([k,v])=>!(v>0)||(k==='walk'?Array.isArray(B.walkCells)&&B.walkCells.every(Number.isInteger)&&B.walkCells[0]>=1&&B.walkCells[0]<=B.walkCells[1]:Number.isFinite(B.durations?.[k])));}
