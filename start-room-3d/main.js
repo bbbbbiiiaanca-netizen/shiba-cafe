@@ -79,7 +79,7 @@ function renderMainMenu(){
  $('paws').textContent=fmt(s.shibas.reduce((n,sh)=>n+(sh.paws||0),0));$('paws').parentElement.title='발바닥 '+$('paws').textContent;
  const sig=JSON.stringify([mainTab,ui.seen.menuDone,s,w.custs.map(c=>[c.phase,c.request]),w.queue.length,w.recent,ui.accType,iso.edit,s.settings.language,CFG.itemIncome.boostMul,CFG.stub.expBoost.mul,Math.floor(now/1000)]);
  if(sig===menuSig)return;menuSig=sig;
- const headers={manage:['가게관리','카페 현황 · 메뉴 개발 · 알바'],shiba:['시바들','돌봄 · 레벨업'],village:['마을','병원 · 산책 · 데이케어 · 훈련'],bag:['가방','가구 · 아이템 · 액세서리'],shop:['상점','반다나 · 다이아 · 해금']};const [title,hint]=headers[mainTab];// §17-4: 가게 관리 shows one short summary line instead of the hint ('착석 2 · 대기 2'; '결제 미정' only while the last payment is undecided)
+ const headers={manage:['가게관리','카페 현황 · 메뉴 개발 · 알바'],shiba:['시바들','돌봄 · 레벨업'],village:['마을','병원 · 산책'],bag:['가방','가구 · 아이템 · 액세서리'],shop:['상점','반다나 · 다이아 · 해금']};const [title,hint]=headers[mainTab];// §17-4: 가게 관리 shows one short summary line instead of the hint ('착석 2 · 대기 2'; '결제 미정' only while the last payment is undecided)
  document.querySelector('.menu-heading').innerHTML=title+(mainTab==='manage'?` <small data-customer-status>착석 ${w.custs.filter(c=>c.phase==='seated').length} · 대기 ${w.queue.length}${w.recent.at(-1)?.pending?' · 결제 미정':''}</small>`:' <small>'+hint+'</small>');
  $('menuList').classList.add('tab-list');
  // §17: 가게 관리 = café status + popup buttons only (the old menu card grid is gone; 메뉴 개발 lives in its popup)

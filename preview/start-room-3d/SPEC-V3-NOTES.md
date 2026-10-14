@@ -783,9 +783,15 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 
 ## 2026-10-15 nav restructure + fonts (user request)
 - Bottom tabs: 마을 / 시바들 / 가게관리 (centre) / 상점 / 가방. 알바 moved into 가게관리 (below café status); 가구 inventory, boosts/tickets/walls, heart reset, potions and accessory bag moved to 가방. 상점 keeps unlocks, bandana shop, gacha, diamond list.
-- 마을: place slots (병원 → opens 시바들 for treatment, 산책, 데이케어, 훈련소) on an empty cream area; existing card icons reused; no scenery drawn.
+- 마을 (§17-10): starts with only 병원 (→ 시바들 for treatment) and 산책; 데이케어/훈련 stay in 가게관리 → 알바 고르기. Header hint '병원 · 산책'. Icons + names only, no drawn scenery.
 - Fonts: Jua (titles/buttons/tabs/numbers) + Gowun Dodum (body), both SIL OFL 1.1, bundled as WOFF2 in assets/fonts (LICENSES.md).
 - Global centring CSS layer for buttons/pills/badges/tabs/popup titles.
 ### Art requests
 - Village map background + building art: 병원, 산책로, 데이케어, 훈련소.
 - Tab icons: 마을, 시바들 (currently first-shiba portrait), 가게관리 (currently M-01 drink), 가방; 병원 place icon.
+
+## Task B — status update (2026-10-15 08:20 KST)
+- Resolved by user: separate **땅 넓히기** ledger line, hidden at 0 (confirmed). Land costs 170,000멍 ×1.6 per row (user-given starting values); rounding to nearest 1,000멍 still pending confirm. Start coins 30,000 (user-given starting value).
+- Art resolved: rear walls now use approved 벽_방벽_연장 왼쪽/오른쪽 (128×244, anchor (64,180)), one per expanded row; new floor uses 타일_바닥_다다미_v3 (128×64). The earlier wall-inner fallback and tatami-room-crop are no longer drawn for expansion.
+- Validation: browser smoke and `--u12b` / `--final` captures were run outside the sandbox and pass (190/190).
+- Still waiting (not built): outer-wall seam/junction pieces where extensions meet the original diorama walls; 2F diamond price.

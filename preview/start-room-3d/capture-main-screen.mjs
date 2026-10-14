@@ -175,7 +175,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev('__game.state.hearts=3;__game.refresh();true');await click('#hud [data-act=hearts]');await shot('main-screen-nav-hearts.png');
  await ev('__game.ui.modals=[];__game.refresh();true');await click('[data-act=ledger]');await shot('main-screen-nav-ledger.png');
  await ev('__game.ui.modals=[];__game.state.wallOwned=3;__game.refresh();true');await click('[data-main-tab=bag]');
- await ev(`(()=>{const a=document.querySelector('[data-furniture-card=wall]');if(!a)throw Error('no wall card in 가방');a.scrollIntoView({block:'center'});return true;})()`);await shot('main-screen-nav-walls-inv.png');
+ await ev(`(()=>{const a=document.querySelector('[data-furniture-card=wall]');if(!a)throw Error('no wall card in 가방');const L=document.getElementById('menuList');L.scrollTop=a.offsetTop-L.offsetTop-L.clientHeight/2+a.offsetHeight/2;return true;})()`);await new Promise(r=>setTimeout(r,300));if(!(await ev(`(()=>{const a=document.querySelector('[data-furniture-card=wall]').getBoundingClientRect(),L=document.getElementById('menuList').getBoundingClientRect(),T=document.getElementById('mainTabs').getBoundingClientRect();return a.top>=L.top&&a.bottom<=Math.min(L.bottom,T.top);})()`)))throw Error('wall card not fully visible');await shot('main-screen-nav-walls-inv.png');
  await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.alba.manager.unlock;g.state.coins=g.CFG.alba.manager.cost;g.S.hireAlba(g.state,'manager',[],g.clock.now());for(let k=0;k<3;k++)g.step(g.CFG.navigation.cellStepSec);g.refresh();return true;})()`);
  await click('[data-main-tab=manage]');await shot('main-screen-nav-manager.png');
  }
