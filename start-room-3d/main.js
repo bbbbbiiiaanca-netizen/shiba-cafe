@@ -51,15 +51,15 @@ function renderHUD(){const now=clock.now();$('coins').textContent=fmt(s.coins);$
  $('closed').hidden=!C.closed;$('closed').textContent=L('hud.closed');}
 
 let sceneSig='';
-const iso=createIsoMap($('isomap'),{onChange:()=>persist(),onExpand:()=>toast('상점 준비 중이에요'),onBlocked:()=>toast('다른 가구와 겹치거나 방 밖으로 나갈 수 없어요.'),onEditChange:()=>{mainTab='furniture';menuSig='';renderMainMenu();}});
+const iso=createIsoMap($('isomap'),{onChange:()=>{S.syncRoutes(s,w);persist();},onExpand:()=>toast('상점 준비 중이에요'),onBlocked:()=>toast('다른 가구와 겹치거나 방 밖으로 나갈 수 없어요.'),onEditChange:()=>{mainTab='furniture';menuSig='';renderMainMenu();}});
 function renderScene(){iso.draw(s,w);renderMainMenu();}
 let menuSig='',mainTab=iso.edit?'furniture':'menu';
 function renderMainMenu(){
  document.querySelectorAll('[data-main-tab]').forEach(b=>b.classList.toggle('active',b.dataset.mainTab===mainTab));
  $('paws').textContent=fmt(s.shibas.reduce((n,sh)=>n+(sh.paws||0),0));
- const now=clock.now(),sig=JSON.stringify([mainTab,s,ui.accType,iso.edit,s.settings.language,Math.floor(now/1000)]);
+ const now=clock.now(),sig=JSON.stringify([mainTab,s,w.custs.map(c=>[c.phase,c.request]),w.queue.length,w.recent,ui.accType,iso.edit,s.settings.language,Math.floor(now/1000)]);
  if(sig===menuSig)return;menuSig=sig;
- const headers={menu:['메뉴 개발','새로운 맛을 준비해요'],shiba:['시바','돌봄 · 레벨업 · 산책'],furniture:['가구','보유 가구 · 배치'],store:['가게','반다나 · 액세서리 · 가방']};const [title,hint]=headers[mainTab];document.querySelector('.menu-heading').innerHTML=title+' <small>'+hint+'</small>';
+ const headers={menu:['메뉴 개발','새로운 맛을 준비해요'],shiba:['시바','돌봄 · 레벨업 · 산책'],furniture:['가구','보유 가구 · 배치'],store:['가게','반다나 · 액세서리 · 가방']};const [title,hint]=headers[mainTab];document.querySelector('.menu-heading').innerHTML=title+' <small>'+hint+'</small>'+ (mainTab==='menu'?`<div data-customer-status style="font-size:11px;font-weight:normal">손님 · 착석 ${w.custs.filter(c=>c.phase==='seated').length} / 대기 ${w.queue.length} · 이동 ${w.custs.filter(c=>c.phase!=='seated').length}<br>${w.custs.some(c=>c.phase==='seated')?'요구 · 시바 만나기 / 재주 보기 · ':''}${w.recent.map(x=>`${x.order} · ${x.pending?'결제 미정':'+'+f2(x.coins)+' 멍코인'}`).join(' / ')}</div>`:'');
  $('menuList').classList.toggle('tab-list',mainTab!=='menu');
  if(mainTab!=='menu'){const content=mainTab==='shiba'?P.shibas().html:mainTab==='store'?P.shop().html:`<button data-edit-toggle aria-pressed="${iso.edit}">${iso.edit?'편집 끝':'배치 편집'}</button><section class="furniture-section" aria-labelledby="furniture-heading"><h3 id="furniture-heading">가구</h3><div class="furniture-grid">${CFG.furniture.items.filter(({id})=>s.placement.slots.some(slot=>slot.type===({'tea-table':'table',zabuton:'cushion'}[id]||id))).map(({id,name})=>`<article class="furniture-card" data-furniture-card="${id}"><img class="furniture-icon" src="assets/drive/ui/ui-icon-${id}.png" alt=""><strong>${name}</strong></article>`).join('')}</div></section>`;const scroll=$('menuList').scrollTop;$('menuList').innerHTML=content;$('menuList').scrollTop=scroll;if(mainTab==='furniture'&&iso.edit)$('menuList').prepend(iso.actions);$('menuList').querySelector('[data-edit-toggle]')?.addEventListener('click',()=>{iso.setEdit(!iso.edit);});return;}
  const items=[CFG.menu.coffee,...CFG.menu.items].sort((a,b)=>a.id.localeCompare(b.id));
@@ -69,12 +69,11 @@ function renderMainMenu(){
  }).join('');
 }
 document.querySelectorAll('[data-main-tab]').forEach(b=>b.addEventListener('click',()=>{close();mainTab=b.dataset.mainTab;menuSig='';document.querySelectorAll('[data-main-tab]').forEach(x=>x.classList.toggle('active',x===b));close();renderMainMenu();}));
-function popAt(el,text,orderImg){if(!el)return;const sc=$('scene').getBoundingClientRect(),b=el.getBoundingClientRect();const p=document.createElement('div');p.className='pop';p.textContent=text;
- if(orderImg){const i=document.createElement('img');i.src='assets/drive/'+orderImg;p.prepend(i);} // 갱신 134: the ordered menu's picture
- p.style.left=(b.left-sc.left+4)+'px';p.style.top=(b.bottom-sc.top-30)+'px';$('scene').appendChild(p);setTimeout(()=>p.remove(),1500);}
 function handleEvents(){for(const e of w.events.splice(0)){
  if(e.type==='menuDone')toast(L('toast.menuDone',{name:L('menu.'+e.id)}));
- if(e.type==='leave'){const el=document.querySelector(`[data-seat="${e.seat}"],[data-cust="${e.id}"]`);popAt(el,`+${f2(e.coins)} ${L('out.'+e.outcome)}`,e.orderImg);}
+ if(e.type==='order')toast(`${L('menu.'+e.order)} · 주문 / 제공`);
+ if(e.type==='leave'){w.feedback={...e};setTimeout(()=>{if(w.feedback?.id===e.id){w.feedback=null;iso.draw(s,w);}},1500);}
+ if(e.type==='leave')toast(e.coins==null?`${L('menu.'+e.order)} · 결제 미정`:`+${f2(e.coins)} 멍코인`);
 }
  while(s.walkResults.length)ui.modals.push({kind:'walkResult',res:s.walkResults.shift()});}
 
@@ -266,7 +265,7 @@ function refresh(){if(s.cafe.level>observedCafeLevel){toast(`카페 Lv ${s.cafe.
 // ───────── loop ─────────
 let last=performance.now(),saveT=0;
 function step(dt){const now=clock.now();
- if(s.started&&s.settings.language){S.tick(s,w,dt,now);S.settleHearts(s,now);}
+ if(s.started&&s.settings.language){S.consumeElapsed(s,w,dt,now);S.settleHearts(s,now);}
  handleEvents();if(ui.toastT>0&&(ui.toastT-=dt)<=0)$('toast').style.opacity=0;
  if(ui.sel!=null&&!w.sh[ui.sel])ui.sel=null;refresh();
  if((saveT+=dt)>=2){saveT=0;persist();}}
@@ -274,9 +273,10 @@ function step(dt){const now=clock.now();
 function catchUp(ms){const now=clock.now(),o=S.fastForward(s,w,now-ms,now,{offline:true});
  if(s.cafe.closed){const re=S.reopenCafe(s,now);ui.modals.push({kind:'offline',o,closed:!!re});w=S.newWorld(s,r);}else if(ms>=60e3)ui.modals.push({kind:'offline',o,closed:false});return o;}
 function advance(ms,offline=false){clock.offset+=ms;if(offline)return catchUp(ms);const now=clock.now(),o=S.fastForward(s,w,now-ms,now,{offline:false});refresh();return o;}
-function frame(t){let dt=(t-last)/1000;last=t;if(Q.get('still')){requestAnimationFrame(frame);return;}
- if(dt>5&&s.started){catchUp(dt*1000);dt=0;}step(Math.min(dt,.25));requestAnimationFrame(frame);}
+function frame(t){let dt=(t-last)/1000;last=t;if(document.hidden){requestAnimationFrame(frame);return;}if(Q.get('still')){requestAnimationFrame(frame);return;}
+ step(Math.max(0,dt));requestAnimationFrame(frame);}
+let hiddenAt=null;
 addEventListener('pagehide',()=>persist());
-document.addEventListener('visibilitychange',()=>{if(document.hidden)persist();});
-const game={CFG,S,iso,get state(){return s;},get world(){return w;},step:(dt=.1)=>{step(dt);return {custs:w.custs.length,queue:w.queue.length,coins:s.coins};},advance,open,close,clock,ui,refresh};
+document.addEventListener('visibilitychange',()=>{if(document.hidden){hiddenAt=clock.now();persist();}else if(hiddenAt!=null){catchUp(clock.now()-hiddenAt);hiddenAt=null;last=performance.now();}});
+const game={CFG,S,iso,get characterPositions(){return [...w.custs,...w.queue,...Object.values(w.sh)].map(c=>({id:c.id,phase:c.phase,cell:c.cell&&[...c.cell]}));},get state(){return s;},get world(){return w;},step:(dt=.1)=>{step(dt);return {custs:w.custs.length,queue:w.queue.length,coins:s.coins};},advance,open,close,clock,ui,refresh};
 window.__game=game;applyStatic();refresh();requestAnimationFrame(frame);window.__ready=true;

@@ -93,7 +93,7 @@ Source: `shiba-cafe-docs/spec-v3-build/spec-v3.md` (최신 갱신 140-1 기준; 
 5a. **메뉴 그림**: '개발한 것에서 무작위'를 주문 종류 안에서로 읽음 — 음료 주문은 개발한 일반 음료 중, 디저트는 개발한 일반 디저트 중, 프리미엄은 개발한 프리미엄 중, 기본 커피는 M-01. 판매가는 그 메뉴의 표 가격(음료 3·디저트 5·프리미엄 8 = 120의 고급 음료·고급 디저트 가격과 같음).
 5b. **프리미엄만 개발**하고 일반 디저트가 없으면 디저트 주문 자리가 기본 커피가 되므로 프리미엄도 나오지 않는다(프리미엄은 고급 디저트 주문에서만 바뀜).
 5c. 이전 v3 저장의 `premiumDrink`/`premiumDessert` 같은 없는 메뉴 id는 불러올 때 지운다.
-6. **레벨 효과**: 그 손님이 만난 시바들의 평균 레벨 효과, 아무도 못 만났으면 ×1. 실망한 손님도 커피 값은 낸다(갱신 120 "손님 1명은 기본으로 1멍").
+6. **레벨 효과**: superseded by config audit / Unit 4: aggregation and no-meeting multiplier are null. No average or ×1 production fallback; payments are pending.
 7. **매니저**는 '보통'으로 끝날 손님에게만 30% 굴림(실망 손님은 대상 아님).
 8. **줄이 10명 꽉 찼을 때** 오는 손님은 들어오지 않음(통계 `lost`, 평판 영향 없음).
 9. **임시휴무**는 오프라인(앱을 닫았거나 탭이 숨겨진 동안)에만. 온라인에서는 갱신 87의 '<30 ×1.2' 규칙대로 30 아래로 내려갈 수 있다. 오프라인 12시간을 넘긴 시간에는 카페 수익·평판이 멈추고 산책 종료·퇴원·하트 회복만 정산.
@@ -105,7 +105,7 @@ Source: `shiba-cafe-docs/spec-v3-build/spec-v3.md` (최신 갱신 140-1 기준; 
 15. **마지막 시바는 파양 불가** (공학적 보호: 뽑기가 UNSET이라 시바를 다시 얻을 길이 산책 구조뿐 — 스펙 규칙 아님, 바꾸기 쉬움).
 16. **시작값 미정**: 코인·게이지·친밀도 null 유지. 구조견 데려오기 비활성. 임의 끝값을 사용하지 않음.
 17. **알바 쿨타임**은 '쿨타임이 끝난 시바만' 맡길 수 있음(123-4 문장), 쿨타임 제거권은 유료(다이아)라 결제 미연결.
-18. **탭이 5초 넘게 숨겨졌다가 돌아오면** 앱을 닫았다 연 것과 같이 오프라인 규칙으로 따라잡는다.
+18. **Hidden tab**: explicit visibility transitions use offline rules; visible frame lag retains elapsed-time debt and stays online (Unit 4, red-team 11).
 19. **저장**: 새 키 `shibaCafe.save.v3`. v1/v2 저장(등급·구 재화 모델)은 건드리지 않고 이어받지 않는다.
 20. **바로 완료 대상**(135-2 '남은 시간이 있는 모든 대기'): 입원, 알바 쿨타임 3종, 메뉴 개발. 산책 진행 시간은 대기가 아니라 활동이라 넣지 않음(멈추기 규칙도 UNSET), 매니저 고용 시간은 서비스 기간이라 넣지 않음, 하트 회복은 111 '하트로 시간 못 줄임'과 별개로 대상 아님.
 21. **발바닥 = 시바별 잔고, 레벨업은 버튼**: 139가 발바닥을 칸 해금에도 쓰게 해서('그만큼 레벨업에 쓸 발바닥이 줄어든다') 자동 레벨업을 없앰. Lv30에서도 발바닥은 쌓임.
@@ -291,3 +291,39 @@ Sources: interior specification §§1,3,4,6,8,9; spec-v3 §1.3, update 56 (singl
 4. When will expanded-row room art and stacked 2층 room/roof/railing art be supplied? Interior §§3,4,9. Expanded rows are data only and 2층 has no room rendering. The upward offset is layout metadata pending supplied art anchors.
 
 Changed files: config.js, map-data.js, sim.js, isomap.js, main.js, index.html, package.json, tests/unit3.test.mjs, tests/smoke-browser.mjs, capture-main-screen.mjs, SPEC-V3-NOTES.md. Mirrored deletion-aware excluding node_modules to preview/start-room-3d; no commit/push.
+
+
+## Unit 4 implementation
+
+The required handoff-v1/spec-v3.md ends at update 36. Later decisions are cited from the existing notes through 140-1 and the matching `/workspace/shiba-cafe-docs/spec-v3-build/spec-v3.md`; spec v3 supersedes core-loop.md. Interior source: `/workspace/shiba-cafe-docs/시바카페_아이소메트릭_인테리어_명세.md`.
+
+| Feature | Spec sections / decisions | Result |
+|---|---|---|
+| Arrival / queue | updates 66–69, 70–75, 87, **132-4** | 100 × café cap/hour, reputation interval multiplier, cap and physical seat reservations, queue max 10 / wait 30 sec; no coin penalty |
+| Seat / routes | interior §§3,5,8; physical seats explicitly requested for Unit 4 | Placed cushion footprint cells are seats; tea tables and all other footprints are obstacles. One guest reserves one cushion, sits ON its target cell; intermediate cushions stay blocked. BFS uses four neighbours and whole cells within the zone grid. Route timing / entrance remain null; production arrivals disabled until configured. |
+| Order / service / payment | updates **120,129,134,134-2,136** | Basic M-01 always available; other menus require completed development. Existing probability/split/premium rules and CFG prices retained. **Selection happens at departure**, after satisfaction is known, per 120. `order → serve → leave(payment) → exit` events record settlement without inventing a cooking timer or early price selection. Developed menu image and +N 멍코인 text are anchored at the seat. |
+| Requests / reputation / XP | updates 70,86,87,100,106,124-4,128 | Reachable shiba approach → meeting; learned trick random. Request satisfaction, damping, ordinary / disappointed results, XP and queue anger retained; unknown income aggregation produces 결제 미정. No customer heart reward/cost exists in spec. Hearts use §1.4 / updates 28,31,32 independently. |
+| Offline / idle | updates **56,126-1–4,136,139-2** | Same core simulation, café income/work capped at 12h, real-time menu development/hearts/walk/hospital settlement preserved. No extra passive income formula imported from core-loop. |
+| 알바 | updates **118,118-1,125-1** (manager); 99/99-2,123,125-1 for other helpers | Existing configured manager request support and cleanup retained; no extra cashier/service helper, salary or automation invented. Helper work grants no café XP; existing paws rules unchanged. |
+| Invisible characters / depth | interior §§2–5; Unit 4 instructions | No shapes or character images drawn. CHAR_SPRITES shiba/guest/dongu files and foot-shadow anchors null. Depth entries join furniture by i+j, characters after furniture at the same sum, room/walls remain the background. Positions exposed through __game.characterPositions for tests. |
+| Feedback | assets/drive/MAP.md lines 33–35,72; update 134 | Confirmed request-bubble-empty_512.png plus confirmed request icons; confirmed M/P menu images. Compact 손님 header in 메뉴 shows seated/waiting/moving and recent order/payment records. Existing tabs unchanged. |
+
+Edit rule (interpretation pending confirmation): a seated guest follows the same cushion id to its new cell without restarting remaining visit time, score, request or meetings. Entering guests reserve that cushion and reroute. Approaching shibas reroute to an adjacent free floor cell; guests walk onto the cushion only as a target. Exiting guests reroute to the entrance. A character whose cell becomes covered by moved furniture may leave that cell, but no subsequent blocked cell may be crossed. Unreachable routes wait for a later layout change; no teleport through obstacles. Shibas take whole-cell approach routes and a free adjacent roaming step within the existing 5-second roam interval. Guest/shiba collisions are not invented.
+
+Red-team scope: **9** belongs here because closure freezes illness/neglect but hospital treatment must still finish; fixed release during closed ticks and restart timestamps (release or newly-zero hunger during closure resumes at reopen, never shifted into the future). **10** belongs here because temporary closure is part of offline customer operation; retained confirmed fatigue→0 / hunger-only decay, all unknown hunger/recovery rates remain null. **11** fixed: visible frame gaps no longer drop time through min(dt,.25) or falsely invoke offline closure. Real elapsed debt is integrated in bounded batches and retained until consumed. 240 steps/frame is an engine work budget, not a gameplay cap; 1-second step is existing offline integration metadata. Only an actual hidden-tab transition invokes offline rules.
+
+Removed / superseded: synthetic numeric seat slots (capacity alone no longer creates seats), instant arrival seating, immediate shiba teleport for delivery, immediate customer removal at payment, dead DOM seat-payment popup lookup, frame-time truncation and >5-second visible-gap offline heuristic. Unsupported average/no-meeting income fallback stays removed/null; non-finite prices/multipliers and unknown encountered shiba levels cannot produce payments. No unsupported hearts, idle income, employee behavior, customer sprites or grass shapes added. Land direction and camera code untouched.
+
+## Unit 4 open questions
+
+1. **Entrance location(s)?** Neither spec-v3 nor interior names a grid entrance. `MAP.zones[*].entrance = null`; configurable per zone, test-only runtime fixtures use an explicit cell. No production arrival until entrance and timing are known.
+2. **Walking time per cell?** `CFG.navigation.cellStepSec = null` (interior §§3,5,8; v3 updates 50/70 define art and meetings, not walking speed). Guest/shiba route traversal waits; tests supply declared speed fixtures.
+3. **Physical seating rules?** Interior §5 defines 1-cell cushions and tea tables, but not capacity/adjacency. Confirm one guest per placed cushion, guest ON cushion target, shiba on adjacent free floor, no mandatory table association; physical seat limit may be lower than café cap (updates 70–75/132-4). Initial placement has only two cushions.
+4. **Meeting-level payment aggregation and no-meeting multiplier?** `CFG.income.levelAggregation = null` (updates 75/120; prior red-team #7). Price is known; total remains null and coins are not awarded. Tests/captures declare a temporary multiplier fixture only.
+5. **Separate order/service timing?** Update 120 explicitly decides menu/payment at departure; no cooking/service duration defined. Current serve event is bookkeeping at settlement, not a timed minigame. Confirm if a separate earlier order or service action is desired before changing this sequence.
+6. **Edited furniture / disconnected routes?** Confirm the same-cushion reseat rule and waiting for a reachable route when exits become blocked (interior §8). No newly invented abandonment timeout or teleport.
+7. **Grass art pending**: interior §12 requires tiled outside grass and conversion on expansion. Await approved grass art/integration; no green shapes drawn and no expansion direction/camera change in Unit 4.
+
+Validation: npm test includes 94 legacy spec acceptance tests with explicit geometry/timing fixtures, existing timeline/map/edit/Unit 3/renderer suites, and 11 Unit 4 tests for lifecycle, obstacles, physical seats, pricing, null gating, edit reseat, depth, frame lag, closure health/rest and hearts. Browser smoke checks and capture scenarios are written but Chrome was not launched in this sandbox. Run `npm run test:browser` and `node capture-main-screen.mjs` on the user's Chrome host. Capture adds main-screen-u4-order.png, main-screen-u4-payment.png and main-screen-u4-panel.png at DPR2 to `/workspace/shiba-cafe-docs/spec-v3-build/`; TEMP fixtures supply entrance, walk timing, gauges and payment aggregation without saving. No screenshots generated here.
+
+Changed files: config.js, sim.js, navigation.js (new), map-data.js, isomap.js, main.js, package.json, capture-main-screen.mjs, tests/spec-v3.test.mjs, tests/unit4.test.mjs (new), tests/smoke-browser.mjs, tests/smoke-steps.mjs, SPEC-V3-NOTES.md. Deletion-aware mirror excludes node_modules; no commit/push.

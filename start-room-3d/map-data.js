@@ -16,9 +16,11 @@ export const MAP_MARKERS={
  expansion:{file:'assets/drive/tiles/marker-expand-land.png',anchor:[64,72]},
  floor2:{file:'assets/drive/ui/ui-lock.png',anchor:[32,32]}
 };
+export const CHAR_SPRITES={shiba:{file:null,anchor:null},guest:{file:null,anchor:null},dongu:{file:null,anchor:null}}; // foot-shadow anchors await supplied art
+export function characterDepthEntries(world){return [...(world?.custs||[]),...(world?.queue||[]),...Object.values(world?.sh||{})].filter(c=>c.cell).map(c=>({character:c,origin:c.cell,cells:[c.cell]}));}
 export const ROOM_BG='assets/drive/room-tatami-noline.png';
 export const MAP={zones:[{
- id:'A',image:ROOM_BG,origin:{x:429,y:181},
+ id:'A',entrance:null,image:ROOM_BG,origin:{x:429,y:181},
  // Display placeholder until expansion land art exists. Alpha scan of 방_기본_다다미_선없음 / 시험
  // front-left rim: lowest opaque pixel (429,614); outer edge y-x/2 <= 401. Offset 0 overlaps
  // 18,193 opaque pixels; offset 1 overlaps zero (smallest whole-row offset).
@@ -31,7 +33,7 @@ export const MAP={zones:[{
   {id:'cushion-front',type:'cushion',origin:[3,3],dir:0},
   {id:'stairs',type:'stairs',origin:[4,0],dir:0,connects:[1,2]}
  ]
-},{id:'B',image:null,origin:{x:429,y:181},cols:6,rows:6,cell:{w:128,h:64},locked:true,unlockCost:null,floor:2,screenOffset:{x:0,y:-615},connects:{zone:'A',slot:'stairs'},slots:[]}]};
+},{id:'B',entrance:null,image:null,origin:{x:429,y:181},cols:6,rows:6,cell:{w:128,h:64},locked:true,unlockCost:null,floor:2,screenOffset:{x:0,y:-615},connects:{zone:'A',slot:'stairs'},slots:[]}]};
 // Placement positions are derived solely from whole-cell footprints.
 export function footprintCentre(item){
  const cells=footprintCells(item);return cells.reduce((p,[i,j])=>[p[0]+i/cells.length,p[1]+j/cells.length],[0,0]);
@@ -39,7 +41,7 @@ export function footprintCentre(item){
 export function compareDepth(a,b){
  const depth=s=>Math.max(...footprintCells(s).map(([i,j])=>i+j));
  const x=s=>{const [i,j]=footprintCentre(s);return i-j;};
- return depth(a)-depth(b)||x(a)-x(b);
+ return depth(a)-depth(b)||Number(Boolean(a.character))-Number(Boolean(b.character))||x(a)-x(b);
 }
 export function cellToImage(col,row,zone=MAP.zones[0]){
  return {x:zone.origin.x+(col-row)*zone.cell.w/2,y:zone.origin.y+(col+row+1)*zone.cell.h/2};
@@ -54,7 +56,7 @@ export function availableDirs(type,sprites=SPRITES){return sprites[type].back?[0
 export function flipDir(dir){return dir^1;}
 export function rotateDir(type,dir,sprites=SPRITES){const dirs=availableDirs(type,sprites);return dirs[(dirs.indexOf(dir)+1)%dirs.length];}
 export function footprintCells(item){
- if(!item.origin)return item.cells; // legacy footprint callers
+ if(item.character||!item.origin)return item.cells; // legacy footprint callers
  const f=SPRITES[item.type].footprint,axis=item.dir%2?(f.axis==='i'?'j':'i'):f.axis;
  return Array.from({length:f.cells},(_,n)=>[item.origin[0]+(axis==='i'?n:0),item.origin[1]+(axis==='j'?n:0)]);
 }

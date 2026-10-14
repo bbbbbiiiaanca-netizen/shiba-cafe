@@ -1,4 +1,4 @@
-import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace} from './map-data.js';
+import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace,CHAR_SPRITES,characterDepthEntries} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
@@ -53,7 +53,8 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
      ctx.beginPath();ctx.moveTo(p.x,p.y-hh);ctx.lineTo(p.x+hw,p.y);ctx.lineTo(p.x,p.y+hh);ctx.lineTo(p.x-hw,p.y);ctx.closePath();ctx.stroke();
     }
    }
-   [...placed].map(s=>drag?.item===s.id?{...s,origin:drag.candidate}:s).sort(compareDepth).forEach(s=>{
+   [...placed,...(z.id==='A'?characterDepthEntries(world):[])].map(s=>drag?.item&&drag.item===s.id?{...s,origin:drag.candidate}:s).sort(compareDepth).forEach(s=>{
+    if(s.character){const meta=CHAR_SPRITES[s.character.kind?'guest':'shiba'];if(meta.file&&meta.anchor)stamp(meta.file,cellToScreen(...s.origin,view,z),meta.anchor);return;}
     const base=SPRITES[s.type];if(!base)return;const sprite=s.dir>=2?base.back:base;if(!sprite)return;
     const im=load(sprite.file),p=cellToScreen(...footprintCentre(s),view,z),spriteScale=scale*sprite.scale;
     if(im.complete&&im.naturalWidth){
@@ -63,6 +64,15 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
      hits.push({id:s.id,x,y,w,h,im,mirrored,view,zone:z});
     }
    });
+   if(z.id==='A'){
+    for(const c of (world.custs||[]).filter(c=>c.phase==='seated'&&c.request&&!c.fulfilled)){
+     const p=cellToScreen(...c.cell,view,z),im=load('assets/drive/request-bubble-empty_512.png');
+     if(im.complete&&im.naturalWidth){const size=36;ctx.drawImage(im,p.x-size/2,p.y-size-18,size,size);}
+     const icon=load(c.request.type==='meetShiba'?'assets/drive/request-icon-shiba_256.png':'assets/drive/request-icon-trick_256.png');
+     if(icon.complete&&icon.naturalWidth)ctx.drawImage(icon,p.x-10,p.y-46,20,20);
+    }
+    const pay=world.feedback;if(pay?.cell){const p=cellToScreen(...pay.cell,view,z);ctx.save();ctx.font='12px sans-serif';ctx.textAlign='center';ctx.fillStyle='#fff0bb';ctx.fillText(pay.coins==null?'결제 미정':`+${pay.coins} 멍코인`,p.x,p.y-20);const im=load('assets/drive/'+pay.orderImg);if(im.complete&&im.naturalWidth)ctx.drawImage(im,p.x-16,p.y-62,32,32);ctx.restore();}
+   }
    if(z.floor===1&&!state.space.floor2Unlocked){
     const stairs=placed.find(s=>s.type==='stairs');
     if(stairs){const p=cellToScreen(...footprintCentre(stairs),view,z);p.y-=(SPRITES.stairs.anchor[1]+36)*scale;

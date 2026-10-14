@@ -1,3 +1,5 @@
+import {layout,seatSlots,pathfind,routeTo,moveCell,syncRoutes} from './navigation.js';
+export {seatSlots,syncRoutes,pathfind};
 // Spec v3 game core — pure logic (no DOM), deterministic with an injected RNG so tests can replay it.
 // Times: `now` is epoch ms; `dt` is seconds. Every number comes from CFG (config.js); UNSET (null) values disable what depends on them.
 import {defaultPlacement,restorePlacement,restoreSpace,zonesForSpace} from './map-data.js';
@@ -146,7 +148,7 @@ export function hospitalCheck(s,id){const sh=byId(s,id);if(!sh)return 'pick';if(
  if(isUnset(s.coins)||s.coins<hospitalCost(s,sh.status==='sick'?'sick':sh.injury))return 'coins';return null;} // 갱신 111-1: 외상 없음
 export function sendToHospital(s,id,now=Date.now(),stayMul=1){if(hospitalCheck(s,id))return null;const sh=byId(s,id),kind=sh.status==='sick'?'sick':sh.injury;
  s.coins-=hospitalCost(s,kind);sh.status='hospital';sh.hospitalKind=kind;sh.hospitalUntil=now+CFG.hospital.stays[kind]*1000*stayMul;return sh;}
-function releaseHospital(s,now){for(const sh of s.shibas)if(sh.status==='hospital'&&now>=sh.hospitalUntil){sh.status='ok';sh.injury=null;sh.hospitalKind=null;sh.sickSince=null;sh.zeroSince=null;updateZero(sh,now);}} // a gauge still at 0 restarts the 2-hour clock
+function releaseHospital(s,now){for(const sh of s.shibas)if(sh.status==='hospital'&&now>=sh.hospitalUntil){sh.status='ok';sh.injury=null;sh.hospitalKind=null;sh.sickSince=null;sh.zeroSince=null;updateZero(sh,s.cafe.closed?s.cafe.closedAt:now);}} // a gauge still at 0 restarts the 2-hour clock
 function tickHealth(s,now){releaseHospital(s,now);for(const sh of s.shibas){
  if(sh.status==='ok'&&sh.zeroSince!=null&&now-sh.zeroSince>=CFG.sick.zeroHours*H){sh.status='sick';sh.sickSince=now;}
  if(sh.status==='sick'&&sh.sickSince!=null&&now-sh.sickSince>=CFG.neglect.donguAfterH*H&&s.coins>=hospitalCost(s,'sick')){ // 갱신 112: 동구가 대신 데려감, 입원 2배
@@ -240,8 +242,9 @@ export function chooseOrder(s,satisfied,r){const M=CFG.menu,p=premiumChance(s.ca
 // 갱신 75·120: level aggregation is UNSET; do not invent an average or a no-meeting multiplier.
 export function payFor(s,met,order,now=Date.now()){
  const aggregate=CFG.income.levelAggregation,item=itemIncomeMul(s,now);
- const lvMul=typeof aggregate==='function'?aggregate(met.map(id=>byId(s,id)).filter(Boolean).map(o=>levelEffect(o.level))):null;
- return {base:order.price,lvMul,item,total:lvMul==null?null:order.price*lvMul*item,pending:lvMul==null};}
+ const effects=met.map(id=>byId(s,id)).filter(Boolean).map(o=>levelEffect(o.level));
+ const lvMul=typeof aggregate==='function'&&effects.every(Number.isFinite)?aggregate(effects):null;
+ const pending=!Number.isFinite(lvMul)||!Number.isFinite(order.price)||!Number.isFinite(item);return {base:order.price,lvMul:pending?null:lvMul,item,total:pending?null:order.price*lvMul*item,pending};}
 
 // ───────────────────────── 얼룩 (갱신 101-3·117-2) ─────────────────────────
 export function cleanStain(s){if(s.cafe.stains<=0)return false;s.cafe.stains--;addCafeExp(s,CFG.cafeExp.stainClean);return true;}
@@ -257,16 +260,22 @@ export function reopenCafe(s,now){const C=s.cafe;if(!C.closed)return null;const 
 
 // ───────────────────────── the café floor (runtime world) ─────────────────────────
 export const NPC_NORMAL=['commuter','mom','dad','girl','boykid','grandma','grandpa','coupleman','couplewoman','friend']; // 갱신 51 (진상·부동산 제외)
-export function newWorld(s,r=Math.random){return {r,t:0,custs:[],queue:[],nextCust:1,spawnT:arrivalInterval(s),sh:{},events:[],lastPay:null};}
+export function newWorld(s,r=Math.random,navigation=null){return {navigation,r,t:0,custs:[],queue:[],nextCust:1,spawnT:arrivalInterval(s),sh:{},events:[],recent:[],lastPay:null};}
 function makeRequest(s,w){const T=[];const working=s.shibas.filter(o=>canWork(s,o));
  if(working.length)T.push('meetShiba');const known=CFG.tricks.filter(t=>working.some(o=>o.tricks[t.id]>0));if(known.length)T.push('seeTrick');
  if(!T.length)return null;const type=pick(w.r,T);return type==='meetShiba'?{type,shibaId:pick(w.r,working).id}:{type,trick:pick(w.r,known).id};}
-function seat(s,w,c){const used=new Set(w.custs.map(x=>x.seat));let i=0;while(used.has(i))i++;
- Object.assign(c,{phase:'seated',seat:i,t:CFG.cafe.stayingSec,score:0,met:[],with:null,fulfilled:false,request:makeRequest(s,w)});w.custs.push(c);w.events.push({type:'seat',id:c.id});}
-function spawn(s,w,now){const c={id:w.nextCust++,kind:pick(w.r,NPC_NORMAL)};
- if(w.custs.length<capOf(s)&&!w.queue.length)seat(s,w,c);
- else if(w.queue.length<CFG.cafe.queueMax){c.phase='queue';c.t=CFG.cafe.queueWaitSec;w.queue.push(c);w.events.push({type:'queue',id:c.id});}
+function seat(s,w,c){const used=new Set(w.custs.filter(c=>c.phase!=='exiting').map(x=>x.seat));const {zone,slots,entrance}=layout(s,w);
+ const target=seatSlots(s,w).find(x=>!used.has(x.id)&&pathfind(zone,slots,c.cell||entrance,x.cell,{seatTarget:true}));
+ if(!target||w.custs.filter(c=>c.phase!=='exiting').length>=capOf(s))return false;
+ Object.assign(c,{phase:'entering',seat:target.id,seatFurniture:target.furnitureId,cell:c.cell||[...entrance],t:CFG.cafe.stayingSec,score:0,met:[],with:null,fulfilled:false,request:makeRequest(s,w)});
+ routeTo(s,w,c,target.cell,true);w.custs.push(c);w.events.push({type:'enter',id:c.id});return true;}
+function spawn(s,w,now){const {zone,slots,entrance}=layout(s,w);
+ if(!Number.isFinite(CFG.navigation.cellStepSec)||CFG.navigation.cellStepSec<=0||!pathfind(zone,slots,entrance,entrance))return;
+ const c={id:w.nextCust++,kind:pick(w.r,NPC_NORMAL),cell:[...entrance]};
+ if(!w.queue.length&&seat(s,w,c))return;
+ if(w.queue.length<CFG.cafe.queueMax){c.phase='queue';c.t=CFG.cafe.queueWaitSec;w.queue.push(c);w.events.push({type:'queue',id:c.id});}
  else{s.stats.lost++;w.events.push({type:'lost'});}}
+function approach(s,w,sh,c){const {zone,slots}=layout(s,w);const targets=[[1,0],[-1,0],[0,1],[0,-1]].map(([i,j])=>[c.cell[0]+i,c.cell[1]+j]);const target=targets.find(p=>pathfind(zone,slots,sh.cell,p));if(!target)return false;sh.phase='approach';sh.cust=c.id;c.with=sh.id;routeTo(s,w,sh,target);return true;}
 function startMeeting(s,w,sh,c,ctx){const o=byId(s,sh.id);
  // 갱신 100: the shiba shows one learned trick — a random learned one, independent of the request
  const learned=CFG.tricks.filter(t=>o.tricks[t.id]>0).map(t=>t.id);const req=c.request;
@@ -274,7 +283,7 @@ function startMeeting(s,w,sh,c,ctx){const o=byId(s,sh.id);
  const score=meetingScore(o,shown?o.tricks[shown]:0);c.score=isUnset(c.score)||isUnset(score)?null:c.score+score;c.met.push(o.id);c.with=o.id;
  if(req&&!c.fulfilled&&((req.type==='meetShiba'&&req.shibaId===o.id)||(req.type==='seeTrick'&&shown===req.trick)))c.fulfilled=true;
  sh.phase='meet';sh.t=CFG.visit.meetSec;sh.cust=c.id;w.events.push({type:'meet',shibaId:o.id,custId:c.id,trick:shown,fulfilled:c.fulfilled});}
-function endMeeting(w,sh){const c=w.custs.find(c=>c.id===sh.cust);if(c&&c.with===sh.id)c.with=null;sh.phase='roam';sh.t=CFG.visit.roamSec;sh.cust=null;}
+function endMeeting(w,sh){const c=w.custs.find(c=>c.id===sh.cust);if(c&&c.with===sh.id)c.with=null;sh.phase='roam';sh.t=CFG.visit.roamSec;sh.cust=null;sh.route=null;sh.target=null;}
 function managerCanFulfil(s,c){const q=c.request;if(!q)return false;const working=s.shibas.filter(o=>canWork(s,o));
  return q.type==='meetShiba'?working.some(o=>o.id===q.shibaId):q.type==='seeTrick'?working.some(o=>o.tricks[q.trick]>0):false;} // 갱신 118: 인테리어·진상 요구는 못 함
 function leave(s,w,c,ctx){const V=CFG.visit,E=CFG.cafeExp;let outcome,repD=0,exp=0,byManager=false;
@@ -282,13 +291,14 @@ function leave(s,w,c,ctx){const V=CFG.visit,E=CFG.cafeExp;let outcome,repD=0,exp
  else if(managerActive(s,ctx.now)&&managerCanFulfil(s,c)&&w.r()<CFG.requests.managerChance){outcome='satisfied';byManager=true;repD=satisfiedGain(s.cafe.rep,CFG.rep.satisfied*CFG.requests.managerRepMul);exp=0;}
  else if(!isUnset(c.score)&&c.score<V.scoreDisappointedBelow){outcome='disappointed';repD=CFG.rep.disappointed;exp=E.custDisappointed;}
  else{outcome='normal';repD=CFG.rep.normal;exp=E.custNormal;}
- const order=chooseOrder(s,outcome==='satisfied',w.r),pay=payFor(s,c.met,order,ctx.now);if(!pay.pending)addCoins(s,pay.total);
+ const order=chooseOrder(s,outcome==='satisfied',w.r);c.order=order;w.events.push({type:'order',id:c.id,order:order.id,orderImg:order.img,cell:[...c.cell]});w.events.push({type:'serve',id:c.id,order:order.id});const pay=payFor(s,c.met,order,ctx.now);if(!pay.pending)addCoins(s,pay.total);
  s.stats.served++;s.stats[outcome]++;addCafeExp(s,exp);w.lastPay={...pay,order:order.id,orderImg:order.img,outcome,met:[...c.met]};
- w.events.push({type:'leave',id:c.id,outcome,coins:pay.total,order:order.id,orderImg:order.img,byManager,seat:c.seat});if(repD)addRep(s,repD,{...ctx,world:w});}
+ w.events.push({type:'leave',id:c.id,outcome,coins:pay.total,order:order.id,orderImg:order.img,byManager,seat:c.seat,cell:c.cell&&[...c.cell]});
+ w.recent.push({id:c.id,order:order.id,coins:pay.total,pending:pay.pending});w.recent=w.recent.slice(-3);c.phase='exiting';routeTo(s,w,c,layout(s,w).entrance);if(repD)addRep(s,repD,{...ctx,world:w});}
 // one step of everything that runs with time (online, or fast-forwarded while the app was closed)
-export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};w.t+=dt;const C=s.cafe;
+export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};syncRoutes(s,w);w.t+=dt;const C=s.cafe;
  const dev=settleMenuDev(s,now);if(dev)w.events.push({type:'menuDone',id:dev}); // 갱신 136: real time, also while closed
- if(C.closed){decayGauges(s,dt,true,now);return w;} // 126-3: 휴무 중엔 배고픔만 (속도 UNSET → 변화 없음)
+ if(C.closed){releaseHospital(s,now);decayGauges(s,dt,true,now);return w;} // 126-3: 휴무 중엔 배고픔만 (속도 UNSET → 변화 없음)
  const wr=tickWalk(s,now,w.r);if(wr)w.events.push({type:'walk',...wr});
  tickHealth(s,now);decayGauges(s,dt,false,now);
  // 얼룩: 배치되어 카페에 있는 시바 1마리당 2시간마다 1개
@@ -302,25 +312,30 @@ export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};w.t+=dt;const C=s.cafe;
  // customers
  w.spawnT-=dt;while(w.spawnT<=0){w.spawnT+=arrivalInterval(s);spawn(s,w,now);}
  for(const c of [...w.queue]){c.t-=dt;if(c.t<=0){w.queue=w.queue.filter(x=>x!==c);s.stats.angry++;w.events.push({type:'angry',id:c.id});addRep(s,CFG.rep.queueAngry,{...ctx,world:w});if(C.closed)return w;}} // 갱신 68·87: 돈은 잃지 않고 평판 −2
- for(const c of [...w.custs]){c.t-=dt;if(c.t<=0){if(c.with!=null&&w.sh[c.with])endMeeting(w,w.sh[c.with]);w.custs=w.custs.filter(x=>x!==c);leave(s,w,c,ctx);if(C.closed)return w;}}
- while(w.queue.length&&w.custs.length<capOf(s))seat(s,w,w.queue.shift());
+ for(const c of [...w.custs]){
+  if(c.phase==='exiting'){if(moveCell(c,dt,CFG.navigation.cellStepSec)){w.custs=w.custs.filter(x=>x!==c);w.events.push({type:'exit',id:c.id});}continue;}
+  if(c.phase==='entering'){if(moveCell(c,dt,CFG.navigation.cellStepSec)){c.phase='seated';w.events.push({type:'seat',id:c.id});}continue;}
+  c.t-=dt;if(c.t<=0){if(c.with!=null&&w.sh[c.with])endMeeting(w,w.sh[c.with]);leave(s,w,c,ctx);if(C.closed)return w;}}
+ while(w.queue.length){if(!seat(s,w,w.queue[0]))break;w.queue.shift();}
  // shibas: 갱신 70 손님 곁 7초 → 5초 돌아다님 → 다시 7초
  const work=new Set(s.shibas.filter(o=>canWork(s,o)).map(o=>o.id));
- for(const id of Object.keys(w.sh).map(Number))if(!work.has(id)){const sh=w.sh[id];if(sh.phase==='meet')endMeeting(w,sh);delete w.sh[id];}
- for(const id of work)if(!w.sh[id])w.sh[id]={id,phase:'roam',t:0,cust:null};
+ for(const id of Object.keys(w.sh).map(Number))if(!work.has(id)){const sh=w.sh[id];if(sh.phase==='meet'||sh.phase==='approach')endMeeting(w,sh);delete w.sh[id];}
+ for(const id of work)if(!w.sh[id])w.sh[id]={id,phase:'roam',t:0,cust:null,cell:layout(s,w).entrance&&[...layout(s,w).entrance]};
  // 139-1·139-2: 카페 근무 1시간마다 발바닥 1 (매니저가 운영하는 시간 포함, 오프라인 12시간 정산 안에서)
  for(const id of work){const o=byId(s,id);o.workAcc=(o.workAcc||0)+dt;while(o.workAcc>=3600){o.workAcc-=3600;addPaws(o,CFG.activityPaws.cafeWorkHour);}}
  for(const sh of Object.values(w.sh)){sh.t-=dt;
+  if(sh.phase==='approach'){const c=w.custs.find(c=>c.id===sh.cust&&c.phase==='seated');if(!c){endMeeting(w,sh);continue;}if(moveCell(sh,dt,CFG.navigation.cellStepSec))startMeeting(s,w,sh,c,ctx);continue;}
   if(sh.phase==='meet'&&sh.t<=0)endMeeting(w,sh);
-  if(sh.phase==='roam'&&sh.t<=0){const free=w.custs.filter(c=>c.with==null);if(free.length){free.sort((a,b)=>a.met.length-b.met.length||a.t-b.t);startMeeting(s,w,sh,free[0],ctx);}}}
+  if(sh.phase==='roam'&&sh.t>0&&sh.cell){if(!sh.route){const {zone,slots}=layout(s,w),target=[[1,0],[-1,0],[0,1],[0,-1]].map(([i,j])=>[sh.cell[0]+i,sh.cell[1]+j]).find(p=>pathfind(zone,slots,sh.cell,p));if(target)routeTo(s,w,sh,target);}moveCell(sh,dt,CFG.navigation.cellStepSec);}
+  if(sh.phase==='roam'&&sh.t<=0){const free=w.custs.filter(c=>c.phase==='seated'&&c.with==null);if(free.length){free.sort((a,b)=>a.met.length-b.met.length||a.t-b.t);approach(s,w,sh,free[0]);}}}
  return w;}
 // 갱신 105: a roaming shiba (not with a guest) can be brought straight to a chosen guest → normal 7-second meeting
-export function deliverCheck(s,w,shibaId,custId){const sh=w.sh[shibaId];if(!sh)return 'notWorking';if(sh.phase==='meet')return 'busy';const c=w.custs.find(c=>c.id===custId);if(!c)return 'cust';if(c.with!=null)return 'custBusy';return null;}
-export function deliver(s,w,shibaId,custId,now=Date.now()){if(deliverCheck(s,w,shibaId,custId))return false;startMeeting(s,w,w.sh[shibaId],w.custs.find(c=>c.id===custId),{now});return true;}
+export function deliverCheck(s,w,shibaId,custId){const sh=w.sh[shibaId];if(!sh)return 'notWorking';if(sh.phase==='meet'||sh.phase==='approach')return 'busy';const c=w.custs.find(c=>c.id===custId);if(!c||c.phase!=='seated')return 'cust';if(c.with!=null)return 'custBusy';return null;}
+export function deliver(s,w,shibaId,custId,now=Date.now()){if(deliverCheck(s,w,shibaId,custId))return false;return approach(s,w,w.sh[shibaId],w.custs.find(c=>c.id===custId));}
 function decayGauges(s,dt,closed,now){const D=CFG.decayPerHour;for(const sh of s.shibas){const placed=sh.placed&&!closed;
  for(const k of CFG.gauges){if(closed&&k!=='full')continue;const rate=D[k];if(isUnset(sh.g[k])||isUnset(rate)||sh.status==='hospital')continue;
   let m=placed?1:CFG.homeDecayMul;if(k==='dirt'&&placed){if(s.cafe.stains>=CFG.stains.badAt)m*=CFG.stains.badDirtMul;else if(s.cafe.stains>=CFG.stains.warnAt)m*=CFG.stains.warnDirtMul;}
-  const sign=k==='dirt'||k==='fatigue'||k==='boredom'?1:-1;sh.g[k]=clamp(sh.g[k]+sign*rate*m*dt/3600,0,100);}updateZero(sh,now);}}
+  const sign=k==='dirt'||k==='fatigue'||k==='boredom'?1:-1;sh.g[k]=clamp(sh.g[k]+sign*rate*m*dt/3600,0,100);}updateZero(sh,closed?s.cafe.closedAt:now);}}
 
 // fast-forward from `from` to `to` (both ms). Café income runs for at most offline.capHours (갱신 56); timed things (walk end, hospital,
 // hearts) still settle at `to`. `offline` turns on the 임시휴무 rule (126).
@@ -376,3 +391,9 @@ export function unlockSpace(s,kind,id){
  return true;
 }
 export function switchFloor(s,floor){if(floor!==1&&floor!==2||floor===2&&!s.space.floor2Unlocked)return false;s.cafe.floor=floor;return true;}
+
+// Integration budget is engine metadata: remaining elapsed time stays queued, never discarded.
+export function consumeElapsed(s,w,elapsedSec,now,{maxSteps=240,offline=false}={}){
+ if(!Number.isFinite(elapsedSec)||elapsedSec<0)return 0;w.elapsedDebt=(w.elapsedDebt||0)+elapsedSec;let steps=0,used=0;
+ while(w.elapsedDebt>1e-9&&steps++<maxSteps){const dt=Math.min(CFG.offline.stepSec,w.elapsedDebt);w.elapsedDebt-=dt;used+=dt;tick(s,w,dt,now-w.elapsedDebt*1000,{offline});}return used;
+}

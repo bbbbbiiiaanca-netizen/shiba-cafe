@@ -108,6 +108,7 @@ export const CFG={
   drinkToDessert:[2,1], // 갱신 120: 음료:디저트 2:1
   devAtOnce:1,devMaxSec:172800}, // 갱신 136: 개발 시간이 지나야 완성, 최대 2일, 한 번에 1개
  itemIncome:{boostMul:1.2,boostHours:4,boostMaxHours:24,paidCapMul:1.5,priceDia:U}, // 갱신 97 시간제 수익 1.2배 · UNSET: 가격(다이아)
+ navigation:{cellStepSec:U}, // UNSET: interior §§3·5·8; whole-cell walking speed unspecified
  offline:{capHours:12,stepSec:1}, // 갱신 56: 오프라인 수익 최대 12시간분. EXEMPT stepSec = engine integration step
 
  // ── 시바 ──

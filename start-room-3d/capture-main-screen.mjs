@@ -16,7 +16,7 @@ const call=(method,params={},sessionId)=>new Promise((res,rej)=>{const n=++id;pe
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));const shots=[];
 try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const {sessionId}=await call('Target.attachToTarget',{targetId,flatten:true});const c=(m,p)=>call(m,p,sessionId);
  await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:+(process.env.DSF||2),mobile:true});await c('Page.enable');await c('Runtime.enable');
- const ev=async x=>{const r=await c('Runtime.evaluate',{expression:x,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(x.slice(0,90)+' -> '+JSON.stringify(r.exceptionDetails).slice(0,500));return r.result.value;};
+ const ev=async x=>{const r=await c('Runtime.evaluate',{expression:x,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(x.slice(0,90)+' -> '+JSON.stringify(r.exceptionDetails).slice(0,3000));return r.result.value;};
  const settle=()=>ev('new Promise(r=>{const imgs=[...document.images].filter(i=>!i.complete);if(!imgs.length)return r(true);let n=imgs.length;for(const i of imgs)i.onload=i.onerror=()=>--n||r(true);setTimeout(()=>r(true),4000);})');
  const shot=async(name,{keepToast=false}={})=>{if(!keepToast)await ev('__game.refresh();__game.ui.toastT=0;document.getElementById("toast").style.opacity=0;true');await settle();await sleep(150);const {data}=await c('Page.captureScreenshot',{format:'png'});writeFileSync(join(out,name),Buffer.from(data,'base64'));shots.push(name);};
  const click=sel=>ev(`(()=>{const e=document.querySelector(${JSON.stringify(sel)});if(!e)throw Error('no '+${JSON.stringify(sel)});e.click();return true;})()`);
@@ -53,6 +53,15 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  if(!(await ev(`document.getElementById('toast').textContent==='상점 준비 중이에요'&&document.querySelector('[data-main-tab=menu]').classList.contains('active')&&!document.querySelector('[data-space-card]')`)))throw Error('Expansion + did not show pending shop toast');
  const unit3=['locked-row','inventory'].map(name=>readFileSync(join(out,'main-screen-u3-'+name+'.png')));
  if(unit3[0].equals(unit3[1]))throw Error('Unit 3 captures must be distinct');
+ // Unit 4 fixture supplies undecided navigation/payment values only in unsaved TEMP mode.
+ await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});await click('[data-main-tab=menu]');
+ await ev(`(()=>{const g=__game;g.world.navigation={entrance:[5,5]};g.CFG.navigation.cellStepSec=1;g.CFG.income.levelAggregation=xs=>xs.length?xs[0]:1;g.state.menus=['M-02'];for(const sh of g.state.shibas)Object.assign(sh.g,{full:100,dirt:0,fatigue:0,happy:100,boredom:0});g.world.spawnT=0;for(let i=0;i<80;i++){g.S.tick(g.state,g.world,1,g.clock.now()+i*1000);if(g.world.events.some(e=>e.type==='leave'))break;}window.u4Payments=g.world.events.filter(e=>e.type==='leave');g.world.events=g.world.events.filter(e=>e.type==='order');g.step(0);return true;})()`);
+ if(!(await ev('document.getElementById("toast").textContent.includes("주문")')))throw Error('Unit 4 order feedback missing');
+ await shot('main-screen-u4-order.png',{keepToast:true});
+ await ev('__game.world.events=window.u4Payments;__game.step(0);true');
+ if(!(await ev('document.getElementById("toast").textContent.includes("멍코인")')))throw Error('Unit 4 payment feedback missing');
+ await shot('main-screen-u4-payment.png',{keepToast:true});
+ await shot('main-screen-u4-panel.png');
  writeFileSync(join(out,'main-screen-v7-state.txt'),'Same normal staging as v6; edit: counter origin [0,1], dir1, footprint (0,1)-(0,2); stairs unchanged; 가구 tab active with action bar in bottom panel. 390x844, normal DPR1/DPR2, edit DPR2.\n');
  console.log('Staged capture: cafe level 5, M-02 developing; coins 21,500, diamonds 30; 390x844 CSS px, DPR 1 and 2.');
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}

@@ -85,6 +85,15 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await check(param+'=1 opens edit view','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="true"&&__game.iso.gridCells===36&&document.querySelector("[data-main-tab=furniture]").classList.contains("active")&&document.getElementById("menuList").contains(document.querySelector(".furniture-actions"))');
  }
 
+ // Unit 4 checks use TEMP staging and explicit pending-value fixtures; no production save.
+ await go(true,'&temp=1');
+ await ev(`(()=>{const g=__game;g.state.settings.language='ko';g.S.chooseStart(g.state,'red','',()=>.99,g.clock.now());g.state.coins=0;g.state.shibas[0].g={full:100,dirt:0,fatigue:0,happy:100,boredom:0};g.world.navigation={entrance:[5,5]};g.CFG.navigation.cellStepSec=1;g.CFG.income.levelAggregation=xs=>xs.length?xs[0]:1;for(let i=0;i<70;i++)g.step(1);g.refresh();document.querySelector('[data-main-tab=menu]').click();return true;})()`);
+ await check('Unit 4 customer strip exposes seated/waiting and recent payment','/손님.*착석.*대기/.test(document.querySelector("[data-customer-status]").textContent)&&/멍코인/.test(document.querySelector("[data-customer-status]").textContent)');
+ await check('Unit 4 invisible characters expose whole cells for testing','__game.characterPositions.length>0&&__game.characterPositions.every(c=>!c.cell||c.cell.every(Number.isInteger))&&!document.querySelector("[data-cust]")');
+ await ev(`(()=>{const g=__game,c=g.world.custs.find(c=>c.phase==='seated');if(!c)throw Error('no seated fixture guest');window.u4Guest=c;window.u4VisitTime=c.t;g.iso.setEdit(true);g.state.placement.slots.find(x=>x.id===c.seatFurniture).origin=[5,3];g.S.syncRoutes(g.state,g.world);g.refresh();return true;})()`);
+ await check('Unit 4 edit reseats guest without restarting visit','window.u4Guest.cell.join(",")==="5,3"&&window.u4Guest.t===window.u4VisitTime&&document.querySelector("[data-main-tab=furniture]").classList.contains("active")');
+ await ev('__game.CFG.income.levelAggregation=null;__game.world.spawnT=1e12;for(let i=0;i<40;i++)__game.step(1);document.querySelector("[data-main-tab=menu]").click();true');
+ await check('Unit 4 null payment feedback is explicit','__game.world.lastPay.total===null&&document.querySelector("[data-customer-status]").textContent.includes("결제 미정")');
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}
 for(const [k,n] of checks)console.log(k==='ok'?'  ok  ':'  FAIL',n);for(const e of errors)console.log('  ERROR',e);
 const fail=checks.filter(c=>c[0]!=='ok').length+errors.length;console.log(`${checks.length-checks.filter(c=>c[0]!=='ok').length}/${checks.length} smoke checks passed, ${errors.length} page errors`);process.exitCode=fail?1:0;
