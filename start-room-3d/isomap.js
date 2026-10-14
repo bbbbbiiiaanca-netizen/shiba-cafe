@@ -4,7 +4,7 @@ import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compare
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
- let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,panX=0,panBounds={minX:0,maxX:0},drag=null,last,selected=null,hits=[],gridCells=0,maxScroll=0,markers=[],markerPhase=null;
+ let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,panX=0,panBounds={minX:0,maxX:0},drag=null,last,selected=null,hits=[],gridCells=0,maxScroll=0,markers=[],markerPhase=null,zoom=1;
  const bar=document.createElement('div');bar.hidden=true;bar.className='furniture-actions';bar.setAttribute('aria-label','가구 편집');
  bar.innerHTML='<button data-furniture-flip>좌우 반전</button><button data-furniture-rotate>회전</button><button data-wall-add hidden>가벽 배치</button><button data-wall-remove>가벽 제거</button><button data-furniture-done>완료/선택 해제</button>';
  function syncBar(){bar.hidden=!edit;for(const button of bar.querySelectorAll('button'))button.disabled=button.hasAttribute('data-wall-add')?false:button.hasAttribute('data-wall-remove')?current()?.type!=='wall':!selected;}
@@ -39,7 +39,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
   // Include the whole outside row, including its leftmost diamond.
   // Scale from the base room (+ its outside row) only, so unlocked rows grow the map vertically (scroll) instead of shrinking it.
   const minX=Math.min(0,...MAP.zones.filter(z=>z.floor===1).map(z=>cellToImage(0,z.rows+(z.expansionRowOffset||0),z).x-z.cell.w/2));
-  const worldWidth=861-minX,scale=(W-12)/worldWidth;
+  const worldWidth=861-minX,scale=(W-12)/worldWidth*zoom;
   const heights=zones.map(z=>Math.max(615,z.origin.y+(z.cols+z.rows+2)*z.cell.h/2+MAP_MARKERS.expansion.anchor[1])*scale);
   const total=heights.reduce((a,b)=>a+b,0)+Math.max(0,zones.length-1)*24;
   const baseX=(W-worldWidth*scale)/2-minX*scale;
@@ -96,7 +96,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
    for(const edge of plateEdges(z)){const p=cellToScreen(...edge.cell,view,z);stamp('assets/drive/tiles/plate-edge-'+edge.part+'.png',{x:p.x,y:p.y-z.cell.h*scale/2},[64,0]);}
    [...placed,...(z.id==='A'?[...characterDepthEntries(world),...tableItemEntries(world)]:[])].map(s=>drag?.item&&drag.item===s.id?{...s,origin:drag.candidate}:s).sort(compareDepth).forEach(s=>{
     if(s.tableItem){const c=s.tableItem,p=cellToScreen(...s.origin,view,z),im=load('assets/drive/'+c.order.img),size=tableItemSize(z);if(im.complete&&im.naturalWidth){const fit=size/Math.max(im.naturalWidth,im.naturalHeight)*scale;ctx.drawImage(im,p.x+c.itemSlot.offset[0]*scale-im.naturalWidth*fit/2,p.y+c.itemSlot.offset[1]*scale-im.naturalHeight*fit,im.naturalWidth*fit,im.naturalHeight*fit);}return;}
-    if(s.character?.role==='manager'){const m=s.character,im=load(managerFrame(m)),p=cellToScreen(...s.origin,view,z);if(im.complete&&im.naturalWidth){const fit=MANAGER.height/MANAGER_OPAQUE_HEIGHT[managerFrame(m).split('/').at(-1)];ctx.drawImage(im,p.x-MANAGER.anchor[0]*fit,p.y-MANAGER.anchor[1]*fit,im.naturalWidth*fit,im.naturalHeight*fit);}return;}
+    if(s.character?.role==='manager'){const m=s.character,im=load(managerFrame(m)),p=cellToScreen(...s.origin,view,z);if(im.complete&&im.naturalWidth){const fit=MANAGER.height*CFG.people.scale*(CFG.people.withMapScale?scale:1)/MANAGER_OPAQUE_HEIGHT[managerFrame(m).split('/').at(-1)];ctx.drawImage(im,p.x-MANAGER.anchor[0]*fit,p.y-MANAGER.anchor[1]*fit,im.naturalWidth*fit,im.naturalHeight*fit);}return;}
     if(s.character){const meta=CHAR_SPRITES[s.character.role==='manager'?'manager':s.character.kind?'guest':'shiba'];if(meta.file&&meta.anchor)stamp(meta.file,cellToScreen(...s.origin,view,z),meta.anchor);return;}
     const base=SPRITES[s.type];if(!base)return;
     if(!base.file){if(edit){const p=cellToScreen(...s.origin,view,z);hits.push({id:s.id,x:p.x-z.cell.w*scale/2,y:p.y-z.cell.h*scale/2,w:z.cell.w*scale,h:z.cell.h*scale,footprint:true,view,zone:z});}return;}const sprite=s.type==='wall'&&s.dir%2?base.flip:s.dir>=2?base.back:base;if(!sprite)return;
@@ -136,7 +136,14 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
    y+=heights[index]+24;
   });
  }
- canvas.addEventListener('wheel',e=>{e.preventDefault();scroll+=e.deltaY;panX+=e.deltaX;last&&draw(...last);},{passive:false});
+ // Pinch zoom (two pointers) and ctrl/⌘+wheel zoom; clamp CFG.view.zoomMin..zoomMax (starting values).
+ const touches=new Map();let pinch=null;
+ const setZoom=(z,cx=canvas.clientWidth/2,cy=canvas.clientHeight/2)=>{const nz=Math.max(CFG.view.zoomMin,Math.min(CFG.view.zoomMax,z)),k=nz/zoom;if(k===1)return;panX=panX*k+(cx-canvas.clientWidth/2)*(k-1);scroll=scroll*k+(cy-canvas.clientHeight/2)*(k-1);zoom=nz;repaint();};
+ const tp=()=>[...touches.values()],dist=()=>{const [a,b]=tp();return Math.hypot(a.x-b.x,a.y-b.y);},mid=()=>{const [a,b]=tp();return {x:(a.x+b.x)/2,y:(a.y+b.y)/2};};
+ canvas.addEventListener('pointerdown',e=>{touches.set(e.pointerId,point(e));if(touches.size===2){cancelDrag();pinch={d0:dist(),z0:zoom};}},{capture:true});
+ canvas.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;touches.set(e.pointerId,point(e));if(pinch&&touches.size===2){const m=mid();setZoom(pinch.z0*dist()/Math.max(1,pinch.d0),m.x,m.y);e.stopImmediatePropagation();}},{capture:true});
+ const lift=e=>{touches.delete(e.pointerId);if(touches.size<2)pinch=null;};canvas.addEventListener('pointerup',lift,{capture:true});canvas.addEventListener('pointercancel',lift,{capture:true});
+ canvas.addEventListener('wheel',e=>{e.preventDefault();if(e.ctrlKey||e.metaKey){const p=point(e);setZoom(zoom*Math.exp(-e.deltaY/200),p.x,p.y);return;}scroll+=e.deltaY;panX+=e.deltaX;last&&draw(...last);},{passive:false});
  // Alpha hit testing uses an offscreen copy only; rendered sprites remain unmodified.
  const masks=new Map();
  function opaque(hit,x,y){if(hit.footprint)return Math.abs((x-hit.x-hit.w/2)/(hit.w/2))+Math.abs((y-hit.y-hit.h/2)/(hit.h/2))<=1;let mask=masks.get(hit.im);if(!mask){const c=document.createElement('canvas');c.width=hit.im.naturalWidth;c.height=hit.im.naturalHeight;const m=c.getContext('2d',{willReadFrequently:true});m.drawImage(hit.im,0,0);try{mask=m.getImageData(0,0,c.width,c.height);masks.set(hit.im,mask);}catch{return true;}}
@@ -164,5 +171,5 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
  canvas.addEventListener('pointercancel',e=>{if(drag?.pointerId===e.pointerId){cancelDrag();repaint();}});
  canvas.addEventListener('lostpointercapture',()=>{cancelDrag();repaint();});
  new ResizeObserver(()=>last&&draw(...last)).observe(canvas);
- return {draw,placeWall,actions:bar,get selected(){return selected;},get gridCells(){return gridCells;},get hits(){return hits.map(({im,...h})=>h);},get edit(){return edit;},setEdit(value){cancelDrag();edit=Boolean(value);if(!edit)selected=null;onEditChange(edit);repaint();},get panX(){return panX;},get panBounds(){return {...panBounds};},panTo(x,y=scroll){panX=x;scroll=y;repaint();},get scroll(){return scroll;},get maxScroll(){return maxScroll;},get markers(){return markers;},scrollTo(value){scroll=value;repaint();},setMarkerPhase(v){markerPhase=v;repaint();},easeBy(dx,dy,ms=CFG.expansion.cameraEaseMs){const sx=panX,sy=scroll,t0=performance.now();const step=t=>{const k=Math.min(1,(t-t0)/Math.max(1,ms)),e=1-(1-k)**3;panX=sx+dx*e;scroll=sy+dy*e;repaint();if(k<1)requestAnimationFrame(step);};requestAnimationFrame(step);}};
+ return {draw,placeWall,actions:bar,get selected(){return selected;},get gridCells(){return gridCells;},get hits(){return hits.map(({im,...h})=>h);},get edit(){return edit;},setEdit(value){cancelDrag();edit=Boolean(value);if(!edit)selected=null;onEditChange(edit);repaint();},get panX(){return panX;},get panBounds(){return {...panBounds};},panTo(x,y=scroll){panX=x;scroll=y;repaint();},get scroll(){return scroll;},get maxScroll(){return maxScroll;},get markers(){return markers;},scrollTo(value){scroll=value;repaint();},setMarkerPhase(v){markerPhase=v;repaint();},get zoom(){return zoom;},setZoom(z){setZoom(z);},easeBy(dx,dy,ms=CFG.expansion.cameraEaseMs){const sx=panX,sy=scroll,t0=performance.now();const step=t=>{const k=Math.min(1,(t-t0)/Math.max(1,ms)),e=1-(1-k)**3;panX=sx+dx*e;scroll=sy+dy*e;repaint();if(k<1)requestAnimationFrame(step);};requestAnimationFrame(step);}};
 }

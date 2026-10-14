@@ -830,3 +830,10 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - All effect lines (하트 쓰기 rows + menu picker, 가방 boosts/items, 알바 cards) are generated in `effects.js` from CFG: duration + exact %/±value. Null → "미정".
 - Still 미정 in effect lines: brush affinity/fatigue/cleanliness, music stay, cookie odds + coin amount, special tip + guest odds (special guests don't spawn until guestOdds set), wish item list.
 - 알바 lines now: "친밀도 50% 놀이", "4마리 산책·지루함-50", "훈련 1회 성공", "12시간 대신 운영" (card length cap relaxed 12→14).
+
+## 시바들 grid / detail / people scale / zoom (수인님 2026-10-15 08:53)
+- 시바들 tab: 4-per-row square cards with approved breed art, 카페/집 tag, Lv, tiny risk light (UI dot), 꺼내기/넣기 button. Filter chips by breed (CFG.breeds; rarity not in data yet — 레어 보류), sort 레벨 높은순/낮은순/최근 획득 (id). Level-up and care moved into the detail (tap card).
+- Detail: approved art large with idle bounce (CSS 1.6s, 6px — starting values), risk light, existing gauges/condition.
+- Risk light `CFG.shibaRisk` starting values: per-gauge badness (full/happy inverted) ≥50 orange, ≥80 red; sick/injured red; hospital orange; null gauges ignored. **Note:** gaugeStart/decay are still UNSET, so in play most shibas show green until those are set.
+- People scale: the manager was drawn at a fixed 150 screen px, ignoring the map scale (that is why he looked huge). Now 150 art px × map scale × `CFG.people.scale` (1, starting value); foot anchor unchanged. Guests have no sprite yet.
+- Zoom: did NOT exist before (only drag/wheel pan). Added pinch zoom (2 pointers) and ctrl/⌘+wheel, clamped `CFG.view` zoomMin 1 – zoomMax 2.5 (starting values); pan bounds follow zoom.

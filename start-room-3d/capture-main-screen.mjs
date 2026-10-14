@@ -152,8 +152,8 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await shot('main-screen-rf-floats.png');
   await stage();await dpr();
   await ev('__game.state.shibas[0].paws=0;__game.refresh();true');
-  await click('[data-main-tab=shiba]');
-  if(!(await ev(`document.querySelector('#menuList [data-act=levelUp]').disabled`)))throw Error('level-up not disabled');
+  await click('[data-main-tab=shiba]');await click('#menuList [data-act=care]');
+  if(!(await ev(`document.querySelector('#panel [data-act=levelUp]').disabled`)))throw Error('level-up not disabled');
   await shot('main-screen-rf-levelup-dim.png');
   await stage();await dpr();
   await ev('__game.debugExpand(3);__game.iso.panTo(0,__game.iso.maxScroll);true');
@@ -218,6 +218,20 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   console.log('ROWS',JSON.stringify(await ev(`[...document.querySelectorAll('#mbox [data-lp-row]')].map(r=>r.querySelector('.lp-name')?.textContent+' | '+r.querySelector('.lp-effect')?.textContent)`)));
   await ev('__game.ui.modals=[];__game.refresh();true');await click('[data-main-tab=bag]');await sleep(200);await shot('main-screen-fx-bag.png');
  }
+ else if(process.argv.includes('--shibas')){
+  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+  await ev(`(()=>{const g=__game,st=g.state;const lv=[30,12,25,7,18,3,21];let i=0;while(st.shibas.length<7){const sh=g.S.makeShiba(st,{breed:g.CFG.breeds[i%4],level:lv[i],r:Math.random,now:0});st.shibas.push(sh);i++;}st.shibas.forEach((sh,k)=>{sh.g={full:100,dirt:0,fatigue:0,happy:100,boredom:0};sh.placed=k<3;});st.shibas[1].g.happy=40;st.shibas[2].status='sick';st.shibas[4].g.fatigue=85;g.refresh();return true;})()`);
+  await click('[data-main-tab=shiba]');await sleep(200);await shot('main-screen-shibas-grid.png');
+  await click('[data-act=shibaView][data-k=breed][data-v=red]');await click('[data-act=shibaView][data-v=levelAsc]');await sleep(150);await shot('main-screen-shibas-filter.png');
+  await click('[data-act=shibaView][data-k=breed][data-v=all]');await click('[data-act=shibaView][data-v=levelDesc]');
+  await click('#menuList [data-act=care]');await sleep(500);await shot('main-screen-shibas-detail.png');
+  await ev(`(()=>{const g=__game;g.ui.panel=null;g.refresh();g.state.cafe.level=g.CFG.alba.manager.unlock;g.state.coins=g.CFG.alba.manager.cost;g.S.hireAlba(g.state,'manager',[],g.clock.now());g.step(g.CFG.navigation.cellStepSec);g.refresh();return true;})()`);
+  await click('[data-main-tab=manage]');
+  await ev('__game.CFG.people.withMapScale=false;__game.refresh();true');await sleep(200);await shot('main-screen-people-before.png');
+  await ev('__game.CFG.people.withMapScale=true;__game.refresh();true');await sleep(200);await shot('main-screen-people-after.png');
+  await ev('__game.iso.setZoom(2);true');await sleep(200);await shot('main-screen-zoom-2x.png');await ev('__game.iso.setZoom(1);true');
+  if(errors.length)throw Error(errors.join('\n'));
+ }
  else if(process.argv.includes('--polish')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
   await click('[data-main-tab=manage]');
@@ -256,9 +270,9 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  else if(process.argv.includes('--u12')){await u12();if(errors.length)throw Error(errors.join('\n'));}
  else if(process.argv.includes('--u141')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
-  await click('[data-main-tab=shiba]');await shot('main-screen-u141-shiba.png');
+  await click('[data-main-tab=shiba]');await shot('main-screen-u141-shiba.png');await click('#menuList [data-act=care]');
   await ev('(()=>{const g=__game,sh=g.state.shibas[0];sh.paws=g.S.pawsToNext(sh.level);g.refresh();return true;})()');
-  await click('#menuList [data-act=levelUp]');await shot('main-screen-u141-levelup.png');
+  await click('#panel [data-act=levelUp]');await shot('main-screen-u141-levelup.png');
   await ev('__game.ui.modals=[];__game.refresh();true');await click('[data-main-tab=shop]');await click('[data-act=gachaOdds]');await shot('main-screen-u141-odds.png');
  }
  else if(process.argv.includes('--u17d')){await u17d();if(errors.length)throw Error(errors.join('\n'));}
@@ -300,7 +314,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
  for(const tab of ['manage','shiba','furniture','shop']){await click(`[data-main-tab=${tab}]`);await shot('main-screen-u2-'+(tab==='manage'?'menu':tab)+'.png');}
  await click('[data-main-tab=shiba]');await ev('__game.state.shibas[0].paws=__game.S.pawsToNext(__game.state.shibas[0].level);__game.refresh();true');
- await click('#menuList [data-act=levelUp]');await shot('main-screen-u2-levelup.png');
+ await click('#menuList [data-act=care]');await click('#panel [data-act=levelUp]');await shot('main-screen-u2-levelup.png');
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
  await click('[data-main-tab=bag]');await ev('document.getElementById("menuList").scrollTop=0;true');await shot('main-screen-u3-inventory.png');
  await click('[data-main-tab=manage]');

@@ -107,11 +107,20 @@ function ageFloats(dt){if(w.floats?.length)w.floats=w.floats.filter(f=>(f.age+=d
 
 // ───────── panels ─────────
 const P={};
-P.shibas=()=>{const n=S.placedShibas(s).length;let h=`<button data-open="walk">${L('nav.walk')}</button><div class="card"><div class="note">${L('shibas.slots',{n,max:S.slotsOf(s),own:s.shibas.length,ownMax:CFG.cafe.maxOwned})}</div>`;
- for(const sh of s.shibas){const st=S.statusOf(s,sh);h+=`<div class="li"><div class="pt" data-act="care" data-id="${sh.id}">${img(shibaImg(sh))}</div><div class="grow" data-act="care" data-id="${sh.id}"><div class="nm">${nameOf(sh)} · ${L('app.lv',{lv:sh.level})}</div><div class="sub">${statusText(sh,st)} · 발바닥 ${fmt(sh.paws)}</div><button class="sec" data-act="care" data-id="${sh.id}">돌봄</button><button data-act="levelUp" data-id="${sh.id}" ${S.levelUpCheck(s,sh.id)?'disabled':''}>${sh.level>=CFG.level.max?'최고 레벨':L('care.levelUp',{n:ico('paw')+fmt(S.pawsToNext(sh.level))})}</button></div>
-  <button class="${sh.placed?'sec':''}" data-act="place" data-id="${sh.id}" data-on="${sh.placed?0:1}" ${!sh.placed&&S.placeCheck(s,sh.id)?'disabled':''}>${sh.placed?L('care.unplace'):L('care.place')}</button></div>`;}
+P.shibas=()=>{const n=S.placedShibas(s).length,f=ui.shibaView||(ui.shibaView={breed:'all',sort:'levelDesc'});
+ let list=s.shibas.filter(sh=>f.breed==='all'||sh.breed===f.breed);
+ list=[...list].sort(f.sort==='levelAsc'?(a,b)=>a.level-b.level||a.id-b.id:f.sort==='recent'?(a,b)=>b.id-a.id:(a,b)=>b.level-a.level||a.id-b.id);
+ const opt=(k,v,label)=>`<button class="chip${f[k]===v?' on':''}" data-act="shibaView" data-k="${k}" data-v="${v}" aria-pressed="${f[k]===v}">${label}</button>`;
+ let h=`<button data-open="walk">${L('nav.walk')}</button><div class="card" data-shiba-grid-card><div class="note">${L('shibas.slots',{n,max:S.slotsOf(s),own:s.shibas.length,ownMax:CFG.cafe.maxOwned})}</div>
+  <div class="chips" data-shiba-filter>${opt('breed','all','전체')}${CFG.breeds.map(b=>opt('breed',b,L('shiba.breed.'+b))).join('')}</div>
+  <div class="chips" data-shiba-sort>${opt('sort','levelDesc','레벨 높은순')}${opt('sort','levelAsc','레벨 낮은순')}${opt('sort','recent','최근 획득')}</div>
+  <div class="shiba-grid" data-shiba-grid>${list.map(sh=>{const st=S.statusOf(s,sh),r=shibaRisk(sh,st);return `<div class="sq" data-shiba-cell="${sh.id}"><button class="sq-pic" data-act="care" data-id="${sh.id}">${img(shibaImg(sh),nameOf(sh))}<i class="risk ${r}" data-risk="${r}" title="${({green:'좋음',orange:'주의',red:'위험'})[r]}"></i><span class="sq-where">${sh.placed?'카페':'집'}</span><span class="sq-lv">Lv${sh.level}</span></button><div class="sq-nm">${nameOf(sh)}</div><button class="sq-btn${sh.placed?' sec':''}" data-act="place" data-id="${sh.id}" data-on="${sh.placed?0:1}" ${!sh.placed&&S.placeCheck(s,sh.id)?'disabled':''}>${sh.placed?'넣기':'꺼내기'}</button></div>`;}).join('')||'<div class="note">시바가 없어요</div>'}</div>`;
  h+=`</div><div class="card"><div class="li"><div class="pt">${img(IMG.dongu)}</div><div class="grow"><div class="nm">${L('char.dongu.name')}</div><div class="sub">${L('shibas.dongu')}</div></div>
   <button class="${s.dongu.placed?'sec':''}" data-act="dongu">${s.dongu.placed?L('care.unplace'):L('care.place')}</button></div></div>`;return {title:L('shibas.title'),html:h};};
+// Tiny status light (UI dot, not art): red = sick/injured or any gauge past red line; orange = hospital/walking-home or past orange line. Thresholds CFG.shibaRisk (starting values).
+function shibaRisk(sh,st=S.statusOf(s,sh)){const R=CFG.shibaRisk;if(st==='sick'||st==='injured')return 'red';let worst='green';
+ for(const k of CFG.gauges){const v=sh.g?.[k];if(typeof v!=='number'||!Number.isFinite(v))continue;const bad=R.highIsBad.includes(k)?v:100-v;if(bad>=R.red)return 'red';if(bad>=R.orange)worst='orange';}
+ return st==='hospital'?'orange':worst;}
 function statusText(sh,st){if(st==='hospital')return L('st.hospital',{t:tfmt((sh.hospitalUntil-clock.now())/1000)})+' · '+L('inj.'+sh.hospitalKind);if(st==='injured')return L('st.injured')+' · '+L('inj.'+sh.injury);
  if(st==='ok'&&!sh.placed)return L('st.home');return L('st.'+st);}
 // 갱신 140: 반다나 = 3×3 시트의 한 칸을 CSS로만 보여 줌 (그림은 그대로)
@@ -139,7 +148,7 @@ function accShop(){const B=CFG.accessory.bandana,t=ui.accType||B.types[0],items=
  h+=`</div><h3>${L('shop.accSpecial')}</h3><div class="li">${slot(L('app.unset'))}<div class="grow note">${L('shop.accSpecialNote',{dia:SP.priceDia})}</div><button disabled>${priceText(SP.priceDia,'dia')} · ${L('app.unset')}</button></div></div>`;
  return h;}
 P.care=id=>{const sh=S.byId(s,id);if(!sh)return P.shibas();const st=S.statusOf(s,sh),now=clock.now(),need=S.pawsToNext(sh.level);
- let h=`<div class="card"><div class="big">${img(shibaImg(sh),nameOf(sh))}</div><div style="text-align:center"><div class="nm" style="font-size:18px;font-weight:900">${nameOf(sh)}</div>
+ let h=`<div class="card"><div class="big tama" data-tama>${img(shibaImg(sh),nameOf(sh))}<i class="risk ${shibaRisk(sh,st)}" data-risk="${shibaRisk(sh,st)}"></i></div><div style="text-align:center"><div class="nm" style="font-size:18px;font-weight:900">${nameOf(sh)}</div>
   <div class="note">${L('shiba.breed.'+sh.breed)} · ${L('care.personality')}: ${sh.personality?L('per.'+sh.personality):L('app.oddsUnset')} · ${statusText(sh,st)}</div></div>
   <div class="g"><span>${L('care.level')} ${sh.level}</span>${bar(need?sh.paws/need:1)}${ico('paw')}</div><div class="btns"><span class="note grow">${need?L('care.paws',{n:fmt(sh.paws),need:fmt(need)}):L('care.pawsMax',{n:fmt(sh.paws)})} · ${L('care.levelEff',{m:f2(S.levelEffect(sh.level))})}</span>
    ${need?`<button data-act="levelUp" data-id="${id}" ${S.levelUpCheck(s,id)?'disabled':''}>${L('care.levelUp',{n:ico('paw')+fmt(need)})}</button>`:''}</div><div class="note">${L('care.pawsSrc')}</div>
@@ -317,6 +326,7 @@ const act={
  albaWalkOpen:()=>{ui.modals=ui.modals.filter(m=>m.kind!=='list');open('walk');},
  albaTrainerOpen:d=>{ui.modals=ui.modals.filter(m=>m.kind!=='list');open('care',+d.id);},
  close,resourceShop:()=>toast('상점 준비 중이에요'),income:()=>{if(CFG.ledger.openFromPill)ui.modals.unshift({kind:'ledger',day:0});},ledger:()=>ui.modals.unshift({kind:'ledger',day:0}),ledgerDay:d=>{ui.modals[0].day=+d.day;},care:d=>open('care',+d.id),
+ shibaView:d=>{ui.shibaView={...(ui.shibaView||{breed:'all',sort:'levelDesc'}),[d.k]:d.v};menuSig='';renderMainMenu();},
  place:d=>{if(!S.setPlaced(s,+d.id,d.on==='1'))why(S.placeCheck(s,+d.id));},
  dongu:()=>{s.dongu.placed=!s.dongu.placed;},
  play:d=>{if(!S.playWith(s,+d.id,clock.now()))why(S.careCheck(s,+d.id,'play'));},

@@ -200,6 +200,9 @@ export const CFG={
  // 게이지 0~100 (1.2-3, 갱신 53·85·86·116). full=포만(배고픔 게이지), dirt=더러움(청결의 반대), fatigue=피로도(=졸림), happy=행복(=기분), boredom=지루함(=놀고 싶음)
  gauges:['full','dirt','fatigue','happy','boredom'],
  gaugeStart:U, // UNSET: 1.2-3 게이지 시작값
+ view:{zoomMin:1,zoomMax:2.5}, // starting value 2026-10-15, pending user confirm: pinch/ctrl+wheel zoom range (1 = fit width)
+ people:{scale:1,withMapScale:true}, // starting value 2026-10-15, pending user confirm: people (manager/guests) were drawn at fixed 150 screen px ignoring map scale; now 150 art px × map scale × scale, foot anchor kept
+ shibaRisk:{orange:50,red:80,highIsBad:['dirt','fatigue','boredom']}, // starting value 2026-10-15, pending user confirm: 'badness' 0–100 per gauge (full/happy inverted); ≥50 orange, ≥80 red; sick/injured red, hospital orange
  gaugeFull:{full:100,dirt:0,fatigue:0,happy:100,boredom:0}, // 갱신 116: 모든 게이지 100%, 행복 만점
  decayPerHour:{full:U,dirt:U,happy:U,boredom:U,fatigue:U}, // UNSET: 1.2-3 질문 '게이지가 줄어드는 속도' → 자연 변화 없음
  homeDecayMul:.25, // 갱신 81: 집 시바는 카페 배치 시바의 1/4 속도
