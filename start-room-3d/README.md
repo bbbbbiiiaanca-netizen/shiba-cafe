@@ -1,3 +1,16 @@
+# 시바카페 — spec v3 core build
+
+**2026-10-14, branch `codex/spec-v3-core`:** `index.html` is the spec-v3 game (기준: `shiba-cafe-docs/spec-v3-build/spec-v3.md`, 갱신 133까지).
+Core operation only: café level/exp & pressure table, guests (queue, 30 s stay, requests, pay), reputation, shiba care/condition/tricks,
+walks & rescue, hospital, part-timers, offline 12 h + 임시휴무. Numbers only from the spec; undecided ones are `null` in `config.js` and their
+features show "미정". Images: confirmed Drive files in `assets/drive/` (`MAP.md`). No 도감, no grades, no in-game YouTube.
+
+- Rules ↔ spec map, UNSET list, stubs, missing images: **`SPEC-V3-NOTES.md`**
+- Tests: `npm test` · `npm run test:browser` · Screens: `node capture-spec-v3.mjs [OUTDIR]`
+
+---
+_Older notes below describe the previous builds (framework-v2 / handoff-v1 / 3D first check) and are kept for history._
+
 # 시바견 카페 — framework-v2 (카탈로그 기준)
 
 **2026-10-13 수인님 지시("왜 카탈로그대로 안하는거야?")로 「시바견 카페 에셋 카탈로그」(20쪽)가 유일한 시각 기준.**

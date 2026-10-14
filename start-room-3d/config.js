@@ -163,6 +163,10 @@ export const CFG={
   interior:{score:[0,100],recommended:{10:20,30:50,50:80},maxArrivalPenalty:.2,walkoutChance:.01}, // 갱신 113 (아이템별 점수 UNSET)
   expBoost:{mul:1.2,hours:4,maxHours:24,capTotal:.2,priceDia:U}, // 갱신 98 · UNSET 가격
   diaPriceWon:10, // 갱신 132-3
+  // 1.4 · 갱신 29·33 28일 온보딩 (확정분만): 1~7일 하트 리셋권 1장, 캡슐 4·11·18·25일 1개 + 9일 5개 + 19일 10개. 3·17·26일 하트 개수 UNSET(질문 1(다)), 날짜 진행 방식 UNSET(보상표 Q5·Q6)
+  onboarding:{days:28,dayMode:U,rewards:{1:{heartReset:1},2:{heartReset:1},3:{heartReset:1,hearts:U},4:{heartReset:1,capsule:1},5:{heartReset:1},6:{heartReset:1},7:{heartReset:1},
+   9:{capsule:5},11:{capsule:1},17:{hearts:U},18:{capsule:1},19:{capsule:10},25:{capsule:1},26:{hearts:U}}},
+  heartSources:{ads:U,friends:U}, // 갱신 54: 광고 시청·플레이어끼리 주고받기 — 방식·한도 UNSET
   adoptionIncome:U, // UNSET: 질문 4 입양 수익
   mergeCooking:U, // UNSET: 갱신 62
  },
