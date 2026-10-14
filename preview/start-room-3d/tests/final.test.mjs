@@ -38,7 +38,7 @@ render();assert.ok(startDisabled());
 ui.startPick='kuro';render();assert.ok(startDisabled());
 ui.startBandana=S.bandanaItems()[0].id;render();assert.equal(startDisabled(),false);
 assert.ok(nodes.mbox.innerHTML.includes(`data-item="${ui.startBandana}" aria-pressed="true"`));
-ui.startBandana=S.bandanaItems().at(-1).id;render();
+ui.startBandana=S.bandanaItems()[CFG.accessory.bandana.colors.length-1].id;render();
 assert.ok(nodes.mbox.innerHTML.includes(`data-item="${ui.startBandana}" aria-pressed="true"`));
 S.chooseStart(state,ui.startPick,'',S.rng(1),0,ui.startBandana);render();
 assert.ok(nodes.modal.hidden);assert.equal(state.shibas[0].breed,'kuro');assert.equal(state.shibas[0].level,21);

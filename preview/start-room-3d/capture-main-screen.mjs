@@ -172,8 +172,8 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  if(!(await ev(`!document.querySelector('[data-act=useItem][data-item=expBoost4h]').disabled`)))throw Error('configured EXP boost remains disabled');
  await click('[data-act=useItem][data-item=expBoost4h]');
  if(!(await ev(`__game.state.items.expBoost4h===0&&document.getElementById('boostChip').textContent.includes('경험치')`)))throw Error('EXP boost consumption/timer missing');
- await shot('main-screen-final-boost.png');
- await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.cafe.seatRewards.findIndex(n=>n>g.CFG.cafe.seatRewards[0])+1;g.S.grantSeatRewards(g.state);const before=g.S.seatCount(g.state);for(let j=0;j<6;j++)for(let i=0;i<6;i++)g.S.placeFurniture(g.state,'cushion',[i,j]);if(g.S.seatCount(g.state)<=before)throw Error('Reward seats not placed');g.refresh();return true;})()`);
+ await click('[data-main-tab=manage]').catch(()=>{});await ev(`__game.ui.modals=[];__game.refresh();true`);await shot('main-screen-final-boost.png');
+ await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.cafe.seatRewards.findIndex(n=>n>=6)+1;g.S.grantSeatRewards(g.state);const before=g.S.seatCount(g.state);const want=[[2,2],[3,3],[1,3],[3,1],[4,2],[2,4],[4,4],[1,1]];for(const c of want)g.S.placeFurniture(g.state,'cushion',c);if(g.S.seatCount(g.state)<=before)throw Error('Reward seats not placed');g.refresh();return true;})()`);
  await click('[data-main-tab=furniture]');await shot('main-screen-final-seats.png');
 
  await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.themes.find(t=>t.id==='bamboo').unlockLevel;g.state.coins=g.CFG.cafe.expansion2FCost;g.state.dia=g.CFG.themes.find(t=>t.id==='bamboo').unlockDia;g.refresh();return true;})()`);await click('[data-main-tab=shop]');await click('[data-act=unlockPopup]');if(!(await ev(`document.querySelector('#mbox [data-kind=floor2][data-via=coins]')&&document.querySelector('#mbox [data-kind=theme][data-via=dia]')`)))throw Error('Unlock popup choices missing');await shot('main-screen-final-unlock.png');
