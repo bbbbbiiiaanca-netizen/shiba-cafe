@@ -66,6 +66,13 @@ export default async function({ev,check,sleep,reload}){
  await ev('const list=document.querySelector("#mbox .lp-list");list.scrollTop=list.scrollHeight;true');
  await check('v3: last menu row fully visible after scrolling the popup','(()=>{const list=document.querySelector("#mbox .lp-list").getBoundingClientRect(),last=document.querySelector("[data-lp-row=P-06]").getBoundingClientRect();return last.top>=list.top-1&&last.bottom<=list.bottom+1&&list.bottom<=innerHeight;})()');
  await ev('document.querySelector("#mbox .lp-close").click();true');
+ // §17-7/8: real edit actions and rejected placement, then manager hire using configured values.
+ await ev('__game.close();__game.iso.setEdit(true);document.querySelector("[data-wall-add]").click();true');
+ await check('wall placed with grid footprint and no sprite art','__game.state.placement.slots.some(s=>s.type==="wall")&&__game.iso.gridCells>0');
+ await ev('window.wallBefore=JSON.stringify(__game.state.placement);__game.iso.placeWall([0,5]);true');
+ await check('entrance blocked toast and rollback','document.getElementById("toast").textContent==="입구가 막혔어요!"&&JSON.stringify(__game.state.placement)===window.wallBefore');
+ await ev('document.querySelector("[data-wall-remove]").click();__game.iso.setEdit(false);__game.state.cafe.level=__game.CFG.alba.manager.unlock;__game.state.coins=__game.CFG.alba.manager.cost;__game.S.hireAlba(__game.state,"manager",[],__game.clock.now());__game.step(__game.CFG.navigation.cellStepSec);true');
+ await check('only manager has staff navigation presence','__game.world.manager?.role==="manager"&&!__game.world.daycare&&!__game.world.trainer&&!__game.world.walk');
  // persisted across reload, offline report path
  await reload();await ev('__game.step(.2);true');
  await check('save kept after reload (language, shiba)','__game.state.settings.language==="ko"&&__game.state.shibas.length>=1&&__game.state.shibas[0].breed==="kuro"&&__game.state.started');

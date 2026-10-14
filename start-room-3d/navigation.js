@@ -8,6 +8,7 @@ export function pathfind(zone,slots,from,to,{seatTarget=false}={}){
  if(!inside(from)||!inside(to))return null;
  const blocked=new Set(slots.flatMap(x=>footprintCells(x).map(key)));
  if(seatTarget&&slots.some(x=>['cushion','chair'].includes(x.type)&&footprintCells(x).some(c=>key(c)===key(to))))blocked.delete(key(to));
+ if(blocked.has(key(from))&&!slots.some(s=>['chair','cushion'].includes(s.type)&&footprintCells(s).some(c=>key(c)===key(from))))return null;
  if(blocked.has(key(to)))return null;
  const queue=[from],prev=new Map([[key(from),null]]);
  for(let n=0;n<queue.length;n++){const c=queue[n];if(key(c)===key(to)){const route=[];let p=c;while(prev.get(key(p))!==null){route.unshift(p);p=prev.get(key(p));}return route;}
@@ -28,3 +29,35 @@ export function linkTable(s,w,c){const {slots}=layout(s,w);const tables=slots.fi
  const occupied=new Set(w.custs.filter(g=>g!==c&&g.phase==='seated'&&g.itemSlot).map(g=>g.itemSlot.id));
  c.itemSlot=null;for(const table of tables){const cells=footprintCells(table),index=cells.findIndex((_,n)=>!occupied.has(table.id+':'+n));if(index>=0){c.itemSlot={tableId:table.id,id:table.id+':'+index,index,offset:[...TABLE_ITEM_LAYOUT.offset],cell:cells[index]};break;}}
  c.itemLocation=c.itemSlot?'table':tables.length?'none':'inHand';}
+
+// Preserve every previously reachable floor cell and seat; counter access is included in floor reachability.
+export function preservesEntrance(zone,before,after){
+ const entrance=zone.entrance;if(!entrance)return true;
+ if(!pathfind(zone,after,entrance,entrance))return false;
+ for(let i=0;i<zone.cols;i++)for(let j=0;j<zone.rows;j++){
+  const cell=[i,j],seatTarget=before.some(s=>['chair','cushion'].includes(s.type)&&footprintCells(s).some(c=>key(c)===key(cell)));
+  if(!pathfind(zone,before,entrance,cell,{seatTarget}))continue;
+  // A newly occupied floor is exempt, but seats must retain an approach.
+  if(!seatTarget&&after.some(s=>footprintCells(s).some(c=>key(c)===key(cell))))continue;
+  if(!pathfind(zone,after,entrance,cell,{seatTarget}))return false;
+ }
+ for(const slot of after){
+  if(['chair','cushion'].includes(slot.type)&&!footprintCells(slot).every(cell=>pathfind(zone,after,entrance,cell,{seatTarget:true})))return false;
+  if(slot.type==='counter'&&!footprintCells(slot).some(([i,j])=>[[i+1,j],[i-1,j],[i,j+1],[i,j-1]].some(cell=>pathfind(zone,after,entrance,cell))))return false;
+ }
+ return true;
+}
+export function tickManager(s,w,dt,active,seconds){
+ if(!active){w.manager=null;return;}
+ const {zone,slots,entrance}=layout(s,w);if(!entrance)return;
+ if(!w.manager)w.manager={role:'manager',cell:[...entrance],phase:'idle',route:null};
+ const m=w.manager;
+ if(slots.some(x=>footprintCells(x).some(c=>key(c)===key(m.cell)))){m.cell=[...entrance];m.route=null;}
+ if(m.target){const acc=m.moveAcc;routeTo(s,w,m,m.target);m.moveAcc=acc;} // refresh against furniture changes
+ if(m.phase==='walking'&&m.route===null){m.phase='idle';m.target=null;}
+ if(m.phase==='walking'&&moveCell(m,dt,seconds)){m.phase='idle';m.target=null;}
+ if(m.phase==='idle'){
+  const targets=[];for(let i=0;i<zone.cols;i++)for(let j=0;j<zone.rows;j++)if(key([i,j])!==key(m.cell)&&pathfind(zone,slots,m.cell,[i,j]))targets.push([i,j]);
+  if(targets.length){routeTo(s,w,m,targets[Math.floor(w.r()*targets.length)]);m.phase='walking';}
+ }
+}

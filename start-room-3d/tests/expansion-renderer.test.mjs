@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import {webcrypto} from 'node:crypto';
+if(!globalThis.crypto)Object.defineProperty(globalThis,'crypto',{value:webcrypto});
 import {readFileSync} from 'node:fs';
 import {createIsoMap} from '../isomap.js';
 import {newState} from '../sim.js';
@@ -8,7 +10,7 @@ const button={disabled:false};
 globalThis.location={search:''};globalThis.devicePixelRatio=1;
 globalThis.ResizeObserver=class{observe(){}};
 globalThis.Image=class{set src(path){loads.push(path);this.file=path;const png=readFileSync(new URL('../'+path,import.meta.url));this.naturalWidth=png.readUInt32BE(16);this.naturalHeight=png.readUInt32BE(20);this.complete=true;}};
-globalThis.document={createElement(type){return type==='canvas'?{getContext:()=>ctx}:{setAttribute(){},querySelector:()=>({...button}),querySelectorAll:()=>[]};}};
+globalThis.document={createElement(type){return type==='canvas'?{getContext:()=>ctx}:{buttons:new Map(),setAttribute(){},querySelector(selector){if(!this.buttons.has(selector))this.buttons.set(selector,{...button});return this.buttons.get(selector);},querySelectorAll:()=>[]};}};
 const canvas={clientWidth:390,clientHeight:300,getContext:()=>ctx,addEventListener:(name,fn)=>events[name]=fn,getBoundingClientRect:()=>({left:0,top:0}),setPointerCapture(){}};
 let opens=0;
 const iso=createIsoMap(canvas,{onExpand:()=>opens++});
@@ -36,3 +38,31 @@ const tableIndex=draws.findLastIndex(d=>d.file==='assets/drive/furn-tea-table-v4
 assert.ok(itemIndex>tableIndex,'confirmed item bitmap after adjacent table');
 assert.ok(draws[itemIndex].args[2]<draws[tableIndex].args[2],'item scaled at draw time');
 console.log('Unit 5 renderer: outside grass before room, exact tile ratio, confirmed bitmap above table passed');
+
+// Real renderer editing callbacks: footprint-only wall selection, drag, rejection and removal.
+let blocked='',changed=0;
+const wallIso=createIsoMap(canvas,{onBlocked:message=>blocked=message,onChange:()=>changed++});
+const wallState=newState(0);wallIso.draw(wallState,{});wallIso.setEdit(true);
+assert.equal(wallIso.placeWall([2,2]),true);
+const wallId=wallIso.selected;
+assert.ok(wallIso.hits.find(h=>h.id===wallId)?.footprint);
+assert.ok(!loads.includes(null));
+wallIso.actions.querySelector('[data-furniture-rotate]').onclick();
+assert.equal(wallState.placement.slots.find(s=>s.id===wallId).dir,1);
+const center=()=>{const h=wallIso.hits.find(h=>h.id===wallId);return {h,x:h.x+h.w/2,y:h.y+h.h/2};};
+let p=center();events.pointerdown(pointer(p.x,p.y));
+const delta=[p.h.zone.cell.w*p.h.view.scale/2,p.h.zone.cell.h*p.h.view.scale/2];
+events.pointermove(pointer(p.x+delta[0],p.y+delta[1]));events.pointerup(pointer(p.x+delta[0],p.y+delta[1]));
+assert.deepEqual(wallState.placement.slots.find(s=>s.id===wallId).origin,[3,2]);
+const snapshot=JSON.stringify(wallState.placement);
+assert.equal(wallIso.placeWall([0,5]),false);assert.equal(blocked,'입구가 막혔어요!');
+assert.equal(JSON.stringify(wallState.placement),snapshot);
+// Drag the existing wall onto the entrance; the original cell must survive.
+p=center();events.pointerdown(pointer(p.x,p.y));
+const dx=-3,dy=3,scale=p.h.view.scale;
+const end=pointer(p.x+(dx-dy)*64*scale,p.y+(dx+dy)*32*scale);
+events.pointermove(end);events.pointerup(end);
+assert.equal(JSON.stringify(wallState.placement),snapshot);
+wallIso.actions.querySelector('[data-wall-remove]').onclick();
+assert.ok(!wallState.placement.slots.some(s=>s.type==='wall'));assert.ok(changed>=4);
+console.log('§17 renderer: no wall image, footprint selection, move/rotate/remove and blocked rollback passed');

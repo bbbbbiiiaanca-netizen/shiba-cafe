@@ -1,4 +1,4 @@
-import {linkTable,faceCell,layout,seatSlots,pathfind,routeTo,moveCell,syncRoutes} from './navigation.js';
+import {tickManager,linkTable,faceCell,layout,seatSlots,pathfind,routeTo,moveCell,syncRoutes} from './navigation.js';
 export {seatSlots,syncRoutes,pathfind};
 // Spec v3 game core — pure logic (no DOM), deterministic with an injected RNG so tests can replay it.
 // Times: `now` is epoch ms; `dt` is seconds. Every number comes from CFG (config.js); UNSET (null) values disable what depends on them.
@@ -341,7 +341,7 @@ function leave(s,w,c,ctx){const V=CFG.visit,E=CFG.cafeExp;let outcome,repD=0,exp
  w.events.push({type:'leave',id:c.id,outcome,coins:pay.total,order:order.id,orderImg:order.img,byManager,requestMet:outcome==='satisfied',metShiba:c.met.length>0,seat:c.seat,cell:c.cell&&[...c.cell]});
  w.recent.push({id:c.id,order:order.id,coins:pay.total,pending:pay.pending});w.recent=w.recent.slice(-3);c.phase='exiting';routeTo(s,w,c,layout(s,w).entrance);if(repD)addRep(s,repD,{...ctx,world:w});}
 // one step of everything that runs with time (online, or fast-forwarded while the app was closed)
-export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};settleLedger(s,now);syncRoutes(s,w);w.t+=dt;const C=s.cafe;
+export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};settleLedger(s,now);syncRoutes(s,w);tickManager(s,w,dt,managerActive(s,now)&&!s.cafe.closed,CFG.navigation.cellStepSec);w.t+=dt;const C=s.cafe;
  for(const c of [...w.custs])if(c.phase==='entering'&&c.route===null){w.custs=w.custs.filter(x=>x!==c);if(!seat(s,w,c)){c.phase='queue';c.t=CFG.navigation.queueWaitSec;c.seat=null;w.queue.push(c);}}
 
  const dev=settleMenuDev(s,now);if(dev)w.events.push({type:'menuDone',id:dev}); // 갱신 136: real time, also while closed

@@ -100,7 +100,20 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await stage();await dpr2();await floatShot('heart','main-screen-u17-float.png');
   writeFileSync(join(out,'main-screen-u17c-state.txt'),'STAGED, unsaved ?temp=1 fixture (café Lv5, seed 7). 390×844 CSS px, DPR2. float-angry: café run with real guests until a queued guest times out (30 s) → 빠직 float (assets/drive/ui/emo-angry.png, drawn at the coin float size) held at 25% of its 1 s rise; other floats removed. float: café run with real guests until a paying guest whose request was met leaves → coin + heart floats held at 25%; other floats removed.\n');
  };
- if(process.argv.includes('--u17c')){await u17c();if(errors.length)throw Error(errors.join('\n'));}
+ const u17d=async()=>{
+  await stage(true);await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+  await click('[data-wall-add]');
+  if(!(await ev(`__game.state.placement.slots.some(s=>s.type==='wall')&&__game.iso.gridCells>0`)))throw Error('wall footprint missing');
+  await shot('main-screen-u17-walls-edit.png');
+  await ev(`(()=>{const g=__game,b=JSON.stringify(g.state.placement);if(g.iso.placeWall([0,5]))throw Error('entrance accepted');if(JSON.stringify(g.state.placement)!==b)throw Error('blocked edit mutated');return true;})()`);
+  if(!(await ev(`document.getElementById('toast').textContent==='입구가 막혔어요!'`)))throw Error('blocked toast missing');
+  await shot('main-screen-u17-walls-blocked.png',{keepToast:true});
+  await ev(`(()=>{const g=__game;g.iso.setEdit(false);g.state.cafe.level=g.CFG.alba.manager.unlock;g.state.coins=g.CFG.alba.manager.cost;g.S.hireAlba(g.state,'manager',[],g.clock.now());g.step(g.CFG.navigation.cellStepSec);g.refresh();return true;})()`);
+  if(!(await ev(`__game.world.manager?.role==='manager'&&document.getElementById('manager-debug').textContent.includes('매니저')`)))throw Error('manager navigation missing');
+  await shot('main-screen-u17-manager.png');
+ };
+ if(process.argv.includes('--u17d')){await u17d();if(errors.length)throw Error(errors.join('\n'));}
+ else if(process.argv.includes('--u17c')){await u17c();if(errors.length)throw Error(errors.join('\n'));}
  else if(process.argv.includes('--u17b')){await u17b();if(errors.length)throw Error(errors.join('\n'));}
  else if(process.argv.includes('--u17')){await u17();if(errors.length)throw Error(errors.join('\n'));}
  else if(process.argv.includes('--u16')){await u16();if(errors.length)throw Error(errors.join('\n'));}

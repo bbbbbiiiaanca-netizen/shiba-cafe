@@ -63,7 +63,7 @@ function renderHUD(){const now=clock.now();$('coins').textContent=fmt(s.coins);$
  $('closed').hidden=!C.closed;$('closed').textContent=L('hud.closed');}
 
 let sceneSig='';
-const iso=createIsoMap($('isomap'),{onChange:()=>{S.syncRoutes(s,w);persist();},onExpand:()=>toast('상점 준비 중이에요'),onBlocked:()=>toast('다른 가구와 겹치거나 방 밖으로 나갈 수 없어요.'),onEditChange:()=>{mainTab='furniture';menuSig='';renderMainMenu();}});
+const iso=createIsoMap($('isomap'),{onChange:()=>{S.syncRoutes(s,w);persist();},onExpand:()=>toast('상점 준비 중이에요'),onBlocked:message=>toast(message||'다른 가구와 겹치거나 방 밖으로 나갈 수 없어요.'),onEditChange:()=>{mainTab='furniture';menuSig='';renderMainMenu();}});
 function renderScene(){iso.draw(s,w);renderMainMenu();}
 let menuSig='',mainTab=iso.edit?'furniture':DEFAULT_TAB;
 // §16-1 tab row: built once from TABS; icons only from existing images, red dots from tabBadges (real state).
@@ -344,7 +344,7 @@ $('scene').addEventListener('pointerdown',e=>{const t=e.target.closest('[data-ac
 addEventListener('pointerup',e=>{if(!drag)return;const d=drag;drag=null;if(Math.hypot(e.clientX-d.x,e.clientY-d.y)<12)return;
  const seat=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-cust]');if(seat&&S.deliver(s,w,d.id,+seat.dataset.cust,clock.now())){ui.sel=null;refresh();}});
 function applyStatic(){document.documentElement.lang=s.settings.language||'ko';document.title=L('app.title');document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=L(e.dataset.i18n));sceneSig='';panelSig='';modalSig='';}
-function refresh(){if(s.cafe.level>observedCafeLevel){toast(`카페 Lv ${s.cafe.level} · 레벨업!`);}observedCafeLevel=s.cafe.level;handleEvents();renderHUD();renderScene();renderPanel();renderModal();}
+function refresh(){if(temp){let debug=document.getElementById('manager-debug');if(!debug){debug=document.createElement('output');debug.id='manager-debug';debug.style.cssText='position:absolute;top:70px;left:8px;color:white;background:#222;z-index:5';$('isomap').parentElement.append(debug);}debug.textContent=w.manager?'매니저 '+w.manager.phase+' ['+w.manager.cell.join(',')+']':'';}if(s.cafe.level>observedCafeLevel){toast(`카페 Lv ${s.cafe.level} · 레벨업!`);}observedCafeLevel=s.cafe.level;handleEvents();renderHUD();renderScene();renderPanel();renderModal();}
 
 // ───────── loop ─────────
 let last=performance.now(),saveT=0;

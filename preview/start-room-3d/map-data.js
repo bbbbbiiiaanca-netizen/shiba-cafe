@@ -2,7 +2,9 @@ import {CFG} from './config.js';
 // Image pixels are the shared coordinate system for room art and sprite anchors.
 // Previous anchors: v2 given table (74,73), cushion (68,52), counter (114,142), stairs (111,177); v5 measured+scaled. v6 uses 그림이 v4 sprites at scale 1.
 // 그림이 will provide back views; unavailable until the art is supplied.
+export const PARTITION={count:null,price:null}; // §17-7: inventory quantity and price await user confirmation
 export const SPRITES={
+ wall:{file:null,anchor:null,scale:1,back:null,footprint:{cells:1,axis:null}}, // user: one-cell units; no wall art
  // 그림이 v4 sprites, original size (scale 1). anchor = centre of floor-contact footprint, sprite px (given by 그림이).
  table:{file:'assets/drive/furn-tea-table-v4.png',anchor:[92,93],scale:1,back:null,footprint:{cells:1,axis:null}},
  cushion:{file:'assets/drive/furn-cushion-v4.png',anchor:[90,74],scale:1,back:null,footprint:{cells:1,axis:null}},
@@ -16,8 +18,8 @@ export const MAP_MARKERS={
  expansion:{file:'assets/drive/tiles/marker-expand-land.png',anchor:[64,72]},
  floor2:{file:'assets/drive/ui/ui-lock.png',anchor:[32,32]}
 };
-export const CHAR_SPRITES={shiba:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]},guest:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]},dongu:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]}}; // foot-shadow anchors await supplied art
-export function characterDepthEntries(world){return [...(world?.custs||[]),...(world?.queue||[]),...Object.values(world?.sh||{})].filter(c=>c.cell).map(c=>({character:c,origin:c.cell,cells:[c.cell]}));}
+export const CHAR_SPRITES={shiba:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]},guest:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]},manager:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]},dongu:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]}}; // foot-shadow anchors await supplied art
+export function characterDepthEntries(world){return [...(world?.custs||[]),...(world?.queue||[]),...(world?.manager?[world.manager]:[]),...Object.values(world?.sh||{})].filter(c=>c.cell).map(c=>({character:c,origin:c.cell,cells:[c.cell]}));}
 export const ROOM_BG='assets/drive/room-tatami-noline.png';
 export const MAP={zones:[{
  // answer 똑또기 2026-10-14: front-left entrance; queue = CFG.navigation.queueCells grass cells straight out from the entrance
@@ -64,15 +66,18 @@ export function footprintCells(item){
 }
 export function validPlacement(item,slots,zone=MAP.zones[0]){
  if(!SPRITES[item.type]||!availableDirs(item.type).includes(item.dir)||!Array.isArray(item.origin)||item.origin.length!==2||!item.origin.every(Number.isInteger))return false;
+ // Direct entrance occupancy: starting value 2026-10-15, pending user confirm (§17-7).
  const cells=footprintCells(item);if(zone.entrance&&cells.some(c=>c.join(',')===zone.entrance.join(',')))return false;const occupied=new Set(slots.filter(s=>s.id!==item.id).flatMap(s=>footprintCells(s).map(c=>c.join(','))));
  return cells.every(([i,j])=>i>=0&&j>=0&&i<zone.cols&&j<zone.rows&&!occupied.has(`${i},${j}`));
 }
 export function defaultPlacement(){return {v:1,slots:structuredClone(MAP.zones[0].slots)};}
 export function restorePlacement(saved,zone=MAP.zones[0]){
  const fallback=defaultPlacement();
- if(!saved||saved.v!==1||!Array.isArray(saved.slots)||saved.slots.length!==fallback.slots.length)return fallback;
- if(saved.slots.some(s=>!s||!Array.isArray(s.origin)||s.origin.length!==2||!s.origin.every(Number.isInteger)||!SPRITES[s.type]||!availableDirs(s.type).includes(s.dir))||new Set(saved.slots.map(s=>s.id)).size!==fallback.slots.length)return fallback;
+ if(!saved||saved.v!==1||!Array.isArray(saved.slots)||saved.slots.filter(s=>s?.type!=='wall').length!==fallback.slots.length)return fallback;
+ if(saved.slots.some(s=>!s||!Array.isArray(s.origin)||s.origin.length!==2||!s.origin.every(Number.isInteger)||!SPRITES[s.type]||!availableDirs(s.type).includes(s.dir))||new Set(saved.slots.map(s=>s.id)).size!==saved.slots.length)return fallback;
+ if(fallback.slots.some(d=>!saved.slots.some(s=>s.id===d.id&&s.type===d.type)))return fallback;
  const slots=fallback.slots.map(d=>{const s=saved.slots.find(s=>s.id===d.id&&s.type===d.type);return s?{...d,origin:s.origin,dir:s.dir}:d;});
+ slots.push(...saved.slots.filter(s=>s.type==='wall').map(s=>({...s})));
  return slots.every(s=>validPlacement(s,slots,zone))?{v:1,slots}:fallback;
 }
 
