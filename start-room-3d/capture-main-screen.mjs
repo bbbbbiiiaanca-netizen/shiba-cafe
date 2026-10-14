@@ -81,12 +81,27 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await click('#mbox .lp-close');await click('[data-main-tab=manage]');await click('[data-act=listOpen][data-list=menu]');
   if(!(await ev(`/^개발 중 /.test(document.querySelector('[data-lp-row=M-02] .lp-effect').textContent)&&document.querySelector('[data-lp-row=M-05] .lp-effect').textContent==='판매가 5멍'`)))throw Error('§17-4 menu popup missing');
   await shot('main-screen-u17-menu.png');await click('#mbox .lp-close');
-  // floats from the real leave path: run the café until a paying guest who met a shiba leaves, then hold the floats a quarter of the way up
-  await ev(`(()=>{const g=__game;for(let i=0;i<4000&&!(g.world.floats||[]).some(f=>f.kind==='heart');i++)g.step(.1);if(!(g.world.floats||[]).some(f=>f.kind==='heart'))throw Error('no satisfied guest left');for(const f of g.world.floats)f.age=.25*f.dur;g.world.floats=g.world.floats.filter(f=>f.kind!=='angry');g.refresh();return true;})()`);
-  await shot('main-screen-u17-float.png');
-  writeFileSync(join(out,'main-screen-u17b-state.txt'),'STAGED, unsaved ?temp=1 fixture. 390×844 CSS px, DPR2. topbar: café Lv5, hearts 2/5 with next heart 04:32. ledger: café Lv30, today sales 120 + meeting extra 120, offline 90, manager wages, sick hospital fee, M-02 development, one bandana; 기타 수입 and 가구 구입 at 0. manage / tabs: café Lv10, M-02 developing, starter paws = next level-up (시바 dot), daycare affordable (알바 dot). alba: Lv10 → daycare open, 산책/훈련사/매니저 "Lv{N} 해금". menu: 메뉴 개발 popup. float: café run with real guests until a paying guest who met a shiba leaves; coin + heart floats held at 25% of their 1 s rise.\n');
+  await floatShot('heart','main-screen-u17-float.png');
+  writeFileSync(join(out,'main-screen-u17b-state.txt'),'STAGED, unsaved ?temp=1 fixture. 390×844 CSS px, DPR2. topbar: café Lv5, hearts 2/5 with next heart 04:32. ledger: café Lv30, today sales 120 + meeting extra 120, offline 90, manager wages, sick hospital fee, M-02 development, one bandana; 기타 수입 and 가구 구입 at 0. manage / tabs: café Lv10, M-02 developing, starter paws = next level-up (시바 dot), daycare affordable (알바 dot). alba: Lv10 → daycare open, 산책/훈련사/매니저 "Lv{N} 해금". menu: 메뉴 개발 popup. float: café run with real guests until a paying guest whose request was met leaves; coin + heart floats held at 25% of their 1 s rise.\n');
  };
- if(process.argv.includes('--u17b')){await u17b();if(errors.length)throw Error(errors.join('\n'));}
+ // §17-5·17-6 floats from the real café path: run until a float of `kind` appears (heart = request met; angry = queue timeout), keep only that
+ // guest's floats (coin+heart, or 빠직), hold them a quarter of the way up, check the icon files are loaded, then shoot.
+ const floatShot=async(kind,name)=>{
+  await ev(`(()=>{const g=__game,has=()=>(g.world.floats||[]).some(f=>f.kind==='${kind}');for(let i=0;i<20000&&!has();i++)g.step(.1);if(!has())throw Error('no ${kind} float');
+   const keep='${kind}'==='angry'?['angry']:['coin','heart'],t=Math.min(...g.world.floats.filter(f=>f.kind==='${kind}').map(f=>f.age));
+   g.world.floats=g.world.floats.filter(f=>keep.includes(f.kind)&&f.age===t);for(const f of g.world.floats)f.age=.25*f.dur;g.refresh();
+   return Promise.all(['res-coin','res-heart','emo-angry'].map(n=>{const i=new Image();i.src='assets/drive/ui/'+n+'.png';return i.decode();})).then(()=>{g.refresh();return true;});})()`);
+  if(!(await ev(`(__game.world.floats||[]).some(f=>f.kind==='${kind}')`)))throw Error(name+': float missing');
+  await sleep(100);await shot(name);};
+ // reviewer fixes 2026-10-15: 빠직 float (emo-angry.png, coin size) and coin+heart float (heart only when the request was met) — DPR2, unsaved TEMP staging.
+ const u17c=async()=>{
+  const dpr2=()=>c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+  await stage();await dpr2();await floatShot('angry','main-screen-u17-float-angry.png');
+  await stage();await dpr2();await floatShot('heart','main-screen-u17-float.png');
+  writeFileSync(join(out,'main-screen-u17c-state.txt'),'STAGED, unsaved ?temp=1 fixture (café Lv5, seed 7). 390×844 CSS px, DPR2. float-angry: café run with real guests until a queued guest times out (30 s) → 빠직 float (assets/drive/ui/emo-angry.png, drawn at the coin float size) held at 25% of its 1 s rise; other floats removed. float: café run with real guests until a paying guest whose request was met leaves → coin + heart floats held at 25%; other floats removed.\n');
+ };
+ if(process.argv.includes('--u17c')){await u17c();if(errors.length)throw Error(errors.join('\n'));}
+ else if(process.argv.includes('--u17b')){await u17b();if(errors.length)throw Error(errors.join('\n'));}
  else if(process.argv.includes('--u17')){await u17();if(errors.length)throw Error(errors.join('\n'));}
  else if(process.argv.includes('--u16')){await u16();if(errors.length)throw Error(errors.join('\n'));}
  // Capture only §14 with --u14; preserve prior approved artifacts.

@@ -48,7 +48,7 @@ test('spec numbers: stay/queue/visit/rep/hearts/walk/hospital/part-timers/paymen
  const C=CFG;assert.equal(C.cafe.stayingSec,30);assert.equal(C.cafe.queueMax,10);assert.equal(C.cafe.queueWaitSec,30);assert.equal(C.cafe.maxPlaced,10);assert.equal(C.cafe.maxOwned,50);
  assert.equal(C.visit.meetSec,5);assert.equal(C.visit.roamSec,3); // starting value 2026-10-14, pending user confirm (was 갱신 70 7 s / 5 s)
  assert.equal(C.rep.start,50);assert.equal(C.rep.queueAngry,-2);assert.equal(C.rep.closureFloor,30);
- assert.deepEqual([C.hearts.regenCap,C.hearts.regenEverySec],[5,1800]); // cap: interior §17-1 starting value 5 (spec v3 1.4 said 10 — conflict, notes '§17 questions'); 30 min: spec v3
+ assert.deepEqual([C.hearts.regenCap,C.hearts.slots,C.hearts.regenEverySec],[10,5,1800]); // cap 10 (spec v3 1.4, confirmed 2026-10-15), 5 top-bar slots (confirmed), 30 min: spec v3
 assert.deepEqual(C.walk.durationsSec,[600,1200,1800]);assert.equal(C.walk.cooldownSec,0);
  assert.equal(C.walk.events.rescue,.05);assert.equal(C.walk.events.snake,1/40);assert.equal(C.walk.events.light,1/30);assert.equal(C.walk.events.capsule,1/30);assert.equal(C.walk.events.extra,.5);
  assert.deepEqual(C.hospital.stays,{light:1800,snake:7200,sick:14400});assert.equal(C.offline.capHours,12);
@@ -189,7 +189,7 @@ test('sick after a 0 gauge for 2 h; hospital needs coins (no credit); 4 h stay; 
  const g=freshGame();S.changeGauges(g.s,g.sh,{happy:-100},0);g.s.coins=1e6;run(g.s,g.w,26*3600,0,60);assert.equal(g.sh.status,'hospital');assert.equal(g.sh.hospitalUntil-g.sh.hospitalUntil%1,(2+24)*H+2*14400e3);});
 test('abandon: others −15, again within 24 h −20; the last shiba cannot be given up (76·82)',()=>{const {s,sh}=freshGame();const a=S.makeShiba(s,{breed:'kuro'}),b=S.makeShiba(s,{breed:'white'});a.intimacy=b.intimacy=50;s.shibas.push(a,b);
  S.abandon(s,sh.id,0);assert.equal(a.intimacy,35);S.abandon(s,b.id,10*H);assert.equal(a.intimacy,15);assert.equal(S.abandonCheck(s,a.id),'last');});
-test('hearts: +1 per 30 min up to the natural cap (§17-1 starting value 5); reward hearts above it; reset ticket only below 10 (1.4)',()=>{const s=S.newState(0);s.hearts=0;S.settleHearts(s,95*MIN);assert.equal(s.hearts,3);S.settleHearts(s,100*H);assert.equal(s.hearts,CFG.hearts.regenCap);
+test('hearts: +1 per 30 min up to the natural cap 10 (1.4); reward hearts above it; reset ticket only below 10 (1.4)',()=>{const s=S.newState(0);s.hearts=0;S.settleHearts(s,95*MIN);assert.equal(s.hearts,3);S.settleHearts(s,100*H);assert.equal(s.hearts,CFG.hearts.regenCap);
  s.hearts=14;S.settleHearts(s,200*H);assert.equal(s.hearts,14);s.items.heartReset=1;assert.equal(S.useHeartReset(s,200*H),false);assert.equal(s.items.heartReset,1);
  s.hearts=4;assert.ok(S.useHeartReset(s,200*H));assert.equal(s.hearts,10);assert.equal(s.items.heartReset,0);});
 

@@ -90,7 +90,7 @@ export const tableItemSize=zone=>zone.cell.w*TABLE_ITEM_LAYOUT.cellWidthFrac;
 // interior §17-5·17-6 floats (layout only, image px × map scale). Guests are invisible (CHAR_SPRITES.guest.file null), so the head
 // is the foot cell centre + headOffset — starting value 2026-10-14, pending user confirm (replace with the sprite's head point when guest art lands).
 // risePx: how far a float drifts up over CFG.feedback.floatSec; iconPx: drawn icon size (128-px 그림이 icons scaled down). Starting values 2026-10-14, pending user confirm.
-export const FLOAT_LAYOUT={headOffset:[0,-90],risePx:40,iconPx:{coin:30,heart:26,angry:30},stagger:[-12,12]}; // stagger: x offsets when coin+heart float together
-// icon per float kind; null = no art yet → the float event still runs but nothing is drawn (§17-6 빠직: art request)
-export const FLOAT_ICONS={coin:'assets/drive/ui/res-coin.png',heart:'assets/drive/ui/res-heart.png',angry:null};
+export const FLOAT_LAYOUT={headOffset:[0,-90],risePx:40,iconPx:{coin:30,heart:26,angry:30},stagger:[-12,12]}; // angry = coin size (user 2026-10-15: same size as the payment floats) · stagger: x offsets when coin+heart float together
+// icon per float kind (그림이 UI icons, MAP.md); null = no art → the float event still runs but nothing is drawn
+export const FLOAT_ICONS={coin:'assets/drive/ui/res-coin.png',heart:'assets/drive/ui/res-heart.png',angry:'assets/drive/ui/emo-angry.png'};
 export function tableItemEntries(world){return (world?.custs||[]).filter(c=>c.phase==='seated'&&c.itemSlot&&c.order).map(c=>({tableItem:c,origin:c.itemSlot.cell,cells:[c.itemSlot.cell]}));}

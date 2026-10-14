@@ -49,8 +49,8 @@ function skipBtn(t){const left=S.skipLeftSec(s,t,clock.now());if(!(left>0))retur
 const mmss=sec=>{sec=Math.max(0,Math.ceil(sec));return `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`;}; // §17-1 '04:32'
 
 // ───────── HUD ─────────
-// §17-1: hearts as CFG.hearts.regenCap slots (filled/empty icons); reward hearts above the cap → all slots filled + small '+N'; mm:ss to the next heart while below the cap
-function renderHearts(now){const cap=CFG.hearts.regenCap,n=Math.max(0,Math.floor(s.hearts||0)),el=$('hearts'),sig=n+'/'+cap;
+// §17-1: hearts as CFG.hearts.slots slots (filled/empty icons); hearts above the slot count → all slots filled + small '+N'; mm:ss to the next heart while below the regen cap
+function renderHearts(now){const cap=CFG.hearts.slots,n=Math.max(0,Math.floor(s.hearts||0)),el=$('hearts'),sig=n+'/'+cap;
  if(el.dataset.sig!==sig){el.dataset.sig=sig;el.innerHTML=Array.from({length:cap},(_,i)=>`<img class="heart-slot" data-full="${i<n?1:0}" src="${i<n?RES.heart:RES.heartEmpty}" alt="" draggable="false">`).join('')+(n>cap?`<small class="heart-more">+${fmt(n-cap)}</small>`:'');}
  const nh=S.nextHeartInSec(s,now);$('heartT').hidden=nh==null;$('heartT').textContent=nh==null?'':mmss(nh);
  el.parentElement.setAttribute('aria-label',`하트 ${fmt(n)}`+(nh==null?'':` · 다음 하트 ${mmss(nh)}`));el.parentElement.title=el.parentElement.getAttribute('aria-label');}
@@ -96,9 +96,9 @@ function handleEvents(){for(const e of w.events.splice(0)){
  if(e.type==='leave')toast(e.coins==null?`${L('menu.'+e.order)} · 결제 미정`:`+${f2(e.coins)} 멍코인`);
 }} // walk results stay in s.walkResults until acknowledged (§17 red dot); renderModal shows them
 // §17-5·17-6 floats: w.floats [{kind,cell,age,dur,dx}] drawn by isomap from the guest's head; aged in step(), gone after CFG.feedback.floatSec.
-// Paying guest → coin; '완전 만족' (request met and/or met a shiba, CFG.feedback flags) → heart beside it; angry (queue timeout) → 'angry' with no icon yet.
+// Paying guest → coin; request met (완전 만족; meeting a shiba alone does not count) → heart beside it; angry (queue timeout) → 빠직.
 function addFloat(kind,cell,dx=0){if(!cell)return;(w.floats??=[]).push({kind,cell:[...cell],age:0,dur:CFG.feedback.floatSec,dx});}
-function floatsFor(e){const F=CFG.feedback,heart=(F.heartIfRequestMet&&e.requestMet)||(F.heartIfMetShiba&&e.metShiba),coin=e.coins!=null,[l,r]=FLOAT_LAYOUT.stagger;
+function floatsFor(e){const heart=!!e.requestMet,coin=e.coins!=null,[l,r]=FLOAT_LAYOUT.stagger;
  if(coin)addFloat('coin',e.cell,heart?l:0);if(heart)addFloat('heart',e.cell,coin?r:0);}
 function ageFloats(dt){if(w.floats?.length)w.floats=w.floats.filter(f=>(f.age+=dt)<f.dur);}
 

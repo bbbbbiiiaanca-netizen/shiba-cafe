@@ -42,8 +42,9 @@ export const CFG={
   days8to14:{fromDay:8,toDay:14,everyDays:2,coins:25000,dia:100}, // starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm · '2일마다' — which days is a question (8·10·12·14 matches the file's ~235,000멍 total)
   items:[{item:'incomeBoost4h',count:3,day:U},{item:'cooldownTicket',count:5,day:U},{item:'potionBig',count:2,day:U}], // starting value 2026-10-15 (밸런스_2년.md §5), pending user confirm · 8~14일 row, day UNSET
   capsules:'stub.onboarding'}, // 캡슐 4·9·11일 (확정 온보딩) already live in stub.onboarding.rewards — not duplicated
- hearts:{regenCap:5, // starting value 2026-10-14, pending user confirm: interior §17-1 '최대 5개(시작값)' = natural-regen cap and top-bar slot count. CONFLICT: spec v3 1.4 / 갱신 28·31 say 10 (SPEC-V3-NOTES '§17 questions')
-  regenEverySec:1800}, // 1.4 / 갱신 28·31: 30분당 1개; 보상 하트는 상한을 넘어 무제한 적립 (top bar: 5 full + '+N')
+ hearts:{regenCap:10, // 1.4 / 갱신 28·31, confirmed by user 2026-10-15: natural regen stops at 10
+  slots:5, // confirmed by user 2026-10-15: top bar shows 5 heart slots; hearts above 5 → 5 full + '+N'
+  regenEverySec:1800}, // 1.4 / 갱신 28·31: 30분당 1개; 보상 하트는 상한을 넘어 무제한 적립
  heartReset:{fillTo:10}, // 1.4 / 갱신 32: 10개 미만일 때만 10개까지, 10개 이상이면 사용 불가(소모 없음)
 
  expansion:{rowCost:U}, // UNSET: interior §1 / spec v3 §1.3 land row cost
@@ -142,8 +143,8 @@ export const CFG={
   walkCells:[2,4], // starting value 똑또기 2026-10-14, pending user batch confirm: a walk covers 2–4 cells
   durations:{lookAround:2,tailWag:2,sit:4,nap:10}}, // starting value 똑또기 2026-10-14, pending user batch confirm: seconds per pose (walk lasts its route)
  // interior §17-5·17-6 floats over a guest's head (layout constants: map-data.js FLOAT_LAYOUT)
- feedback:{floatSec:1, // starting value 2026-10-14, pending user confirm: §17-5/17-6 '약 1초, 시작값' — rise and fade time of coin / heart / anger floats
-  heartIfRequestMet:true,heartIfMetShiba:true}, // starting value 2026-10-14, pending user confirm: '완전 만족' = request met (incl. manager) OR met at least one shiba → heart float too
+ // heart float = request met only (incl. manager), confirmed by user 2026-10-15; meeting a shiba alone → coin only
+ feedback:{floatSec:1}, // starting value 2026-10-14, pending user confirm: §17-5/17-6 '약 1초, 시작값' — rise and fade time of coin / heart / anger floats
  offline:{capHours:12,stepSec:1}, // 갱신 56: 오프라인 수익 최대 12시간분. EXEMPT stepSec = engine integration step
 
  // ── 시바 ──

@@ -18,9 +18,9 @@ const H=3600e3;
 // §15: actual coin flows only; balances at creation/migration are not income.
 // §17-2 order: income 메뉴 판매 · 시바 만남 추가 수입 · 오프라인 수입 (café payments settled while the game was closed/hidden) · 기타 수입 (walk rewards, any other non-sales coins);
 // expense 알바비 · 병원비 · 메뉴 개발비 · 액세서리 구입 (all accessories) · 가구 구입 (always shown, no purchase exists yet).
-// 가게 업그레이드 is not in the §17-2 list: kept for when upgrade prices exist, shown only when non-zero (4th element = hide at 0).
+// 가게 업그레이드 is not a ledger line (user 2026-10-15): upgrade purchases spend coins without a statement row.
 export const ledgerCategories={sales:['메뉴 판매','income'],meeting:['시바 만남 추가 수입','income'],offline:['오프라인 수입','income'],other:['기타 수입','income'],
- alba:['알바비','expense'],hospital:['병원비','expense'],menu:['메뉴 개발비','expense'],accessory:['액세서리 구입','expense'],furniture:['가구 구입','expense'],upgrade:['가게 업그레이드','expense',true]};
+ alba:['알바비','expense'],hospital:['병원비','expense'],menu:['메뉴 개발비','expense'],accessory:['액세서리 구입','expense'],furniture:['가구 구입','expense']};
 export const ledgerDay=now=>Math.floor((now+CFG.ledger.dayOffsetMs)/CFG.ledger.periodMs);
 export function settleLedger(s,now){
  const today=ledgerDay(now);s.ledger??={days:{},now};s.ledger.now=Math.max(now,s.ledger.now??now);const latest=ledgerDay(s.ledger.now);
@@ -33,7 +33,7 @@ export function recordLedger(s,category,amount,now=s.ledger?.now??s.lastSeen){
 }
 export function ledgerStatement(s,now,offset=0){
  const day=settleLedger(s,now)+(offset===-1?-1:0),row=s.ledger.days[day]||{};
- const lines=Object.entries(ledgerCategories).map(([id,[label,kind,hideZero]])=>({id,label,kind,amount:row[id]||0,hideZero})).filter(x=>!x.hideZero||x.amount).map(({hideZero,...x})=>x);
+ const lines=Object.entries(ledgerCategories).map(([id,[label,kind]])=>({id,label,kind,amount:row[id]||0}));
  return {day,lines,net:lines.reduce((n,x)=>n+(x.kind==='expense'?-x.amount:x.amount),0)};
 }
 export function recordPayment(s,pay,now,{offline=false}={}){
@@ -284,7 +284,7 @@ const upgradeAdd=(s,kind)=>{const e=CFG.upgrades[kind]?.effect;return Number.isF
 const upgradeMul=(s,kind)=>{const e=CFG.upgrades[kind]?.effect;return Number.isFinite(e)?e**upgradeLevel(s,kind):1;}; // interval · price: ×effect per level (form pending confirm)
 export function upgradeCheck(s,kind){const U=CFG.upgrades[kind];if(!U)return 'kind';if(!Number.isFinite(U.price))return 'unset';
  if(Number.isFinite(U.maxLevel)&&upgradeLevel(s,kind)>=U.maxLevel)return 'max';if(isUnset(s.coins)||s.coins<U.price)return 'coins';return null;}
-export function buyUpgrade(s,kind,now=Date.now()){if(upgradeCheck(s,kind))return false;const p=CFG.upgrades[kind].price;s.coins-=p;recordLedger(s,'upgrade',p,now);s.upgrades[kind]=upgradeLevel(s,kind)+1;return true;}
+export function buyUpgrade(s,kind,now=Date.now()){if(upgradeCheck(s,kind))return false;const p=CFG.upgrades[kind].price;s.coins-=p;s.upgrades[kind]=upgradeLevel(s,kind)+1;return true;}
 
 // ───────────────────────── 얼룩 (갱신 101-3·117-2) ─────────────────────────
 export function cleanStain(s){if(s.cafe.stains<=0)return false;s.cafe.stains--;addCafeExp(s,CFG.cafeExp.stainClean);return true;}

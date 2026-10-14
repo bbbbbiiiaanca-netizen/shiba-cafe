@@ -173,7 +173,7 @@ Drive display names: tatami-approved.png = 타일_바닥_다다미_칸.png; tile
 ## 그림이 UI icons (2026-10-14)
 
 128×128 transparent PNGs, used unmodified (CSS/canvas size only). sha256 re-checked against the files here.
-Shown as: top-bar resource pills (coin, heart slots full/empty, diamond, paw), price buttons (coin, diamond), §17-5 payment floats (coin, heart), settings button (gear).
+Shown as: top-bar resource pills (coin, heart slots full/empty, diamond, paw), price buttons (coin, diamond), §17-5 payment floats (coin, heart), §17-6 anger float (빠직, added 2026-10-15), settings button (gear).
 
 | file | Drive original | Drive id | sha256 |
 |---|---|---|---|
@@ -183,3 +183,4 @@ Shown as: top-bar resource pills (coin, heart slots full/empty, diamond, paw), p
 | `ui/res-heart-empty.png` | `이미지/interior/UI_재화_하트_빈.png` | `1pHIKJl1RgV7j4mX20Ltlo1ojmQWDxpVo` | `ccf6669887ba9854378a61757df3db8ac3c19c51b48fbf8e85a9431335121832` |
 | `ui/res-diamond.png` | `이미지/interior/UI_재화_다이아.png` | `148mziE9fLPJ9QZK18ZZTmV1k4RBQpIzh` | `fbda3773816ab1afbf9be54323e1a7b8a31ced900e1b7029a3a2f53baf7fdb64` |
 | `ui/res-paw.png` | `이미지/interior/UI_재화_발바닥.png` | `1YmTwuvjr8hP8O3I2InseFHEAA_maXmrN` | `e921b24c0640b1534c36f0229099af17e367cf6c0b5bd8708adcccc21c04e856` |
+| `ui/emo-angry.png` | `이미지/interior/UI_감정_빠직.png` | `1QsESC0UaHiiSMDX15Jde-OG5hVPA82JM` | `4226a6572ada44b0c1b89d5e2d184ec63cef9532186a3fbf566401b2d1e503a7` |

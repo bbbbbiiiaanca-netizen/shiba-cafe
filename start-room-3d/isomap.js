@@ -78,7 +78,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
      const icon=load(c.request.type==='meetShiba'?'assets/drive/request-icon-shiba_256.png':'assets/drive/request-icon-trick_256.png');
      if(icon.complete&&icon.naturalWidth)ctx.drawImage(icon,p.x-10,p.y-46,20,20);
     }
-    // §17-5·17-6: icon floats rise from the guest's head and fade (age advanced by main.js); kinds without art (빠직) draw nothing
+    // §17-5·17-6: icon floats rise from the guest's head and fade (age advanced by main.js); kinds with a null icon draw nothing
     for(const f of world.floats||[]){const file=FLOAT_ICONS[f.kind];if(!file||!f.cell)continue;const im=load(file);if(!(im.complete&&im.naturalWidth))continue;
      const k=Math.min(1,Math.max(0,f.age/f.dur)),p=cellToScreen(...f.cell,view,z),size=FLOAT_LAYOUT.iconPx[f.kind]*scale,F=FLOAT_LAYOUT;
      const x=p.x+(F.headOffset[0]+(f.dx||0))*scale,y=p.y+F.headOffset[1]*scale-F.risePx*scale*k;
