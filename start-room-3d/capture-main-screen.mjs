@@ -24,8 +24,8 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await click('[data-lang=ko]');await click('[data-act=langOk]');await click('[data-breed=red]');await click('[data-act=startGo]');
  await ev(`(()=>{const g=__game;g.state.cafe.level=5;g.state.coins=30000;g.state.dia=30;for(const breed of ['white','kuro']){const sh=g.S.makeShiba(g.state,{breed,level:21,now:g.clock.now()});sh.placed=true;g.state.shibas.push(sh);}for(let i=0;i<250;i++)g.step(.1);g.world.custs=g.world.custs.slice(0,2);g.S.developMenu(g.state,'M-02',g.clock.now());g.refresh();return true;})()`);
  await sleep(1600);
- for(const dsf of [1,2]){await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:dsf,mobile:true});await shot(dsf===1?'main-screen-v3.png':'main-screen-v3@2x.png');}
- writeFileSync(join(out,'main-screen-v3-state.txt'),'Lv5; three placed shibas (red, white, kuro), two simulated guests; M-02 developing; coins 21,500; diamonds 30; fresh=1, still=1, seed=7; 250 steps of 0.1 seconds. 390x844, DPR1 and DPR2.\n');
+ for(const dsf of [1,2]){await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:dsf,mobile:true});await shot(dsf===1?'main-screen-v4.png':'main-screen-v4@2x.png');}
+ writeFileSync(join(out,'main-screen-v4-state.txt'),'Lv5; three placed shibas (red, white, kuro), two simulated guests; M-02 developing; coins 21,500; diamonds 30; fresh=1, still=1, seed=7; 250 steps of 0.1 seconds. 390x844, DPR1 and DPR2.\n');
  console.log('Staged capture: cafe level 5, three placed shibas, two simulated guests, M-02 developing; coins 21,500, diamonds 30; 390x844 CSS px, DPR 1 and 2.');
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}
 console.log(`${shots.length} screens → ${out}`);for(const s of shots)console.log('  '+s);for(const e of errors)console.log('  ERROR',e);process.exitCode=errors.length?1:0;

@@ -3,14 +3,22 @@ const grid=(rows,cols,id)=>Array.from({length:rows},()=>Array(cols).fill(id));
 export const MAP={tileWidth:128,tileHeight:64,floors:[
  {id:1,locked:false,grid:grid(6,6,'tatami'),walls:{backLeft:true,backRight:true},objects:[
   {type:'counter',col:1,row:0,w:2,h:1,sprite:null,label:'카운터'},
-  {type:'dongu',col:3,row:0,w:1,h:1,sprite:null,label:'동구'},
+  {type:'dongu',col:1,row:1,w:1,h:1,sprite:null,label:'동구'},
   {type:'table',col:1,row:2,w:1,h:1,sprite:null,label:'찻상'},
   {type:'cushion',col:0,row:3,w:1,h:1,sprite:null,label:'방석'},
-  {type:'table',col:3,row:3,w:1,h:1,sprite:null,label:'찻상'},
-  {type:'cushion',col:4,row:3,w:1,h:1,sprite:null,label:'방석'},
-  {type:'stairs',col:5,row:0,w:1,h:2,sprite:null,label:'2층 계단',connects:[1,2]}],
-  zones:[{id:'theme',col:4,row:4,w:2,h:2,locked:true,cost:null /* UNSET */,label:'잠김'}]},
- {id:2,locked:true,cost:null /* UNSET */,grid:grid(4,6,'plain'),walls:{backLeft:true,backRight:true},objects:[],zones:[]}
+  {type:'table',col:2,row:3,w:1,h:1,sprite:null,label:'찻상'},
+  {type:'cushion',col:1,row:3,w:1,h:1,sprite:null,label:'방석'},
+  {type:'stairs',col:3,row:0,w:1,h:2,sprite:null,label:'2층 계단',connects:[1,2]}],
+  zones:[{id:'A',rect:{col:0,row:0,w:4,h:6},locked:false,unlockCost:null /* UNSET */,theme:null},
+   {id:'B',rect:{col:4,row:0,w:2,h:6},locked:true,unlockCost:null /* UNSET */,theme:null}],
+  interiorWalls:[{zones:['A','B'],edges:Array.from({length:6},(_,r)=>({from:[4,r],to:[4,r+1],door:r===3}))}],
+  slots:[]},
+ {id:2,locked:true,cost:null /* UNSET */,grid:grid(4,6,'plain'),walls:{backLeft:true,backRight:true},objects:[],zones:[{id:'upstairs',rect:{col:0,row:0,w:6,h:4},locked:true,unlockCost:null,theme:null}],interiorWalls:[],slots:[]}
 ]};
 export const SPRITES={table:{path:'assets/drive/furniture/furn-tea-table.png',anchor:[64,72]},cushion:{path:'assets/drive/furniture/furn-zabuton-a.png',anchor:[64,32]},counter:{path:'assets/drive/furniture/furn-counter.png',anchor:[96,136]},dongu:null,stairs:{path:'assets/drive/furniture/furn-stairs.png',anchor:[96,177]},expand:{path:'assets/drive/tiles/marker-expand-land.png',anchor:[64,72]},guest:null,red:null,white:null,kuro:null,sesame:null};
 export const TILES={tatami:'tatami-approved.png',plain:'tile-floor-tatami.png',locked:'tile-floor-locked.png'};
+
+export function zoneAt(floor,col,row){return floor.zones.find(z=>z.cells?z.cells.some(([c,r])=>c===col&&r===row):col>=z.rect.col&&col<z.rect.col+z.rect.w&&row>=z.rect.row&&row<z.rect.row+z.rect.h);}
+export function canPlace(floor,slotId,type){const s=floor.slots.find(s=>s.id===slotId);return Boolean(s&&!floor.locked&&!zoneAt(floor,...s.cell)?.locked&&zoneAt(floor,...s.cell)?.id===s.zoneId&&s.item===null&&s.allowed.includes(type));}
+export function placeItem(floor,slotId,type){if(!canPlace(floor,slotId,type))return false;floor.slots.find(s=>s.id===slotId).item=type;return true;}
+for(const f of MAP.floors){for(let r=0;r<f.grid.length;r++)for(let c=0;c<f.grid[r].length;c++){const z=zoneAt(f,c,r);if(!z)continue;const o=f.objects.find(o=>c>=o.col&&c<o.col+o.w&&r>=o.row&&r<o.row+o.h);f.slots.push({id:`${f.id}:${c},${r}`,zoneId:z.id,cell:[c,r],allowed:['table','cushion','counter','stairs'],item:o?.type||null});}f.objects.forEach(o=>o.zoneId=zoneAt(f,o.col,o.row)?.id);}

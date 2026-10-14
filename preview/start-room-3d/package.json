@@ -1,1 +1,1 @@
-{"private":true,"type":"module","scripts":{"test":"node tests/spec-v3.test.mjs && node tests/timeline.test.mjs","test:browser":"node tests/smoke-browser.mjs","capture":"node capture-spec-v3.mjs"}}
+{"private":true,"type":"module","scripts":{"test":"node tests/spec-v3.test.mjs && node tests/timeline.test.mjs && node tests/map-data.test.mjs","test:browser":"node tests/smoke-browser.mjs","capture":"node capture-spec-v3.mjs"}}
