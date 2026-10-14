@@ -1,26 +1,20 @@
 import assert from 'node:assert/strict';
-import {MAP,zoneAt,canPlace,placeItem,SPRITES} from '../map-data.js';
-const f=structuredClone(MAP.floors[0]);
-assert.equal(f.zones.filter(z=>!z.locked).length,1);
-assert.equal(zoneAt({zones:[{id:'cells',cells:[[2,3]],locked:false}]},2,3).id,'cells');
-assert.equal(zoneAt(f,3,5).id,'A');assert.equal(zoneAt(f,4,5).id,'B');
-for(const z of f.zones){assert.equal(z.unlockCost,null);assert.equal(z.theme,null);}
-assert.deepEqual(SPRITES.expand.anchor,[64,72]);
-assert.equal(f.slots.length,f.grid.flat().length);
-assert.equal(new Set(f.slots.map(s=>s.id)).size,f.slots.length);
-for(const s of f.slots)assert.equal(zoneAt(f,...s.cell).id,s.zoneId);
-for(const o of f.objects){assert.equal(o.zoneId,'A');for(let r=o.row;r<o.row+o.h;r++)for(let c=o.col;c<o.col+o.w;c++)assert.equal(f.slots.find(s=>s.cell[0]===c&&s.cell[1]===r).item,o.type);}
-assert.equal(canPlace(f,'1:1,0','table'),false,'occupied counter footprint');
-assert.equal(canPlace(f,'1:5,5','table'),false,'locked zone');
-assert.equal(canPlace(f,'1:0,0','guest'),false,'unsupported item');
-assert.equal(placeItem(f,'1:0,0','table'),true);assert.equal(canPlace(f,'1:0,0','table'),false);assert.equal(placeItem(f,'1:0,0','cushion'),false);
-assert.equal(placeItem(f,'missing','table'),false);
-const run=f.interiorWalls[0];assert.deepEqual(run.zones,['A','B']);
-assert.equal(run.edges.filter(e=>e.door).length,1);
-assert.deepEqual(run.edges.find(e=>e.door),{from:[4,3],to:[4,4],door:true});
-for(const e of run.edges){const [c,r]=e.from;assert.equal(zoneAt(f,c-1,r).id,'A');assert.equal(zoneAt(f,c,r).id,'B');assert.deepEqual(e.to,[c,r+1]);}
-assert.deepEqual(f.objects.find(o=>o.type==='stairs').connects,[1,2]);
-const upper=MAP.floors[1];assert.equal(upper.locked,true);assert.equal(canPlace(upper,upper.slots[0].id,'table'),false);
-const extended=structuredClone(f);extended.grid.push(Array(6).fill('tatami'));extended.zones[0].rect.h++;extended.zones[1].rect.h++;
-assert.equal(zoneAt(extended,0,6).id,'A');assert.equal(zoneAt(extended,5,6).id,'B');
-console.log('map data: zones, footprints, placement, door gap, stairs and row expansion passed');
+import {existsSync} from 'node:fs';
+import {MAP,SPRITES,zoneAt,cellToImage,cellToScreen} from '../map-data.js';
+const z=structuredClone(MAP.zones[0]);
+assert.deepEqual(z.origin,{x:429,y:181});assert.deepEqual(z.cell,{w:128,h:64});
+assert.equal(z.cols,6);assert.equal(z.rows,6);assert.equal(z.floor,1);assert.equal(z.locked,false);assert.equal(z.unlockCost,null);
+assert.equal(existsSync(new URL('../'+z.image,import.meta.url)),true);
+assert.deepEqual(cellToImage(0,0,z),{x:429,y:213});
+assert.deepEqual(cellToImage(3,3,z),{x:429,y:405});
+assert.deepEqual(cellToImage(0,3.5,z),{x:205,y:325});
+assert.deepEqual(cellToImage(2.5,0,z),{x:589,y:293});
+assert.deepEqual(cellToScreen(3,3,{x:10,y:20,scale:.5},z),{x:224.5,y:222.5});
+assert.deepEqual(z.slots.map(s=>[s.type,s.i,s.j]),[['stairs',0,3.5],['counter',2.5,0],['table',3,3],['cushion',3,2],['cushion',3,4]]);
+assert.deepEqual(Object.values(SPRITES).map(s=>s.anchor),[[74,73],[68,52],[114,142],[111,177]]);
+const occupied=new Set();for(const s of z.slots){assert.ok(SPRITES[s.type]);assert.ok(existsSync(new URL('../'+SPRITES[s.type].path,import.meta.url)));for(const [c,r] of s.cells){assert.ok(c>=0&&c<z.cols&&r>=0&&r<z.rows);assert.ok(!occupied.has(`${c},${r}`));occupied.add(`${c},${r}`);}}
+assert.deepEqual(z.slots[0].connects,[1,2]);assert.equal(z.slots[0].cells.length,2);assert.equal(z.slots[1].cells.length,2);
+const expanded={zones:[z,{...structuredClone(z),id:'upstairs',floor:2,locked:true,slots:[]}]};z.rows++;
+assert.equal(zoneAt(expanded,5,6).id,'A');assert.equal(zoneAt(expanded,5,7),undefined);
+assert.equal(zoneAt(expanded,3,3,2).id,'upstairs');assert.equal(zoneAt(expanded,3,3,2).unlockCost,null);
+console.log('map data: image coordinates, approved anchors, footprints, zones, row expansion and second floor passed');

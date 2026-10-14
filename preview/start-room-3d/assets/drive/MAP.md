@@ -147,3 +147,13 @@ Drive display names: tatami-approved.png = 타일_바닥_다다미_칸.png; tile
 | `ui/ui-icon-zabuton.png` | `UI_아이콘_방석` (`이미지/interior/ui-icon-zabuton.png`) | `774aeae946cd6186ded16f9f94afcd5f43388a83bff921cdc19b41cf0e4852e5` |
 | `ui/ui-icon-counter.png` | `UI_아이콘_카운터` (`이미지/interior/ui-icon-counter.png`) | `e15a25b2e64066320a68e106a91f5621264c523e30a5428c0c3f931920c8edb4` |
 | `ui/ui-icon-stairs.png` | `UI_아이콘_계단` (`이미지/interior/ui-icon-stairs.png`) | `9abc6439567a6f74eda99b23f0df411029d27b79d0233efe51e89b8ab7d0e4b7` |
+
+## Main café v4 room and approved furniture (unmodified)
+
+| File | Drive original name | Drive ID | Full SHA256 |
+|---|---|---|---|
+| `방_기본_다다미_시험.png` | `방_기본_다다미_시험.png` | `1OB8xn7vyd1cDjUJcKOTadvnZD0CBLX4_` | `e13e916a70c615ceaa0c7c08d4e05a263b9a7727d3879aaf2e53b57a41c5f744` |
+| `furn-tea-table.png` | `가구_찻상_v2.png` | `159O5okYdMGc1Gdc9M88EqCradlyFTj9D` | `fde5f1dca5fd1c0f9db9b1a04c00bf49c58a7303a3a63b027273a7b63844a4e1` |
+| `furn-cushion.png` | `가구_방석_v2.png` | `1aLdA7U5fd5gMG04Qz0AoNdg1oOG4M-p4` | `f3fa770f2023f7e62da9cf689ab064e33693f6562f402fd5a61058e2bc6b6f7a` |
+| `furn-counter.png` | `가구_카운터_v2.png` | `1PBZ4mkp_6Y3JZunwNma1TPZXCeIcJKPf` | `cf02cbc08b9d11ce7746cf7874705c6bad9dff8a2006dba8c8d4afb11bfeb00f` |
+| `furn-stairs.png` | `가구_계단_v2.png` | `1CNysa_Rg2eGY-qFPM7HhN3dOUH5D-i1J` | `27593897c1f48877136cfb305d3092b76fdbe6ba9f1047663ca28dd0389fabe7` |
