@@ -216,3 +216,30 @@ Approved assets are copied byte-identically and drawn whole; hashes and Drive na
 Furniture edit follow-up: action controls now live at the top of the bottom 가구 tab content; no edit DOM controls are added to the map. Entering edit via the toggle, setEdit, ?edit=1 or ?grid=1 activates 가구; exiting keeps 가구. Controls stay visible during edit and are disabled until selection. Browser smoke checks cover panel ownership, map separation, automatic tab activation and exit behavior.
 
 Run `npm run test:browser` and `node capture-main-screen.mjs` on a Chrome-capable host to verify and regenerate main-screen-v7-edit.png (selected flipped counter, origin [0,1], cells (0,1)/(0,2), 가구 action bar). `python3 align-crops.py` generates align-v7/align-counter-flipped.png offline: complete room plus all furniture at 3×, grid, selected counter outline, depth sorting and mirror anchor ax′ = width − ax.
+
+
+## Unit 2 implementation
+
+- 메뉴: dedicated fixed header; 14 confirmed menu images, configured unlock levels/prices/development costs and durations (134/134-1/136), one active job, remaining-time display, rounded diamond instant finish (135-2), completion feedback. Development remains real-time in the existing core.
+- 시바: owned list with confirmed portraits, status, personal paw balance and care entry; level-up confirmation and explicit result, 20×current-level cost and Lv30 cap (138/139); existing care and real-time walk screen wired from this tab (1.10, 84/85/87/124-5/125-1). No new walk rules.
+- 가구: dedicated header, four confirmed Drive icons; explicit null prices (1.3/F p6·9); existing placement edit toggle and edit bar retained.
+- 가게: bandanas 4×9 at 5,000 coins (140), special accessory empty slot at 300 diamonds; per-shiba single slot with 1,000 personal paws / 1,000 diamonds unlock (139-5/6). Counted inventory shows owned/worn/available and equips/unequips/swaps (140-1). Gacha visible and disabled with 준비 중. Heart-reset inventory remains usable per 1.4.
+- Café: existing automatic XP progression/table to Lv50 (73/87/98/132-4), progress/threshold and reputation shown in shop, HUD progress tooltip, level-up feedback. Null threshold shows 미정 and no invented progression. No separate reputation level or fee added.
+- Validation: npm test passes (93 spec tests plus timeline/map/edit suites). Added exhaustive personal-paw spending, purchase/inventory conservation through save/load, failed development and diamond transactions, null-threshold tests. Browser smoke adds tab headers, confirmation/cancel/result, inventory purchase/equip/unequip, café threshold feedback; existing menu and furniture primary-action checks retained. Chrome was not launched in this sandbox.
+- Capture script adds main-screen-u2-menu.png, main-screen-u2-shiba.png, main-screen-u2-furniture.png, main-screen-u2-shop.png and main-screen-u2-levelup.png at DPR2 to /workspace/shiba-cafe-docs/spec-v3-build/. Earlier v7 staging/output names are retained. Run npm run test:browser and node capture-main-screen.mjs on the Chrome host; new images have not been generated here.
+- On-map character rendering remains unchanged: shibas, guests and 동구 stay invisible. No YouTube or 도감 added. All existing costs retained.
+
+## Unit 2 open questions
+
+QUESTIONS (all corresponding spec config values remain null):
+
+1. Furniture prices / purchase rules: `furniture.items[*].price = null` (1.3, F p6·9; notes §3 interior unresolved). Current furniture is editable; no purchases invented.
+2. Which starting accessory? `accessory.starterItem = null` (139-6). Existing explicitly documented pending first-sheet-cell fallback remains; not a new confirmed choice.
+3. Bandana colour names/order? `accessory.bandana.colorNames = null` (1.5, 140). Use neutral cell1–cell9 identifiers and confirmed sheets.
+4. Special accessory types/designs? `accessory.special.items = null` (140). Empty slot, disabled purchase.
+5. Gacha breed odds and starting level? `gacha.breedOdds`, `gacha.startLevel = null` (137, notes red-team question 9(바); 138's Lv1 calculation is an inference). Disabled 준비 중, no sampled odds.
+6. Feeding/bathing quantities and costs, snack cost/recovery, sleep recovery speed? `care.feed.*`, `care.bath.*`, `care.snack.*`, `care.sleep.fatiguePerHour = null` (1.2-3, 1.10.0 questions 9(다-1/2/3)). Disabled 미정.
+7. Walk stop/refund/partial reward rules and extra coin reward amount? `walk.stopRule`, `walk.events.extraCoins = null` (1.10.3 question 1-4; 82). Existing stop button disabled; existing documented heart outcome retained.
+8. Starting gauges/intimacy, personality odds, decay rates, neglect intimacy loss and rescue starting level? `gaugeStart`, `intimacy.start`, `personalityOdds`, `decayPerHour.*`, `neglect.intimacyDrop`, `neglect.donguIntimacyDrop`, `rescueLevel = null` (1.2-3, 38/39, 112, notes question 9(다/사)). Existing documented core fallbacks retained; no new values.
+9. Starting coins / paid slot / expansion / income and XP booster diamond prices? `start.coins`, `cafe.paidSlotUnlockDia`, `cafe.expansion2FCost`, `itemIncome.priceDia`, `stub.expBoost.priceDia = null` (56, 87/132-3, 97/98). Relevant UI shows 미정; payment actions stay disabled.
+10. Meeting-level income aggregation? `income.levelAggregation = null` (75/120, prior red-team #7). No payment formula guessed. Café level thresholds themselves are confirmed by 98, so no unknown café threshold is filled in.

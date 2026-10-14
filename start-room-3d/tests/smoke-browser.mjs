@@ -19,6 +19,22 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  const go=async(fresh,view='')=>{await c('Page.navigate',{url:'file://'+resolve(ROOT,'index.html')+'?still=1&seed=7'+(fresh?'&fresh=1':'')+view});await sleep(300);
   for(let i=0;i<300&&!(await ev('Boolean(window.__ready)'));i++)await sleep(100);};
  await go(true);await steps({ev,check,sleep,reload:()=>go(false)});
+ await ev('__game.ui.modals=[];__game.close();__game.state.settings.language="ko";__game.refresh();true');
+ for(const [tab,title] of [['menu','메뉴 개발'],['shiba','시바'],['furniture','가구'],['store','가게']]){await ev(`document.querySelector('[data-main-tab=${tab}]').click();true`);await check('Unit 2 '+tab+' header',`document.querySelector('.menu-heading').firstChild.textContent.trim()===${JSON.stringify(title)}`);}
+ await ev('document.querySelector("[data-main-tab=shiba]").click();__game.state.shibas[0].paws=420;__game.refresh();document.querySelector("#menuList [data-act=levelUp]").click();true');
+ await check('level-up confirmation leaves paws intact','__game.state.shibas[0].level===21&&__game.state.shibas[0].paws===420&&!document.getElementById("modal").hidden');
+ await ev('document.querySelector("[data-act=modalOk]").click();true');
+ await check('cancel spends nothing','__game.state.shibas[0].paws===420');
+ await ev('document.querySelector("#menuList [data-act=levelUp]").click();document.querySelector("[data-act=confirmYes]").click();true');
+ await check('confirmed level-up consumes personal paws and shows result','__game.state.shibas[0].level===22&&__game.state.shibas[0].paws===0&&/레벨업 완료/.test(document.getElementById("mbox").textContent)');
+ await ev('document.querySelector("[data-act=modalOk]").click();document.querySelector("[data-main-tab=store]").click();__game.state.coins=5000;__game.refresh();document.querySelector("[data-act=buyAcc][data-item=bandana-triangle-cell2]").click();true');
+ await check('shop primary action buys into inventory','__game.state.coins===0&&__game.state.accInv["bandana-triangle-cell2"]===1&&/가방 1/.test(document.querySelector("[data-inventory]").textContent)');
+ await ev('document.querySelector("[data-inventory] [data-act=equip][data-item=bandana-triangle-cell2]").click();true');
+ await check('inventory equips one copy','__game.state.shibas[0].acc==="bandana-triangle-cell2"&&__game.state.accInv["bandana-triangle-cell2"]===0');
+ await ev('document.querySelector("[data-inventory] [data-act=unequip][data-item=bandana-triangle-cell2]").click();true');
+ await check('inventory unequips back to bag','__game.state.shibas[0].acc===null&&__game.state.accInv["bandana-triangle-cell2"]===1');
+ await ev('__game.state.cafe.level=1;__game.refresh();__game.state.cafe.exp=__game.S.cafeNeed(1)-1;__game.S.addCafeExp(__game.state,1);__game.refresh();true');
+ await check('cafe experience threshold advances level with feedback','__game.state.cafe.level===2&&/카페 Lv 2/.test(document.querySelector("[data-cafe-level]").textContent)&&/레벨업/.test(document.getElementById("toast").textContent)');
  await go(false);
  await ev('document.querySelector("[data-main-tab=furniture]").click();document.querySelector("[data-edit-toggle]").click();true');
  await check('toggle enters edit in furniture panel','__game.iso.edit && __game.iso.gridCells===36 && document.querySelector("[data-main-tab=furniture]").classList.contains("active")');

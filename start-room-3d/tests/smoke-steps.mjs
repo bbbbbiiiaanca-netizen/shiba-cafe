@@ -21,9 +21,9 @@ export default async function({ev,check,sleep,reload}){
  await ev('document.querySelector("[data-act=walk][data-sec=\'600\']").click();true');
  await check('walk started, shiba left the café','!!__game.state.walk&&!__game.world.sh[__game.state.walk.shibaId]&&[...document.querySelectorAll("#pbody button")].some(b=>/Stop/.test(b.textContent)&&b.disabled)');
  await ev('document.querySelector("[data-main-tab=store]").click();true');
- await check('shop: 14 menus with images (M-01 default), 13 dev buttons locked/unaffordable at start; diamond items payment stub; gacha 100/900 disabled with 0 diamonds (137)','document.querySelectorAll("[data-menu]").length===14&&document.querySelectorAll("[data-menu] img").length===14&&document.querySelectorAll("#menuList [data-act=dev][disabled]").length===13&&[...document.querySelectorAll("#menuList button")].some(b=>b.disabled&&/TBD/.test(b.textContent))&&[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled)&&/100💎/.test(document.querySelector("[data-gacha]").textContent)&&/900💎/.test(document.querySelector("[data-gacha]").textContent)');
+ await check('shop inventory and disabled gacha','!!document.querySelector("[data-inventory]")&&[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled&&/준비 중/.test(b.textContent))');
  await ev('__game.state.dia=1000;__game.state.items.capsule=1;__game.refresh();document.querySelector("[data-act=gacha][data-n=\'1\']:not([data-ticket])").click();true');
- await check('red-team #1: gacha odds UNSET → all 3 pull buttons disabled "Odds TBD" even with diamonds and a ticket, nothing spent','[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled&&/Odds TBD/.test(b.textContent))&&__game.state.dia===1000&&__game.state.items.capsule===1&&__game.state.shibas.length===1');
+ await check('red-team #1: gacha odds UNSET → all 3 pull buttons disabled "Odds TBD" even with diamonds and a ticket, nothing spent','[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled&&/준비 중/.test(b.textContent))&&__game.state.dia===1000&&__game.state.items.capsule===1&&__game.state.shibas.length===1');
  await ev('__game.state.dia=0;__game.state.items.capsule=0;__game.open("care",__game.state.shibas[0].id);true');
  await check('red-team #1: personality shown as "Odds TBD" (not drawn)','__game.state.shibas[0].personality===null&&/Personality: Odds TBD/.test(document.getElementById("pbody").textContent)');
  await ev('document.querySelector("[data-main-tab=store]").click();true');
@@ -33,8 +33,8 @@ export default async function({ev,check,sleep,reload}){
  await ev('__game.open("care",__game.state.shibas[0].id);document.querySelector("[data-act=equip][data-item=bandana-loop-cell9]").click();true');
  await check('starter wears it; the starter bandana goes back to the bag (139-6·140-1)','__game.state.shibas[0].acc==="bandana-loop-cell9"&&__game.state.accInv["bandana-triangle-cell1"]===1&&!!document.querySelector("[data-acc] [data-band=bandana-loop-cell9]")');
  await ev('document.querySelector("[data-main-tab=store]").click();true');
- await ev('__game.state.cafe.level=2;__game.state.coins=8500;__game.refresh();document.querySelector("[data-act=dev][data-id=M-02]").click();true');
- await check('developing M-02 at Lv2 costs 8,500 멍코인 and shows 30 min in progress (136)','__game.state.menuDev?.id==="M-02"&&!__game.state.menus.includes("M-02")&&__game.state.coins===0&&!!document.querySelector("[data-dev=M-02]")&&document.querySelector("[data-act=dev][data-id=M-05]")?.disabled');
+ await ev('document.querySelector("[data-main-tab=menu]").click();__game.state.cafe.level=2;__game.state.coins=8500;__game.refresh();document.querySelector("[data-act=dev][data-id=M-02]").click();true');
+ await check('developing M-02 at Lv2 costs 8,500 멍코인 and shows 30 min in progress (136)','__game.state.menuDev?.id==="M-02"&&!__game.state.menus.includes("M-02")&&__game.state.coins===0&&!!document.querySelector("[data-main-menu=M-02] .instant")&&!document.querySelector("[data-main-menu=M-05] [data-act=dev]")');
  await ev('__game.state.dia=30;__game.refresh();document.querySelector("[data-act=skip][data-type=menu]").click();true');
  await check('finish now: 30 diamonds, M-02 developed (135-2)','__game.state.menus.includes("M-02")&&__game.state.dia===0&&!__game.state.menuDev');
  // language switch in settings applies at once

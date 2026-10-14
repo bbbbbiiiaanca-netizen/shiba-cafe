@@ -42,7 +42,8 @@ function skipBtn(t){const left=S.skipLeftSec(s,t,clock.now());if(!(left>0))retur
 // ───────── HUD ─────────
 function renderHUD(){const now=clock.now();$('coins').textContent=fmt(s.coins);$('hearts').textContent=fmt(s.hearts);$('dia').textContent=fmt(s.dia);
  const nh=S.nextHeartInSec(s,now);$('heartT').textContent=nh==null?'':tfmt(nh);
- const C=s.cafe,need=S.cafeNeed(C.level);$('lvl').textContent=L('hud.level',{lv:C.level});$('expBar').style.width=(need?Math.min(100,C.exp/need*100):100)+'%';
+ const C=s.cafe,need=S.cafeNeed(C.level);$('lvl').textContent=L('hud.level',{lv:C.level});$('expBar').style.width=(C.level>=CFG.cafe.maxLevel?100:need==null?0:Math.min(100,C.exp/need*100))+'%';
+ $('expBar').parentElement.title=C.level>=CFG.cafe.maxLevel?'최고 레벨':need==null?'미정':`${fmt(C.exp)} / ${fmt(need)}`;
  $('rep').textContent=L('hud.rep',{rep:Math.round(C.rep)});$('mgr').textContent=S.managerActive(s,now)?L('hud.manager',{t:tfmt((C.managerUntil-now)/1000)}):'';
  $('closed').hidden=!C.closed;$('closed').textContent=L('hud.closed');}
 
@@ -53,14 +54,15 @@ let menuSig='',mainTab=iso.edit?'furniture':'menu';
 function renderMainMenu(){
  document.querySelectorAll('[data-main-tab]').forEach(b=>b.classList.toggle('active',b.dataset.mainTab===mainTab));
  $('paws').textContent=fmt(s.shibas.reduce((n,sh)=>n+(sh.paws||0),0));
- const now=clock.now(),sig=JSON.stringify([mainTab,s.cafe.level,s.coins,s.dia,s.menus,s.menuDev,Math.ceil((s.menuDev?.until-now)/1000)]);
- if(mainTab==='menu'&&sig===menuSig)return;menuSig=sig;
+ const now=clock.now(),sig=JSON.stringify([mainTab,s,ui.accType,iso.edit,s.settings.language,Math.floor(now/1000)]);
+ if(sig===menuSig)return;menuSig=sig;
+ const headers={menu:['메뉴 개발','새로운 맛을 준비해요'],shiba:['시바','돌봄 · 레벨업 · 산책'],furniture:['가구','배치 · 가격 미정'],store:['가게','반다나 · 액세서리 · 가방']};const [title,hint]=headers[mainTab];document.querySelector('.menu-heading').innerHTML=title+' <small>'+hint+'</small>';
  $('menuList').classList.toggle('tab-list',mainTab!=='menu');
- if(mainTab!=='menu'){const content=mainTab==='shiba'?P.shibas().html:mainTab==='store'?P.shop().html:`<button data-edit-toggle aria-pressed="${iso.edit}">${iso.edit?'편집 끝':'배치 편집'}</button><div class="note">가구 배치 · 가격 미정</div>${[['tea-table','찻상'],['zabuton','방석'],['counter','카운터'],['stairs','계단']].map(([id,name])=>`<div class="card li"><img class="furniture-icon" src="assets/drive/ui/ui-icon-${id}.png" alt=""><strong>${name}</strong></div>`).join('')}`;$('menuList').innerHTML=content;if(mainTab==='furniture'&&iso.edit)$('menuList').prepend(iso.actions);$('menuList').querySelector('[data-edit-toggle]')?.addEventListener('click',()=>{iso.setEdit(!iso.edit);});return;}
+ if(mainTab!=='menu'){const content=mainTab==='shiba'?P.shibas().html:mainTab==='store'?P.shop().html:`<button data-edit-toggle aria-pressed="${iso.edit}">${iso.edit?'편집 끝':'배치 편집'}</button><div class="note">가구 배치 · 가격 미정</div>${CFG.furniture.items.map(({id,name,price})=>`<div class="card li"><img class="furniture-icon" src="assets/drive/ui/ui-icon-${id}.png" alt=""><div class="grow"><strong>${name}</strong><div class="note">가격 ${price==null?L('app.unset'):fmt(price)}</div></div></div>`).join('')}`;const scroll=$('menuList').scrollTop;$('menuList').innerHTML=content;$('menuList').scrollTop=scroll;if(mainTab==='furniture'&&iso.edit)$('menuList').prepend(iso.actions);$('menuList').querySelector('[data-edit-toggle]')?.addEventListener('click',()=>{iso.setEdit(!iso.edit);});return;}
  const items=[CFG.menu.coffee,...CFG.menu.items].sort((a,b)=>a.id.localeCompare(b.id));
  const value=n=>n==null?'미정':fmt(n);
  $('menuList').innerHTML=items.map(m=>{const basic=m.id===CFG.menu.coffee.id,locked=!basic&&s.cafe.level<m.unlockLevel,dev=s.menuDev?.id===m.id,owned=s.menus.includes(m.id);
- return `<article class="menu-card ${locked?'locked':''}" data-main-menu="${m.id}"><img src="assets/drive/${m.img}" alt="${L('menu.'+m.id)}"><div class="menu-info"><small>${m.id}</small><strong>${L('menu.'+m.id)}</strong><span>가격 ${value(m.price)} 멍코인</span>${basic?'':``}${dev?`<span>개발 중 · ${tfmt((s.menuDev.until-now)/1000)}</span>`:''}</div><div class="menu-action">${basic?'<b>기본 메뉴</b>':locked?`<img class="lock" src="assets/drive/ui/ui-lock.png" alt="잠금"><b>Lv ${m.unlockLevel} 해금</b>`:dev?`<button class="instant" data-act="skip" data-type="menu" data-id="" ${S.skipCheck(s,{type:'menu'},now)?'disabled':''}>💎 즉시 완료 ${S.skipCost(S.skipLeftSec(s,{type:'menu'},now))}</button>`:owned?'<b>개발 완료</b>':`<button data-act="dev" data-id="${m.id}" ${S.menuCheck(s,m.id)?'disabled':''}>개발 ${value(m.devCost)} 멍코인</button>`}</div></article>`;
+ return `<article class="menu-card ${locked?'locked':''}" data-main-menu="${m.id}"><img src="assets/drive/${m.img}" alt="${L('menu.'+m.id)}"><div class="menu-info"><small>${m.id}</small><strong>${L('menu.'+m.id)}</strong><span>가격 ${value(m.price)} 멍코인</span>${basic?'':`<span>개발 시간 ${hm(m.devSec)}</span>`}${dev?`<span>개발 중 · ${tfmt((s.menuDev.until-now)/1000)}</span>`:''}</div><div class="menu-action">${basic?'<b>기본 메뉴</b>':locked?`<img class="lock" src="assets/drive/ui/ui-lock.png" alt="잠금"><b>Lv ${m.unlockLevel} 해금</b>`:dev?`<button class="instant" data-act="skip" data-type="menu" data-id="" ${S.skipCheck(s,{type:'menu'},now)?'disabled':''}>💎 즉시 완료 ${S.skipCost(S.skipLeftSec(s,{type:'menu'},now))}</button>`:owned?'<b>개발 완료</b>':`<button data-act="dev" data-id="${m.id}" ${S.menuCheck(s,m.id)?'disabled':''}>개발 ${value(m.devCost)} 멍코인</button>`}</div></article>`;
  }).join('');
 }
 document.querySelectorAll('[data-main-tab]').forEach(b=>b.addEventListener('click',()=>{close();mainTab=b.dataset.mainTab;menuSig='';document.querySelectorAll('[data-main-tab]').forEach(x=>x.classList.toggle('active',x===b));close();renderMainMenu();}));
@@ -76,10 +78,10 @@ function handleEvents(){for(const e of w.events.splice(0)){
 // ───────── panels ─────────
 const P={};
 P.shibas=()=>{const n=S.placedShibas(s).length;let h=`<button data-open="walk">${L('nav.walk')}</button><div class="card"><div class="note">${L('shibas.slots',{n,max:S.slotsOf(s),own:s.shibas.length,ownMax:CFG.cafe.maxOwned})}</div>`;
- for(const sh of s.shibas){const st=S.statusOf(s,sh);h+=`<div class="li"><div class="pt" data-act="care" data-id="${sh.id}">${img(shibaImg(sh))}</div><div class="grow" data-act="care" data-id="${sh.id}"><div class="nm">${nameOf(sh)} · ${L('app.lv',{lv:sh.level})}</div><div class="sub">${statusText(sh,st)}</div></div>
+ for(const sh of s.shibas){const st=S.statusOf(s,sh);h+=`<div class="li"><div class="pt" data-act="care" data-id="${sh.id}">${img(shibaImg(sh))}</div><div class="grow" data-act="care" data-id="${sh.id}"><div class="nm">${nameOf(sh)} · ${L('app.lv',{lv:sh.level})}</div><div class="sub">${statusText(sh,st)} · 발바닥 ${fmt(sh.paws)}</div><button class="sec" data-act="care" data-id="${sh.id}">돌봄</button><button data-act="levelUp" data-id="${sh.id}" ${S.levelUpCheck(s,sh.id)?'disabled':''}>${sh.level>=CFG.level.max?'최고 레벨':L('care.levelUp',{n:fmt(S.pawsToNext(sh.level))})}</button></div>
   <button class="${sh.placed?'sec':''}" data-act="place" data-id="${sh.id}" data-on="${sh.placed?0:1}" ${!sh.placed&&S.placeCheck(s,sh.id)?'disabled':''}>${sh.placed?L('care.unplace'):L('care.place')}</button></div>`;}
  h+=`</div><div class="card"><div class="li"><div class="pt">${img(IMG.dongu)}</div><div class="grow"><div class="nm">${L('char.dongu.name')}</div><div class="sub">${L('shibas.dongu')}</div></div>
-  <button class="${s.dongu.placed?'sec':''}" data-act="dongu">${s.dongu.placed?L('care.unplace'):L('care.place')}</button></div></div>`;return {title:L('shibas.title'),html:`<button data-nav="walk">${L('nav.walk')}</button>`+h};};
+  <button class="${s.dongu.placed?'sec':''}" data-act="dongu">${s.dongu.placed?L('care.unplace'):L('care.place')}</button></div></div>`;return {title:L('shibas.title'),html:h};};
 function statusText(sh,st){if(st==='hospital')return L('st.hospital',{t:tfmt((sh.hospitalUntil-clock.now())/1000)})+' · '+L('inj.'+sh.hospitalKind);if(st==='injured')return L('st.injured')+' · '+L('inj.'+sh.injury);
  if(st==='ok'&&!sh.placed)return L('st.home');return L('st.'+st);}
 // 갱신 140: 반다나 = 3×3 시트의 한 칸을 CSS로만 보여 줌 (그림은 그대로)
@@ -153,21 +155,14 @@ function devCard(now){const D=s.menuDev;if(!D)return `<div class="note">${L('sho
  return `<div class="li dev" data-dev="${D.id}"><div class="pt">${img('assets/drive/'+m.img)}</div><div class="grow"><div class="nm">${L('shop.developing',{name:L('menu.'+D.id)})}</div>
   ${bar((now-D.startAt)/(D.until-D.startAt))}<div class="sub">${L('shop.devLeft',{t:tfmt(left)})} · ${L('skip.note')}</div></div>${skipBtn({type:'menu'})}</div>`;}
 // 갱신 137 시바뽑기 — 확률표 UNSET(질문 9(바))이면 버튼 3개 모두 비활성 '확률 미정'
-function gachaCard(){const G=CFG.gacha,odds=S.gachaOddsSet(),tag=odds?'':' · '+L('app.oddsUnset'),dis=(n,o)=>S.gachaCheck(s,n,o)?'disabled':'';
- return `<div class="card" data-gacha><h3>${L('shop.gacha')}</h3><div class="note">${L(odds&&!isUnset(G.startLevel)?'shop.gachaNote':'shop.gachaNoteUnset',{p:G.dupPaws,lv:G.startLevel})}</div><div class="btns">
-   <button data-act="gacha" data-n="1" ${dis(1)}>${L('shop.gacha1',{dia:G.priceDia})}${tag}</button>
-   <button data-act="gacha" data-n="${G.tenCount}" ${dis(G.tenCount)}>${L('shop.gacha10',{n:G.tenCount,dia:fmt(G.tenDia)})}${tag}</button>
-   <button class="sec" data-act="gacha" data-n="1" data-ticket="1" ${dis(1,{ticket:true})}>${L('shop.gachaTicket',{n:s.items.capsule})}${tag}</button></div></div>`;}
-P.shop=()=>{const now=clock.now(),M=CFG.menu,menuImg=f=>`<div class="pt">${img('assets/drive/'+f)}</div>`;
- let h=`<div class="card"><h3>${L('shop.menu')}</h3><div class="note">${L('shop.menuRule',{n:S.normalDeveloped(s),p:f2(S.premiumChance(s.cafe.rep,false,S.normalDeveloped(s))*100)})}</div>
-  ${devCard(now)}<div class="li" data-menu="${M.coffee.id}">${menuImg(M.coffee.img)}<div class="grow"><div class="nm">${L('menu.'+M.coffee.id)}</div><div class="sub">${L('shop.coffee',{p:M.coffee.price})}</div></div><button disabled>✓</button></div>`;
- for(const m of M.items){const c=S.menuCheck(s,m.id);
-  h+=`<div class="li" data-menu="${m.id}">${menuImg(m.img)}<div class="grow"><div class="nm">${L('menu.'+m.id)}</div><div class="sub">${L('menu.kind.'+m.kind)} · ${L('shop.sell',{p:m.price})} · ${L('app.lv',{lv:m.unlockLevel})} · ${L('shop.devTime',{t:hm(m.devSec)})}</div></div>
-   <button data-act="dev" data-id="${m.id}" ${c?'disabled':''}>${c==='owned'?'✓':c==='developing'?L('shop.developingShort'):c==='locked'?L('app.locked',{lv:m.unlockLevel}):L('app.coins',{n:fmt(m.devCost)})}</button></div>`;}
- h+='</div>';
+function gachaCard(){const G=CFG.gacha;return `<div class="card" data-gacha><h3>${L('shop.gacha')}</h3><div class="note">확률 미정</div><div class="btns"><button data-act="gacha" data-n="1" disabled>${G.priceDia}💎 · 준비 중</button><button data-act="gacha" data-n="${G.tenCount}" disabled>${G.tenDia}💎 · 준비 중</button><button data-act="gacha" data-n="1" data-ticket="1" disabled>캡슐 ${s.items.capsule} · 준비 중</button></div></div>`;}
+function cafeCard(){const C=s.cafe,need=S.cafeNeed(C.level);return `<div class="card" data-cafe-level><h3>카페 Lv ${C.level}</h3><div class="note">경험치 ${fmt(C.exp)} / ${C.level>=CFG.cafe.maxLevel?'최고 레벨':need==null?'미정':fmt(need)} · 평판 ${Math.round(C.rep)}</div>${bar(need==null?0:C.exp/need)}<div class="note">경험치를 모으면 자동 레벨업 · 배치 가능 ${S.slotsOf(s)}마리</div></div>`;}
+function shopSlots(){return `<div class="card" data-shop-slots><h3>시바 액세서리 칸</h3>${s.shibas.map(sh=>`<div class="li"><div class="pt">${img(IMG.shiba(sh.breed))}</div><div class="grow"><b>${nameOf(sh)}</b><div class="note">${sh.accUnlocked?'칸 열림 · '+(sh.acc?accName(sh.acc):'빈 칸'):'칸 잠김'}</div><div class="btns">${sh.accUnlocked?`<button class="sec" data-act="care" data-id="${sh.id}">돌봄 · 액세서리</button>`:`<button data-act="accUnlock" data-id="${sh.id}" data-via="paws" ${S.accUnlockCheck(s,sh.id,'paws')?'disabled':''}>발바닥 ${fmt(CFG.accessory.unlockPaws)}</button><button data-act="accUnlock" data-id="${sh.id}" data-via="dia" ${S.accUnlockCheck(s,sh.id,'dia')?'disabled':''}>${fmt(CFG.accessory.unlockDia)}💎</button>`}</div></div></div>`).join('')}</div>`;}
+function inventoryCard(){const items=S.bandanaItems().filter(it=>S.accOwned(s,it.id)>0);return `<div class="card" data-inventory><h3>액세서리 가방</h3>${items.length?items.map(it=>`<div class="li">${bandHtml(it.id)}<div class="grow"><b>${accName(it.id)}</b><div class="note">보유 ${S.accOwned(s,it.id)} · 착용 ${S.accWorn(s,it.id)} · 가방 ${s.accInv[it.id]||0}</div>${s.shibas.map(sh=>`<button class="sec" data-act="${sh.acc===it.id?'unequip':'equip'}" data-id="${sh.id}" data-item="${it.id}" ${sh.acc===it.id?'':S.equipCheck(s,sh.id,it.id)?'disabled':''}>${nameOf(sh)} · ${sh.acc===it.id?'벗기기':sh.accUnlocked?'착용':'칸 잠김'}</button>`).join('')}</div></div>`).join(''):'<div class="note">보유한 액세서리가 없어요.</div>'}</div>`;}
+P.shop=()=>{const now=clock.now();let h=cafeCard();
  const G=CFG.alba.manager,mc=S.albaCheck(s,'manager',[],now);
  h+=`<div class="card"><h3>${L('shop.manager')}</h3><div class="note">${L('shop.managerNote')}</div><button data-act="manager" ${mc?'disabled':''}>${s.cafe.level<G.unlock?L('app.locked',{lv:G.unlock}):S.managerActive(s,now)?L('hud.manager',{t:tfmt((s.cafe.managerUntil-now)/1000)}):L('shop.hire',{cost:fmt(G.cost)})}</button></div>
-  ${accShop()}<div class="card"><h3>${L('shop.bag')}</h3><div class="li"><span class="ico reset" style="width:34px;height:34px"></span><div class="grow nm">${L('shop.heartReset',{n:s.items.heartReset})}</div><button data-act="heartReset" ${S.canUseHeartReset(s)?'':'disabled'}>${L('shop.use')}</button></div>
+  ${accShop()}${shopSlots()}${inventoryCard()}<div class="card"><h3>${L('shop.bag')}</h3><div class="li"><span class="ico reset" style="width:34px;height:34px"></span><div class="grow nm">${L('shop.heartReset',{n:s.items.heartReset})}</div><button data-act="heartReset" ${S.canUseHeartReset(s)?'':'disabled'}>${L('shop.use')}</button></div>
    <div class="li">${slot(L('app.missingImg'),34,34)}<div class="grow nm">${L('shop.capsule',{n:s.items.capsule})}</div></div>
    <div class="li">${img(IMG.potion)}<div class="grow nm">${L('dia.potionBig')} ×${s.items.potionBig} · ${L('dia.potionSmall')} ×${s.items.potionSmall}</div></div></div>
   ${gachaCard()}
@@ -195,7 +190,7 @@ function close(){ui.panel=null;$('pbody').innerHTML='';panelSig='';ui.nav='cafe'
 function navState(){document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('on',b.dataset.nav===ui.nav));}
 
 // ───────── modals ─────────
-let modalSig='';
+let modalSig='';let observedCafeLevel=s.cafe.level;
 function renderModal(){const m=ui.modals[0]||(!s.settings.language?{kind:'lang'}:!s.started?{kind:'start'}:s.rescues.length?{kind:'rescue',x:s.rescues[0]}:null);
  if(!m){$('modal').hidden=true;modalSig='';return;}const sig=JSON.stringify([m.kind,m.x,ui.langPick,ui.startPick,s.settings.language,s.coins>=(m.kind==='rescue'?S.hospitalCost(s,'rescueBath'):0)]);if(sig===modalSig)return;modalSig=sig;
  let h='';
@@ -213,6 +208,7 @@ function renderModal(){const m=ui.modals[0]||(!s.settings.language?{kind:'lang'}
     <button data-act="rescueBring" ${S.bringCheck(s,x.rid)?'disabled':''}>${L('rescue.bring')}</button>${S.bringCheck(s,x.rid)==='owned'?`<div class="note">${L('rescue.full')}</div>`:''}<button class="sec" data-act="rescueDecline">${L('rescue.decline')}</button>`
    :`<h2>${L('rescue.found')}</h2><div class="big">${img(IMG.rescue[x.pic])}</div><button data-act="rescueBath" ${s.coins<cost?'disabled':''}>${L('rescue.bath',{cost:fmt(cost)})}</button><button class="sec" data-act="rescueDecline">${L('rescue.decline')}</button>`;}
  if(m.kind==='gacha')h=`<h2>${L('gacha.title')}</h2><div class="gres">${m.res.map(x=>`<div class="gi${x.dup?' dup':''}">${img(IMG.shiba(x.breed))}<span>${x.dup?L('gacha.dup',{name:nameOf(S.byId(s,x.toId)||{breed:x.breed}),p:x.paws}):L('gacha.new',{breed:L('shiba.breed.'+x.breed),lv:CFG.gacha.startLevel})}</span></div>`).join('')}</div><button data-act="modalOk">${L('app.ok')}</button>`;
+ if(m.kind==='levelResult'){const sh=S.byId(s,m.id);h=`<h2>레벨업 완료!</h2><div class="big">${sh?img(IMG.shiba(sh.breed)):''}</div><div class="note">${sh?nameOf(sh):''} · Lv ${m.from} → ${m.to}</div><button data-act="modalOk">${L('app.ok')}</button>`;}
  if(m.kind==='confirm')h=`<div class="note" style="font-size:14px">${m.text}</div><div class="btns"><button class="warn" data-act="confirmYes">${L('app.ok')}</button><button class="sec" data-act="modalOk">${L('app.cancel')}</button></div>`;
  $('mbox').innerHTML=h;$('modal').hidden=false;}
 if(L0.offline&&(L0.offline.sec>=60||L0.reopened))ui.modals.push({kind:'offline',o:L0.offline,closed:!!L0.reopened});
@@ -235,7 +231,7 @@ const act={
  albaWalk:()=>{if(S.hireAlba(s,'walk',[...ui.walkAlba],clock.now()))ui.walkAlba.clear();},
  manager:()=>{S.hireAlba(s,'manager',[],clock.now());},
  skip:d=>{const t={type:d.type,id:d.id===''?null:+d.id};if(S.skipNow(s,t,clock.now())==null)why(S.skipCheck(s,t,clock.now()));},
- levelUp:d=>{if(S.levelUp(s,+d.id))toast(L('toast.levelUpShiba',{lv:S.byId(s,+d.id).level}));else toast(L('toast.paws'));},
+ levelUp:d=>{const sh=S.byId(s,+d.id);if(S.levelUpCheck(s,+d.id))return;const lv=sh.level,need=S.pawsToNext(lv);ui.modals.unshift({kind:'confirm',text:`${nameOf(sh)} Lv ${lv} → ${lv+1} · 발바닥 ${fmt(need)}개를 사용할까요?`,yes:()=>{if(S.byId(s,+d.id)?.level!==lv||!S.levelUp(s,+d.id)){toast(L('toast.paws'));return;}ui.modals.unshift({kind:'levelResult',id:+d.id,from:lv,to:lv+1});}});},
  gacha:d=>{const res=S.gachaPull(s,+d.n,r,clock.now(),{ticket:!!d.ticket});if(res)ui.modals.push({kind:'gacha',res});else why(S.gachaCheck(s,+d.n,{ticket:!!d.ticket}));},
  accUnlock:d=>{if(!S.unlockAccSlot(s,+d.id,d.via))why(S.accUnlockCheck(s,+d.id,d.via));},
  accType:d=>{ui.accType=d.type;},buyAcc:d=>{if(S.buyAcc(s,d.item))toast(L('toast.accBought',{name:accName(d.item)}));else why(S.buyAccCheck(s,d.item));},
@@ -262,7 +258,7 @@ $('scene').addEventListener('pointerdown',e=>{const t=e.target.closest('[data-ac
 addEventListener('pointerup',e=>{if(!drag)return;const d=drag;drag=null;if(Math.hypot(e.clientX-d.x,e.clientY-d.y)<12)return;
  const seat=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-cust]');if(seat&&S.deliver(s,w,d.id,+seat.dataset.cust,clock.now())){ui.sel=null;refresh();}});
 function applyStatic(){document.documentElement.lang=s.settings.language||'ko';document.title=L('app.title');document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=L(e.dataset.i18n));sceneSig='';panelSig='';modalSig='';}
-function refresh(){handleEvents();renderHUD();renderScene();renderPanel();renderModal();}
+function refresh(){if(s.cafe.level>observedCafeLevel){toast(`카페 Lv ${s.cafe.level} · 레벨업!`);}observedCafeLevel=s.cafe.level;handleEvents();renderHUD();renderScene();renderPanel();renderModal();}
 
 // ───────── loop ─────────
 let last=performance.now(),saveT=0;

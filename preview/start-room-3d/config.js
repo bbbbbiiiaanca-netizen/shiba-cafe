@@ -39,6 +39,7 @@ export const CFG={
  hearts:{regenCap:10,regenEverySec:1800}, // 1.4 / 갱신 28·31: 30분당 1개, 10개까지 자연 회복; 보상 하트는 무제한 적립
  heartReset:{fillTo:10}, // 1.4 / 갱신 32: 10개 미만일 때만 10개까지, 10개 이상이면 사용 불가(소모 없음)
 
+ furniture:{items:[{id:'tea-table',name:'찻상',price:U},{id:'zabuton',name:'방석',price:U},{id:'counter',name:'카운터',price:U},{id:'stairs',name:'계단',price:U}]}, // UNSET: 1.3 / F p6·9 furniture prices
  // ── 카페 ──
  cafe:{maxLevel:50, // 갱신 73
   customersPerHourPerCap:100, // 갱신 132-4 supersedes 갱신 75 arrival intervals
@@ -125,6 +126,7 @@ export const CFG={
   bandana:{priceCoins:5000, // 140: 무료템 반다나 4종(F p11) × 원색 9색, 1개 5,000멍
    types:['triangle','loop','knotTail','frontKnot'], // 1.5 / F p11: 클래식 삼각형, 루프 스누드형, 매듭 테일형, 앞 매듭형
    // 원색 9색 (1.5·140): 색 이름·순서는 정해지지 않음 → 시트 칸 번호만 씀 (3×3, 왼쪽 위부터 cell1..cell9). 이름이 정해지면 i18n acc.color.<id>만 바꿈
+   colorNames:U, // UNSET: 1.5 / 갱신 140 colour names and ordering; identify sheet cells only
    colors:['cell1','cell2','cell3','cell4','cell5','cell6','cell7','cell8','cell9'],
    legacyColorIds:['red','blue','green','yellow','pink','navy','orange','purple','teal'], // 이전 v3 저장의 id (같은 순서 = 같은 칸) → 불러올 때 cellN으로 바꿈
    sheet:{triangle:'bandana-triangle-sheet.webp',loop:'bandana-loop-sheet.webp',knotTail:'bandana-knottail-sheet.webp',frontKnot:'bandana-frontknot-sheet.webp'},
