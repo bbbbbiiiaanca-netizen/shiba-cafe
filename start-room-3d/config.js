@@ -1,103 +1,177 @@
-// All tunables for the 시바견 카페 game skeleton live here.
+// 시바카페 spec v3 — every tunable lives here. Each value carries its spec source (갱신 N = "v3 갱신 N" in spec-v3.md).
+// Rule: numbers come from the spec only. Anything the spec leaves undecided is `null` with a comment "UNSET: <spec ref>";
+// code that depends on an UNSET value disables that feature (button off / "미정" label) instead of guessing.
+// Where a start value for a stored stat is UNSET the code uses the range's defined endpoint — see START_FALLBACK below and SPEC-V3-NOTES.md.
+const U=null; // marker for UNSET values (kept as plain null so JSON saves stay simple)
+
+// 갱신 75 손님 압박 표 (갱신 73·74 대체): [시바 칸, 손님 상한, 손님 오는 간격(초), 한계 대비 %] for café levels 1..50
+const PRESSURE=[
+ [2,5,7.5,125],[2,5,6.6,110],[2,5,5.1,85],[3,7,5.4,125],[3,7,4.7,110],[3,7,3.6,85],[4,9,4.2,125],[4,9,3.7,110],[4,9,3.3,98],[4,9,2.8,85],
+ [5,11,3.4,125],[5,11,3.0,110],[5,11,2.8,102],[5,11,2.5,93],[5,11,2.3,85],[6,14,2.5,125],[6,14,2.2,110],[6,14,2.0,102],[6,14,1.9,93],[6,14,1.7,85],
+ [7,16,2.2,125],[7,16,1.9,110],[7,16,1.8,104],[7,16,1.7,98],[7,16,1.6,91],[7,16,1.5,85],[8,18,2.0,125],[8,18,1.7,110],[8,18,1.7,105],[8,18,1.6,100],
+ [8,18,1.5,95],[8,18,1.4,90],[8,18,1.3,85],[9,20,1.8,125],[9,20,1.6,110],[9,20,1.5,106],[9,20,1.5,102],[9,20,1.4,98],[9,20,1.3,93],[9,20,1.3,89],
+ [9,20,1.2,85],[10,22,1.6,125],[10,22,1.4,110],[10,22,1.3,106],[10,22,1.3,103],[10,22,1.2,99],[10,22,1.2,96],[10,22,1.2,92],[10,22,1.1,89],[10,22,1.1,85]];
+
+// 갱신 98 카페 레벨 경험치 (L→L+1, 갱신 87·91·92 대체; 132-4로 표 그대로 유지)
+const CAFE_EXP=[120,220,370,520,740,1000,1850,1940,2050,2190,2860,3070,3300,3540,3800,5190,5560,5940,6340,6760,
+ 8220,8730,9250,9790,10350,10920,12950,13620,14310,15020,15740,16480,17230,19990,20850,21730,22630,23540,24460,25400,
+ 26350,30040,31120,32210,33310,34430,35570,36710,37870];
+
 export const CFG={
- saveKey:'shibaCafe.save.v2', // key unchanged; the save's internal version `v` is bumped and old saves are migrated in sim.migrate()
- saveVersion:2,
- // ── switches ──
- // FEATURES: whole features whose numbers are only proposals (제안값) in the docs. All off until confirmed.
- FEATURES:{
-  promotionCard:false, // D-04 대체 카드 연출 — 타이밍은 명세 1.6 '제안'값이라 꺼 둠
-  fatigue:false,       // D-09 피로도 (= 핸드오프의 walk.fatigue.enabled) — 수치 전부 미정(질문 12)
-  rescue:false,        // D-10 미아 시바 구조 — 발생 확률·등급 확률 미정(질문 18·19)
-  healingPlay:false,healingTimeOfDay:false,healingObserve:false, // D-13 — 명세 1.7 수치는 모두 제안값
+ saveKey:'shibaCafe.save.v3',saveVersion:3,
+
+ // ── 재화 ──
+ start:{coins:0,hearts:10,dia:0}, // coins: UNSET start amount is not in the spec → 0 (see notes). hearts: 기본 소지 10 (1.4, 갱신 28). dia: 유료로만 (132-2) → 0
+ hearts:{regenCap:10,regenEverySec:1800}, // 1.4 / 갱신 28·31: 30분당 1개, 10개까지 자연 회복; 보상 하트는 무제한 적립
+ heartReset:{fillTo:10}, // 1.4 / 갱신 32: 10개 미만일 때만 10개까지, 10개 이상이면 사용 불가(소모 없음)
+
+ // ── 카페 ──
+ cafe:{maxLevel:50, // 갱신 73
+  pressure:PRESSURE, // 갱신 75
+  expToNext:CAFE_EXP, // 갱신 98
+  capFromSlots:2.2, // 갱신 70·71: 손님 상한 = 배치 가능 시바 수 × 2.2, 올림 (표 값과 일치; 표가 우선)
+  maxPlaced:10, // 갱신 74
+  maxOwned:50, // 갱신 75
+  stayingSec:30, // 갱신 69: 손님 체류 시간
+  queueMax:10, // 갱신 66
+  queueWaitSec:30, // 갱신 68·69: 줄 대기 제한 = 체류 시간
+  hourlyCustomersPerCap:100, // 갱신 132-4: 시간당 손님 = 100 × 손님 상한 (planning only; the live sim uses the table interval)
+  paidSlotUnlockDia:U, // UNSET: 갱신 87 유료 칸 미리 해제 — 다이아 가격 미정(132-3)
+  expansion2FCost:U, // UNSET: 갱신 56 2층 확장 비용 미정
  },
- // TEMP: placeholder behaviours the handoff allows "for checking only" (// TEMP 미정). All off; `?temp=1` turns them on in a test build.
- TEMP:{
-  gachaNonSAsN:false,
-  onboardingLoginDays:false, // D-07 날짜 진행 방식(onboarding.dayMode) 미정(보상표 Q5 일반 출석과의 관계·Q6 빠뜨린 날): 켜면 '접속한 날짜 수 = 진행 일차'로 임시 진행
-  mergeHandoffDefaults:false,
-  walkFreeWhenCostNull:false, // D-08 산책 하트 소모량 미정(질문 9): 켜면 테스트 빌드에서만 무료로 보낼 수 있음
-  walkStopNoRefund:false,     // D-08 멈췄을 때 규칙 미정(질문 11): 켜면 '즉시 복귀, 보상·환불 없음' // D-03 '같은 시바' 기준·자동/선택·병합 승급 연출 미정(질문 2-3 라·마·바): 켜면 핸드오프 임시값 sameKey 'coat+expr', mode 'manual', playPromotion false  // D-01 N·R 확률 미정(명세 질문 2): 켜면 S가 아닌 결과를 모두 N으로 처리(R 확률을 지어내지 않음), 화면에 확률 표시 안 함
+ // 갱신 87 카페 경험치
+ cafeExp:{custNormal:1,custSatisfied:2,custDisappointed:0,walkPer10Min:2,play:1,feed:1,bath:1,snack:1,rescueAdopt:10,
+  stainClean:1, // 갱신 101-3
+  albaGivesExp:false}, // 갱신 99-2 · 118: 알바·훈련사·매니저가 한 일은 경험치 없음
+
+ // ── 평판 (갱신 87, 106, 126) ──
+ rep:{min:0,max:100,start:50,satisfied:1,normal:0,disappointed:-1,queueAngry:-2,
+  damp:[[90,.25],[70,.5]], // 갱신 106: 70 이상 만족 증가 절반, 90 이상 4분의 1
+  driftPerHour:1,driftTo:50, // 갱신 106: 1시간마다 50 쪽으로 1점
+  arrivalMul:[[70,.9],[30,1.0],[0,1.2]], // 갱신 87: ≥70 ×0.9, 30~69 ×1.0, <30 ×1.2 (간격 배율)
+  closureFloor:30}, // 갱신 126-1: 오프라인 중 평판 하한 30 → 임시휴무
+
+ // ── 손님 (갱신 70, 86, 100, 105, 106, 113, 120, 124-4, 128, 129) ──
+ visit:{meetSec:7,roamSec:5, // 갱신 70: 손님 곁 7초, 5초 돌아다님
+  scoreDisappointedBelow:.5, // 갱신 86: 합계 0.5 미만 실망
+  scoreSatisfiedAt:1.5, // 갱신 86 (만족 판정은 갱신 106에서 '요구 충족'으로 바뀜 — notes 참고; 값은 기록용)
+  condMin:.25,condMax:1.3, // 갱신 86
+  trickBonusPerLevel:.05,trickBonusMax:.25}, // 갱신 100 손님 만남: +0.05 × 재주 단계, 최대 +0.25 (컨디션 상한 1.3 안)
+ // 갱신 86 컨디션 배율 (곱해서 적용). 같은 게이지의 두 단계는 더 높은 단계 하나만 적용.
+ condition:[
+  {gauge:'dirt',atLeast:80,mul:.5},{gauge:'dirt',atLeast:60,mul:.7},
+  {gauge:'fatigue',atLeast:80,mul:.5},{gauge:'fatigue',atLeast:60,mul:.7},
+  {gauge:'full',atMost:30,mul:.8},
+  {gauge:'happy',atLeast:70,mul:1.2}],
+ // 갱신 106 일반손님 요구 (124-4: 필수 아님, 안 들어줘도 벌 없음). 113: 인테리어 요구 — 인테리어 점수·아이템 미정이라 꺼 둠.
+ requests:{types:['meetShiba','seeTrick'],interior:{enabled:false,minThemeItems:3}, // 갱신 113 '특정 테마 아이템 3개 이상' (인테리어 시스템 UNSET)
+  managerChance:.3,managerRepMul:.5}, // 갱신 118
+ // 갱신 120 결제 · 129 메뉴 개발
+ menu:{coffee:{price:1}, // 갱신 120: 기본 커피 1멍
+  premium:[{id:'premiumDrink',kind:'drink',price:3,devCost:U,unlockLevel:U}, // 갱신 120 고급 음료 3멍 · UNSET: 갱신 129 개발 비용·해금 레벨
+   {id:'premiumDessert',kind:'dessert',price:5,devCost:U,unlockLevel:U}], // 갱신 120 고급 디저트 5멍 · UNSET: 갱신 129
+  premiumBase:.05,premiumPerRepAbove50:.003,premiumSatisfiedBonus:.15,premiumCap:.4, // 갱신 120
+  drinkToDessert:[2,1]}, // 갱신 120: 음료:디저트 2:1
+ itemIncome:{boostMul:1.2,boostHours:4,boostMaxHours:24,paidCapMul:1.5,priceDia:U}, // 갱신 97 시간제 수익 1.2배 · UNSET: 가격(다이아)
+ offline:{capHours:12,stepSec:1}, // 갱신 56: 오프라인 수익 최대 12시간분. stepSec = simulation step (engine, not a game number)
+
+ // ── 시바 ──
+ breeds:['red','sesame','kuro','white'], // 1.2 기본 4종 (레어 4종 ⏸️ 보류)
+ personalities:['prankster','shy','tomboy','sweet','mopey','lazy','curious','boss','peopleLover','dogLover','tomgirl','zoomies','fighter','foodie','walkLover'], // 1.2 13개 + 갱신 52 먹보·산책광 = 15. 확률: 균등(성격별 확률 UNSET: 질문 9(다))
+ level:{max:30,pawsPerLevel:10,dupPaws:10, // 갱신 81: Lv N→N+1 발바닥 10×N, 중복 1마리당 10
+  incomePerLevel:.05}, // 갱신 81: ×(1 + 0.05×(레벨−1))
+ accessorySlots:[[25,3],[15,2],[5,1]], // 갱신 90: Lv5 1칸, Lv15 2칸, Lv25 3칸
+ accessories:U, // UNSET: 1.2 / 질문 9(가) 어떤 액세서리가 열리는지
+ likes:{snacks:{basic:2,rare:1},toys:U,list:U}, // 갱신 40: 좋아하는 간식 기본 2 + 레어 1 · UNSET: 장난감 구조(제안), 간식·장난감 목록(질문 9(카))
+ startShiba:{level:21,tricks:{sit:3,wait:3}}, // 갱신 90 레벨 21 · 갱신 100·109·133 앉아·기다려 3단계 · 갱신 109 4종 중 선택
+ rescueLevel:U, // UNSET: 질문 9(사) 구조한 시바의 레벨 → Lv1(범위 최저) 사용, notes 참고
+ intimacy:{min:0,max:100,start:U, // UNSET: 시작 친밀도 → 0(범위 최저) 사용
+  abandonShock:-15,abandonShockRepeat:-20,abandonRepeatWithinH:24}, // 갱신 82
+ // 게이지 0~100 (1.2-3, 갱신 53·85·86·116). full=포만(배고픔 게이지), dirt=더러움(청결의 반대), fatigue=피로도(=졸림), happy=행복(=기분), boredom=지루함(=놀고 싶음)
+ gauges:['full','dirt','fatigue','happy','boredom'],
+ gaugeStart:U, // UNSET: 1.2-3 게이지 시작값 → 116 멍포션 '가득 찬 상태'를 사용 (notes 참고)
+ gaugeFull:{full:100,dirt:0,fatigue:0,happy:100,boredom:0}, // 갱신 116: 모든 게이지 100%, 행복 만점
+ decayPerHour:{full:U,dirt:U,happy:U,boredom:U,fatigue:U}, // UNSET: 1.2-3 질문 '게이지가 줄어드는 속도' → 자연 변화 없음
+ homeDecayMul:.25, // 갱신 81: 집 시바는 카페 배치 시바의 1/4 속도
+ sick:{zeroGauges:['full','dirt','happy'],zeroHours:2}, // 갱신 111: 배고픔·청결·기분 중 하나라도 0인 채로 2시간 (청결 0 = dirt 100)
+ neglect:{intimacyDropAfterH:12,intimacyDrop:U,donguAfterH:24,donguStayMul:2,donguIntimacyDrop:U}, // 갱신 112 · UNSET: 친밀도 감소량
+ // 갱신 85 산책 후 상태 변화 · 90 친밀도 · 88 놀아주기
+ walkEffect:{600:{boredom:-40,dirt:15,fatigue:15,happy:10,intimacy:2},1200:{boredom:-55,dirt:25,fatigue:25,happy:15,intimacy:4},1800:{boredom:-70,dirt:35,fatigue:35,happy:20,intimacy:6}},
+ care:{
+  play:{hearts:1,boredom:-28,dirt:3,fatigue:5,happy:7,intimacy:3}, // 갱신 84·88·90 놀아주기
+  feed:{full:U,cost:U}, // UNSET: 밥 회복량·비용 (1.2-3 질문)
+  snack:{fatigue:U,cost:U}, // UNSET: 1.10.0 질문 9(다-2) 간식 1개당 피로 회복량, (다-3) 비용
+  bath:{dirt:U,cost:U}, // UNSET: 내 시바 목욕 효과·비용 (구조견 목욕비는 hospital.rescueBath)
+  sleep:{fatiguePerHour:U}, // UNSET: 1.10.0 질문 9(다-1) 수면 회복 속도 (수면 > 간식은 확정)
+  fatigueMax:100}, // 1.10.0: 100%면 놀기·산책 불가, 잠만 잠
+ potion:{bigDia:150,smallDia:50}, // 갱신 116 (다이아 = 유료 전용, stub)
+
+ // ── 재주 (갱신 100 · 133) ──
+ tricks:[{id:'sit'},{id:'paw'},{id:'wait'},{id:'down'},{id:'bow'}], // 갱신 133: 앉아·손·기다려·엎드려·인사. 더 넣으려면 여기에 추가(이름은 i18n trick.<id>)
+ trickMaxLevel:5,intelligencePerLevel:4,intelligenceMax:100, // 갱신 133: 지능 = 단계 합 × 4, 최대 100
+ training:{hearts:1,fatigue:5, // 갱신 100: 하트 1, 성공 시 피로 +5
+  successBase:.6,bonuses:[{stat:'intimacy',atLeast:70,add:.15},{stat:'happy',atLeast:70,add:.10},{stat:'fatigue',atLeast:60,add:-.20},{stat:'boredom',atLeast:60,add:-.15}],
+  min:.2,max:.95}, // 갱신 100 성공률 · 단계 N→N+1 성공 N+1번
+
+ // ── 산책 (1.10, 갱신 82·83·85·87·90·124·125) ──
+ walk:{durationsSec:[600,1200,1800], // 갱신 14
+  heartsPer10Min:1, // 갱신 87·124-5
+  cooldownSec:0, // 갱신 125-1: 직접 산책 쿨타임 없음
+  stopRule:U, // UNSET: 질문 1-4 멈췄을 때 규칙 → 멈추기 버튼 꺼 둠
+  events:{rescue:.05, // 갱신 124-2 (82의 1/30 대체)
+   snake:1/40,light:1/30, // 갱신 83
+   extra:.5,extraCoins:U,extraHeart:1, // 갱신 82: 1/2 확률로 멍코인 소량 또는 하트 1 · UNSET: 멍코인 양 → 하트만 지급
+   capsule:1/30}}, // 갱신 82 시바 뽑기권
+
+ // ── 병원 (갱신 58·111·111-1·112·131) ──
+ hospital:{stays:{light:1800,snake:7200,sick:14400}, // 갱신 111: 30분, 2시간, 4시간
+  // 갱신 131 카페 레벨 구간별 고정 멍코인 [최저레벨, 가벼운 부상, 뱀 물림, 앓아누움, 구조견 목욕]
+  costs:[[1,400,1200,2400,200],[10,500,1500,3000,250],[20,800,2400,4700,400],[30,1000,3000,6100,500],[40,1100,3400,6800,550]],
+  speedupDiaPer10Min:U}, // UNSET: 갱신 111·132 치료 앞당기기 다이아 가격
+
+ // ── 알바 (갱신 99·99-2·118·118-1·123-x·124-1·125-1) ──
+ alba:{
+  daycare:{unlock:10,cost:8000,cooldownSec:7200,intimacyMul:.5}, // 갱신 99 · 125-1 가격 · 99-2 쿨 2시간
+  walk:{unlock:15,cost:18000,cooldownSec:14400,maxShibas:4,boredom:-50}, // 갱신 125-1 가격 · 123-5 쿨 4시간·최대 4마리 · 123-3/124-1 지루함 50 즉시 해소
+  trainer:{unlock:20,cost:24000,cooldownSec:14400}, // 갱신 125-1 · 99-2 쿨 4시간
+  manager:{unlock:25,cost:60000,hireSec:43200,cleanEverySec:600}}, // 갱신 125-1 · 118-1 12시간 · 118 10분마다 얼룩 1개
+ cooldownTicketDia:{one:20,five:80}, // 갱신 115-1 (유료 전용, stub)
+
+ // ── 얼룩 (갱신 101-3 · 117-2) ──
+ stains:{everySecPerShiba:7200,warnAt:3,warnDirtMul:1.5,badAt:6,badDirtMul:2,badRepEverySec:600,badRep:-1},
+
+ // ── 동구 (갱신 78·79·80) ──
+ dongu:{takesSlot:false,earns:false,canWalk:false,canAbandon:false},
+
+ // ── 뽑기 (갱신 57·132) — 시작 레벨·확률·멍코인 가격 UNSET이라 꺼 둠 ──
+ gacha:{priceDia:200, // 갱신 132-3
+  priceCoins:U,startLevel:U,breedOdds:U, // UNSET: 갱신 57 멍코인 가격, 질문 9(바) 시작 레벨·확률표
+  video:'drive-images/영상/media-generation-gacha-reveal-video-v7-with-sfx.mp4'}, // not copied: 뽑기 disabled
+
+ // ── stubs: confirmed systems outside the core, kept as config only ──
+ stub:{
+  ranking:{by:'cafeLevel',periodDays:7,excludeGM:true}, // 갱신 61·94·130 (보상표 94는 경험치 기준 → 130으로 기준만 바꿈)
+  gmCafe:true, // 갱신 94
+  missions:{daily:3,weekly:3}, // 갱신 101-2
+  donguRequest:{everySec:21600,heartsMin:2,heartsMax:3}, // 갱신 101-5
+  rudeCustomer:{chance:1/30,maxAtOnce:1,cooldownSec:600,fromLevel:5, // 갱신 104-1
+   difficulty:{easy:{conds:1,sec:150,ok:1,fail:-2,stains:2},normal:{conds:2,sec:120,ok:2,fail:-3,stains:3},hard:{conds:3,sec:120,ok:4,fail:-4,stains:4}}, // 갱신 105-3
+   mix:[[5,[6,4,0]],[15,[3,5,2]],[30,[2,4,4]]]}, // 갱신 105-3
+  regulars:{becomeAfter:5,favMul:1.5,perHour:3,minIntervalSec:3600,dropAfterMisses:3,population:U}, // 갱신 102·108·122 · UNSET: '같은 손님'을 가를 손님 개체 수
+  relations:{friendsMax:3,enemiesMax:3,fightChancePerMin:.1,fightSec:3,huffSec:2,fightInjury:1/20,fightHappy:-5,friendPickMul:2}, // 갱신 101-4·110·127
+  shibaPlay:{checkIntervalSec:20,pairChance:.25}, // 1.7.1 · 갱신 127
+  interior:{score:[0,100],recommended:{10:20,30:50,50:80},maxArrivalPenalty:.2,walkoutChance:.01}, // 갱신 113 (아이템별 점수 UNSET)
+  expBoost:{mul:1.2,hours:4,maxHours:24,capTotal:.2,priceDia:U}, // 갱신 98 · UNSET 가격
+  diaPriceWon:10, // 갱신 132-3
+  adoptionIncome:U, // UNSET: 질문 4 입양 수익
+  mergeCooking:U, // UNSET: 갱신 62
  },
- // ── grades & levels (명세 1.6 ✅ 확정) ──
- grades:{bands:{N:[1,10],R:[11,20],S:[21,30]},maxLevel:30}, // grade is computed from level; start level of a pull = band start
- start:{coins:500,hearts:0,paws:3,shibas:[{coat:'red',expr:'red_smile'},{coat:'white',expr:'white_smile'}]},
- coats:{red:'적색',sesame:'참깨',kuro:'쿠로',white:'백시바'}, // display names come from i18n shiba.breed.<coat>
- // catalog p7-8 expressions (적색 9, 참깨·쿠로·백 3) — images assets/<id>.png
- exprs:{red_smile:'해맑은 미소',red_laugh:'함박웃음',red_yawn:'하품',red_wow:'깜짝',red_wink:'윙크',red_yum:'냠냠',red_pout:'삐침',red_love:'하트 눈',red_sleepy:'졸림',
-  sesame_smile:'헤헤',sesame_wow:'깜짝',sesame_grin:'싱글',kuro_calm:'도도',kuro_wink:'윙크',kuro_laugh:'웃음',white_smile:'방긋',white_happy:'반가움',white_sweet:'다정'},
- coatExprs(c){return Object.keys(this.exprs).filter(k=>k.startsWith(c+'_'));},
- // floor geometry (world units) — seats face the table (+1 = looking toward +x)
- tables:[{x:-2.7,z:-.3},{x:-.5,z:.4}],
- seats:[{x:-3.25,z:-.85,face:1,table:0,via:{x:-4.1,z:-.85}},{x:-1.35,z:.4,face:1,table:1},{x:-.5,z:-.45,face:0,table:1,via:{x:.6,z:-.45}}], // all seats sit behind their table (2D depth)
- door:{x:1.6,z:3.2},aisleZ:1.7,
- roam:{x0:-4,x1:.9,z0:1.15,z1:2.2,speed:.65,idleMin:1,idleMax:3},
- customer:{speed:.9,spawnEvery:6,firstSpawn:1,waitBeforeVisit:1.5,visits:2,happyPause:1.2,payBase:40,payPerShiba:6,paws:1},
- visit:{climb:.9,pet:3.5,descend:.9,cooldown:3,heartsPerPet:1},
- cafe:{maxShibas:6},
- // D-03 병합 ✅ 확정: 같은 등급끼리만 · 레벨 += 재료 레벨 · 30에서 멈춤 · 승급은 레벨에서 자동 · 재료는 카페 목록에서 빠지고 도감은 유지.
- // ❓미정 → null: sameKey('같은 시바' 기준: 'coat+expr' | 'coat'), mode('manual' | 'auto'), playPromotion(병합 승급 때 연출 재생). null이면 병합 버튼은 '기준 미정'으로 꺼짐.
- merge:{sameKey:null,mode:null,playPromotion:null},
- // D-04 승급 연출: 필요는 ✅ 확정, 영상은 미정(videoAsset null). card = 영상 전 대체 카드 연출의 '제안' 수치(명세 1.6) → FEATURES.promotionCard 로 꺼 둠.
- promotion:{enabled:true,skippable:true,videoAsset:null,card:{zoomSec:.3,borderSec:.5,exprSec:1,totalSec:2.5}},
- // D-08 산책 ✅ 확정: 10/20/30분 선택(walkDurationSec 600/1200/1800) · 실시간·백그라운드 진행(walkStartAt) · 다음 실행 때 한 번만 정산 · 완료 알림 없음 ·
- //   도중 멈추기 가능 · 산책 중에도 카페 운영(산책 간 시바의 기여만 빠짐) · 비용은 하트(시간 비례).
- // ❓미정 → null: heartCost(질문 9, 넣을 때 {600:…,1200:…,1800:…}), reward(보상량), stopRule(멈췄을 때, 질문 11). 누가 가는지(질문 10) 미정 → 뼈대는 시바 1마리를 골라 보내는 것만.
- walk:{durationsSec:[600,1200,1800],heartCost:null,reward:null,stopRule:null,
-  // D-09 피로도 (FEATURES.fatigue): 확정 = 산책할수록 쌓임, 최대치면 산책 시작 불가, 100%면 놀기·산책 불가·잠만 잠, 회복은 수면·간식(수면이 더 빠름). 수치 전부 미정(질문 12) → null.
-  //   fatigue is stored per shiba as a 0..1 ratio (1 = 100%). max: 산책 시작 불가 기준(null → 100%), tiredAt: '피곤' 경계, gainBySec: {600:…} 산책 1회 증가량, sleepRecoverPerSec / snackRecover: 회복량.
-  fatigue:{max:null,tiredAt:null,gainBySec:null,sleepRecoverPerSec:null,snackRecover:null},
-  // D-10 미아 시바 구조 (FEATURES.rescue): 확정 = 등급 먼저 무작위 → 그 구간에서 레벨 무작위, 견종 기본 4종 무작위, 산책 중 장면, 닫혀 있던 동안 일어난 건 다음 실행 때 몰아서.
-  //   ❓미정 → null: chance(산책 1회당 확률, null = 발생 0, 질문 19), gradeWeights({N,R,S}, 질문 18), levelDist('uniform' 등, 질문 18). 절차·거절·중복·하루 제한(질문 20·22·23)은 구현 안 함.
-  rescue:{chance:null,gradeWeights:null,levelDist:null}},
- // D-05 하트 ✅ 확정(명세 1.4): 자연 회복 상한 10, 30분당 1개, 10개 이상이면 회복 타이머 멈춤. 보상 하트는 상한 없이 쌓임.
- hearts:{regenCap:10,regenEverySec:1800},
- // D-06 하트 리셋권 ✅ 확정: 하트 < 10 일 때만 10개로 채움, 10 이상이면 사용 불가(소모 없음). 아이콘 I-01 전까지 이모지.
- items:{heartReset:{icon:'🎟️',name:'하트 리셋권'},capsule:{icon:'🥚',name:'시바뽑기 캡슐'}}, // capsule = 1 free pull at normal rates (no grade guarantee)
- // D-07 28일 온보딩 — ✅ 확정분만: 1~7일 하트 리셋권 1장씩(7장) · 캡슐 4·11·18·25일 1개 + 9일 5개 + 19일 10개 = 19개(등급 보장 없음).
- // 3·17·26일 하트 개수 ❓미정(질문 8) → null('준비 중'). 멍코인·간식·장난감·다이아·인테리어는 보상표의 제안값이라 넣지 않음. ⏸️ 도장 지급 보류 → 넣지 않음.
- // dayMode ❓미정(Q5·Q6) → null: 일차가 진행되지 않음(CFG.TEMP.onboardingLoginDays로만 임시 진행). 튜토리얼 무료 첫 뽑기(Q4)는 기존 gacha.firstFree 그대로, 변경 없음.
- onboarding:{days:28,dayMode:null,rewards:{1:{heartReset:1},2:{heartReset:1},3:{heartReset:1,hearts:null},4:{heartReset:1,capsule:1},5:{heartReset:1},6:{heartReset:1},7:{heartReset:1},
-  9:{capsule:5},11:{capsule:1},17:{hearts:null},18:{capsule:1},19:{capsule:10},25:{capsule:1},26:{hearts:null}}},
- upgrade:{base:300,grow:1.8,bonus:.25}, // 업그레이드: 방치 수입 +25%/단계
- idle:{perSec:.5,perShibaPerSec:.25},
- offline:{rate:.5,capHours:8,minSeconds:60},
- gacha:{cost:{paws:3},cost10:{paws:27},machineImg:'media/gacha-machine.jpg',firstFree:true,revealAt:6.7,video:'media/gacha-reveal.mp4',
-  // S 2% ✅ 확정(명세 1.6). N·R ❓미정(명세 질문 2) → null. While N or R is null the pull is blocked ('확률 미정') unless CFG.TEMP.gachaNonSAsN.
-  // grade has no stat effect yet (수익 배율 기준 미정, 질문 2-2)
-  rates:{N:null,R:null,S:.02}},
- sfx:{click:{slot:'sfx-button-click',sec:.12},knob:{slot:'sfx-knob-turn',sec:.5},drop:{slot:'sfx-capsule-drop',sec:.6},reveal:{slot:'sfx-gacha-reveal',sec:10},fanfare:{slot:'sfx-success-fanfare',sec:1.2}}, // slots only: no audio files given yet
- // D-12 테마: 다다미 기본 + 후지산 벽화 카페 + 대나무 회랑(명세 1.3, F p8). 벚꽃·여름축제는 ⏸️ 보류로 뺌(이전 세이브는 기본 테마로).
- // 배경 그림 R-01·R-02 전까지 색만 바꾼 임시 테마(색은 자리표시용, 확정 아님). 가격 ❓미정 → null('가격 미정', 구매 불가).
- themes:[{id:'basic',nameKey:'theme.tatami.name',price:0,wall:'#e2cba6',tatami:'#d3c08e',light:'#ffe6c8'},
-  {id:'fuji',nameKey:'theme.fuji.name',price:null,wall:'#cfdbe6',tatami:'#cdbf95',light:'#f4ecff'},   // TEMP 색: 벽화 그림(R-01) 전
-  {id:'bamboo',nameKey:'theme.bamboo.name',price:null,wall:'#cfdcb4',tatami:'#c9c48c',light:'#eef8dc'}], // TEMP 색: 대나무 그림(R-02) 전
- quests:[{id:'serve5',goal:s=>s.served>=5,reward:{coins:200}}, // text: i18n quest.<id>
-  {id:'hearts20',goal:s=>s.hearts>=20,reward:{paws:2}},
-  {id:'own4',goal:s=>s.owned.length>=4,reward:{coins:300}},
-  {id:'theme',goal:s=>s.themesOwned.length>=2,reward:{paws:3}}],
- tutorial:[ // lines: i18n tut.<index>
-  {next:true},
-  {done:s=>s.served>=1,reward:{coins:100}},
-  {done:s=>s.gachaPulls>=1,highlight:'shiba',needsGacha:true},
-  {next:true}],
- // D-11 언어 ✅ 확정: 첫 실행 언어 선택(한국어·English), 설정에서 언제든 변경. 저장 키 settings.language (BCP-47).
- // ❓미정(명세 1.8 질문, 질문 31): 기기 언어 기본값·로그인 전후·동구 등장·버튼 모양 → 핸드오프 임시 구현대로 세로 목록 + 기본 선택 없음, 기기 언어는 쓰지 않음.
- languages:['ko','en'],
- // D-13 힐링 3종 — 방향 ✅ 확정, 아래 수치는 명세 1.7의 '제안값(미정)' 그대로. 그래서 FEATURES.healingPlay / healingTimeOfDay / healingObserve 로 모두 꺼 둠.
- // 공통: 벌 없음, 손님 응대가 항상 먼저(놀이 중 손님 배정 → 같은 프레임에 중단).
- healing:{
-  play:{checkIntervalSec:20,pairChance:.25,pairRadius:2.5,personalCooldownSec:90,globalCooldownSec:30,maxConcurrentPairs:1,heartOnTap:1,donguJoinChance:.15,approachMaxSec:4,
-   personality:{red:'cheerful',sesame:'playful',kuro:'proud',white:'smiley'}, // F p2 성격 (해맑·개구쟁이·도도·방긋) ✅
-   affinity:{cheerful:{cheerful:1,playful:1.5,proud:.8,smiley:1.3},playful:{playful:1.2,proud:.6,smiley:1},proud:{proud:.7,smiley:1.4},smiley:{smiley:1}}, // symmetric
-   prefer:{playful:{chase:1.5,tug:1.5},proud:{sitTogether:1.5,napLean:1.5}},
-   types:{chase:{dur:6,notAt:['night']},sniff:{dur:4},napLean:{dur:20,weightAt:{evening:2,night:2}},tug:{dur:6,needsToy:true},sitTogether:{dur:10}}},
-  timeOfDay:{boundaries:{morning:'06:00',day:'11:00',evening:'17:00',night:'21:00'},transitionSec:20,checkIntervalSec:60,lockToggle:false,
-   presets:{morning:{kelvin:5500,exposure:1},day:{kelvin:6000},evening:{kelvin:3500},night:{kelvin:2700,exposure:.75}},
-   customerMix:{night:{countMul:.7,tipMul:1.43}}},
-  observe:{idleThresholdSec:20,rollIntervalSec:15,rollChance:.35,tapWindowSec:8,cooldownSec:60,dailyRewardCap:{coins:100,stamp:5},
-   // reward null: 도장 지급은 ⏸️ 보류라 도장 보상(petals·fireflies·moonWindow)은 넣지 않음. fireflies '여름' 달 범위 미정 → months null = 나오지 않음.
-   // petals는 '정원 소품 보유' 조건 — 정원 소품 세트 아이템이 아직 없어 나오지 않음. 7종 완성 보상(인테리어 소품)은 아이템 체계가 없어 구현 안 함.
-   events:{butterfly:{w:30,icon:'🦋',reward:{coins:5},tod:['morning','day']},sparrow:{w:30,icon:'🐦',reward:{coins:5},tod:['morning']},
-    donguNap:{w:15,icon:'💤',reward:{hearts:1},tod:['day','evening']},petals:{w:10,icon:'🌸',reward:null,months:[3,4,5],needs:'gardenSet'},
-    fireflies:{w:5,icon:'✨',reward:null,tod:['night'],months:null},shibaDream:{w:15,icon:'💭',reward:{hearts:1},tod:['night']},moonWindow:{w:3,icon:'🌕',reward:null,tod:['night']}}}},
+ languages:['ko','en'], // 1.8·1.9
 };
+
+// UNSET start values: the code uses these documented range endpoints (never a guessed middle value).
+export const START_FALLBACK={gauges:'gaugeFull (갱신 116 full state)',intimacy:'0 (range minimum)',rescueLevel:'1 (level range minimum, 갱신 81)',coins:'0'};
+
+// helpers that only read CFG
+export const isUnset=v=>v===null||v===undefined;
+export const pressureAt=lv=>{const p=CFG.cafe.pressure[Math.max(1,Math.min(CFG.cafe.maxLevel,lv))-1];return {slots:p[0],cap:p[1],interval:p[2],pct:p[3]};};
