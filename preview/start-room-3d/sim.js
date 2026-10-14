@@ -159,16 +159,26 @@ export function bringRescue(s,rid,r=Math.random,now=Date.now()){if(bringCheck(s,
 export function declineRescue(s,rid){const n=s.rescues.length;s.rescues=s.rescues.filter(x=>x.rid!==rid);return s.rescues.length<n;}
 
 // ───────────────────────── 메뉴·결제 (갱신 120·129) ─────────────────────────
-export const menuCheck=(s,id)=>{const m=CFG.menu.premium.find(m=>m.id===id);if(!m)return 'pick';if(s.menus.includes(id))return 'owned';if(isUnset(m.devCost)||isUnset(m.unlockLevel))return 'unset';
- if(s.cafe.level<m.unlockLevel)return 'locked';if(s.coins<m.devCost)return 'coins';return null;};
-export function developMenu(s,id){if(menuCheck(s,id))return false;s.coins-=CFG.menu.premium.find(m=>m.id===id).devCost;s.menus.push(id);return true;}
-export function premiumChance(rep,satisfied){const M=CFG.menu;return Math.min(M.premiumCap,M.premiumBase+Math.max(0,rep-50)*M.premiumPerRepAbove50+(satisfied?M.premiumSatisfiedBonus:0));}
+export const menuItem=id=>CFG.menu.items.find(m=>m.id===id);
+export function menuCheck(s,id){const m=menuItem(id);if(!m)return 'pick';if(s.menus.includes(id))return 'owned';
+ if(isUnset(m.devCost)||isUnset(m.unlockLevel))return 'unset';if(s.cafe.level<m.unlockLevel)return 'locked';if(s.coins<m.devCost)return 'coins';return null;} // 갱신 129: 멍코인으로 개발, 134: 카페 레벨 해금
+export function developMenu(s,id){if(menuCheck(s,id))return false;s.coins-=menuItem(id).devCost;s.menus.push(id);return true;}
+export const developed=(s,kind)=>CFG.menu.items.filter(m=>s.menus.includes(m.id)&&(!kind||m.kind===kind));
+export const normalDeveloped=s=>developed(s,'drink').length+developed(s,'dessert').length;
+// 갱신 120 + 134: 5% + (평판−50)×0.3%p + 개발한 일반 메뉴 1개당 1%p (+15%p 만족), 상한 40%
+export function premiumChance(rep,satisfied,normalDev=0){const M=CFG.menu;
+ return Math.min(M.premiumCap,M.premiumBase+normalDev*M.premiumPerNormalDeveloped+Math.max(0,rep-50)*M.premiumPerRepAbove50+(satisfied?M.premiumSatisfiedBonus:0));}
 export function itemIncomeMul(s,now=Date.now()){return now<s.cafe.boostUntil?Math.min(CFG.itemIncome.paidCapMul,CFG.itemIncome.boostMul):1;}
-// the order is decided when the guest leaves; only developed menus can be ordered
-export function chooseOrder(s,satisfied,r){const avail=CFG.menu.premium.filter(m=>s.menus.includes(m.id));const p=premiumChance(s.cafe.rep,satisfied);
- if(avail.length&&r()<p){const [wd,ws]=CFG.menu.drinkToDessert,kinds=['drink','dessert'].filter(k=>avail.some(m=>m.kind===k));
-  let kind=kinds[0];if(kinds.length===2)kind=r()*(wd+ws)<wd?'drink':'dessert';const m=pick(r,avail.filter(m=>m.kind===kind));return {id:m.id,price:m.price,p};}
- return {id:'coffee',price:CFG.menu.coffee.price,p};}
+const coffeeOrder=p=>({id:CFG.menu.coffee.id,kind:'coffee',price:CFG.menu.coffee.price,img:CFG.menu.coffee.img,p});
+// 갱신 134 order rules (decided when the guest leaves, 120):
+//  고급 음료(3멍) needs ≥1 developed normal drink, 고급 디저트(5멍) ≥1 normal dessert — otherwise that slot becomes the default coffee;
+//  a 고급 디저트 becomes a premium (8멍) with 30% when ≥1 premium is developed. The picture is a random developed item of that kind.
+export function chooseOrder(s,satisfied,r){const M=CFG.menu,p=premiumChance(s.cafe.rep,satisfied,normalDeveloped(s));
+ if(!(r()<p))return coffeeOrder(p);
+ const [wd,ws]=M.drinkToDessert,kind=r()*(wd+ws)<wd?'drink':'dessert';const list=developed(s,kind);
+ if(!list.length)return {...coffeeOrder(p),slot:kind};
+ if(kind==='dessert'){const prem=developed(s,'premium');if(prem.length&&r()<M.premiumUpgradeChance){const m=pick(r,prem);return {id:m.id,kind:'premium',price:m.price,img:m.img,p,slot:kind};}}
+ const m=pick(r,list);return {id:m.id,kind,price:m.price,img:m.img,p,slot:kind};}
 // 갱신 75·120: 기본 수익 × 시바 레벨 효과(만난 시바 평균, 아무도 못 만났으면 ×1) × 아이템 효과
 export function payFor(s,met,order,now=Date.now()){const lvs=met.map(id=>byId(s,id)).filter(Boolean).map(o=>levelEffect(o.level));
  const lvMul=lvs.length?lvs.reduce((a,b)=>a+b,0)/lvs.length:1,item=itemIncomeMul(s,now);return {base:order.price,lvMul,item,total:order.price*lvMul*item};}
@@ -213,8 +223,8 @@ function leave(s,w,c,ctx){const V=CFG.visit,E=CFG.cafeExp;let outcome,repD=0,exp
  else if(managerActive(s,ctx.now)&&managerCanFulfil(s,c)&&w.r()<CFG.requests.managerChance){outcome='satisfied';byManager=true;repD=satisfiedGain(s.cafe.rep,CFG.rep.satisfied*CFG.requests.managerRepMul);exp=0;}
  else{outcome='normal';repD=CFG.rep.normal;exp=E.custNormal;}
  const order=chooseOrder(s,outcome==='satisfied',w.r),pay=payFor(s,c.met,order,ctx.now);addCoins(s,pay.total);
- s.stats.served++;s.stats[outcome]++;addCafeExp(s,exp);w.lastPay={...pay,order:order.id,outcome,met:[...c.met]};
- w.events.push({type:'leave',id:c.id,outcome,coins:pay.total,order:order.id,byManager,seat:c.seat});if(repD)addRep(s,repD,{...ctx,world:w});}
+ s.stats.served++;s.stats[outcome]++;addCafeExp(s,exp);w.lastPay={...pay,order:order.id,orderImg:order.img,outcome,met:[...c.met]};
+ w.events.push({type:'leave',id:c.id,outcome,coins:pay.total,order:order.id,orderImg:order.img,byManager,seat:c.seat});if(repD)addRep(s,repD,{...ctx,world:w});}
 // one step of everything that runs with time (online, or fast-forwarded while the app was closed)
 export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};w.t+=dt;const C=s.cafe;
  if(C.closed){decayGauges(s,dt,true,now);return w;} // 126-3: 휴무 중엔 배고픔만 (속도 UNSET → 변화 없음)
@@ -265,7 +275,7 @@ export function save(storage,s,now=Date.now()){s.lastSeen=now;storage.setItem(CF
 export function load(storage,now=Date.now(),r=Math.random){let s=null;try{s=JSON.parse(storage.getItem(CFG.saveKey));}catch{}
  if(!s||s.v!==CFG.saveVersion)return {state:newState(now),fresh:true,offline:null,reopened:null};
  const d=newState(now);s={...d,...s,items:{...d.items,...s.items},cafe:{...d.cafe,...s.cafe},stats:{...d.stats,...s.stats},settings:{...d.settings,...s.settings}};
- let offline=null;if(s.started&&now>s.lastSeen){const w=newWorld(s,r);offline=fastForward(s,w,s.lastSeen,now,{offline:true});}
+ s.menus=(s.menus||[]).filter(id=>menuItem(id));let offline=null;if(s.started&&now>s.lastSeen){const w=newWorld(s,r);offline=fastForward(s,w,s.lastSeen,now,{offline:true});}
  const reopened=reopenCafe(s,now);s.lastSeen=now;return {state:s,fresh:false,offline,reopened};}
 
 // ───────────────────────── UNSET-gated features (stubs) ─────────────────────────

@@ -66,11 +66,27 @@ export const CFG={
  // 갱신 106 일반손님 요구 (124-4: 필수 아님, 안 들어줘도 벌 없음). 113: 인테리어 요구 — 인테리어 점수·아이템 미정이라 꺼 둠.
  requests:{types:['meetShiba','seeTrick'],interior:{enabled:false,minThemeItems:3}, // 갱신 113 '특정 테마 아이템 3개 이상' (인테리어 시스템 UNSET)
   managerChance:.3,managerRepMul:.5}, // 갱신 118
- // 갱신 120 결제 · 129 메뉴 개발
- menu:{coffee:{price:1}, // 갱신 120: 기본 커피 1멍
-  premium:[{id:'premiumDrink',kind:'drink',price:3,devCost:U,unlockLevel:U}, // 갱신 120 고급 음료 3멍 · UNSET: 갱신 129 개발 비용·해금 레벨
-   {id:'premiumDessert',kind:'dessert',price:5,devCost:U,unlockLevel:U}], // 갱신 120 고급 디저트 5멍 · UNSET: 갱신 129
+ // 갱신 120 결제 · 129 메뉴 개발(멍코인) · 134 메뉴 목록·주문 규칙 · 134-1 개발비 (134 표의 개발비는 134-1로 대체)
+ menu:{coffee:{id:'M-01',price:1,img:'M-01-iced-americano_512.png'}, // 갱신 134: M-01 아이스 아메리카노 = 처음부터 있는 기본 커피 1멍 (120)
+  // kind: drink/dessert = 일반 메뉴, premium = 프리미엄. unlockLevel·price = 갱신 134 표, devCost = 갱신 134-1 표
+  items:[
+   {id:'M-02',kind:'drink',unlockLevel:2,devCost:8500,price:3,img:'M-02-hot-latte_512.png'},            // 따뜻한 라테
+   {id:'M-05',kind:'dessert',unlockLevel:3,devCost:10000,price:5,img:'M-05-cheesecake_512.png'},        // 치즈케이크
+   {id:'M-03',kind:'drink',unlockLevel:5,devCost:12000,price:3,img:'M-03-strawberry-latte_512.png'},    // 딸기 라테
+   {id:'M-06',kind:'dessert',unlockLevel:7,devCost:13500,price:5,img:'M-06-chocochip-cookie_512.png'},  // 초코칩 쿠키
+   {id:'M-04',kind:'drink',unlockLevel:9,devCost:15000,price:3,img:'M-04-yuja-ade_512.png'},            // 유자 에이드
+   {id:'M-07',kind:'dessert',unlockLevel:12,devCost:17000,price:5,img:'M-07-croissant_512.png'},        // 크루아상
+   {id:'M-08',kind:'dessert',unlockLevel:15,devCost:18500,price:5,img:'M-08-strawberry-parfait_512.png'},// 딸기 파르페
+   {id:'P-01',kind:'premium',unlockLevel:20,devCost:23500,price:8,img:'P-01-gold-tiramisu_512.png'},    // 골드 티라미수
+   {id:'P-02',kind:'premium',unlockLevel:25,devCost:27000,price:8,img:'P-02-strawberry-whole-cake_512.png'}, // 딸기 홀케이크
+   {id:'P-03',kind:'premium',unlockLevel:30,devCost:30500,price:8,img:'P-03-montblanc_512.png'},        // 몽블랑
+   {id:'P-04',kind:'premium',unlockLevel:35,devCost:32000,price:8,img:'P-04-choco-fondant_512.png'},    // 초코 퐁당
+   {id:'P-05',kind:'premium',unlockLevel:40,devCost:34000,price:8,img:'P-05-macaron-trio_512.png'},     // 마카롱 3종
+   {id:'P-06',kind:'premium',unlockLevel:45,devCost:35500,price:8,img:'P-06-pavlova_512.png'}],         // 파블로바
+  premiumDrinkPrice:3,premiumDessertPrice:5, // 갱신 120 고급 음료 3멍·고급 디저트 5멍 (134: 일반 음료/디저트를 1개 이상 개발해야 주문, 아니면 기본 커피)
   premiumBase:.05,premiumPerRepAbove50:.003,premiumSatisfiedBonus:.15,premiumCap:.4, // 갱신 120
+  premiumPerNormalDeveloped:.01, // 갱신 134: 개발한 일반 메뉴 1개마다 고급 메뉴 기본 확률 +1%p (상한 40% 그대로)
+  premiumUpgradeChance:.3, // 갱신 134: 고급 디저트 주문 → 프리미엄 1개 이상 개발 시 30% 확률로 프리미엄(8멍)
   drinkToDessert:[2,1]}, // 갱신 120: 음료:디저트 2:1
  itemIncome:{boostMul:1.2,boostHours:4,boostMaxHours:24,paidCapMul:1.5,priceDia:U}, // 갱신 97 시간제 수익 1.2배 · UNSET: 가격(다이아)
  offline:{capHours:12,stepSec:1}, // 갱신 56: 오프라인 수익 최대 12시간분. stepSec = simulation step (engine, not a game number)

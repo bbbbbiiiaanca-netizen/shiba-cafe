@@ -1,10 +1,10 @@
 # Spec v3 build notes (start-room-3d)
 
-Source: `shiba-cafe-docs/spec-v3-build/spec-v3.md` (최신 갱신 133 기준; 높은 갱신 번호가 앞의 내용을 대체, ~~취소선~~은 폐지로 처리),
+Source: `shiba-cafe-docs/spec-v3-build/spec-v3.md` (최신 갱신 134-1 기준; 높은 갱신 번호가 앞의 내용을 대체, ~~취소선~~은 폐지로 처리),
 `docs/` (decisions, guest 검수메모, onboarding, sound list), `image-list.md`. Built on branch `codex/spec-v3-core`.
 
 - Run: open `start-room-3d/index.html` (portrait 390×844; `?fresh=1` new save, `?seed=N` fixed RNG, `?still=1` no auto-tick).
-- Tests: `cd start-room-3d && npm test` (52 spec tests + legacy timeline test) · `npm run test:browser` (16 headless-Chrome checks).
+- Tests: `cd start-room-3d && npm test` (56 spec tests + legacy timeline test) · `npm run test:browser` (17 headless-Chrome checks).
 - Screens: `node start-room-3d/capture-spec-v3.mjs [OUTDIR]` → default `/workspace/shiba-cafe-docs/spec-v3-build/screens/`.
 - Files: `config.js` (all numbers, UNSET = `null`), `sim.js` (pure rules), `main.js` + `index.html` (UI), `i18n.js` (ko/en),
   `assets/drive/` (confirmed Drive images, mapping in `assets/drive/MAP.md`).
@@ -34,7 +34,13 @@ Source: `shiba-cafe-docs/spec-v3-build/spec-v3.md` (최신 갱신 133 기준; �
 | 손님 | 실망 평판 −1 | 갱신 87 |
 | 손님 | 돌아다니는 시바를 끌어서(또는 탭→탭) 손님에게 데려다주면 7초 만남, 만나는 중인 시바는 못 끎 | 갱신 105 |
 | 결제 | 손님 1명 커피 1멍 × 시바 레벨 효과 × 아이템 효과, 결제는 나갈 때. 소수는 속으로 쌓고 정수만 표시 | 갱신 75·120 |
-| 결제 | 고급 메뉴 확률 5% + (평판−50)×0.3%p, 요구 충족 만족 +15%p, 최대 40%, 음료:디저트 2:1 (개발한 메뉴만) | 갱신 120·129 |
+| 메뉴 | M-01 아이스 아메리카노 = 처음부터 있는 기본 커피 1멍; 일반 음료 M-02·03·04 (3멍), 일반 디저트 M-05·06·07·08 (5멍), 프리미엄 P-01~06 (8멍) | 갱신 120·134 |
+| 메뉴 | 해금 카페 Lv(2·3·5·7·9·12·15·20·25·30·35·40·45)과 판매가는 134 표, 개발비는 134-1 표(8,500 … 35,500멍; 134 표의 개발비는 대체됨) | 갱신 134·134-1 |
+| 메뉴 | 개발은 멍코인으로, 해금 레벨 이상에서, 메뉴마다 한 번 | 갱신 129·134 |
+| 결제 | 고급 메뉴 확률 5% + 개발한 일반 메뉴 1개당 1%p + (평판−50)×0.3%p, 요구 충족 만족 +15%p, 최대 40%; 음료:디저트 2:1 | 갱신 120·134 |
+| 결제 | 고급 음료(3멍)는 일반 음료 1개 이상, 고급 디저트(5멍)는 일반 디저트 1개 이상 개발해야 주문; 아니면 그 주문은 기본 커피 | 갱신 134 |
+| 결제 | 고급 디저트 주문은 프리미엄을 1개 이상 개발했으면 30% 확률로 프리미엄(8멍) | 갱신 134 |
+| 결제 | 손님이 고른 메뉴 그림 = 그 종류의 개발한 메뉴 중 무작위 (떠날 때 +멍 표시 옆에 그림) | 갱신 134 |
 | 결제 | 수익 계산식 화면(멍코인 누르기 / 설정): 기본 × 레벨 효과 × 아이템, 시바별 컨디션 배율 함께 표시 | 갱신 75·86 |
 | 평판 | 0~100, 시작 50, 1시간마다 50 쪽으로 1점 | 갱신 87·106 |
 | 오프라인 | 앱을 닫은 동안 같은 규칙으로 카페를 시뮬레이션, 수익은 최대 12시간분 | 갱신 56 |
@@ -78,6 +84,9 @@ Source: `shiba-cafe-docs/spec-v3-build/spec-v3.md` (최신 갱신 133 기준; �
 3. **시바 자동 배정**: 돌아다니기 5초가 끝난 시바는 시바를 아직 덜 만난 손님 → 그중 곧 떠날 손님 순으로 간다. 한 손님에게 동시에 1마리.
 4. **보여 주는 재주**: 그 시바가 손님이 원하는 재주를 알면 그것을, 아니면 배운 재주 중 무작위 (갱신 100 '무작위'를 요구와 맞춤).
 5. **요구 종류 고르기**: 들어줄 수 있는 종류(만나기/재주) 중 균등, 대상도 균등. 인테리어 요구는 인테리어 시스템 UNSET이라 내지 않음.
+5a. **메뉴 그림**: '개발한 것에서 무작위'를 주문 종류 안에서로 읽음 — 음료 주문은 개발한 일반 음료 중, 디저트는 개발한 일반 디저트 중, 프리미엄은 개발한 프리미엄 중, 기본 커피는 M-01. 판매가는 그 메뉴의 표 가격(음료 3·디저트 5·프리미엄 8 = 120의 고급 음료·고급 디저트 가격과 같음).
+5b. **프리미엄만 개발**하고 일반 디저트가 없으면 디저트 주문 자리가 기본 커피가 되므로 프리미엄도 나오지 않는다(프리미엄은 고급 디저트 주문에서만 바뀜).
+5c. 이전 v3 저장의 `premiumDrink`/`premiumDessert` 같은 없는 메뉴 id는 불러올 때 지운다.
 6. **레벨 효과**: 그 손님이 만난 시바들의 평균 레벨 효과, 아무도 못 만났으면 ×1. 실망한 손님도 커피 값은 낸다(갱신 120 "손님 1명은 기본으로 1멍").
 7. **매니저**는 '보통'으로 끝날 손님에게만 30% 굴림(실망 손님은 대상 아님).
 8. **줄이 10명 꽉 찼을 때** 오는 손님은 들어오지 않음(통계 `lost`, 평판 영향 없음).
@@ -109,7 +118,6 @@ Source: `shiba-cafe-docs/spec-v3-build/spec-v3.md` (최신 갱신 133 기준; �
 | `rescueLevel` | 질문 9(사) | Lv1, 화면에 "레벨 규칙 미정 → Lv1" |
 | `walk.stopRule` | 질문 1-4 | 멈추기 버튼 비활성 "규칙 미정" |
 | `walk.events.extraCoins` | 갱신 82 '소량' | 추가 보상은 하트 1개만 |
-| `menu.premium[*].devCost`, `.unlockLevel` | 갱신 129 | 고급 음료 3멍·고급 디저트 5멍 개발 버튼 "미정" → 손님은 커피만 주문 |
 | `itemIncome.priceDia` | 갱신 97 | 수익 1.2배 아이템 판매 불가 (효과 로직은 있음) |
 | `cafe.paidSlotUnlockDia` | 갱신 87·132 | 칸 미리 해제 "미정" |
 | `cafe.expansion2FCost` | 갱신 56 | 2층 없음 |
@@ -147,7 +155,6 @@ Shown to the player as "준비 중" (settings) or disabled shop rows ("미정" /
 | 멍코인 아이콘 | HUD coin pill | I-04 (`final-check.jpg` has heart reset/heart/paw/diamond/stamp only) |
 | 밥 주기·목욕 버튼 아이콘 | care screen | 1.2-3 '게이지·버튼 아이콘' |
 | 시바뽑기 캡슐/뽑기권 아이콘 | bag | I-02 |
-| 메뉴 그림 for 기본 커피·고급 음료·고급 디저트 | shop › 메뉴 개발 | `카페아이템/M-*, P-*` exist but the menu list is UNSET (129) so none is mapped |
 | 액세서리 아이콘 | care › 액세서리 칸 | A-01~ (8eb5d737 accessory sheet exists; unlock list UNSET) |
 | 좋아하는 간식·장난감 잠김 칸 아이콘 | care › 좋아하는 간식·장난감 | U-L |
 | 적색·백시바 걷기/잠들기 포즈 | walk & sleeping state (portrait shown instead) | E-07~E-14 |
@@ -160,8 +167,8 @@ Shown to the player as "준비 중" (settings) or disabled shop rows ("미정" /
 | 다이아 상점 상품 아이콘(쿨타임권, 수익·경험치 1.2배, 칸 해제) | shop › 다이아 | 갱신 103·115·97 |
 
 ## 7. Tests
-- `tests/spec-v3.test.mjs` (new, 52 tests): spec tables and numbers, formulas (income, intelligence = 합×4 ≤100, paw & café exp curves, premium chance, condition, training chance, reputation damping/arrival), customer flow and timing, queue anger, satisfaction/requests, drag-to-guest, manager share, walks with scripted RNG and seeded rate checks (20,000 walks), rescue flow, part-timers, max 10 placed, stains, reputation drift, 12 h offline cap, 임시휴무 and reopen, save/load, walk settled once on load, UNSET features disabled, menu works once its UNSET values are filled.
-- `tests/smoke-browser.mjs` + `tests/smoke-steps.mjs` (rewritten, 16 checks in headless Chrome).
+- `tests/spec-v3.test.mjs` (56 tests; 갱신 134/134-1 added: menu table incl. 134-1 dev costs and image files, development gating/cost, +1%p per normal menu with the 40% cap, drink/dessert slot → coffee fallback, 2:1 split, 30% premium upgrade only with a premium developed, random picture among developed, prices paid by guests): spec tables and numbers, formulas (income, intelligence = 합×4 ≤100, paw & café exp curves, premium chance, condition, training chance, reputation damping/arrival), customer flow and timing, queue anger, satisfaction/requests, drag-to-guest, manager share, walks with scripted RNG and seeded rate checks (20,000 walks), rescue flow, part-timers, max 10 placed, stains, reputation drift, 12 h offline cap, 임시휴무 and reopen, save/load, walk settled once on load, UNSET features disabled.
+- `tests/smoke-browser.mjs` + `tests/smoke-steps.mjs` (rewritten, 17 checks in headless Chrome, incl. 14 menu rows with images and developing M-02 at Lv2 for 8,500멍).
 - Removed `tests/sim.test.mjs` and `tests/handoff.test.mjs`: they assert the abolished grade system (bands, S 2%, same-grade merge, promotion), the old customer pay model and 도감 — contradicted by v3.
 - Kept `tests/timeline.test.mjs` (legacy 3D first check, unaffected).
 
@@ -169,4 +176,5 @@ Shown to the player as "준비 중" (settings) or disabled shop rows ("미정" /
 - **One shiba cannot carry the café past Lv3.** With the spec tables, a single Lv21 shiba reaches café Lv3–6 within ~1–2 h; guests then outnumber what one shiba can meet, reputation falls, and offline the café hits 임시휴무 in ~2 h (`tests` › "one shiba, 20 h away"). Because 뽑기 (start level/odds) and the 구조 level are UNSET, the only way to get a 2nd shiba is the 5% rescue per walk.
 - **Care can only make gauges worse.** Walks/play/training add dirt and fatigue, but 밥·간식·목욕·수면 amounts are UNSET, so nothing lowers dirt or fatigue except a paid potion or 임시휴무 (fatigue → 0). After three 30-minute walks a shiba sleeps until the next closure.
 - **Paws have no source** while 뽑기 is UNSET, so shiba levels never rise in this build.
+- **Menus are expensive for the early café.** The first menu (M-02, Lv2) costs 8,500멍 (134-1, 6 hours of planned income). With one Lv21 shiba the café earns about 2멍 per guest, so in the capture run it had ~280멍 after 15 minutes; 134-1 already notes the cost basis (282 × 상한 per hour) — worth checking against play.
 - 갱신 86 '1.5 = 만족' vs 갱신 106 '요구 충족만 만족' — confirm interpretation 2.1.

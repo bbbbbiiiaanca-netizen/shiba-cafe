@@ -64,10 +64,11 @@ function renderScene(){const cap=S.capOf(s),bySeat={};for(const c of w.custs)byS
  // per-frame values without rebuilding
  for(const c of w.custs){const e=document.querySelector(`[data-cust="${c.id}"] .tm i`);if(e)e.style.width=Math.max(0,c.t/CFG.cafe.stayingSec*100)+'%';}
  for(const c of w.queue){const e=document.querySelector(`[data-q="${c.id}"] .bar i`);if(e){e.style.width=Math.max(0,c.t/CFG.cafe.queueWaitSec*100)+'%';e.style.background=c.t<10?'#d9695a':'';}}}
-function popAt(el,text){if(!el)return;const sc=$('scene').getBoundingClientRect(),b=el.getBoundingClientRect();const p=document.createElement('div');p.className='pop';p.textContent=text;
+function popAt(el,text,orderImg){if(!el)return;const sc=$('scene').getBoundingClientRect(),b=el.getBoundingClientRect();const p=document.createElement('div');p.className='pop';p.textContent=text;
+ if(orderImg){const i=document.createElement('img');i.src='assets/drive/'+orderImg;p.prepend(i);} // 갱신 134: the ordered menu's picture
  p.style.left=(b.left-sc.left+4)+'px';p.style.top=(b.bottom-sc.top-30)+'px';$('scene').appendChild(p);setTimeout(()=>p.remove(),1500);}
 function handleEvents(){for(const e of w.events.splice(0)){
- if(e.type==='leave'){const el=document.querySelector(`[data-seat="${e.seat}"],[data-cust="${e.id}"]`);popAt(el,`+${f2(e.coins)} ${L('out.'+e.outcome)}`);}
+ if(e.type==='leave'){const el=document.querySelector(`[data-seat="${e.seat}"],[data-cust="${e.id}"]`);popAt(el,`+${f2(e.coins)} ${L('out.'+e.outcome)}`,e.orderImg);}
 }
  while(s.walkResults.length)ui.modals.push({kind:'walkResult',res:s.walkResults.shift()});}
 
@@ -118,10 +119,15 @@ P.walk=()=>{const now=clock.now();let h='';const W=s.walk;
   <div class="choices">${s.shibas.map(o=>{const cd=(o.cd.walk||0)-now;return `<button class="choice${ui.walkAlba.has(o.id)?' on':''}" data-act="albaPick" data-id="${o.id}" ${s.cafe.level<A.unlock||cd>0?'disabled':''}><span>${nameOf(o)}${cd>0?' · '+tfmt(cd/1000):''}</span></button>`;}).join('')}</div>
   <button data-act="albaWalk" ${ac?'disabled':''}>${L('walk.albaGo',{cost:fmt(A.cost)})}</button></div>`;
  return {title:L('walk.title'),html:h};};
-P.shop=()=>{const now=clock.now(),M=CFG.menu;let h=`<div class="card"><h3>${L('shop.menu')}</h3><div class="li">${slot(L('app.missingImg'))}<div class="grow nm">${L('shop.coffee',{p:M.coffee.price})}</div></div>`;
- for(const m of M.premium){const c=S.menuCheck(s,m.id);h+=`<div class="li">${slot(L('app.missingImg'))}<div class="grow"><div class="nm">${L('shop.'+m.id,{p:m.price})}</div><div class="sub">${c==='unset'?L('shop.devUnset'):c==='owned'?'✓':''}</div></div><button data-act="dev" data-id="${m.id}" ${c?'disabled':''}>${c==='unset'?L('app.unset'):c==='owned'?'✓':fmt(m.devCost)}</button></div>`;}
+P.shop=()=>{const now=clock.now(),M=CFG.menu,menuImg=f=>`<div class="pt">${img('assets/drive/'+f)}</div>`;
+ let h=`<div class="card"><h3>${L('shop.menu')}</h3><div class="note">${L('shop.menuRule',{n:S.normalDeveloped(s),p:f2(S.premiumChance(s.cafe.rep,false,S.normalDeveloped(s))*100)})}</div>
+  <div class="li" data-menu="${M.coffee.id}">${menuImg(M.coffee.img)}<div class="grow"><div class="nm">${L('menu.'+M.coffee.id)}</div><div class="sub">${L('shop.coffee',{p:M.coffee.price})}</div></div><button disabled>✓</button></div>`;
+ for(const m of M.items){const c=S.menuCheck(s,m.id);
+  h+=`<div class="li" data-menu="${m.id}">${menuImg(m.img)}<div class="grow"><div class="nm">${L('menu.'+m.id)}</div><div class="sub">${L('menu.kind.'+m.kind)} · ${L('shop.sell',{p:m.price})} · ${L('app.lv',{lv:m.unlockLevel})}</div></div>
+   <button data-act="dev" data-id="${m.id}" ${c?'disabled':''}>${c==='owned'?'✓':c==='locked'?L('app.locked',{lv:m.unlockLevel}):L('app.coins',{n:fmt(m.devCost)})}</button></div>`;}
+ h+='</div>';
  const G=CFG.alba.manager,mc=S.albaCheck(s,'manager',[],now);
- h+=`</div><div class="card"><h3>${L('shop.manager')}</h3><div class="note">${L('shop.managerNote')}</div><button data-act="manager" ${mc?'disabled':''}>${s.cafe.level<G.unlock?L('app.locked',{lv:G.unlock}):S.managerActive(s,now)?L('hud.manager',{t:tfmt((s.cafe.managerUntil-now)/1000)}):L('shop.hire',{cost:fmt(G.cost)})}</button></div>
+ h+=`<div class="card"><h3>${L('shop.manager')}</h3><div class="note">${L('shop.managerNote')}</div><button data-act="manager" ${mc?'disabled':''}>${s.cafe.level<G.unlock?L('app.locked',{lv:G.unlock}):S.managerActive(s,now)?L('hud.manager',{t:tfmt((s.cafe.managerUntil-now)/1000)}):L('shop.hire',{cost:fmt(G.cost)})}</button></div>
   <div class="card"><h3>${L('shop.bag')}</h3><div class="li"><span class="ico reset" style="width:34px;height:34px"></span><div class="grow nm">${L('shop.heartReset',{n:s.items.heartReset})}</div><button data-act="heartReset" ${S.canUseHeartReset(s)?'':'disabled'}>${L('shop.use')}</button></div>
    <div class="li">${slot(L('app.missingImg'),34,34)}<div class="grow nm">${L('shop.capsule',{n:s.items.capsule})}</div></div>
    <div class="li">${img(IMG.potion)}<div class="grow nm">${L('dia.potionBig')} ×${s.items.potionBig} · ${L('dia.potionSmall')} ×${s.items.potionSmall}</div></div></div>
@@ -137,8 +143,8 @@ P.settings=()=>{const h=`<div class="card"><h3>${L('settings.language')}</h3><di
  <div class="card"><button class="warn" data-act="reset">${L('set.reset')}</button></div>`;return {title:L('set.title'),html:h};};
 P.income=()=>{const now=clock.now(),item=S.itemIncomeMul(s,now),base=CFG.menu.coffee.price;
  let h=`<div class="card"><h3>${L('inc.formula')}</h3><div class="note">${L('inc.base',{p:base})}</div>
-  <div class="note">${s.menus.length?s.menus.map(id=>L('shop.'+id,{p:CFG.menu.premium.find(m=>m.id===id).price})).join(' · '):L('inc.noPremium')}</div>
-  <div class="note">${L('inc.premium',{p:f2(S.premiumChance(s.cafe.rep,false)*100)})}</div><div class="note">${L('inc.item',{m:item})}</div></div><div class="card">`;
+  <div class="note">${s.menus.length?S.developed(s).map(m=>L('menu.'+m.id)+' '+L('app.coins',{n:m.price})).join(' · '):L('inc.noPremium')}</div>
+  <div class="note">${L('inc.premium',{p:f2(S.premiumChance(s.cafe.rep,false,S.normalDeveloped(s))*100)})}</div><div class="note">${L('inc.item',{m:item})}</div></div><div class="card">`;
  for(const sh of S.placedShibas(s)){const e=S.levelEffect(sh.level);h+=`<div class="li"><div class="pt" style="width:40px;height:40px">${img(IMG.shiba(sh.breed))}</div><div class="grow"><div class="nm" style="font-size:12px">${L('inc.row',{name:nameOf(sh),lv:sh.level,base,lv2:f2(e),item,total:f2(base*e*item)})}</div><div class="sub">${L('inc.cond',{m:f2(S.conditionMul(sh))})}</div></div></div>`;}
  const p=w.lastPay;if(p)h+=`<div class="note">${L('inc.last',{out:L('out.'+p.outcome),base:p.base,lv:f2(p.lvMul),item:p.item,total:f2(p.total)})} ${p.met.length?'':L('inc.metNone')}</div>`;
  return {title:L('inc.title'),html:h+'</div>'};};

@@ -2,6 +2,8 @@
 import assert from 'node:assert/strict';
 import {CFG,pressureAt} from '../config.js';
 import * as S from '../sim.js';
+import {existsSync} from 'node:fs';import {join,dirname} from 'node:path';import {fileURLToPath} from 'node:url';
+const ROOT=join(dirname(fileURLToPath(import.meta.url)),'..');
 
 let pass=0;const fails=[];
 function test(name,fn){try{fn();pass++;}catch(e){fails.push([name,e]);}}
@@ -33,7 +35,7 @@ test('spec numbers: stay/queue/visit/rep/hearts/walk/hospital/part-timers/paymen
  assert.deepEqual([C.alba.daycare.cooldownSec,C.alba.walk.cooldownSec,C.alba.trainer.cooldownSec,C.alba.manager.hireSec],[7200,14400,14400,43200]);
  assert.deepEqual([C.alba.daycare.unlock,C.alba.walk.unlock,C.alba.trainer.unlock,C.alba.manager.unlock],[10,15,20,25]);
  assert.equal(C.alba.walk.maxShibas,4);assert.equal(C.alba.walk.boredom,-50);
- assert.equal(C.menu.coffee.price,1);assert.deepEqual(C.menu.premium.map(m=>m.price),[3,5]);assert.equal(C.gacha.priceDia,200);assert.equal(C.stub.diaPriceWon,10);
+ assert.equal(C.menu.coffee.price,1);assert.equal(C.menu.coffee.id,'M-01');assert.deepEqual([C.menu.premiumDrinkPrice,C.menu.premiumDessertPrice],[3,5]);assert.equal(C.gacha.priceDia,200);assert.equal(C.stub.diaPriceWon,10);
  assert.deepEqual(C.cooldownTicketDia,{one:20,five:80});assert.deepEqual(C.potion,{bigDia:150,smallDia:50});});
 test('갱신 133: exactly 5 tricks from config (앉아·손·기다려·엎드려·인사), max step 5, ×4',()=>{
  assert.deepEqual(CFG.tricks.map(t=>t.id),['sit','paw','wait','down','bow']);assert.equal(CFG.trickMaxLevel,5);assert.equal(CFG.intelligencePerLevel,4);assert.equal(CFG.intelligenceMax,100);});
@@ -57,8 +59,37 @@ test('income = base × level effect (met shibas avg) × item (75·120); fraction
  assert.equal(S.payFor(s,[sh.id],{price:1}).total,2);assert.equal(S.payFor(s,[],{price:1}).total,1);
  const o=S.makeShiba(s,{breed:'kuro',level:1});s.shibas.push(o);near(S.payFor(s,[sh.id,o.id],{price:3}).total,3*1.5);
  s.cafe.boostUntil=1e15;near(S.payFor(s,[sh.id],{price:1}).total,2.4);});
-test('order: only developed premium menus; drink:dessert 2:1 (120·129)',()=>{const {s}=freshGame();assert.equal(S.chooseOrder(s,true,()=>0).id,'coffee');
- s.menus=['premiumDrink','premiumDessert'];let d=0,n=0;const r=S.rng(3);for(let i=0;i<30000;i++){const o=S.chooseOrder(s,true,r);if(o.id!=='coffee'){n++;if(o.id==='premiumDrink')d++;}}near(d/n,2/3,.02,'drink share');});
+test('갱신 134/134-1 menu table: 13 items, unlock level & price from 134, dev cost from 134-1 (not 134)',()=>{
+ const T={'M-02':['drink',2,8500,3],'M-05':['dessert',3,10000,5],'M-03':['drink',5,12000,3],'M-06':['dessert',7,13500,5],'M-04':['drink',9,15000,3],'M-07':['dessert',12,17000,5],'M-08':['dessert',15,18500,5],
+  'P-01':['premium',20,23500,8],'P-02':['premium',25,27000,8],'P-03':['premium',30,30500,8],'P-04':['premium',35,32000,8],'P-05':['premium',40,34000,8],'P-06':['premium',45,35500,8]};
+ assert.equal(CFG.menu.items.length,13);for(const m of CFG.menu.items)assert.deepEqual([m.kind,m.unlockLevel,m.devCost,m.price],T[m.id],m.id);
+ const old134=[1500,1500,2000,2500,3000,3500,4000,12000,14000,16000,17000,18000,20000];assert.ok(CFG.menu.items.every((m,i)=>m.devCost!==old134[i]),'134 dev costs replaced by 134-1');
+ assert.equal(CFG.menu.premiumPerNormalDeveloped,.01);assert.equal(CFG.menu.premiumUpgradeChance,.3);assert.equal(CFG.menu.premiumCap,.4);
+ for(const m of [CFG.menu.coffee,...CFG.menu.items])assert.ok(existsSync(join(ROOT,'assets/drive',m.img)),m.img);});
+test('menu development: 멍코인, gated by café level, once each (129·134)',()=>{const {s}=freshGame();s.coins=8499;
+ assert.equal(S.menuCheck(s,'M-02'),'locked','M-02 unlocks at Lv2');s.cafe.level=2;assert.equal(S.menuCheck(s,'M-02'),'coins');s.coins=8500;assert.ok(S.developMenu(s,'M-02'));assert.equal(s.coins,0);assert.equal(S.menuCheck(s,'M-02'),'owned');
+ s.coins=1e6;assert.equal(S.menuCheck(s,'M-05'),'locked');s.cafe.level=3;assert.ok(S.developMenu(s,'M-05'));assert.equal(s.coins,1e6-10000);
+ assert.equal(S.menuCheck(s,'P-01'),'locked');s.cafe.level=20;assert.ok(S.developMenu(s,'P-01'));assert.equal(S.developMenu(s,'P-01'),false);assert.equal(S.menuCheck(s,'nope'),'pick');});
+test('premium chance +1%p per developed normal menu, cap 40% unchanged (120·134)',()=>{near(S.premiumChance(50,false,7),.12);near(S.premiumChance(90,true,7),.39);near(S.premiumChance(100,true,7),.4);
+ const {s}=freshGame();s.menus=['M-02','M-05','P-01'];assert.equal(S.normalDeveloped(s),2);});
+test('orders (134): no menus → always coffee M-01; drink slot needs a normal drink, dessert slot a normal dessert, else coffee; 2:1 split',()=>{
+ const {s}=freshGame();const o=S.chooseOrder(s,true,()=>0);assert.deepEqual([o.id,o.price,o.img],['M-01',1,'M-01-iced-americano_512.png']);
+ // r: premium roll, kind roll (<2/3 → drink), pick
+ s.menus=['M-05'];assert.equal(S.chooseOrder(s,true,script([0,.1,0])).id,'M-01','drink slot without a drink → coffee');
+ const d=S.chooseOrder(s,true,script([0,.9,.99,0]));assert.deepEqual([d.id,d.price,d.kind],['M-05',5,'dessert']);
+ s.menus=['M-02'];const dr=S.chooseOrder(s,true,script([0,.1,0]));assert.deepEqual([dr.id,dr.price],['M-02',3]);assert.equal(S.chooseOrder(s,true,script([0,.9,0])).id,'M-01','dessert slot without a dessert → coffee');
+ assert.equal(S.chooseOrder(s,false,script([.99])).id,'M-01','premium roll failed');
+ s.menus=['M-02','M-05'];let dk=0,n=0;const r=S.rng(3);for(let i=0;i<30000;i++){const x=S.chooseOrder(s,true,r);if(x.id!=='M-01'){n++;if(x.kind==='drink')dk++;}}near(dk/n,2/3,.02,'drink share');});
+test('premium dessert → 30% premium (8멍) only with a premium developed; picture random among developed of that kind (134)',()=>{const {s}=freshGame();
+ s.menus=['M-05','M-06','P-01','P-03'];const r=S.rng(11);let des=0,prem=0;const imgs=new Set();
+ for(let i=0;i<40000;i++){const o=S.chooseOrder(s,true,r);if(o.slot==='dessert'){des++;if(o.kind==='premium'){prem++;assert.equal(o.price,8);assert.ok(['P-01','P-03'].includes(o.id));}else{assert.equal(o.price,5);assert.ok(['M-05','M-06'].includes(o.id));}imgs.add(o.img);}}
+ near(prem/des,.3,.02,'premium share');assert.equal(imgs.size,4,'every developed dessert/premium picture shows up');
+ s.menus=['M-05'];for(let i=0;i<2000;i++)assert.notEqual(S.chooseOrder(s,true,r).kind,'premium');
+ s.menus=['P-01'];for(let i=0;i<2000;i++)assert.equal(S.chooseOrder(s,true,r).id,'M-01','premium alone never ordered without a normal dessert');});
+test('guests pay the ordered menu price × level effect, and the leave event carries its picture (120·134)',()=>{const {s,w}=freshGame();s.cafe.level=3;s.menus=['M-02','M-05'];s.cafe.rep=100;
+ const {ev}=run(s,w,1200);const L=ev.filter(e=>e.type==='leave');
+ const price={'M-01':1,'M-02':3,'M-05':5};for(const e of L)assert.ok([1,2].some(m=>Math.abs(e.coins-price[e.order]*m)<1e-9),e.order+' '+e.coins); // ×2 if it met the Lv21 shiba, ×1 if nobody
+ assert.ok(L.some(e=>e.order==='M-02')&&L.some(e=>e.order==='M-05'));assert.ok(L.every(e=>/^(M-01|M-02|M-05)-/.test(e.orderImg)));});
 test('condition multiplier (86): steps, products, clamp .25–1.3; meeting score + trick bonus within 1.3 (100)',()=>{const {sh}=freshGame();
  near(S.conditionMul(sh),1.2); // full state: happy 100
  Object.assign(sh.g,{happy:50,dirt:60});near(S.conditionMul(sh),.7);sh.g.dirt=80;near(S.conditionMul(sh),.5);sh.g.fatigue=80;near(S.conditionMul(sh),.25);sh.g.full=30;near(S.conditionMul(sh),.25);
@@ -185,12 +216,10 @@ test('walk that ends while away settles once on load',()=>{const {s,sh}=freshGam
  S.save(mem,s,60e3);const L=S.load(mem,H,()=>.99);assert.equal(L.state.walk,null);assert.equal(L.state.walkResults.length,1);assert.equal(L.state.shibas[0].g.fatigue,15);});
 
 // ───────── UNSET features stay off ─────────
-test('UNSET features are disabled: gacha, menu development, paid slot, regulars, walk stop, rescue level → Lv1',()=>{const {s}=freshGame();s.coins=1e9;
- assert.equal(S.gachaCheck(),'unset');assert.equal(S.menuCheck(s,'premiumDrink'),'unset');assert.equal(S.developMenu(s,'premiumDessert'),false);assert.equal(S.slotUnlockCheck(),'unset');
+test('UNSET features are disabled: gacha, paid slot, regulars, walk stop, rescue level → Lv1',()=>{const {s}=freshGame();s.coins=1e9;
+ assert.equal(S.gachaCheck(),'unset');assert.equal(S.slotUnlockCheck(),'unset');
  assert.equal(S.regularsCheck(),'unset');assert.equal(S.canStopWalk(),false);assert.equal(CFG.rescueLevel,null);
  for(const [k,v] of Object.entries(CFG.decayPerHour))assert.equal(v,null,k);for(const k of ['feed','snack','bath','sleep'])assert.ok(Object.values(CFG.care[k]).every(v=>v===null),k);});
-test('a menu becomes orderable once its UNSET values are filled (no other code change needed)',()=>{const m=CFG.menu.premium[0];const bak={...m};m.devCost=100;m.unlockLevel=1;
- try{const {s}=freshGame();s.coins=100;assert.ok(S.developMenu(s,'premiumDrink'));assert.equal(s.coins,0);assert.equal(S.chooseOrder(s,true,()=>0).id,'premiumDrink');}finally{Object.assign(m,bak);}});
 test('potions (116): big fills all gauges, small one gauge; no effect on tricks/intimacy/level',()=>{const {s,sh}=freshGame();Object.assign(sh.g,{full:10,dirt:90,fatigue:90,happy:10,boredom:90});s.items.potionSmall=1;s.items.potionBig=1;
  assert.ok(S.usePotion(s,sh.id,'small','dirt'));assert.equal(sh.g.dirt,0);assert.equal(sh.g.full,10);assert.ok(S.usePotion(s,sh.id,'big'));assert.deepEqual(sh.g,CFG.gaugeFull);assert.equal(sh.level,21);assert.equal(S.intelligence(sh),24);});
 test('start: choose 1 of 4 breeds, Lv21, 앉아·기다려 3 (109·90·100); personality from 15 (38·52)',()=>{for(const b of CFG.breeds){const {sh}=freshGame(b);assert.equal(sh.breed,b);assert.equal(sh.level,21);assert.deepEqual([sh.tricks.sit,sh.tricks.wait,sh.tricks.paw],[3,3,0]);assert.ok(CFG.personalities.includes(sh.personality));}

@@ -37,6 +37,10 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await click('[data-act=rescueBath]');await shot('10-rescue-reveal.png');await click('[data-act=rescueDecline]');
  await ev('__game.advance(7*60e3);true');await shot('11-walk-result.png');await click('[data-act=modalOk]');
  await click('[data-nav=shop]');await shot('12-shop-menu-dev.png');
+ // 메뉴 개발 (갱신 134/134-1): staged — café level 20 and 100,000 멍코인 so the dev buttons can be shown in use; M-02, M-05, P-01 developed by clicking
+ await ev('window.__bak=JSON.stringify({l:__game.state.cafe.level,c:__game.state.coins,m:__game.state.menus});__game.state.cafe.level=20;__game.state.coins=100000;__game.refresh();true');for(const id of ['M-02','M-05','P-01'])await click(`[data-act=dev][data-id=${id}]`);
+ await shot('12b-shop-menu-developed.png');
+ await ev('(b=>{const s=__game.state;s.cafe.level=b.l;s.coins=b.c;s.menus=b.m;})(JSON.parse(window.__bak));__game.refresh();true'); // undo the staging
  await ev('document.getElementById("pbody").scrollTop=600;true');await shot('13-shop-bag-dia.png');
  await click('[data-nav=settings]');await shot('14-settings.png');
  await click('#panel [data-act=income]');await shot('15-income-formula.png');

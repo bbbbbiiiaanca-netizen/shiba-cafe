@@ -21,7 +21,9 @@ export default async function({ev,check,sleep,reload}){
  await ev('document.querySelector("[data-act=walk][data-sec=\'600\']").click();true');
  await check('walk started, shiba left the café','!!__game.state.walk&&!__game.world.sh[__game.state.walk.shibaId]&&[...document.querySelectorAll("#pbody button")].some(b=>/Stop/.test(b.textContent)&&b.disabled)');
  await ev('document.querySelector("[data-nav=shop]").click();true');
- await check('shop: menu dev + gacha disabled (UNSET), diamond items payment stub','document.querySelectorAll("[data-act=dev][disabled]").length===2&&[...document.querySelectorAll("#pbody button")].some(b=>b.disabled&&/TBD/.test(b.textContent))');
+ await check('shop: 14 menus with images (M-01 default), 13 dev buttons locked/unaffordable at start; gacha UNSET, diamond items payment stub','document.querySelectorAll("[data-menu]").length===14&&document.querySelectorAll("[data-menu] img").length===14&&document.querySelectorAll("[data-act=dev][disabled]").length===13&&[...document.querySelectorAll("#pbody button")].some(b=>b.disabled&&/TBD/.test(b.textContent))');
+ await ev('__game.state.cafe.level=2;__game.state.coins=8500;__game.refresh();document.querySelector("[data-act=dev][data-id=M-02]").click();true');
+ await check('developing M-02 at Lv2 costs 8,500 멍코인','__game.state.menus.includes("M-02")&&__game.state.coins===0');
  // language switch in settings applies at once
  await ev('document.querySelector("[data-nav=settings]").click();document.querySelector("[data-lang=ko]").click();true');
  await check('settings → 한국어 switches nav text','document.querySelector("[data-nav=walk]").textContent==="산책"&&document.getElementById("ptitle").textContent==="설정"');
