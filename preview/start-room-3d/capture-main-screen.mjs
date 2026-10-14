@@ -20,14 +20,11 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  const click=sel=>ev(`(()=>{const e=document.querySelector(${JSON.stringify(sel)});if(!e)throw Error('no '+${JSON.stringify(sel)});e.click();return true;})()`);
  await c('Page.navigate',{url:'file://'+resolve(ROOT,'index.html')+'?still=1&fresh=1&seed=7'});
  for(let i=0;i<300&&!(await ev('Boolean(window.__ready)'));i++)await sleep(100);
- // Staged presentation: three placed breeds and five live guests; core simulation creates visits.
+ // Staged, unsaved state: Lv5, three placed shibas, two seated guests; M-02 in development.
  await click('[data-lang=ko]');await click('[data-act=langOk]');await click('[data-breed=red]');await click('[data-act=startGo]');
- await ev(`(()=>{const g=__game;for(const breed of ['white','kuro']){const sh=g.S.makeShiba(g.state,{breed,level:21,now:g.clock.now()});sh.placed=true;g.state.shibas.push(sh);}g.state.cafe.level=10;for(let i=0;i<2400;i++)g.step(.1);return true;})()`);
- // Hold five seated guests and visiting shibas for both DPR captures; no save is written.
- await ev(`(()=>{const g=__game;g.world.custs=g.world.custs.slice(0,5);g.world.custs.forEach((c,i)=>c.seat=i);g.world.queue=[];for(const x of Object.values(g.world.sh)){if(!g.world.custs.some(c=>c.id===x.cust)){x.phase='roam';x.cust=null;}}g.refresh();return true;})()`);
- await ev(`(()=>{const g=__game;if(g.world.custs.length!==5)throw Error('capture needs five guests');if(!g.world.custs.some(c=>c.with!=null))throw Error('capture needs a visiting shiba');return true;})()`);
+ await ev(`(()=>{const g=__game;g.state.cafe.level=5;g.state.coins=30000;g.state.dia=30;for(const breed of ['white','kuro']){const sh=g.S.makeShiba(g.state,{breed,level:21,now:g.clock.now()});sh.placed=true;g.state.shibas.push(sh);}for(let i=0;i<250;i++)g.step(.1);g.world.custs=g.world.custs.slice(0,2);g.S.developMenu(g.state,'M-02',g.clock.now());g.refresh();return true;})()`);
  await sleep(1600);
- for(const dsf of [1,2]){await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:dsf,mobile:true});await shot(dsf===1?'main-screen-v1.png':'main-screen-v1@2x.png');}
- console.log('Staged capture: cafe level 10, three placed shibas, five live simulated guests; 390x844 CSS px, DPR 1 and 2.');
+ for(const dsf of [1,2]){await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:dsf,mobile:true});await shot(dsf===1?'main-screen-v2.png':'main-screen-v2@2x.png');}
+ console.log('Staged capture: cafe level 5, three placed shibas, two simulated guests, M-02 developing; coins 21,500, diamonds 30; 390x844 CSS px, DPR 1 and 2.');
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}
 console.log(`${shots.length} screens → ${out}`);for(const s of shots)console.log('  '+s);for(const e of errors)console.log('  ERROR',e);process.exitCode=errors.length?1:0;

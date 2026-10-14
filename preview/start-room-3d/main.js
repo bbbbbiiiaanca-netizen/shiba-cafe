@@ -1,6 +1,7 @@
 // Spec v3 UI: DOM screens over the pure core in sim.js. Images are the confirmed Drive files in assets/drive/ (see MAP.md), shown
 // unmodified (sub-regions via CSS only). A needed image that does not exist is a dashed placeholder slot.
 // 갱신 50: no "sticker" sliding — without walk frames (frame data UNSET) characters change place as a cut, never by gliding.
+import {createIsoMap} from './isomap.js';
 import {CFG,pressureAt,isUnset} from './config.js';
 import * as S from './sim.js';
 import {makeT,LANGS} from './i18n.js';
@@ -45,31 +46,22 @@ function renderHUD(){const now=clock.now();$('coins').textContent=fmt(s.coins);$
  $('rep').textContent=L('hud.rep',{rep:Math.round(C.rep)});$('mgr').textContent=S.managerActive(s,now)?L('hud.manager',{t:tfmt((C.managerUntil-now)/1000)}):'';
  $('closed').hidden=!C.closed;$('closed').textContent=L('hud.closed');}
 
-// ───────── café scene (keyed DOM, rebuilt only when its signature changes) ─────────
-// Foot anchors on the tatami (percent of the cover viewport); perspective sizes in CSS px.
-const cafeSeats=[[16,66,56],[48,67,60],[82,64,54],[35,71,64],[69,74,66]];
-const seatStyle=i=>{const [x,y,size]=cafeSeats[i%5];const row=Math.floor(i/5);return `--x:${x}%;--y:${y-row*7}%;--size:${Math.max(54,size-row*6)}px;z-index:${Math.round(y-row*7)}`;};
 let sceneSig='';
-function renderScene(){const cap=S.capOf(s),bySeat={};for(const c of w.custs)bySeat[c.seat]=c;
- const tokens={};for(const sh of Object.values(w.sh))if(sh.phase==='meet')tokens[sh.cust]=sh.id;
- const sig=JSON.stringify([cap,w.custs.map(c=>[c.id,c.seat,c.met.length,c.fulfilled,c.with]),Object.values(w.sh).map(x=>[x.id,x.phase]),w.queue.map(c=>c.id),s.cafe.stains,s.dongu.placed,ui.sel,s.settings.language]);
- if(sig!==sceneSig){sceneSig=sig;let h='';
-  for(let i=0;i<cap;i++){const c=bySeat[i];
-   if(!c){h+=`<div class="seat" style="${seatStyle(i)}" data-seat="${i}"></div>`;continue;}
-   const q=c.request,reqHtml=q?`<div class="req${c.fulfilled?' ok':''}">${img(q.type==='meetShiba'?IMG.reqShiba:IMG.reqTrick)}<b>${q.type==='meetShiba'?nameOf(S.byId(s,q.shibaId)||{breed:'red'}):L('trick.'+q.trick)}</b></div>`:'';
-   const tok=c.with!=null?(()=>{const o=S.byId(s,c.with);return o?`<div class="tok">${img(IMG.shiba(o.breed))}</div>`:''})():'';
-   h+=`<div class="seat cust${ui.sel!=null&&c.with==null?' sel':''}" style="${seatStyle(i)}" data-act="seat" data-cust="${c.id}"><div class="who">${img(IMG.guest(c.kind),L('npc.'+c.kind))}</div>${reqHtml}<span class="met">${'♥'.repeat(c.met.length)}</span>${tok}<div class="tm">${bar(c.t/CFG.cafe.stayingSec)}</div></div>`;}
-  $('seats').innerHTML=h;
-  let rh='',roamIndex=0;for(const x of Object.values(w.sh))if(x.phase==='roam'){const o=S.byId(s,x.id);if(o)rh+=`<div class="tok${ui.sel===x.id?' sel':''}" style="--x:${[40,64,20,83][roamIndex%4]}%;--y:${[66,76,74,71][roamIndex++%4]}%" data-act="pickShiba" data-shiba="${x.id}">${img(IMG.shiba(o.breed),nameOf(o))}</div>`;}
-  if(s.dongu.placed)rh+=`<div class="tok dongu" title="${L('char.dongu.name')}">${img(IMG.dongu)}</div>`;
-  $('roam').innerHTML=rh;
-  let sh='';const n=Math.min(s.cafe.stains,12);for(let i=0;i<n;i++){const x=(i*73+17)%86,y=(i*41+23)%60;sh+=`<div class="stain" data-act="stain" style="left:${x}%;top:${58+y*.35}%"></div>`;}
-  $('stains').innerHTML=sh;
-  let qh=`<span class="lab">${L('cafe.queue',{n:w.queue.length,max:CFG.cafe.queueMax})}</span>`;for(const c of w.queue)qh+=`<div class="q" data-q="${c.id}">${img(IMG.guest(c.kind))}<div class="bar"><i></i></div></div>`;
-  $('queue').innerHTML=qh;}
- // per-frame values without rebuilding
- for(const c of w.custs){const e=document.querySelector(`[data-cust="${c.id}"] .tm i`);if(e)e.style.width=Math.max(0,c.t/CFG.cafe.stayingSec*100)+'%';}
- for(const c of w.queue){const e=document.querySelector(`[data-q="${c.id}"] .bar i`);if(e){e.style.width=Math.max(0,c.t/CFG.cafe.queueWaitSec*100)+'%';e.style.background=c.t<10?'#d9695a':'';}}}
+const iso=createIsoMap($('isomap'),hit=>{if(hit.shiba)act.pickShiba({shiba:hit.shiba});if(hit.cust)act.seat({cust:hit.cust});refresh();});
+function renderScene(){iso.draw(s,w);renderMainMenu();}
+let menuSig='',mainTab='menu';
+function renderMainMenu(){
+ $('paws').textContent=fmt(s.shibas.reduce((n,sh)=>n+(sh.paws||0),0));
+ const now=clock.now(),sig=JSON.stringify([mainTab,s.cafe.level,s.coins,s.dia,s.menus,s.menuDev,Math.ceil((s.menuDev?.until-now)/1000)]);
+ if(sig===menuSig)return;menuSig=sig;
+ if(mainTab!=='menu'){$('menuList').innerHTML='<div class="preparing">준비 중</div>';return;}
+ const items=[CFG.menu.coffee,...CFG.menu.items].sort((a,b)=>a.id.localeCompare(b.id));
+ const value=n=>n==null?'미정':fmt(n);
+ $('menuList').innerHTML=items.map(m=>{const basic=m.id===CFG.menu.coffee.id,locked=!basic&&s.cafe.level<m.unlockLevel,dev=s.menuDev?.id===m.id,owned=s.menus.includes(m.id);
+ return `<article class="menu-card" data-main-menu="${m.id}"><img src="assets/drive/${m.img}" alt="${L('menu.'+m.id)}"><div class="menu-info"><small>${m.id}</small><strong>${L('menu.'+m.id)}</strong><span>가격 ${value(m.price)} 멍코인</span><span>개발비 ${value(m.devCost)} · 시간 ${m.devSec==null?'미정':value(m.devSec/60)+'분'}</span>${dev?`<span>개발 중 · ${tfmt((s.menuDev.until-now)/1000)}</span>`:''}</div><div class="menu-action">${basic?'<b>기본 메뉴</b>':locked?`<b>Lv ${m.unlockLevel} 해금</b>`:dev?`<button data-act="skip" data-type="menu" data-id="" ${S.skipCheck(s,{type:'menu'},now)?'disabled':''}>다이아 즉시 완료 ${S.skipCost(S.skipLeftSec(s,{type:'menu'},now))}</button>`:owned?'<b>개발 완료</b>':`<button data-act="dev" data-id="${m.id}" ${S.menuCheck(s,m.id)?'disabled':''}>개발</button>`}</div></article>`;
+ }).join('');
+}
+document.querySelectorAll('[data-main-tab]').forEach(b=>b.addEventListener('click',()=>{mainTab=b.dataset.mainTab;document.querySelectorAll('[data-main-tab]').forEach(x=>x.classList.toggle('active',x===b));renderMainMenu();}));
 function popAt(el,text,orderImg){if(!el)return;const sc=$('scene').getBoundingClientRect(),b=el.getBoundingClientRect();const p=document.createElement('div');p.className='pop';p.textContent=text;
  if(orderImg){const i=document.createElement('img');i.src='assets/drive/'+orderImg;p.prepend(i);} // 갱신 134: the ordered menu's picture
  p.style.left=(b.left-sc.left+4)+'px';p.style.top=(b.bottom-sc.top-30)+'px';$('scene').appendChild(p);setTimeout(()=>p.remove(),1500);}

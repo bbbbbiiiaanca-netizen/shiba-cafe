@@ -20,30 +20,6 @@ button.warn{background:#d9695a;box-shadow:0 2px 0 #9c4136}
 #lvl{font-weight:900;font-size:13px;white-space:nowrap}#rep{font-weight:800;font-size:12px;white-space:nowrap}#mgr{font-size:11px;font-weight:800;color:#5b7a3a;white-space:nowrap}
 /* scene */
 #scene{flex:1;min-height:0;position:relative;overflow:hidden;background:#f7e6cc;touch-action:none}
-.room{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:32% 50%;pointer-events:none}
-#seats,#roam,#stains{position:absolute;inset:0;pointer-events:none}
-.seat{position:absolute;left:var(--x);top:var(--y);width:var(--size);height:calc(var(--size)*1.44);transform:translate(-50%,-100%);pointer-events:auto;mix-blend-mode:multiply}
-.seat:not(.cust){pointer-events:none}
-.seat .who{position:absolute;inset:0}
-.seat .who img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply}
-.seat.sel .who{outline:2px dashed #78c5e6;border-radius:12px}
-.seat .tm{position:absolute;left:24%;right:24%;bottom:0;height:3px;opacity:.65}
-.seat .tm .bar{height:3px}
-.req{position:absolute;left:40%;top:-20px;width:34px;height:30px;background:url(assets/drive/request-bubble-empty_512.png) center/contain no-repeat;display:flex;align-items:center;justify-content:center;padding-bottom:5px;z-index:2}
-.req img{width:16px;height:16px;mix-blend-mode:multiply}.req.ok{filter:drop-shadow(0 0 2px #6bc46b)}
-.req b{display:none}
-.met{position:absolute;left:24%;bottom:5px;font-size:8px;font-weight:900;color:#c0574a;text-shadow:0 0 2px #fff}
-.tok{position:absolute;width:62px;height:62px;pointer-events:auto;mix-blend-mode:multiply}
-.tok img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply}
-.seat .tok{left:72%;bottom:-2px;width:42px;height:42px}
-.tok.sel{outline:2px dashed #78c5e6;border-radius:12px}
-#roam .tok{left:var(--x);top:var(--y);transform:translate(-50%,-100%)}
-#roam .dongu{left:49%;top:34%;width:54px;height:54px}
-.stain{position:absolute;width:34px;height:34px;background:url(assets/drive/floor-stain_512.png) center/contain no-repeat;mix-blend-mode:multiply;pointer-events:auto}
-#queue{position:absolute;left:8px;right:8px;bottom:70px;height:36px;display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:12px;background:rgba(255,246,230,.85);overflow:hidden}
-#queue .q{position:relative;width:24px;height:30px;flex:none;mix-blend-mode:multiply}
-#queue .q img{width:100%;height:26px;object-fit:contain}#queue .q .bar{position:absolute;left:2px;right:2px;bottom:0;height:3px}
-#queue .lab{font-size:10px;font-weight:800;white-space:nowrap;margin-right:4px}
 #closed{position:absolute;inset:0;background:rgba(40,25,10,.55);color:#fff;font-weight:900;font-size:22px;display:flex;align-items:center;justify-content:center;z-index:6}
 .pop{position:absolute;font-weight:900;font-size:12px;color:#7a3f12;background:#fffaf0;border-radius:8px;padding:1px 5px;pointer-events:none;z-index:8;animation:pop 1.4s forwards}
 .pop img{width:22px;height:22px;vertical-align:middle;margin-right:2px}
@@ -81,18 +57,21 @@ button.warn{background:#d9695a;box-shadow:0 2px 0 #9c4136}
 .gres .gi img{width:100%;aspect-ratio:1;object-fit:cover;object-position:50% 30%;border-radius:10px;border:2px solid #f0a64a;background:#fff}.gres .gi.dup img{border-color:#ecd8b8;opacity:.8}
 input[type=text]{font:inherit;font-size:15px;padding:8px;border-radius:10px;border:2px solid #e3c9a3;width:100%}
 #toast{position:absolute;left:50%;top:96px;transform:translateX(-50%);background:#4a2e1c;color:#fff;font-weight:800;font-size:13px;padding:7px 12px;border-radius:12px;z-index:30;pointer-events:none;transition:opacity .3s;max-width:90%;text-align:center}
+
+#hud{padding:10px 10px 8px;gap:8px;border:0;background:#fffaf0}
+.resources{gap:5px}.pill{position:relative;display:grid;grid-template-columns:18px 1fr;gap:2px;padding:6px;border:1px solid #e5d8bf;border-radius:11px;font-size:12px;background:#f6efdf}.pill small{font-size:8px}.pill span{grid-column:2;text-align:left}.resource{grid-row:1/3;width:15px;height:15px;display:block;position:relative;align-self:center}.coin{border-radius:50%;background:#e8b64e;border:2px solid #be8a2f}.heart{background:#d8817a;transform:rotate(-45deg);width:11px;height:11px;margin-left:2px}.heart:before,.heart:after{content:'';position:absolute;width:11px;height:11px;border-radius:50%;background:inherit}.heart:before{top:-5px}.heart:after{left:5px}.diamond{background:#82bfc2;clip-path:polygon(25% 0,75% 0,100% 35%,50% 100%,0 35%)}.paw{background:#ac9476;border-radius:60% 60% 45% 45%;width:12px;height:10px;margin-top:5px}.paw:before{content:'';position:absolute;width:5px;height:5px;background:inherit;border-radius:50%;left:-2px;top:-6px;box-shadow:6px -2px #ac9476,12px 0 #ac9476}
+#scene{flex:none;height:calc(55% - 77px);background:#e9eddf}#isomap{width:100%;height:100%;display:block;touch-action:none}.map-caption{position:absolute;top:13px;left:15px;font-size:14px;font-weight:900;pointer-events:none}.map-caption small{display:block;font-size:9px;color:#7c8970;margin-top:3px}.placeholder-note{position:absolute;bottom:9px;left:15px;font-size:9px;color:#78836a;pointer-events:none}
+#mainMenu{flex:1;min-height:0;display:flex;flex-direction:column;background:#fffaf0;border-radius:20px 20px 0 0;z-index:2;box-shadow:0 -3px 10px #67765915}.main-tabs{display:flex;padding:10px 12px 0;gap:5px;border-bottom:1px solid #e5dac6}.main-tabs button{flex:1;background:transparent;color:#95856c;border-radius:10px 10px 0 0;box-shadow:none;font-size:13px;padding:10px}.main-tabs .active{background:#e7b65c;color:#533b22}.menu-heading{padding:12px 15px 8px;font-size:15px;font-weight:900}.menu-heading small{float:right;font-size:10px;font-weight:500;color:#a08b70;margin-top:4px}#menuList{overflow:auto;padding:0 12px 12px;flex:1;min-height:0}.menu-card{display:flex;align-items:center;gap:9px;border:1px solid #e9decb;border-radius:13px;background:#fffdf7;padding:8px;margin-bottom:7px;min-height:98px}.menu-card>img{width:64px;height:64px;object-fit:contain;border-radius:9px}.menu-info{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}.menu-info small{font-size:8px;color:#ad9777}.menu-info strong{font-size:12px}.menu-info span{font-size:9px;color:#947f62}.menu-action{width:75px;text-align:center;font-size:9px;color:#aa9273}.menu-action button{font-size:10px;padding:7px;line-height:1.5}.preparing{text-align:center;padding:55px;color:#ad9777}#nav{height:28px;padding:3px 7px;border:0}#nav button{font-size:9px;padding:2px;background:transparent;color:#9d8a70;box-shadow:none}#nav button.on{background:#eee3cf}#panel{bottom:28px}
 </style>
 <div id="app">
- <div id="hud">
-  <div class="row">
-   <div class="pill" id="coinPill" data-act="income"><span class="slot" style="width:22px;height:22px;font-size:7px">멍코인<br>아이콘</span><span id="coins">0</span></div>
-   <div class="pill"><span class="ico heart"></span><span id="hearts">0</span><small id="heartT"></small></div>
-   <div class="pill"><span class="ico dia"></span><span id="dia">0</span></div>
-  </div>
-  <div class="row"><span id="lvl"></span><div class="bar"><i id="expBar"></i></div><span id="rep"></span><span id="mgr"></span></div>
- </div>
- <div id="scene"><img class="room" src="assets/drive/cafe-start-room.png" alt="다다미 카페와 울타리 빈터"><div id="seats"></div><div id="stains"></div><div id="roam"></div><div id="closed" hidden></div></div>
- <div id="queue"></div>
+ <div id="hud"><div class="row resources">
+ <div class="pill" data-act="income"><i class="resource coin"></i><small>멍코인</small><span id="coins"></span></div>
+ <div class="pill"><i class="resource heart"></i><small>하트</small><span id="hearts"></span></div>
+ <div class="pill"><i class="resource diamond"></i><small>다이아</small><span id="dia"></span></div>
+ <div class="pill"><i class="resource paw"></i><small>발바닥</small><span id="paws"></span></div>
+ </div><div class="row"><span id="lvl"></span><div class="bar"><i id="expBar"></i></div><span id="rep"></span><span id="mgr"></span><small id="heartT" hidden></small></div></div>
+ <div id="scene"><canvas id="isomap" aria-label="다다미 카페 지도 · 드래그하여 이동"></canvas><div class="map-caption">다다미 카페 <small>1F · 드래그로 이동</small></div><div class="placeholder-note">가구 · 캐릭터: 임시 도형</div><div id="closed" hidden></div></div>
+ <section id="mainMenu"><div class="main-tabs"><button data-main-tab="menu" class="active">메뉴</button><button data-main-tab="shiba">시바</button><button data-main-tab="furniture">가구</button><button data-main-tab="store">가게</button></div><div class="menu-heading">메뉴 개발 <small>새로운 맛을 준비해요</small></div><div id="menuList"></div></section>
  <div id="nav">
   <button data-nav="cafe" class="on" data-i18n="nav.cafe"></button><button data-nav="shibas" data-i18n="nav.shibas"></button><button data-nav="walk" data-i18n="nav.walk"></button><button data-nav="shop" data-i18n="nav.shop"></button><button data-nav="settings" data-i18n="nav.settings"></button>
  </div>

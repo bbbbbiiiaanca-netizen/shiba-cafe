@@ -106,3 +106,18 @@ drawn, edited, cropped or recoloured. Where the UI shows only part of an image i
 - `request-bubble-empty_512.png` + request shiba/trick icon — small bubble above a requesting guest. Menu images remain shown in the payment pop when the guest leaves.
 - Capture: `node start-room-3d/capture-main-screen.mjs` writes the requested main-screen-v1 PNGs at 390×844 CSS px, DPR 1 and 2. **Staged** level 10 and three placed breeds; 240 simulated seconds create live guests and visits, then five guests are retained for both screenshots.
 - Missing for this scene: a character-free version of this exact start room; matching floor-seated guest poses without chairs; transparent character cutouts (cream can still tint the floor under multiply); a confirmed 멍코인 HUD icon. No replacement images were fabricated.
+
+## Main café v2 tiles (full SHA256; byte-identical)
+
+| File | Drive original | SHA256 |
+|---|---|---|
+| `tiles/tatami-approved.png` | `이미지/interior/tatami-approved.png` | `70ed0e901a96a8f8ade91fc6f9077d60cbad4dd2e2f7a277031762f0363bb329` |
+| `tiles/tile-floor-tatami.png` | `이미지/interior/tile-floor-tatami.png` | `af2f2c4e612bd48770b53bebdd45bd1643abccf80740cfa3c0d2f798175f6914` |
+| `tiles/tile-floor-side-left.png` | `이미지/interior/tile-floor-side-left.png` | `7289fd196b8bef74594a94dfd76b2678c30eb44629b78daf00763e9f57d56070` |
+| `tiles/tile-floor-side-right.png` | `이미지/interior/tile-floor-side-right.png` | `40f3dfdd39f97369218b5b322b0f1467a278d744d7d72c394f50816eb74b3f5c` |
+| `tiles/tile-wall-left.png` | `이미지/interior/tile-wall-left.png` | `56016ded543bfcb05b2cc1ca4199d853ad41e07b280fa86db81de94a3e0aa13b` |
+| `tiles/tile-wall-right.png` | `이미지/interior/tile-wall-right.png` | `3bc11a5165bf918c69ee91e0b632f3ada162ea24c1f0338fbab1d37f814394c2` |
+
+V2 replaces the v1 scene: no background illustration or catalog characters. Only tile PNGs are drawn on the map. Furniture and people are labeled code placeholders; registry paths are null. Menu icons remain untouched.
+
+Drive display names: tatami-approved.png = 타일_바닥_다다미_칸.png; tile-floor-tatami.png = 타일_바닥_다다미.png. Floor-side images are 128×80 (opaque halves y32–80); wall images are 128×176 (opaque halves y0–144). Wall origin is tile origin minus 112 source pixels; floor sides use tile origin unchanged.

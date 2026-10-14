@@ -202,3 +202,8 @@ Bandana sheets copied in this round (byte-identical, see `assets/drive/MAP.md`):
 - **Second shiba's accessory.** Every non-starter shiba needs 1,000 paws or 1,000 diamonds before it can wear even a 5,000멍 bandana (139-6 + 140) — confirm this is intended.
 - **Menus are expensive for the early café.** The first menu (M-02, Lv2) costs 8,500멍 (134-1, 6 hours of planned income). With one Lv21 shiba the café earns about 2멍 per guest, so in the capture run it had ~280멍 after 15 minutes; 134-1 already notes the cost basis (282 × 상한 per hour) — worth checking against play.
 - 갱신 86 '1.5 = 만족' vs 갱신 106 '요구 충족만 만족' — confirm interpretation 2.1.
+
+## Main café screen v2
+Canvas uses the six untouched approved 128px isometric tile assets; main scene has no catalog/background illustration. `map-data.js` defines floors, grids, walls, objects, locked zones (cost null), stair connection 1→2, and sprite registry. Null sprites draw labeled temporary shapes; assign an image path to replace them. Grid row additions extend the scroll range; wheel/drag scrolls vertically. Floor 2 remains locked with unset expansion cost. Resource paws show the sum of owned shibas’ individual paws.
+
+Capture: `node start-room-3d/capture-main-screen.mjs`, 390×844 at DPR1/DPR2, output `/workspace/shiba-cafe-docs/spec-v3-build/main-screen-v2.png` and `main-screen-v2@2x.png`. Staged unsaved Lv5, three placed Lv21 breeds, two live simulated seated guests, 30,000 coins before M-02 development (21,500 after), 30 diamonds, M-02 developing. Both screenshots visually inspected for wall/edge alignment and label overlap. Economy values come exclusively from CFG; missing development fields for the basic menu render 미정.
