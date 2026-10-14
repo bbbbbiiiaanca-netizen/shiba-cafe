@@ -203,11 +203,12 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
    const point=await ev(`(()=>{const m=__game.iso.markers.find(m=>m.kind==='row'),r=document.getElementById('isomap').getBoundingClientRect();return {x:r.left+m.buttonX,y:r.top+m.buttonY};})()`);
    for(const type of ['mousePressed','mouseReleased'])await c('Input.dispatchMouseEvent',{type,...point,button:'left',buttons:type==='mousePressed'?1:0,clickCount:1});
    if(!(await ev(`__game.ui.modals[0]?.kind==='confirm'`)))throw Error('Expansion confirmation missing');
-   if(n===1)await shot('main-screen-u12b-confirm.png');
+   await shot(n===1?'main-screen-u12b-confirm.png':'main-screen-u12b-confirm-'+n+'.png');
    await click('#mbox [data-act=confirmYes]');
    if(!(await ev(`__game.state.space.unlockedRows===${n}&&__game.state.coins===0`)))throw Error('Expansion purchase failed');
    await ev('__game.iso.panTo(0,0);true');await shot('main-screen-u12b-expand-'+n+'.png');
   }
+  await ev(`(()=>{const g=__game;g.state.coins=g.S.spacePrice('row',null,'coins',g.state)-1;g.refresh();g.openExpand();document.querySelector('#mbox [data-act=confirmYes]').click();return true;})()`);await sleep(150);await shot('main-screen-u12b-confirm-short.png',{keepToast:true});
  }
  else if(process.argv.includes('--u18')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});

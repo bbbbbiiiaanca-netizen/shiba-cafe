@@ -136,6 +136,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  // §11·§12: TEMP debug, alternating expansion, bitmap floor, drag bounds and saved placements.
  await go(true,'&temp=1&expansions=3');
  await ev('__game.ui.modals=[];__game.state.settings.language="ko";__game.state.started=true;__game.refresh();true');
+ await check('§12 land confirm: row number, coin icon, tiered price; short coins dims + toast, keeps modal',`(()=>{const g=__game,r=g.state.space.unlockedRows,c0=g.state.coins,p=g.S.spacePrice('row',null,'coins',g.state);g.state.coins=p-1;g.openExpand();const t=document.querySelector('#mbox .confirm-text'),y=document.querySelector('#mbox [data-act=confirmYes]');const ok=t&&t.textContent.includes((r+1)+'번째')&&t.querySelector('.land-price img')&&t.textContent.includes(p.toLocaleString('en-US'))&&y.classList.contains('dim');y.click();const kept=g.ui.modals[0]?.kind==='confirm'&&g.state.space.unlockedRows===r&&document.getElementById('toast').textContent.includes('부족');g.ui.modals.shift();g.state.coins=c0;g.refresh();return !!(ok&&kept&&p%10000===0);})()`);
  await check('§12 query unlocks N alternating strips with configured price',`__game.state.space.unlockedRows===3&&__game.CFG.expansion.rowCost===170000&&__game.iso.markers.find(m=>m.kind==='row').axis==='i'`);
  for(const [n,grid,axis] of [[0,36,'j'],[1,42,'i'],[2,49,'j'],[3,56,'i']]){
   await ev(`__game.debugExpand(${n});__game.iso.setEdit(true);true`);

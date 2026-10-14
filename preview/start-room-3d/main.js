@@ -64,7 +64,7 @@ function renderHUD(){const now=clock.now();$('coins').textContent=fmt(s.coins);$
  $('closed').hidden=!C.closed;$('closed').textContent=L('hud.closed');}
 
 let sceneSig='';
-const iso=createIsoMap($('isomap'),{onChange:()=>{S.syncRoutes(s,w);persist();},onExpand:()=>{const cost=S.spacePrice('row',null,'coins',s),rows=s.space.unlockedRows;ui.modals.unshift({kind:'confirm',text:`땅 넓히기 · ${cost==null?'미정':fmt(cost)} 멍코인`,yes:()=>{if(s.space.unlockedRows!==rows)return;if(!S.unlockSpace(s,'row',null,'coins',clock.now()))toast('멍코인이 부족해요');else S.syncRoutes(s,w);}});renderModal();},onBlocked:message=>toast(message||'다른 가구와 겹치거나 방 밖으로 나갈 수 없어요.'),onEditChange:()=>{mainTab='bag';menuSig='';renderMainMenu();}});
+const iso=createIsoMap($('isomap'),{onChange:()=>{S.syncRoutes(s,w);persist();},onExpand:()=>openExpand(),onBlocked:message=>toast(message||'다른 가구와 겹치거나 방 밖으로 나갈 수 없어요.'),onEditChange:()=>{mainTab='bag';menuSig='';renderMainMenu();}});
 function renderScene(){iso.draw(s,w);renderMainMenu();}
 let menuSig='',mainTab=iso.edit?'bag':DEFAULT_TAB;
 // §16-1 tab row: built once from TABS; icons only from existing images, red dots from tabBadges (real state).
@@ -299,7 +299,7 @@ function renderModal(){const m=ui.modals[0]||(!s.settings.language?{kind:'lang'}
  if(m.kind==='gacha')h=`<h2>${L('gacha.title')}</h2><div class="gres">${m.res.map(x=>`<div class="gi${x.dup?' dup':''}">${img(IMG.shiba(x.breed))}<span>${x.dup?L('gacha.dup',{name:nameOf(S.byId(s,x.toId)||{breed:x.breed}),p:x.paws}):L('gacha.new',{breed:L('shiba.breed.'+x.breed),lv:CFG.gacha.startLevel})}</span></div>`).join('')}</div><button data-act="modalOk">${L('app.ok')}</button>`;
  if(m.kind==='levelResult'){const sh=S.byId(s,m.id);h=`<h2>레벨업 완료!</h2><div class="big">${sh?img(IMG.shiba(sh.breed)):''}</div><div class="note">${sh?nameOf(sh):''} · Lv ${m.from} → ${m.to}</div><button data-act="modalOk">${L('app.ok')}</button>`;}
  if(m.kind==='spaceUnlock')h=`<h2>공간 해금</h2>${unlocks()}<button data-act=modalOk>닫기</button>`;
- if(m.kind==='confirm')h=`<div class="note" style="font-size:14px">${m.text}</div><div class="btns"><button class="warn" data-act="confirmYes">${L('app.ok')}</button><button class="sec" data-act="modalOk">${L('app.cancel')}</button></div>`;
+ if(m.kind==='confirm')h=`<div class="note confirm-text" style="font-size:14px">${m.text}</div><div class="btns"><button class="warn${m.short?' dim':''}" data-act="confirmYes">${L('app.ok')}</button><button class="sec" data-act="modalOk">${L('app.cancel')}</button></div>`;
  $('mbox').innerHTML=h;$('modal').hidden=false;}
 if(L0.offline&&(L0.offline.sec>=60||L0.reopened))ui.modals.push({kind:'offline',o:L0.offline,closed:!!L0.reopened});
 
@@ -351,7 +351,7 @@ const act={
  startPick:d=>{ui.startName=$('startName')?.value||'';ui.startPick=d.breed;},
  startGo:()=>{const name=($('startName')?.value||'').trim();if(S.chooseStart(s,ui.startPick,name,r,clock.now(),ui.startBandana)){if(temp){for(const breed of ['red','white','kuro'].filter(b=>b!==ui.startPick).slice(0,2)){const sh=S.makeShiba(s,{breed,level:CFG.startShiba.level,now:clock.now()});sh.placed=true;s.shibas.push(sh);}}w=S.newWorld(s,r);}},
  modalOk:()=>{ui.modals.shift();},walkResultOk:()=>{s.walkResults.shift();}, // §17: the result stays in state (시바 red dot) until acknowledged
- confirmYes:()=>{const m=ui.modals.shift();m.yes();},
+ confirmYes:()=>{const m=ui.modals[0];if(m?.short){toast('멍코인이 부족해요');return;}ui.modals.shift();m.yes();},
 };
 document.addEventListener('click',e=>{const opener=e.target.closest('[data-open]');if(opener){open(opener.dataset.open);refresh();return;}const nb=e.target.closest('[data-nav]');if(nb){const n=nb.dataset.nav;if(n==='cafe')close();else open(n);refresh();return;}
  const el=e.target.closest('[data-act]');if(!el||el.disabled)return;const f=act[el.dataset.act];if(f){f(el.dataset);refresh();}});
@@ -380,7 +380,8 @@ let hiddenAt=null;
 addEventListener('pagehide',()=>persist());
 document.addEventListener('visibilitychange',()=>{if(document.hidden){hiddenAt=clock.now();persist();}else if(hiddenAt!=null){catchUp(clock.now()-hiddenAt);hiddenAt=null;last=performance.now();persist();refresh();}});
 const game={CFG,S,iso,debugExpand(n){if(!temp||!Number.isSafeInteger(n)||n<0)return false;s.space.unlockedRows=n;S.syncRoutes(s,w);refresh();return true;},get characterPositions(){return [...w.custs,...w.queue,...Object.values(w.sh)].map(c=>({id:c.id,phase:c.phase,cell:c.cell&&[...c.cell]}));},get state(){return s;},get world(){return w;},step:(dt=.1)=>{step(dt);return {custs:w.custs.length,queue:w.queue.length,coins:s.coins};},advance,open,close,clock,ui,refresh};
-window.__game=game;applyStatic();refresh();requestAnimationFrame(frame);window.__ready=true;
+function openExpand(){const cost=S.spacePrice('row',null,'coins',s),rows=s.space.unlockedRows;ui.modals.unshift({kind:'confirm',land:true,short:cost!=null&&s.coins<cost,text:`${rows+1}번째 땅 넓히기<br><span class="land-price"><img src="${RES.coin}" alt="">${cost==null?'미정':fmt(cost)} 멍코인</span>`,yes:()=>{if(s.space.unlockedRows!==rows)return;if(!S.unlockSpace(s,'row',null,'coins',clock.now()))toast('멍코인이 부족해요');else S.syncRoutes(s,w);}});renderModal();}
+game.openExpand=openExpand;window.__game=game;applyStatic();refresh();requestAnimationFrame(frame);window.__ready=true;
 
 function consumables(){return `<div class=card data-consumables>${[['incomeBoost4h','수익 부스트'],['expBoost4h','경험치 부스트'],['cooldownTicket','쿨타임권']].map(([k,n])=>`<button data-act=useItem data-item=${k} ${s.items[k]>0&&(k==='cooldownTicket'?S.cooldownTarget(s,clock.now()):Number.isFinite(k==='incomeBoost4h'?CFG.itemIncome.boostMul:CFG.stub.expBoost.mul))?'':'disabled'}>${itemIcon(k)}${n} ×${s.items[k]||0} · ${k!=='cooldownTicket'&&!Number.isFinite(k==='incomeBoost4h'?CFG.itemIncome.boostMul:CFG.stub.expBoost.mul)?'배율 미정':'사용'}</button>`).join('')}</div>`;}
 function unlocks(){return `<div class=card data-unlocks>${[['floor2','', '2층'],...CFG.themes.filter(t=>t.locked).map(t=>['theme',t.id,t.name])].map(([kind,id,name])=>`<div>${name} · Lv${kind==='floor2'?CFG.cafe.expansion2FLevel:CFG.themes.find(t=>t.id===id).unlockLevel} 해금${['coins','dia'].map(via=>`<button data-act=spaceBuy data-kind=${kind} data-id="${id}" data-via=${via} ${S.spaceUnlockCheck(s,kind,id,via)?'disabled':''}>${S.spacePrice(kind,id,via)??'미정'} ${via==='dia'?'다이아':'멍코인'}</button>`).join('')}</div>`).join('')}</div>`;}

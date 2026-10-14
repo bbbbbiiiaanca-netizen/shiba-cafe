@@ -802,3 +802,4 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - **Assumption:** the player is charged the shown (rounded) price — what they see is what they pay. Ledger 'land' line records the charged amount.
 - Resulting sequence: 170,000 · 270,000 · 440,000 · 700,000 · 1,100,000 · 1,800,000 · 2,900,000 …
 - Supersedes the earlier "nearest 1,000" starting value above.
+- Confirm popup polish (2026-10-15 08:23 KST): shows "N번째 땅 넓히기", coin icon + rounded price, centred; when coins < price the 확인 button is dimmed, tapping it toasts "멍코인이 부족해요" and keeps the popup (no charge). Smoke check added.
