@@ -71,7 +71,7 @@ function renderMainMenu(){
 document.querySelectorAll('[data-main-tab]').forEach(b=>b.addEventListener('click',()=>{close();mainTab=b.dataset.mainTab;menuSig='';document.querySelectorAll('[data-main-tab]').forEach(x=>x.classList.toggle('active',x===b));close();renderMainMenu();}));
 function handleEvents(){for(const e of w.events.splice(0)){
  if(e.type==='menuDone')toast(L('toast.menuDone',{name:L('menu.'+e.id)}));
- if(e.type==='order')toast(`${L('menu.'+e.order)} · 주문 / 제공`);
+ if(e.type==='order')toast(`${L('menu.'+e.order)} 주문`);
  if(e.type==='leave'){w.feedback={...e};setTimeout(()=>{if(w.feedback?.id===e.id){w.feedback=null;iso.draw(s,w);}},1500);}
  if(e.type==='leave')toast(e.coins==null?`${L('menu.'+e.order)} · 결제 미정`:`+${f2(e.coins)} 멍코인`);
 }
@@ -264,7 +264,7 @@ function refresh(){if(s.cafe.level>observedCafeLevel){toast(`카페 Lv ${s.cafe.
 
 // ───────── loop ─────────
 let last=performance.now(),saveT=0;
-function step(dt){const now=clock.now();
+function step(dt){if(temp&&!w.behaviour)S.enableTempBehaviour(w);const now=clock.now();
  if(s.started&&s.settings.language){S.consumeElapsed(s,w,dt,now);S.settleHearts(s,now);}
  handleEvents();if(ui.toastT>0&&(ui.toastT-=dt)<=0)$('toast').style.opacity=0;
  if(ui.sel!=null&&!w.sh[ui.sel])ui.sel=null;refresh();

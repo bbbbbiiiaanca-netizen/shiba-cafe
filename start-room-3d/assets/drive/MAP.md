@@ -167,3 +167,5 @@ Drive display names: tatami-approved.png = 타일_바닥_다다미_칸.png; tile
 | `furn-counter-v4.png` | `이미지/interior/가구_카운터_v4.png` | `1sIe0w1uNoKXwXK5NbVIEQAICOmtc8iFn` | `aaa38e4037932514fccf686279c91400bcf3c16b5d4702758758ae0fd9ba228e` |
 | `furn-tea-table-v4.png` | `이미지/interior/가구_찻상_v4.png` | `1E-6EamLhmiVXh7QdADFcQbj_KjRMl052` | `64d571bd3a5932a89c014d9bb9a83776dada6b73f07eaf69953c09ddcdb9eb7b` |
 | `furn-cushion-v4.png` | `이미지/interior/가구_방석_v4.png` | `1jkbdj3tgaRkrCeEY9Tyv_K5LRmDoqEaf` | `ed42045bf19743a0b7102b084d76b6be9289bec34337cab03adb09f26795920a` |
+
+| tile-grass-outside.png | 타일_잔디_가게밖.png | 1VrPcLGwjUdvIVY-u22LmTvGjEJKSEyGC | 128×64 seamless | sha256 837b34d753d2396f919f6b4683c6c3f84355f92018e5f1de66c7d8ca63c286e5 |

@@ -94,6 +94,14 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await check('Unit 4 edit reseats guest without restarting visit','window.u4Guest.cell.join(",")==="5,3"&&window.u4Guest.t===window.u4VisitTime&&document.querySelector("[data-main-tab=furniture]").classList.contains("active")');
  await ev('__game.CFG.income.levelAggregation=null;__game.world.spawnT=1e12;for(let i=0;i<40;i++)__game.step(1);document.querySelector("[data-main-tab=menu]").click();true');
  await check('Unit 4 null payment feedback is explicit','__game.world.lastPay.total===null&&document.querySelector("[data-customer-status]").textContent.includes("결제 미정")');
+
+ // Unit 5: deterministic unsaved table image + all menu actions stay inside cards.
+ await go(true,'&temp=1&still=1');
+ await ev(`(()=>{const g=__game;g.state.settings.language='ko';g.S.chooseStart(g.state,'red','',()=>.99,g.clock.now());g.state.coins=30000;g.state.dia=100;g.state.cafe.level=5;g.S.developMenu(g.state,'M-02',g.clock.now());g.world.spawnT=0;for(let i=0;i<200&&!g.world.custs.some(c=>c.phase==='seated');i++)g.step(.1);g.refresh();return true;})()`);
+ await check('Unit 5 seated order has a table slot and confirmed image','__game.world.custs.some(c=>c.phase==="seated"&&c.itemSlot&&c.itemLocation==="table"&&c.order.img)&&__game.CFG.behaviour.eatSec===null');
+ await check('Unit 5 all menu buttons fit inside card border','[...document.querySelectorAll(".menu-card button")].length>0&&[...document.querySelectorAll(".menu-card button")].every(b=>{const r=b.getBoundingClientRect(),c=b.closest(".menu-card").getBoundingClientRect();return r.left>=c.left&&r.right<=c.right&&r.top>=c.top&&r.bottom<=c.bottom;})');
+ await check('Unit 5 diamond action is inside bottom area and 70 percent width','(()=>{const b=document.querySelector(".menu-card .instant"),r=b.getBoundingClientRect(),c=b.closest(".menu-card").getBoundingClientRect();return r.top>c.top+c.height*.6&&r.width<c.width*.75;})()');
+ await check('Unit 5 no character art placeholders are drawn','Object.values(__game.world.sh).every(c=>!c.cell||c.cell.every(Number.isInteger))&&!document.querySelector("[data-cust]")');
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}
 for(const [k,n] of checks)console.log(k==='ok'?'  ok  ':'  FAIL',n);for(const e of errors)console.log('  ERROR',e);
 const fail=checks.filter(c=>c[0]!=='ok').length+errors.length;console.log(`${checks.length-checks.filter(c=>c[0]!=='ok').length}/${checks.length} smoke checks passed, ${errors.length} page errors`);process.exitCode=fail?1:0;

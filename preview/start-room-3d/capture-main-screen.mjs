@@ -62,6 +62,14 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  if(!(await ev('document.getElementById("toast").textContent.includes("멍코인")')))throw Error('Unit 4 payment feedback missing');
  await shot('main-screen-u4-payment.png',{keepToast:true});
  await shot('main-screen-u4-panel.png');
+
+ // Unit 5 new DPR2 artifacts. Table item uses actual sit/order rules in TEMP.
+ await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+ await shot('main-screen-u5-grass.png');
+ await click('[data-main-tab=menu]');await ev('document.getElementById("menuList").scrollTop=0;true');await shot('main-screen-u5-menu.png');
+ await ev(`(()=>{const g=__game;g.world.custs=[];g.world.queue=[];g.world.sh={};g.world.events=[];g.world.spawnT=0;g.world.r=()=>.99;for(let i=0;i<200;i++){g.step(.1);if(g.world.custs.some(c=>c.phase==='seated'))break;}g.refresh();return true;})()`);
+ if(!(await ev('__game.world.custs.some(c=>c.phase==="seated"&&c.itemSlot&&c.order.kind==="coffee")')))throw Error('Unit 5 staged drink missing table slot');
+ await shot('main-screen-u5-table-item.png');
  writeFileSync(join(out,'main-screen-v7-state.txt'),'Same normal staging as v6; edit: counter origin [0,1], dir1, footprint (0,1)-(0,2); stairs unchanged; 가구 tab active with action bar in bottom panel. 390x844, normal DPR1/DPR2, edit DPR2.\n');
  console.log('Staged capture: cafe level 5, M-02 developing; coins 21,500, diamonds 30; 390x844 CSS px, DPR 1 and 2.');
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}

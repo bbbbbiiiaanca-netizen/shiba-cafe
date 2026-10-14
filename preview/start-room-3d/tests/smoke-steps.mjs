@@ -10,7 +10,7 @@ export default async function({ev,check,sleep,reload}){
  await check('starter accessory identity UNSET: unlocked slot, nothing worn or given','__game.state.shibas[0].accUnlocked&&__game.state.shibas[0].acc===null&&Object.keys(__game.state.accInv).length===0');
  // café loop runs in the page
  await ev('for(let i=0;i<900;i++)__game.step(.1);true');
- await check('unresolved entrance and walk speed gate guests; starting coins remain null','__game.state.stats.served===0&&__game.state.coins===null&&__game.world.custs.length===0&&__game.world.lastPay===null&&Object.values(__game.state.shibas[0].g).every(v=>v===null)&&document.getElementById("isomap").width===390');
+ await check('answered entrance enables guests; starting coins and gauges remain null','__game.state.stats.served>0&&__game.state.coins===null&&Object.values(__game.state.shibas[0].g).every(v=>v===null)&&document.getElementById("isomap").width===390');
  await check('no 도감 / dex button anywhere','!/도감|Collection|dex/i.test(document.querySelector(".main-tabs").textContent)');
  // screens
  for(const n of ['shibas','walk','shop','settings']){await ev(n==='shibas'?'document.querySelector("[data-main-tab=shiba]").click();true':n==='shop'?'document.querySelector("[data-main-tab=store]").click();true':n==='walk'?'document.querySelector("[data-main-tab=shiba]").click();document.querySelector("[data-open=walk]").click();true':`document.querySelector("[data-nav=${n}]").click();true`);await check(`${n} screen opens`,'document.getElementById("panel").hidden?document.getElementById("menuList").children.length>0:document.getElementById("pbody").children.length>0');}

@@ -84,7 +84,7 @@ export const CFG={
  requests:{types:['meetShiba','seeTrick'],interior:{enabled:false,minThemeItems:3}, // 갱신 113 '특정 테마 아이템 3개 이상' (인테리어 시스템 UNSET)
   managerChance:.3,managerRepMul:.5}, // 갱신 118
  // 갱신 120 결제 · 129 메뉴 개발(멍코인) · 134 메뉴 목록·주문 규칙 · 134-1 개발비 (134 표의 개발비는 134-1로 대체)
- income:{levelAggregation:U}, // UNSET 갱신 75·120: combining meeting-level effects and no-meeting fallback are undecided; payments gated
+ income:{levelAggregation:effects=>effects.length?Math.max(...effects):CFG.income.noMeetingMultiplier,noMeetingMultiplier:1}, // confirmed 수인님 2026-10-14: max; no-meeting x1 answer 똑또기 2026-10-14 pending confirm
  menu:{coffee:{id:'M-01',price:1,img:'M-01-iced-americano_512.png'}, // 갱신 134: M-01 아이스 아메리카노 = 처음부터 있는 기본 커피 1멍 (120)
   // kind: drink/dessert = 일반 메뉴, premium = 프리미엄. unlockLevel·price = 갱신 134 표, devCost = 갱신 134-1 표, devSec = 갱신 136 개발 시간
   items:[
@@ -108,7 +108,8 @@ export const CFG={
   drinkToDessert:[2,1], // 갱신 120: 음료:디저트 2:1
   devAtOnce:1,devMaxSec:172800}, // 갱신 136: 개발 시간이 지나야 완성, 최대 2일, 한 번에 1개
  itemIncome:{boostMul:1.2,boostHours:4,boostMaxHours:24,paidCapMul:1.5,priceDia:U}, // 갱신 97 시간제 수익 1.2배 · UNSET: 가격(다이아)
- navigation:{cellStepSec:U}, // UNSET: interior §§3·5·8; whole-cell walking speed unspecified
+ navigation:{cellStepSec:.4,shibaCellStepSec:.5,queueWaitSec:30,queueReputation:0}, // answer 똑또기 2026-10-14: editable starting values
+ behaviour:{eatSec:U,cooldownSec:U,weights:{walk:U,lookAround:U,sit:U,nap:U,tailWag:U,approachGuest:U},durations:{walk:U,lookAround:U,sit:U,nap:U,tailWag:U}}, // interior §13; unset production behaviour
  offline:{capHours:12,stepSec:1}, // 갱신 56: 오프라인 수익 최대 12시간분. EXEMPT stepSec = engine integration step
 
  // ── 시바 ──
@@ -235,3 +236,7 @@ export const CFG={
 // helpers that only read CFG
 export const isUnset=v=>v===null||v===undefined;
 export const pressureAt=lv=>{const p=CFG.cafe.pressure[Math.max(1,Math.min(CFG.cafe.maxLevel,lv))-1];return {slots:p[0],cap:p[1],interval:p[2],pct:p[3]};}; // EXEMPT: array indexing and bounds, uses 갱신 75 table
+
+// income.levelAggregation: confirmed 수인님 2026-10-14 (max single multiplier).
+// income.noMeetingMultiplier: answer 똑또기 2026-10-14, starting value pending confirm.
+export const TEMP_BEHAVIOUR={eatSec:2,cooldownSec:1,weights:{walk:3,lookAround:1,sit:1,nap:1,tailWag:1,approachGuest:6},durations:{walk:2,lookAround:1,sit:2,nap:3,tailWag:1}}; // TEMP tests only, never persisted

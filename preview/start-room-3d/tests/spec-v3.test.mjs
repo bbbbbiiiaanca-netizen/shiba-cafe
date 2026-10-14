@@ -10,12 +10,12 @@ let pass=0;const fails=[];
 // Explicit fixtures for isolated mechanics tests; production audit/start tests use unchanged null config.
 // The wrapper sets coins/gauges/intimacy/rescue level only for mechanics unrelated to start defaults.
 const fixtureAggregation=lvs=>lvs.length?lvs.reduce((a,b)=>a+b,0)/lvs.length:1;
-function test(name,fn){const savedEntrance=MAP.zones[0].entrance,savedSlots=MAP.zones[0].slots,savedSpeed=CFG.navigation.cellStepSec;
+function test(name,fn){const savedEntrance=MAP.zones[0].entrance,savedSlots=MAP.zones[0].slots,savedSpeed=CFG.navigation.cellStepSec,savedShibaSpeed=CFG.navigation.shibaCellStepSec,savedBehaviour=CFG.behaviour;CFG.navigation.shibaCellStepSec=.001;CFG.behaviour={eatSec:0,cooldownSec:0,weights:{approachGuest:1},durations:{walk:0}};
  // Explicit geometry/speed fixture preserves the original economy tests' capacity. Production values stay null.
  MAP.zones[0].entrance=[0,5];CFG.navigation.cellStepSec=.001;
  const occupied=new Set(savedSlots.flatMap(x=>footprintCells(x).map(c=>c.join(','))));
  MAP.zones[0].slots=[...savedSlots];for(const j of [0,2,4])for(const i of [1,3,5])if(!occupied.has(`${i},${j}`))MAP.zones[0].slots.push({id:`fixture-${i}-${j}`,type:'cushion',origin:[i,j],dir:0});
- const old=CFG.income.levelAggregation;if(!name.startsWith('red-team #7'))CFG.income.levelAggregation=fixtureAggregation;try{const production=/red-team #2|gauges do not|UNSET features|139-6|fresh default|audit null/.test(name);if(production)fn();else withCfg(CFG.start,{coins:0},()=>withCfg(CFG,{gaugeStart:{full:100,dirt:0,fatigue:0,happy:100,boredom:0},rescueLevel:1},()=>withCfg(CFG.intimacy,{start:0},fn)));pass++;}catch(e){fails.push([name,e]);}finally{CFG.income.levelAggregation=old;MAP.zones[0].entrance=savedEntrance;MAP.zones[0].slots=savedSlots;CFG.navigation.cellStepSec=savedSpeed;}}
+ const old=CFG.income.levelAggregation;if(!name.startsWith('red-team #7'))CFG.income.levelAggregation=fixtureAggregation;try{const production=/red-team #2|gauges do not|UNSET features|139-6|fresh default|audit null/.test(name);if(production)fn();else withCfg(CFG.start,{coins:0},()=>withCfg(CFG,{gaugeStart:{full:100,dirt:0,fatigue:0,happy:100,boredom:0},rescueLevel:1},()=>withCfg(CFG.intimacy,{start:0},fn)));pass++;}catch(e){fails.push([name,e]);}finally{CFG.income.levelAggregation=old;MAP.zones[0].entrance=savedEntrance;MAP.zones[0].slots=savedSlots;CFG.navigation.cellStepSec=savedSpeed;CFG.navigation.shibaCellStepSec=savedShibaSpeed;CFG.behaviour=savedBehaviour;}}
 const H=3600e3,MIN=60e3;
 const near=(a,b,eps=1e-9,msg)=>assert.ok(Math.abs(a-b)<=eps,`${msg||''} ${a} ≉ ${b}`);
 const freshGame=(breed='red',now=0,seed=1)=>{const r=S.rng(seed),s=S.newState(now);S.chooseStart(s,breed,'',r,now);return {s,r,sh:s.shibas[0],w:S.newWorld(s,r)};};
@@ -136,11 +136,11 @@ test('customer flow: arrive → seat → shiba 7 s meeting / 5 s roam → leave 
  // meeting timing: 7 s at a guest then 5 s roaming
  const g=freshGame();const ws=g.w;let t=0,phase=[];for(let i=0;i<200;i++){t+=100;S.tick(g.s,ws,.1,t);phase.push(ws.sh[g.sh.id]?.phase);}
  const first=phase.indexOf('meet'),endM=phase.indexOf('roam',first);if(endM>0){const nextM=phase.indexOf('meet',endM);assert.ok(endM-first<=71,'meeting ≤7 s (+1 tick float)');if(nextM>0)assert.ok(Math.abs(nextM-endM-50)<=3,'roam 5 s plus route steps: '+(nextM-endM));}});
-test('queue: cap reached → queue (max 10); waiting 30 s → leaves angry, rep −2, no money (66·68·87)',()=>{const {s,w}=freshGame();s.cafe.rep=50;
+test('queue: cap reached → queue (max 10); waiting >30 s → leaves, reputation unchanged, no money (66·68·87)',()=>{const {s,w}=freshGame();s.cafe.rep=50;
  for(const sh of s.shibas)sh.placed=false; // nobody serves → seats stay full
  w.spawnT=1e9;for(let i=0;i<5;i++)w.custs.push({id:100+i,kind:'mom',phase:'seated',seat:i,cell:[1,3],t:999,score:0,met:[],with:null,fulfilled:false,request:null});
  for(let i=0;i<12;i++){w.spawnT=0;S.tick(s,w,0,0);w.spawnT=1e9;}assert.equal(w.queue.length,10);assert.equal(s.stats.lost,2);
- const c0=s.coins;run(s,w,30.5);assert.equal(w.queue.length,0);assert.equal(s.stats.angry,10);assert.equal(s.cafe.rep,30);assert.equal(s.coins,c0);});
+ const c0=s.coins;run(s,w,30.5);assert.equal(w.queue.length,0);assert.equal(s.stats.angry,10);assert.equal(s.cafe.rep,50);assert.equal(s.coins,c0);});
 test('0 meetings → disappointed (rep −1, exp 0); request met → satisfied (+1, exp +2); met but not met-request → normal (+0, exp +1) (70·86·87·106)',()=>{
  const a=freshGame();a.sh.placed=false;const {ev}=run(a.s,a.w,60);const L=ev.filter(e=>e.type==='leave');assert.ok(L.length&&L.every(e=>e.outcome==='disappointed'));assert.equal(a.s.cafe.exp,0);assert.equal(a.s.cafe.rep,50-L.length);assert.ok(L.every(e=>e.coins===1),'coffee still paid ×1');
  const b=freshGame();b.w.spawnT=1e9;b.w.custs.push({id:1,kind:'dad',phase:'seated',seat:0,cell:[1,3],t:30,score:0,met:[],with:null,fulfilled:false,request:{type:'meetShiba',shibaId:b.sh.id}});
@@ -363,7 +363,7 @@ test('red-team #5: fulfilled and manager requests win over low score',()=>{for(c
 
 test('red-team #6: requested trick does not override random learned trick',()=>{const {s,w,sh}=freshGame();w.r=()=>.99;w.sh[sh.id]={id:sh.id,phase:'roam',cell:[0,5],t:0};const c={id:1,phase:'seated',cell:[1,3],t:30,with:null,score:0,met:[],fulfilled:false,request:{type:'seeTrick',trick:'sit'}};w.custs.push(c);assert.ok(S.deliver(s,w,sh.id,1,0));S.tick(s,w,.1,100);assert.equal(w.events.at(-1).trick,'wait');assert.equal(c.fulfilled,false);});
 
-test('red-team #7: UNSET aggregation gates payments for no, single, repeated and multiple meetings',()=>{assert.equal(CFG.income.levelAggregation,null);const {s,w,sh}=freshGame();for(const met of [[],[sh.id],[sh.id,sh.id]]){const p=S.payFor(s,met,{price:3},0);assert.equal(p.total,null);assert.equal(p.lvMul,null);assert.ok(p.pending);}w.spawnT=1e9;w.custs.push({id:1,phase:'seated',seat:0,cell:[1,3],t:0,score:1,met:[sh.id],fulfilled:true});const before=s.coins;S.tick(s,w,0,0);assert.equal(s.coins,before);assert.equal(w.lastPay.total,null);});
+test('red-team #7: UNSET aggregation gates payments for no, single, repeated and multiple meetings',()=>{CFG.income.levelAggregation=null;const {s,w,sh}=freshGame();for(const met of [[],[sh.id],[sh.id,sh.id]]){const p=S.payFor(s,met,{price:3},0);assert.equal(p.total,null);assert.equal(p.lvMul,null);assert.ok(p.pending);}w.spawnT=1e9;w.custs.push({id:1,phase:'seated',seat:0,cell:[1,3],t:0,score:1,met:[sh.id],fulfilled:true});const before=s.coins;S.tick(s,w,0,0);assert.equal(s.coins,before);assert.equal(w.lastPay.total,null);});
 
 test('red-team #8: incapacitated dogs cannot play, train or buy activities',()=>{for(const status of ['sick','injured','hospital']){const {s,sh}=freshGame();sh.status=status;s.coins=1e6;s.cafe.level=25;const before=[s.hearts,s.coins,sh.paws];assert.equal(S.careCheck(s,sh.id,'play'),status);assert.equal(S.playWith(s,sh.id,0),null);assert.equal(S.trainCheck(s,sh.id,'paw'),status);assert.equal(S.train(s,sh.id,'paw',()=>0,0),null);for(const kind of ['daycare','walk','trainer']){assert.equal(S.albaCheck(s,kind,[sh.id],0,'paw'),status);assert.equal(S.hireAlba(s,kind,[sh.id],0,'paw'),null);}assert.deepEqual([s.hearts,s.coins,sh.paws],before);}});
 

@@ -93,7 +93,7 @@ Source: `shiba-cafe-docs/spec-v3-build/spec-v3.md` (최신 갱신 140-1 기준; 
 5a. **메뉴 그림**: '개발한 것에서 무작위'를 주문 종류 안에서로 읽음 — 음료 주문은 개발한 일반 음료 중, 디저트는 개발한 일반 디저트 중, 프리미엄은 개발한 프리미엄 중, 기본 커피는 M-01. 판매가는 그 메뉴의 표 가격(음료 3·디저트 5·프리미엄 8 = 120의 고급 음료·고급 디저트 가격과 같음).
 5b. **프리미엄만 개발**하고 일반 디저트가 없으면 디저트 주문 자리가 기본 커피가 되므로 프리미엄도 나오지 않는다(프리미엄은 고급 디저트 주문에서만 바뀜).
 5c. 이전 v3 저장의 `premiumDrink`/`premiumDessert` 같은 없는 메뉴 id는 불러올 때 지운다.
-6. **레벨 효과**: superseded by config audit / Unit 4: aggregation and no-meeting multiplier are null. No average or ×1 production fallback; payments are pending.
+6. **레벨 효과**: superseded by config audit / Unit 4: aggregation is confirmed max; no-meeting ×1 is an editable starting value pending confirmation (see Unit 5).
 7. **매니저**는 '보통'으로 끝날 손님에게만 30% 굴림(실망 손님은 대상 아님).
 8. **줄이 10명 꽉 찼을 때** 오는 손님은 들어오지 않음(통계 `lost`, 평판 영향 없음).
 9. **임시휴무**는 오프라인(앱을 닫았거나 탭이 숨겨진 동안)에만. 온라인에서는 갱신 87의 '<30 ×1.2' 규칙대로 30 아래로 내려갈 수 있다. 오프라인 12시간을 넘긴 시간에는 카페 수익·평판이 멈추고 산책 종료·퇴원·하트 회복만 정산.
@@ -242,7 +242,7 @@ QUESTIONS (all corresponding spec config values remain null):
 7. Walk stop/refund/partial reward rules and extra coin reward amount? `walk.stopRule`, `walk.events.extraCoins = null` (1.10.3 question 1-4; 82). Existing stop button disabled; extra reward branch disabled until decided.
 8. Starting gauges/intimacy, personality odds, decay rates, neglect intimacy loss and rescue starting level? `gaugeStart`, `intimacy.start`, `personalityOdds`, `decayPerHour.*`, `neglect.intimacyDrop`, `neglect.donguIntimacyDrop`, `rescueLevel = null` (1.2-3, 38/39, 112, notes question 9(다/사)). All unsupported core fallbacks removed in the config audit below.
 9. Starting coins / paid slot / expansion / income and XP booster diamond prices? `start.coins`, `cafe.paidSlotUnlockDia`, `cafe.expansion2FCost`, `itemIncome.priceDia`, `stub.expBoost.priceDia = null` (56, 87/132-3, 97/98). Relevant UI shows 미정; payment actions stay disabled.
-10. Meeting-level income aggregation? `income.levelAggregation = null` (75/120, prior red-team #7). No payment formula guessed. Café level thresholds themselves are confirmed by 98, so no unknown café threshold is filled in.
+10. Meeting-level income aggregation? `income.levelAggregation` now uses confirmed max (수인님 2026-10-14); no-meeting ×1 remains pending confirm. Café level thresholds themselves are confirmed by 98, so no unknown café threshold is filled in.
 
 ## Config audit (unit 3 pre-step)
 
@@ -314,16 +314,47 @@ Red-team scope: **9** belongs here because closure freezes illness/neglect but h
 
 Removed / superseded: synthetic numeric seat slots (capacity alone no longer creates seats), instant arrival seating, immediate shiba teleport for delivery, immediate customer removal at payment, dead DOM seat-payment popup lookup, frame-time truncation and >5-second visible-gap offline heuristic. Unsupported average/no-meeting income fallback stays removed/null; non-finite prices/multipliers and unknown encountered shiba levels cannot produce payments. No unsupported hearts, idle income, employee behavior, customer sprites or grass shapes added. Land direction and camera code untouched.
 
-## Unit 4 open questions
+## Unit 4 open questions — answered / superseded by Unit 5
 
-1. **Entrance location(s)?** Neither spec-v3 nor interior names a grid entrance. `MAP.zones[*].entrance = null`; configurable per zone, test-only runtime fixtures use an explicit cell. No production arrival until entrance and timing are known.
-2. **Walking time per cell?** `CFG.navigation.cellStepSec = null` (interior §§3,5,8; v3 updates 50/70 define art and meetings, not walking speed). Guest/shiba route traversal waits; tests supply declared speed fixtures.
-3. **Physical seating rules?** Interior §5 defines 1-cell cushions and tea tables, but not capacity/adjacency. Confirm one guest per placed cushion, guest ON cushion target, shiba on adjacent free floor, no mandatory table association; physical seat limit may be lower than café cap (updates 70–75/132-4). Initial placement has only two cushions.
-4. **Meeting-level payment aggregation and no-meeting multiplier?** `CFG.income.levelAggregation = null` (updates 75/120; prior red-team #7). Price is known; total remains null and coins are not awarded. Tests/captures declare a temporary multiplier fixture only.
-5. **Separate order/service timing?** Update 120 explicitly decides menu/payment at departure; no cooking/service duration defined. Current serve event is bookkeeping at settlement, not a timed minigame. Confirm if a separate earlier order or service action is desired before changing this sequence.
-6. **Edited furniture / disconnected routes?** Confirm the same-cushion reseat rule and waiting for a reachable route when exits become blocked (interior §8). No newly invented abandonment timeout or teleport.
-7. **Grass art pending**: interior §12 requires tiled outside grass and conversion on expansion. Await approved grass art/integration; no green shapes drawn and no expansion direction/camera change in Unit 4.
+1. **Answered, answer 똑또기 2026-10-14:** front-left entrance is `[0,5]` (i=0, j=rows−1 on the original floor). Guests enter from adjacent exterior grass. Entrance is reserved against furniture edits. No expansion/camera rules changed.
+2. **Answered, answer 똑또기 2026-10-14:** editable starting cell times guest 0.4 s, shiba 0.5 s (`CFG.navigation`).
+3. **Answered, answer 똑또기 2026-10-14:** cushion/chair seats, one guest per seat; shiba needs an adjacent free floor cell or skips. Adjacent table gets item; otherwise `inHand`, invisible pending guest sprites. Current supplied furniture has cushions; chair art/footprint is not supplied.
+4. **CONFIRMED, confirmed 수인님 2026-10-14:** max single level multiplier among met shibas. No-meeting ×1.0 remains an editable starting value **pending confirm** (answer 똑또기 2026-10-14).
+5. **Answered, answer 똑또기 2026-10-14:** order instantly on sit; no serving wait; charge once at departure. This supersedes Unit 4's departure-time order. Premium satisfied bonus cannot predict future fulfilment, so order uses current fulfilment (false on first sit); later fulfilment affects outcome, not a reroll of the visible item.
+6. **Answered, answer 똑또기 2026-10-14:** blocked incoming route seeks another reachable free seat, otherwise queues; waiting >30 s leaves with reputation unchanged. Same-cushion edit reseats and relinks table without restarting visit/score. Blocked exits wait for a reachable route, never teleport through furniture.
+7. **Answered:** approved `tile-grass-outside.png` integrated (interior §12), SHA-256 verified against supplied value; mapping in `assets/drive/MAP.md`. Exact 128×64 cells cover viewport outside land before room draw. Existing row outline/button draw afterward.
 
 Validation: npm test includes 94 legacy spec acceptance tests with explicit geometry/timing fixtures, existing timeline/map/edit/Unit 3/renderer suites, and 11 Unit 4 tests for lifecycle, obstacles, physical seats, pricing, null gating, edit reseat, depth, frame lag, closure health/rest and hearts. Browser smoke checks and capture scenarios are written but Chrome was not launched in this sandbox. Run `npm run test:browser` and `node capture-main-screen.mjs` on the user's Chrome host. Capture adds main-screen-u4-order.png, main-screen-u4-payment.png and main-screen-u4-panel.png at DPR2 to `/workspace/shiba-cafe-docs/spec-v3-build/`; TEMP fixtures supply entrance, walk timing, gauges and payment aggregation without saving. No screenshots generated here.
 
 Changed files: config.js, sim.js, navigation.js (new), map-data.js, isomap.js, main.js, package.json, capture-main-screen.mjs, tests/spec-v3.test.mjs, tests/unit4.test.mjs (new), tests/smoke-browser.mjs, tests/smoke-steps.mjs, SPEC-V3-NOTES.md. Deletion-aware mirror excludes node_modules; no commit/push.
+
+
+## Unit 5 implementation
+
+References: interior §§5/8/13-1/13-2/13-3, spec-v3 updates 50/51 (sprites), 69/70 (30 s visit, 7 s meeting, 5 s between meetings), 75/120/134 (prices/orders/payment), and Unit 4b answers dated 2026-10-14. Unit 5 supersedes contradictory historical Unit 4 descriptions above.
+
+- Guest `phase`: entering → seated → exiting; queue separate and ordered. `activity`: eat → interact → play → interact. Real whole-cell entry begins on grass. A queue reservation routes back through the entrance. Seats come from furniture footprints, not café capacity alone; queue max is the spec-v3 cap 10 (66–69), not invented. Queue cell layout is editable map data along the exterior entrance edge.
+- Order is selected exactly once at sit from developed menus (M-01 always available), placed instantly, preserved through departure payment. `itemLocation` is table or inHand. Each table footprint defines item slots with cell index and display offset; links use four-neighbour adjacency and exclusive slot ids. Table edits relink seated items. Table slot exhaustion also falls back to hand rather than overlap.
+- Only the confirmed M/P item bitmap is added to the map. Table item display fits 36×36 image pixels at draw time, offsets ±18/−42 are **layout constants: display size, adjust when 그림이 gives table-item spec**. These are not gameplay tuning. Entries sort with furniture/characters by i+j; items follow their table at equal depth. Characters remain invisible, with null sprite and foot-shadow hooks.
+- Shiba logical `phase` stays compatible with Unit 4: roam / approach / meet. `state`: wander, walk, lookAround, sit, nap, tailWag, approachGuest, play. Weighted state choices and pose durations are all null in production. Thus production autonomous state/movement freezes in roam; existing manual delivery may still use confirmed 7 s meetings. Eat duration null retains eat until the existing 30 s visit expires; no invented eating speed. TEMP explicitly enables pose odds/durations and eating/cooldown, runtime world only; never saved. Both face whole-cell movement with directions 0(+i), 1(+j), 2(−i), 3(−j); front two can mirror, back two need separate art.
+- TEMP approach chooses a seated guest with no current shiba after eating, reserves a reachable adjacent free cell, faces guest, plays with existing score/request/7 s meeting rules, releases reservation and returns to wander (existing 5 s interval plus configurable cooldown). No adjacent cell skips the interaction. Absent/unplaced/walking/hospital/injured/sick/exhausted shibas use existing `canWork` and do not wander. Cosmetic nap does not invent fatigue recovery.
+- `__game.world` exposes runtime state, routes, table slots, orders, facing, activities, and TEMP config. Entrance, speeds, timeout and unchanged reputation are editable starting answers, marked in data/config. Max level aggregation is confirmed; no-meeting ×1 is pending.
+- Menu actions reserve card bottom space, diamond action is 70% width/21px vs former 29px height. Order toast is one line, e.g. 아이스 아메리카노 주문.
+
+## Unit 5 open questions
+
+1. **Pose odds and durations** (interior §13-2): `CFG.behaviour.weights` / `durations` null. What weights and walk/look/sit/nap/tailWag times? TEMP 3/1/1/1/1/6 weights, 2/1/2/3/1 seconds are declared test fixtures only.
+2. **Eating duration** (interior §13-3): `eatSec=null`; TEMP 2 s only. Production keeps visible order and eat state until 30 s visit ends. Confirm whether visit may extend to finish eating/playing.
+3. **Approach cooldown** (interior §13-3): `cooldownSec=null`; TEMP 1 s only, existing spec-v3 5 s roam/7 s meet preserved. Confirm how cooldown combines with the 5 s interval.
+4. **Table item art/layout** (interior §§5/13-3): confirm table-top slot count, exact offsets, display size and behaviour when all slots occupied. Current supplied one-cell table has two provisional display slots, one per initial cushion. No-table answer is resolved as inHand; no hand image until sprites.
+5. **Income** (75/120, Unit 4b): no-shiba-met ×1.0 still pending confirm. Max single multiplier is confirmed 수인님 2026-10-14.
+6. **Queue layout / other floors** (§13-1): confirm exterior ordered cells, layout for future entrances, and blocked-exit timeout if desired; no new timeout invented. Queue cap 10 is already specified in v3.
+7. **Order-time satisfied bonus** (120 vs Unit 4b instant order): current order uses satisfaction at sit. Confirm whether a future demand fulfilment should alter price/order (currently never rerolls visible item).
+
+Art request list — interior §13-2/13-3, §5 directions/anchors:
+
+- Each of red / sesame / kuro / white shiba: walking frames in 4 directions (front original + mirror, two separate backs); lookAround, sit, lie/nap, tailWag, approach uses walk, play/interaction poses. Reuse supplied pose sheets only once separate approved sprite/frames/anchors are supplied; do not crop catalog images.
+- Guests: walk, sit, drink/eat, queue frames; hand-held drink/dessert pose for a seat with no adjacent table. Supply direction mapping and front mirror/back art.
+- Every sprite: transparent PNG, foot-contact anchor, foot-shadow art/anchor, frame sequence and timing. `CHAR_SPRITES` files/anchors/directional slots remain null until provided. Dongu art/animation likewise remains null; no invented figure drawn.
+
+Validation: `npm test` includes 94 acceptance tests, timeline/map/edit/Unit 3/renderer/11 Unit 4 tests and 9 new Unit 5 tests. Legacy tests use explicit speed/behaviour fixtures, keeping production null gates tested separately. Browser smoke adds table-slot/confirmed-image state and button-rect-inside-card checks. Chrome is deliberately not launched here. On Chrome host run `npm run test:browser` and `node capture-main-screen.mjs`; DPR2 output adds main-screen-u5-table-item.png (TEMP seated drink), main-screen-u5-grass.png, main-screen-u5-menu.png (M-02 developing), and re-captures main-screen-u4-order.png with one-line toast. No captures generated in the sandbox.

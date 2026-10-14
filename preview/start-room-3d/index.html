@@ -77,6 +77,10 @@ button[data-act=levelUp]{background:url(assets/drive/ui/ui-btn-levelup-yellow.pn
 .furniture-card .furniture-icon{width:100%;height:100%;min-height:0;object-fit:contain;object-position:center}
 .furniture-card strong{max-width:100%;font-size:10px;line-height:1.2;white-space:nowrap}
 
+/* Unit 5: reserve bottom area inside every menu card. */
+#menuList:not(.tab-list){grid-auto-rows:180px}.menu-card{aspect-ratio:auto;min-height:0;height:100%;padding-bottom:12px;box-sizing:border-box}.menu-info{flex:none}.menu-action{margin-top:auto;flex-shrink:0;min-height:30px}.menu-action button{max-width:100%;box-sizing:border-box}.menu-action button.instant{width:70%;height:21px;font-size:7px;white-space:nowrap}
+#toast{white-space:nowrap;font-size:12px}
+
 </style>
 <div id="app">
  <div id="hud"><div class="row resources">

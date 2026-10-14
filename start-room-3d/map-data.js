@@ -4,7 +4,7 @@ import {CFG} from './config.js';
 // 그림이 will provide back views; unavailable until the art is supplied.
 export const SPRITES={
  // 그림이 v4 sprites, original size (scale 1). anchor = centre of floor-contact footprint, sprite px (given by 그림이).
- table:{file:'assets/drive/furn-tea-table-v4.png',anchor:[92,93],scale:1,back:null,footprint:{cells:1,axis:null}},
+ table:{itemSlots:[{cellIndex:0,offset:[-18,-42]},{cellIndex:0,offset:[18,-42]}],file:'assets/drive/furn-tea-table-v4.png',anchor:[92,93],scale:1,back:null,footprint:{cells:1,axis:null}},
  cushion:{file:'assets/drive/furn-cushion-v4.png',anchor:[90,74],scale:1,back:null,footprint:{cells:1,axis:null}},
  counter:{file:'assets/drive/furn-counter-v4.png',anchor:[124,132],scale:1,back:null,footprint:{cells:2,axis:'i'}},
  stairs:{file:'assets/drive/furn-stairs-v4.png',anchor:[121,167],scale:1,back:null,footprint:{cells:2,axis:'i'}}
@@ -16,11 +16,12 @@ export const MAP_MARKERS={
  expansion:{file:'assets/drive/tiles/marker-expand-land.png',anchor:[64,72]},
  floor2:{file:'assets/drive/ui/ui-lock.png',anchor:[32,32]}
 };
-export const CHAR_SPRITES={shiba:{file:null,anchor:null},guest:{file:null,anchor:null},dongu:{file:null,anchor:null}}; // foot-shadow anchors await supplied art
+export const CHAR_SPRITES={shiba:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]},guest:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]},dongu:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]}}; // foot-shadow anchors await supplied art
 export function characterDepthEntries(world){return [...(world?.custs||[]),...(world?.queue||[]),...Object.values(world?.sh||{})].filter(c=>c.cell).map(c=>({character:c,origin:c.cell,cells:[c.cell]}));}
 export const ROOM_BG='assets/drive/room-tatami-noline.png';
 export const MAP={zones:[{
- id:'A',entrance:null,image:ROOM_BG,origin:{x:429,y:181},
+ // answer 똑또기 2026-10-14: front-left entrance; queue layout starting cells editable
+ id:'A',entrance:[0,5],queueCells:[[0,6],[0,7],[0,8],[0,9],[0,10],[0,11],[0,12],[0,13],[0,14],[0,15]],image:ROOM_BG,origin:{x:429,y:181},
  // Display placeholder until expansion land art exists. Alpha scan of 방_기본_다다미_선없음 / 시험
  // front-left rim: lowest opaque pixel (429,614); outer edge y-x/2 <= 401. Offset 0 overlaps
  // 18,193 opaque pixels; offset 1 overlaps zero (smallest whole-row offset).
@@ -41,7 +42,7 @@ export function footprintCentre(item){
 export function compareDepth(a,b){
  const depth=s=>Math.max(...footprintCells(s).map(([i,j])=>i+j));
  const x=s=>{const [i,j]=footprintCentre(s);return i-j;};
- return depth(a)-depth(b)||Number(Boolean(a.character))-Number(Boolean(b.character))||x(a)-x(b);
+ return depth(a)-depth(b)||Number(Boolean(a.character||a.tableItem))-Number(Boolean(b.character||b.tableItem))||x(a)-x(b);
 }
 export function cellToImage(col,row,zone=MAP.zones[0]){
  return {x:zone.origin.x+(col-row)*zone.cell.w/2,y:zone.origin.y+(col+row+1)*zone.cell.h/2};
@@ -56,13 +57,13 @@ export function availableDirs(type,sprites=SPRITES){return sprites[type].back?[0
 export function flipDir(dir){return dir^1;}
 export function rotateDir(type,dir,sprites=SPRITES){const dirs=availableDirs(type,sprites);return dirs[(dirs.indexOf(dir)+1)%dirs.length];}
 export function footprintCells(item){
- if(item.character||!item.origin)return item.cells; // legacy footprint callers
+ if(item.character||item.tableItem||!item.origin)return item.cells; // legacy footprint callers
  const f=SPRITES[item.type].footprint,axis=item.dir%2?(f.axis==='i'?'j':'i'):f.axis;
  return Array.from({length:f.cells},(_,n)=>[item.origin[0]+(axis==='i'?n:0),item.origin[1]+(axis==='j'?n:0)]);
 }
 export function validPlacement(item,slots,zone=MAP.zones[0]){
  if(!SPRITES[item.type]||!availableDirs(item.type).includes(item.dir)||!Array.isArray(item.origin)||item.origin.length!==2||!item.origin.every(Number.isInteger))return false;
- const cells=footprintCells(item),occupied=new Set(slots.filter(s=>s.id!==item.id).flatMap(s=>footprintCells(s).map(c=>c.join(','))));
+ const cells=footprintCells(item);if(zone.entrance&&cells.some(c=>c.join(',')===zone.entrance.join(',')))return false;const occupied=new Set(slots.filter(s=>s.id!==item.id).flatMap(s=>footprintCells(s).map(c=>c.join(','))));
  return cells.every(([i,j])=>i>=0&&j>=0&&i<zone.cols&&j<zone.rows&&!occupied.has(`${i},${j}`));
 }
 export function defaultPlacement(){return {v:1,slots:structuredClone(MAP.zones[0].slots)};}
@@ -80,3 +81,7 @@ export function restoreSpace(saved){
  return {unlockedRows,floor2Unlocked:saved?.floor2Unlocked===true,themes:[...new Set([...CFG.themes.filter(t=>!t.locked).map(t=>t.id),...(Array.isArray(saved?.themes)?saved.themes.filter(id=>CFG.themes.some(t=>t.id===id)):[])])]};
 }
 export function zonesForSpace(space){const data=restoreSpace(space);return MAP.zones.map(z=>({...z,rows:z.rows+(z.floor===1?data.unlockedRows:0),locked:z.floor===2?!data.floor2Unlocked:z.locked}));}
+
+// Display size, adjust when 그림이 gives table-item spec. Layout only, not a gameplay number.
+export const TABLE_ITEM_LAYOUT={size:[36,36],offset:[0,-42]};
+export function tableItemEntries(world){return (world?.custs||[]).filter(c=>c.phase==='seated'&&c.itemSlot&&c.order).map(c=>({tableItem:c,origin:c.itemSlot.cell,cells:[c.itemSlot.cell]}));}
