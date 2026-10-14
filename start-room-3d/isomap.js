@@ -1,4 +1,4 @@
-import {MAP,SPRITES,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace} from './map-data.js';
+import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{}}={}){
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
@@ -27,17 +27,14 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
   maxScroll=Math.max(0,total-H);scroll=Math.max(0,Math.min(scroll,maxScroll));
   let y=Math.max(0,(H-total)/2)-scroll;
   zones.forEach((z,index)=>{
-   const view={x:(W-861*scale)/2+scroll*2,y:y+(z.screenOffset?.y||0)*scale,scale};const placed=z.id==='A'?state.placement.slots:z.slots;
+   const view={x:(W-861*scale)/2,y:y+(z.screenOffset?.y||0)*scale,scale};const placed=z.id==='A'?state.placement.slots:z.slots;
    if(z.image){const glow=ctx.createRadialGradient(W/2,y+heights[index]*.84,0,W/2,y+heights[index]*.84,W*.55);
    glow.addColorStop(0,'#b9854540');glow.addColorStop(1,'#b9854500');ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);}
-   const room=z.image?load(z.image):null;if(room?.complete&&room.naturalWidth)ctx.drawImage(room,view.x,view.y,room.naturalWidth*scale,room.naturalHeight*scale);
    const stamp=(file,p,anchor)=>{const im=load(file);if(im.complete&&im.naturalWidth)ctx.drawImage(im,p.x-anchor[0]*scale,p.y-anchor[1]*scale,im.naturalWidth*scale,im.naturalHeight*scale);};
-   if(z.floor===1){
-    for(let c=0;c<z.cols;c++)stamp('assets/drive/tiles/tile-floor-locked.png',cellToScreen(c,z.rows,view,z),[64,32]);
-    const p=cellToScreen((z.cols-1)/2,z.rows,view,z);stamp('assets/drive/tiles/marker-expand-land.png',p,[64,72]);markers.push({kind:'row',...p});
-    if(!state.space.floor2Unlocked){const stairs=placed.find(s=>s.type==='stairs'),p=cellToScreen(...footprintCentre(stairs),view,z);p.y-=z.cell.h*scale;
-     stamp('assets/drive/ui/ui-lock.png',p,[32,32]);ctx.fillStyle='#fff';ctx.font='12px sans-serif';ctx.textAlign='center';ctx.fillText('2층 · 잠김',p.x,p.y-36*scale);markers.push({kind:'floor2',...p});}
-   }
+   // Cell-exact front row goes beneath the room's thick opaque rim.
+   if(z.floor===1)for(let c=0;c<z.cols;c++)stamp(MAP_MARKERS.lockedTile.file,cellToScreen(c,z.rows,view,z),MAP_MARKERS.lockedTile.anchor);
+   const room=z.image?load(z.image):null;if(room?.complete&&room.naturalWidth)ctx.drawImage(room,view.x,view.y,room.naturalWidth*scale,room.naturalHeight*scale);
+   if(z.floor===1){const p=cellToScreen((z.cols-1)/2,z.rows,view,z);stamp(MAP_MARKERS.expansion.file,p,MAP_MARKERS.expansion.anchor);markers.push({kind:'row',...p});}
    if(edit&&z.image){const occupied=new Set(placed.flatMap(s=>footprintCells(s).map(c=>c.join(','))));
     for(let r=0;r<MAP.zones[0].rows;r++)for(let c=0;c<z.cols;c++){
      ctx.strokeStyle=occupied.has(`${c},${r}`)?'#ffd36b':'#7de7ffb0';ctx.lineWidth=occupied.has(`${c},${r}`)?1.5:.8;
@@ -55,6 +52,11 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
      hits.push({id:s.id,x,y,w,h,im,mirrored,view,zone:z});
     }
    });
+   if(z.floor===1&&!state.space.floor2Unlocked){
+    const stairs=placed.find(s=>s.type==='stairs');
+    if(stairs){const p=cellToScreen(...footprintCentre(stairs),view,z);p.y-=(SPRITES.stairs.anchor[1]+36)*scale;
+     stamp(MAP_MARKERS.floor2.file,p,MAP_MARKERS.floor2.anchor);markers.push({kind:'floor2',...p});}
+   }
    if(edit&&selected){const item=placed.find(s=>s.id===selected);if(item){const candidate=drag?.item===item.id?{...item,origin:drag.candidate}:item;
     ctx.strokeStyle=validPlacement(candidate,placed,z)?'#ffd36b':'#ff4545';ctx.lineWidth=2;
     for(const [i,j] of footprintCells(candidate)){const p=cellToScreen(i,j,view,z),hw=z.cell.w*scale/2,hh=z.cell.h*scale/2;

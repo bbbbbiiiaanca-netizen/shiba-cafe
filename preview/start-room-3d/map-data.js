@@ -10,6 +10,13 @@ export const SPRITES={
  stairs:{file:'assets/drive/furn-stairs-v4.png',anchor:[121,167],scale:1,back:null,footprint:{cells:2,axis:'i'}}
 };
 // Normal-mode room background (방_기본_다다미_선없음.png, Drive 1V3vO-ZEJfPv30NeDAfVKpLVKjFvtQAGX). Same size/coords as the 시험 image.
+// Opaque top-face bounds measured from alpha: x [1,127), y [0,64).
+// Anchor uses pixel-edge coordinates, the diamond's centre (64,32).
+export const MAP_MARKERS={
+ lockedTile:{file:'assets/drive/tiles/tile-floor-locked.png',anchor:[64,32],topFaceBounds:[1,0,127,64]},
+ expansion:{file:'assets/drive/tiles/marker-expand-land.png',anchor:[64,72]},
+ floor2:{file:'assets/drive/ui/ui-lock.png',anchor:[32,32]}
+};
 export const ROOM_BG='assets/drive/room-tatami-noline.png';
 export const MAP={zones:[{
  id:'A',image:ROOM_BG,origin:{x:429,y:181},

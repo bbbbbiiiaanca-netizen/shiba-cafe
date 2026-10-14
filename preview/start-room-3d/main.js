@@ -54,7 +54,7 @@ let sceneSig='';
 const iso=createIsoMap($('isomap'),{onChange:()=>persist(),onBlocked:()=>toast('다른 가구와 겹치거나 방 밖으로 나갈 수 없어요.'),onEditChange:()=>{mainTab='furniture';menuSig='';renderMainMenu();}});
 function spaceCards(){
  const card=(kind,title,cost,id='',owned=false)=>`<div class="card space-card" data-space-card="${kind}" style="background-image:url('assets/drive/ui/ui-card-${owned?'default':'locked'}.png')"><img class="space-lock" src="assets/drive/ui/ui-lock.png" alt="잠금" ${owned?'hidden':''}><strong>${title}</strong><button data-act="spaceUnlock" data-kind="${kind}" data-id="${id}" ${S.spaceUnlockCheck(s,kind,id)?'disabled':''}>${owned?'해금됨':cost==null?'미정':fmt(cost)+' 멍코인'}</button></div>`;
- return `<div class="btns" aria-label="층 선택"><button data-act="floor" data-floor="1" aria-pressed="${(s.cafe.floor||1)===1}">1층</button><button data-act="floor" data-floor="2" ${s.space.floor2Unlocked?'':'disabled'} aria-pressed="${s.cafe.floor===2}">2층</button></div>`+card('row','땅 넓히기',CFG.expansion.rowCost)+card('floor2','2층 증축',CFG.cafe.expansion2FCost,'',s.space.floor2Unlocked)+CFG.themes.filter(t=>t.locked).map(t=>card('theme',t.name,t.unlockCost,t.id,s.space.themes.includes(t.id))).join('')+(CFG.themes.some(t=>t.locked)?'':'<div class="card">테마 (준비 중)</div>');
+ return `<div class="btns" aria-label="층 선택"><button data-act="floor" data-floor="1" aria-pressed="${(s.cafe.floor||1)===1}">1층</button><button data-act="floor" data-floor="2" aria-disabled="${!s.space.floor2Unlocked}" aria-pressed="${s.cafe.floor===2}">2층</button></div>`+card('row','땅 넓히기',CFG.expansion.rowCost)+card('floor2','2층 증축',CFG.cafe.expansion2FCost,'',s.space.floor2Unlocked)+CFG.themes.filter(t=>t.locked).map(t=>card('theme',t.name,t.unlockCost,t.id,s.space.themes.includes(t.id))).join('')+(CFG.themes.some(t=>t.locked)?'':'<div class="card">테마 (준비 중)</div>');
 }
 function renderScene(){iso.draw(s,w);renderMainMenu();}
 let menuSig='',mainTab=iso.edit?'furniture':'menu';
@@ -222,7 +222,7 @@ if(L0.offline&&(L0.offline.sec>=60||L0.reopened))ui.modals.push({kind:'offline',
 
 // ───────── actions ─────────
 const act={
- spaceUnlock:d=>{if(S.unlockSpace(s,d.kind,d.id))persist();},floor:d=>{if(S.switchFloor(s,+d.floor))persist();},
+ spaceUnlock:d=>{if(S.unlockSpace(s,d.kind,d.id))persist();},floor:d=>{if(+d.floor===2&&!s.space.floor2Unlocked){toast('2층은 아직 잠겨 있어요.');return;}if(S.switchFloor(s,+d.floor))persist();},
  close,income:()=>open('income'),care:d=>open('care',+d.id),
  place:d=>{if(!S.setPlaced(s,+d.id,d.on==='1'))why(S.placeCheck(s,+d.id));},
  dongu:()=>{s.dongu.placed=!s.dongu.placed;},

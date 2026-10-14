@@ -1,7 +1,7 @@
 // Main cafe capture using capture-spec-v3.mjs Chrome CDP pipe approach, portrait 390×844.
 // Usage (from the repo root or start-room-3d/): node start-room-3d/capture-main-screen.mjs [OUTDIR]
 // Default OUTDIR: /workspace/shiba-cafe-docs/spec-v3-build
-import {spawn} from 'node:child_process';import {mkdirSync,writeFileSync,rmSync} from 'node:fs';import {resolve,dirname,join} from 'node:path';import {fileURLToPath} from 'node:url';
+import {spawn} from 'node:child_process';import {mkdirSync,writeFileSync,readFileSync,rmSync} from 'node:fs';import {resolve,dirname,join} from 'node:path';import {fileURLToPath} from 'node:url';
 const ROOT=dirname(fileURLToPath(import.meta.url));
 const out=resolve(process.argv[2]||'/workspace/shiba-cafe-docs/spec-v3-build');mkdirSync(out,{recursive:true});
 const prof='/tmp/shiba-main-cap-'+process.pid;
@@ -18,7 +18,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:+(process.env.DSF||2),mobile:true});await c('Page.enable');await c('Runtime.enable');
  const ev=async x=>{const r=await c('Runtime.evaluate',{expression:x,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(x.slice(0,90)+' -> '+JSON.stringify(r.exceptionDetails).slice(0,500));return r.result.value;};
  const settle=()=>ev('new Promise(r=>{const imgs=[...document.images].filter(i=>!i.complete);if(!imgs.length)return r(true);let n=imgs.length;for(const i of imgs)i.onload=i.onerror=()=>--n||r(true);setTimeout(()=>r(true),4000);})');
- const shot=async(name)=>{await ev('__game.refresh();__game.ui.toastT=0;document.getElementById("toast").style.opacity=0;true');await settle();await sleep(150);const {data}=await c('Page.captureScreenshot',{format:'png'});writeFileSync(join(out,name),Buffer.from(data,'base64'));shots.push(name);};
+ const shot=async(name,{keepToast=false}={})=>{if(!keepToast)await ev('__game.refresh();__game.ui.toastT=0;document.getElementById("toast").style.opacity=0;true');await settle();await sleep(150);const {data}=await c('Page.captureScreenshot',{format:'png'});writeFileSync(join(out,name),Buffer.from(data,'base64'));shots.push(name);};
  const click=sel=>ev(`(()=>{const e=document.querySelector(${JSON.stringify(sel)});if(!e)throw Error('no '+${JSON.stringify(sel)});e.click();return true;})()`);
  const stage=async(edit=false)=>{
  await c('Page.navigate',{url:'file://'+resolve(ROOT,'index.html')+'?temp=1&still=1&fresh=1&seed=7'+(edit?'&edit=1':'')});
@@ -49,8 +49,15 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev(`(()=>{const list=document.getElementById('menuList'),grid=document.querySelector('.furniture-grid');list.scrollTop+=grid.getBoundingClientRect().top-list.getBoundingClientRect().top-8;return true;})()`);
  await shot('main-screen-u3-furniture-grid.png');
  await ev('document.getElementById("menuList").scrollTop=0;true');
+ await click('[data-main-tab=menu]');
  await ev('__game.iso.scrollTo(__game.iso.maxScroll);true');await shot('main-screen-u3-locked-row.png');
- await ev('__game.iso.scrollTo(0);true');await shot('main-screen-u3-2f.png');
+ await click('[data-main-tab=furniture]');
+ await ev('__game.iso.scrollTo(0);document.getElementById("menuList").scrollTop=0;true');
+ await click('[data-act=floor][data-floor=\"2\"]');
+ {const st=await ev('JSON.stringify({f:__game.state.cafe.floor||1,t:__game.ui.toastT,m:__game.iso.markers.map(m=>m.kind)})');console.log('2F state',st);if(!st.includes('"f":1')||!st.includes('floor2'))throw Error('2F locked state missing '+st);}
+ await shot('main-screen-u3-2f.png',{keepToast:true});
+ const unit3=['locked-row','2f','furniture'].map(name=>readFileSync(join(out,'main-screen-u3-'+name+'.png')));
+ if(unit3.some((image,i)=>unit3.slice(i+1).some(other=>image.equals(other))))throw Error('Unit 3 captures must be distinct');
  writeFileSync(join(out,'main-screen-v7-state.txt'),'Same normal staging as v6; edit: counter origin [0,1], dir1, footprint (0,1)-(0,2); stairs unchanged; 가구 tab active with action bar in bottom panel. 390x844, normal DPR1/DPR2, edit DPR2.\n');
  console.log('Staged capture: cafe level 5, M-02 developing; coins 21,500, diamonds 30; 390x844 CSS px, DPR 1 and 2.');
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}
