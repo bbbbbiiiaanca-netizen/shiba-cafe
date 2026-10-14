@@ -1,248 +1,278 @@
-// Pure game logic (no DOM / Three.js) so it can be unit-tested and stepped deterministically.
-import {CFG} from './config.js';
-import {customerMix} from './healing.js';
-export function rng(seed=1){let s=seed>>>0||1;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};}
+// Spec v3 game core — pure logic (no DOM), deterministic with an injected RNG so tests can replay it.
+// Times: `now` is epoch ms; `dt` is seconds. Every number comes from CFG (config.js); UNSET (null) values disable what depends on them.
+import {CFG,pressureAt,isUnset} from './config.js';
 
-// ---------- grades & levels (D-02): grade is never stored, always computed from level ----------
-export const GRADES=['N','R','S'];
-export function clampLevel(lv){return Math.max(1,Math.min(CFG.grades.maxLevel,Math.floor(+lv)||1));}
-export function gradeOf(lv){lv=clampLevel(lv);for(const g of GRADES){const [a,b]=CFG.grades.bands[g];if(lv>=a&&lv<=b)return g;}return 'N';}
-export const startLevel=g=>CFG.grades.bands[g][0];
-export const dexKey=o=>o.coat+'_'+o.expr;
+export function rng(seed=1){let a=seed>>>0||1;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const pick=(r,arr)=>arr[Math.floor(r()*arr.length)];
+const H=3600e3;
 
-// ---------- persistent state ----------
-export function newState(now=Date.now()){const st=baseState(now);markVisit(st,now);return st;}
-function baseState(now){
- return {v:CFG.saveVersion,coins:CFG.start.coins,hearts:CFG.start.hearts,paws:CFG.start.paws,
-  owned:CFG.start.shibas.map((s,i)=>({id:i+1,...s,lv:startLevel('N')})),nextId:CFG.start.shibas.length+1,dex:CFG.start.shibas.map(dexKey),
-  served:0,petted:0,upg:0,gachaPulls:0,tut:0,questsClaimed:[],theme:'basic',themesOwned:['basic'],
-  items:{heartReset:0,capsule:0},heartRegenAt:now,promoQueue:[],onboarding:{visits:[],claimed:[]},walk:null,rescueQueue:[],
-  settings:{sound:true,music:true,language:null,todLock:CFG.healing.timeOfDay.lockToggle},lastSeen:now};
+// ───────────────────────── state ─────────────────────────
+export function newState(now=Date.now()){
+ return {v:CFG.saveVersion,started:false,coins:CFG.start.coins,coinFrac:0,hearts:CFG.start.hearts,heartRegenAt:now,dia:CFG.start.dia,
+  items:{heartReset:0,capsule:0,potionBig:0,potionSmall:0,cooldownTicket:0},
+  cafe:{level:1,exp:0,rep:CFG.rep.start,stains:0,stainAcc:0,badStainAcc:0,driftAcc:0,closed:false,closedAt:null,managerUntil:0,managerCleanAcc:0,boostUntil:0},
+  shibas:[],nextId:1,dongu:{placed:true},walk:null,rescues:[],walkResults:[],menus:[],lastAbandonAt:null,
+  stats:{served:0,satisfied:0,normal:0,disappointed:0,angry:0,lost:0},
+  settings:{language:null,sound:true,music:true},lastSeen:now};
 }
-// Old saves (v1): `rarity` field N/R/SR + lv. The stored level is kept as is (only clamped to the confirmed Lv30 cap) and the old
-// rarity field (incl. the SR label, = S today) is dropped: grade is computed from the level from now on. No level remapping.
-export function migrate(s,now=Date.now()){
- if(s.v===1){
-  for(const o of s.owned||[]){o.lv=clampLevel(o.lv);delete o.rarity;}
-  s.dex=[...new Set((s.owned||[]).map(dexKey))];s.heartRegenAt=s.lastSeen??now;s.v=2;}
- return sanitize(s);}
-// the untouched pre-migration save string is kept under this key (written once, never overwritten)
-export const backupKey=v=>CFG.saveKey+':backup.v'+v;
-// invariants enforced on every load and save: no stored grade, level within 1..30
-export function sanitize(s){
- // D-12: themes on hold (sakura/summer) or unknown fall back to the basic theme; D-11: unknown language → ask again
- const T=CFG.themes.map(t=>t.id);s.themesOwned=[...new Set(['basic',...(s.themesOwned||[]).filter(id=>T.includes(id))])];if(!T.includes(s.theme))s.theme='basic';
- if(s.settings&&!CFG.languages.includes(s.settings.language))s.settings.language=null;for(const o of s.owned||[]){if('rarity' in o)delete o.rarity;if('grade' in o)delete o.grade;o.lv=clampLevel(o.lv);}
- s.dex=[...new Set([...(s.dex||[]),...(s.owned||[]).map(dexKey)])];return s;}
-// shibas out on a walk do not contribute (D-08); everyone else keeps working
-export function activeOwned(s){return s.owned.filter(o=>!isBusy(s,o.id));}
-export function incomePerSec(s){return (CFG.idle.perSec+CFG.idle.perShibaPerSec*Math.min(activeOwned(s).length,CFG.cafe.maxShibas))*(1+CFG.upgrade.bonus*(s.upg||0));}
-export function upgradeCost(s){return Math.round(CFG.upgrade.base*Math.pow(CFG.upgrade.grow,s.upg||0));}
-export function buyUpgrade(s){const c=upgradeCost(s);if(s.coins<c)return false;s.coins-=c;s.upg=(s.upg||0)+1;return true;}
-// a walk that ends while the app is closed is split at its completion time: the walker earns again from walkStartAt+walkDurationSec.
-// The capped window starts at lastSeen (earnings stop accruing capHours after leaving).
-export function offlineEarnings(s,now=Date.now()){const sec=Math.min((now-s.lastSeen)/1000,CFG.offline.capHours*3600);
- if(!(sec>=CFG.offline.minSeconds))return {sec:Math.max(0,sec|0),coins:0};const W=s.walk;
- const walkSec=W?Math.min(sec,Math.max(0,(W.walkStartAt+W.walkDurationSec*1000-s.lastSeen)/1000)):0;
- return {sec:sec|0,coins:Math.floor((walkSec*incomePerSec(s)+(sec-walkSec)*incomePerSec({...s,walk:null}))*CFG.offline.rate)};}
-export function load(storage,now=Date.now()){let raw=null,s=null;try{raw=storage.getItem(CFG.saveKey);s=JSON.parse(raw);}catch{}
- if(!s||!(s.v===1||s.v===CFG.saveVersion))return {state:newState(now),offline:{sec:0,coins:0},fresh:true,returned:null};
- if(s.v!==CFG.saveVersion&&storage.getItem(backupKey(s.v))==null)storage.setItem(backupKey(s.v),raw);
- const d=baseState(now);s=migrate({...d,...s,onboarding:{...d.onboarding,...s.onboarding},settings:{...d.settings,...s.settings},items:{...d.items,...s.items}},now);settleHearts(s,now);markVisit(s,now);const offline=offlineEarnings(s,now);const wr=tickWalk(s,now);s.coins+=offline.coins;s.lastSeen=now;
- return {state:s,offline,fresh:false,returned:wr?.returned??null};} // returned: walker settled on load → main puts it back on the floor
-export function save(storage,s,now=Date.now()){s.lastSeen=now;sanitize(s);storage.setItem(CFG.saveKey,JSON.stringify(s));}
-// test build: only an exact `temp=1` query turns on every CFG.TEMP switch, and then saves go to a separate key so TEMP play never touches the ordinary save
-export const BASE_SAVE_KEY=CFG.saveKey,TEMP_SAVE_SUFFIX=':temp';
-export function applyBuildMode(search){const on=new URLSearchParams(search).get('temp')==='1';
- if(on){for(const k of Object.keys(CFG.TEMP))CFG.TEMP[k]=true;CFG.saveKey=BASE_SAVE_KEY+TEMP_SAVE_SUFFIX;}return on;}
-// rewards are never capped (hearts from rewards may go above hearts.regenCap)
-export function grant(s,r={}){for(const k of ['coins','hearts','paws'])if(r[k])s[k]+=r[k];for(const k of Object.keys(CFG.items))if(r[k])s.items[k]=(s.items[k]||0)+r[k];}
 
-// ---------- hearts (D-05 / D-06) ----------
-// heartRegenAt = start of the current 30-min regen period. While hearts ≥ cap the timer is stopped (anchor follows `now`).
-// Called on load (covers time the app was closed) and every frame.
-export function settleHearts(s,now=Date.now()){const H=CFG.hearts,P=H.regenEverySec*1000;
- if(!(s.heartRegenAt<=now))s.heartRegenAt=now; // missing anchor or clock moved backwards
- if(s.hearts>=H.regenCap){s.heartRegenAt=now;return 0;}
- const n=Math.floor((now-s.heartRegenAt)/P),add=Math.min(n,H.regenCap-s.hearts);s.hearts+=add;
- if(s.hearts>=H.regenCap)s.heartRegenAt=now;else s.heartRegenAt+=n*P;return add;}
+// ───────────────────────── shibas ─────────────────────────
+export function makeShiba(s,{breed,level=1,name=null,tricks={},r=Math.random,now=Date.now()}){
+ const g={...(CFG.gaugeStart??CFG.gaugeFull)}; // UNSET gaugeStart → the 116 full state (START_FALLBACK)
+ const tr={},te={};for(const t of CFG.tricks){tr[t.id]=clamp(tricks[t.id]||0,0,CFG.trickMaxLevel);te[t.id]=0;}
+ return {id:s.nextId++,breed,name,personality:pick(r,CFG.personalities),level:clamp(level,1,CFG.level.max),paws:0,
+  intimacy:CFG.intimacy.start??CFG.intimacy.min,g,tricks:tr,trickExp:te,placed:false,status:'ok',injury:null,hospitalUntil:0,hospitalKind:null,
+  zeroSince:null,sickSince:null,cd:{},joinedAt:now,accessories:[],likesFound:{snacks:[],toys:[]}};
+}
+export const byId=(s,id)=>s.shibas.find(o=>o.id===id);
+export const levelEffect=lv=>1+CFG.level.incomePerLevel*(lv-1); // 갱신 81
+export const pawsToNext=lv=>lv>=CFG.level.max?null:CFG.level.pawsPerLevel*lv; // 갱신 81
+export function addPaws(sh,n){sh.paws+=n;let up=0;for(let need=pawsToNext(sh.level);need!=null&&sh.paws>=need;need=pawsToNext(sh.level)){sh.paws-=need;sh.level++;up++;}
+ if(sh.level>=CFG.level.max)sh.paws=0;return up;}
+export function accessorySlots(lv){for(const [at,n] of CFG.accessorySlots)if(lv>=at)return n;return 0;} // 갱신 90
+export const trickSum=sh=>CFG.tricks.reduce((a,t)=>a+(sh.tricks[t.id]||0),0);
+export const intelligence=sh=>Math.min(CFG.intelligenceMax,trickSum(sh)*CFG.intelligencePerLevel); // 갱신 133
+export function changeGauges(s,sh,d,now=Date.now()){for(const k of CFG.gauges)if(d[k])sh.g[k]=clamp(sh.g[k]+d[k],0,100);
+ if(d.intimacy)sh.intimacy=clamp(sh.intimacy+d.intimacy,CFG.intimacy.min,CFG.intimacy.max);updateZero(sh,now);}
+// 갱신 111: a gauge at 0 (배고픔·청결·기분; 청결 0 = dirt 100) starts the 2-hour 앓아눕기 clock
+const isZero=(sh,k)=>k==='dirt'?sh.g.dirt>=100:sh.g[k]<=0;
+function updateZero(sh,now){const z=CFG.sick.zeroGauges.some(k=>isZero(sh,k));if(z&&sh.zeroSince==null)sh.zeroSince=now;if(!z)sh.zeroSince=null;}
+// 갱신 86 condition multiplier: strongest matching step per gauge, multiplied, clamped 0.25..1.3
+export function conditionMul(sh){const seen=new Set();let m=1;
+ for(const c of CFG.condition){if(seen.has(c.gauge))continue;const v=sh.g[c.gauge];if((c.atLeast!=null&&v>=c.atLeast)||(c.atMost!=null&&v<=c.atMost)){m*=c.mul;seen.add(c.gauge);}}
+ return clamp(m,CFG.visit.condMin,CFG.visit.condMax);}
+// 갱신 86·100: meeting score = condition multiplier + 0.05 × shown trick level (≤ +0.25), all within the 1.3 cap
+export function meetingScore(sh,trickLv=0){return Math.min(CFG.visit.condMax,conditionMul(sh)+Math.min(CFG.visit.trickBonusMax,CFG.visit.trickBonusPerLevel*trickLv));}
+export function statusOf(s,sh){if(s.walk&&s.walk.shibaId===sh.id)return 'walking';if(sh.status!=='ok')return sh.status;if(sh.g.fatigue>=CFG.care.fatigueMax)return 'sleeping';return 'ok';}
+// works in the café: placed, healthy, not walking, not asleep (1.10.0: 피로도 100% → 잠만 잠), café open
+export const canWork=(s,sh)=>sh.placed&&statusOf(s,sh)==='ok'&&!s.cafe.closed;
+
+// ───────────────────────── café level, reputation, hearts ─────────────────────────
+export const cafeNeed=lv=>lv>=CFG.cafe.maxLevel?null:CFG.cafe.expToNext[lv-1];
+export function addCafeExp(s,n){if(!(n>0))return 0;const C=s.cafe;let up=0;if(C.level>=CFG.cafe.maxLevel)return 0;C.exp+=n;
+ for(let need=cafeNeed(C.level);need!=null&&C.exp>=need;need=cafeNeed(C.level)){C.exp-=need;C.level++;up++;}if(C.level>=CFG.cafe.maxLevel)C.exp=0;return up;}
+export const slotsOf=s=>Math.min(CFG.cafe.maxPlaced,pressureAt(s.cafe.level).slots);
+export const capOf=s=>pressureAt(s.cafe.level).cap;
+export function arrivalMul(rep){for(const [at,m] of CFG.rep.arrivalMul)if(rep>=at)return m;return CFG.rep.arrivalMul.at(-1)[1];}
+export const arrivalInterval=s=>pressureAt(s.cafe.level).interval*arrivalMul(s.cafe.rep);
+export function satisfiedGain(rep,base=CFG.rep.satisfied){for(const [at,m] of CFG.rep.damp)if(rep>=at)return base*m;return base;}
+// offline: if a drop reaches the floor the café closes for the day (갱신 126-1)
+export function addRep(s,d,ctx={}){const C=s.cafe;C.rep=clamp(C.rep+d,CFG.rep.min,CFG.rep.max);
+ if(ctx.offline&&d<0&&C.rep<=CFG.rep.closureFloor)closeCafe(s,ctx.now??Date.now(),ctx.world);}
+export function settleHearts(s,now=Date.now()){const Hc=CFG.hearts,P=Hc.regenEverySec*1000;
+ if(!(s.heartRegenAt<=now))s.heartRegenAt=now;if(s.hearts>=Hc.regenCap){s.heartRegenAt=now;return 0;}
+ const n=Math.floor((now-s.heartRegenAt)/P),add=Math.min(n,Hc.regenCap-s.hearts);s.hearts+=add;if(s.hearts>=Hc.regenCap)s.heartRegenAt=now;else s.heartRegenAt+=n*P;return add;}
 export function nextHeartInSec(s,now=Date.now()){if(s.hearts>=CFG.hearts.regenCap)return null;return Math.max(0,Math.ceil((s.heartRegenAt+CFG.hearts.regenEverySec*1000-now)/1000));}
-export function spendHearts(s,n,now=Date.now()){settleHearts(s,now);if(s.hearts<n)return false;s.hearts-=n;return true;}
-export function canUseHeartReset(s){return (s.items.heartReset||0)>0&&s.hearts<CFG.hearts.regenCap;}
-export function useHeartReset(s,now=Date.now()){settleHearts(s,now);if(!canUseHeartReset(s))return false;s.items.heartReset--;s.hearts=CFG.hearts.regenCap;s.heartRegenAt=now;return true;}
+export function spendHearts(s,n,now=Date.now()){settleHearts(s,now);if(s.hearts<n)return false;if(s.hearts>=CFG.hearts.regenCap&&s.hearts-n<CFG.hearts.regenCap)s.heartRegenAt=now;s.hearts-=n;return true;}
+export const canUseHeartReset=s=>(s.items.heartReset||0)>0&&s.hearts<CFG.heartReset.fillTo;
+export function useHeartReset(s,now=Date.now()){settleHearts(s,now);if(!canUseHeartReset(s))return false;s.items.heartReset--;s.hearts=CFG.heartReset.fillTo;s.heartRegenAt=now;return true;}
+function addCoins(s,x){const t=s.coinFrac+x,w=Math.floor(t+1e-9);s.coins+=w;s.coinFrac=t-w;return w;} // 갱신 120: fractions kept inside, integers shown
 
-// ---------- gacha (D-01) ----------
-// S = CFG.gacha.rates.S (2%, 확정). N·R rates are null (미정) → no N/R split is invented; pulls are blocked unless the TEMP switch is on.
-export function gachaReady(){const R=CFG.gacha.rates;return (R.N!=null&&R.R!=null)||!!CFG.TEMP.gachaNonSAsN;}
-export function rollGrade(r){const R=CFG.gacha.rates,x=r();if(x<R.S)return 'S';
- if(R.N!=null&&R.R!=null){const y=(x-R.S)/(1-R.S)*(R.N+R.R);return y<R.R?'R':'N';} // N·R share the remaining 1−S in their given ratio
- return CFG.TEMP.gachaNonSAsN?'N':null;}
-// opts.capsule: pay with one 시바뽑기 캡슐 instead of paws (same rates, no guarantee)
-export function canPull(s,opts={}){if(!gachaReady())return false;if(opts.capsule)return (s.items.capsule||0)>0;return (CFG.gacha.firstFree&&s.gachaPulls===0)||s.paws>=CFG.gacha.cost.paws;}
-export function pull(s,r,opts={}){if(!canPull(s,opts))return null;const free=!opts.capsule&&CFG.gacha.firstFree&&s.gachaPulls===0;if(opts.capsule)s.items.capsule--;else if(!free)s.paws-=CFG.gacha.cost.paws;
- const coats=Object.keys(CFG.coats);const coat=coats[Math.floor(r()*coats.length)];const exprs=CFG.coatExprs(coat);const expr=exprs[Math.floor(r()*exprs.length)];
- const grade=rollGrade(r);s.gachaPulls++;
- // every pull is a new shiba starting at its band's first level (N 1 / R 11 / S 21); duplicates are merged by the player (D-03)
- const o={id:s.nextId++,coat,expr,lv:startLevel(grade)};const isNew=!s.dex.includes(dexKey(o));const dup=s.owned.some(x=>dexKey(x)===dexKey(o));
- s.owned.push(o);if(isNew)s.dex.push(dexKey(o));return {...o,grade,isNew,dup,free};}
+// ───────────────────────── start / placement / abandon ─────────────────────────
+// 갱신 109: the player picks one of the 4 breeds; it starts at Lv21 (갱신 90) with 앉아·기다려 3단계 (갱신 100·133)
+export function chooseStart(s,breed,name,r=Math.random,now=Date.now()){if(s.started||!CFG.breeds.includes(breed))return null;
+ const sh=makeShiba(s,{breed,name:name||null,level:CFG.startShiba.level,tricks:CFG.startShiba.tricks,r,now});sh.placed=true;s.shibas.push(sh);s.started=true;return sh;}
+export const placedShibas=s=>s.shibas.filter(o=>o.placed);
+export function placeCheck(s,id){const sh=byId(s,id);if(!sh)return 'pick';if(sh.placed)return null;if(placedShibas(s).length>=slotsOf(s))return 'slots';return null;}
+export function setPlaced(s,id,on){const sh=byId(s,id);if(!sh)return false;if(on&&placeCheck(s,id))return false;sh.placed=!!on;return true;}
+export function abandonCheck(s,id){if(!byId(s,id))return 'pick';if(s.shibas.length<=1)return 'last';if(s.walk&&s.walk.shibaId===id)return 'walking';return null;}
+// 갱신 76·82: 남은 시바 전원 친밀도 −15, 24시간 안에 다시 하면 −20. 동구는 목록에 없어 파양할 수 없다(갱신 78).
+export function abandon(s,id,now=Date.now()){if(abandonCheck(s,id))return null;const I=CFG.intimacy;
+ const d=s.lastAbandonAt!=null&&now-s.lastAbandonAt<I.abandonRepeatWithinH*H?I.abandonShockRepeat:I.abandonShock;
+ const gone=byId(s,id);s.shibas=s.shibas.filter(o=>o.id!==id);for(const o of s.shibas)changeGauges(s,o,{intimacy:d},now);s.lastAbandonAt=now;return {gone,shock:d};}
 
-// ---------- 28-day onboarding (D-07) ----------
-const dateKey=now=>{const d=new Date(now);return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;}; // device-local date
-export function markVisit(s,now=Date.now()){const v=s.onboarding.visits,k=dateKey(now);if(!v.includes(k)&&v.length<CFG.onboarding.days)v.push(k);}
-export function onboardingMode(){return CFG.onboarding.dayMode??(CFG.TEMP.onboardingLoginDays?'loginDays':null);}
-export function onboardingDay(s){return onboardingMode()==='loginDays'?Math.min(CFG.onboarding.days,s.onboarding.visits.length):null;} // null = 진행 방식 미정
-// split a day's rewards into decided values and null (미정) keys
-export function onboardingReward(day){const ready={},pending=[];for(const [k,v] of Object.entries(CFG.onboarding.rewards[day]||{}))v==null?pending.push(k):ready[k]=v;return {ready,pending};}
-export function onboardingStatus(s,day){if(s.onboarding.claimed.includes(day))return 'claimed';if(!Object.keys(onboardingReward(day).ready).length)return 'pending';
- const cur=onboardingDay(s);return cur!=null&&day<=cur?'claimable':'locked';}
-// each day is claimed once; null parts are skipped (shown as 준비 중)
-export function claimOnboarding(s,day){if(onboardingStatus(s,day)!=='claimable')return null;const {ready}=onboardingReward(day);grant(s,ready);s.onboarding.claimed.push(day);return ready;}
+// ───────────────────────── care (1.2-3) ─────────────────────────
+export function careCheck(s,id,kind){const sh=byId(s,id);if(!sh)return 'pick';const st=statusOf(s,sh);
+ if(kind==='play'){if(st==='walking'||st==='hospital')return st;if(st==='sleeping')return 'sleeping';if(s.hearts<CFG.care.play.hearts)return 'hearts';return null;}
+ const c=CFG.care[kind];if(!c)return 'pick';if(Object.values(c).some(isUnset))return 'unset';return null;} // feed / snack / bath / sleep: amounts UNSET
+export function playWith(s,id,now=Date.now()){if(careCheck(s,id,'play'))return null;const P=CFG.care.play;spendHearts(s,P.hearts,now);const sh=byId(s,id);
+ changeGauges(s,sh,P,now);addCafeExp(s,CFG.cafeExp.play);return sh;} // 갱신 84·88·90: 하트 1, 사고·랜덤 보상 없음
 
-// ---------- level changes, merge (D-03) and promotion (D-04) ----------
-// every level change goes through setLevel: clamps to 1..30 and queues a promotion when the computed grade changes
-export function setLevel(s,o,lv,source){const g0=gradeOf(o.lv);o.lv=clampLevel(lv);const g1=gradeOf(o.lv);
- if(g0!==g1&&promotionShouldPlay(source))(s.promoQueue||(s.promoQueue=[])).push({id:o.id,coat:o.coat,expr:o.expr,from:g0,to:g1,lv:o.lv});return g0!==g1;}
-// shibas obtained directly from a pull never play it (they start at a band's first level, no level change happens)
-export function promotionShouldPlay(source){if(!CFG.promotion.enabled||source==='gacha')return false;if(source==='merge')return mergeRule()?.playPromotion===true;return true;}
-export function takePromotion(s){return (s.promoQueue||[]).shift()||null;} // dequeued once → plays once
-// fallback card timeline (제안값): zoom → border colour → badge swap + sparkle → expression; total ≈ totalSec
-export function promoPhase(t){const C=CFG.promotion.card,badge=Math.max(0,C.totalSec-C.zoomSec-C.borderSec-C.exprSec);
- const seg=[['zoom',C.zoomSec],['border',C.borderSec],['badge',badge],['expr',C.exprSec]];for(const [p,d] of seg){if(t<d)return {phase:p,k:d?t/d:1};t-=d;}return {phase:'done',k:1};}
-export function mergeRule(){const M=CFG.merge;if(M.sameKey!=null&&M.mode!=null)return {sameKey:M.sameKey,mode:M.mode,playPromotion:M.playPromotion===true};
- return CFG.TEMP.mergeHandoffDefaults?{sameKey:'coat+expr',mode:'manual',playPromotion:false}:null;}
-const SAME={'coat+expr':o=>o.coat+'_'+o.expr,coat:o=>o.coat};
-// null = can merge; otherwise a reason code for the UI
-export function mergeCheck(s,targetId,matId){const rule=mergeRule();if(!rule)return 'undecided';if(rule.mode!=='manual')return 'mode';
- const a=s.owned.find(o=>o.id===targetId),b=s.owned.find(o=>o.id===matId);if(!a||!b||a===b)return 'pick';
- if(isBusy(s,a.id)||isBusy(s,b.id))return 'busy';
- if(!SAME[rule.sameKey]||SAME[rule.sameKey](a)!==SAME[rule.sameKey](b))return 'notSame';if(gradeOf(a.lv)!==gradeOf(b.lv))return 'grade';return null;}
-export const canMerge=(s,t,m)=>mergeCheck(s,t,m)===null;
-export function merge(s,targetId,matId){if(!canMerge(s,targetId,matId))return null;const a=s.owned.find(o=>o.id===targetId),i=s.owned.findIndex(o=>o.id===matId),b=s.owned[i];
- const from=a.lv;const promoted=setLevel(s,a,a.lv+b.lv,'merge');s.owned.splice(i,1); // material leaves the cafe list; s.dex (도감) is untouched
- return {target:a,material:b,from,to:a.lv,promoted};}
+// 갱신 100·133 training
+export function trainChance(sh){const T=CFG.training;let p=T.successBase;for(const b of T.bonuses){const v=b.stat==='intimacy'?sh.intimacy:sh.g[b.stat];if(v>=b.atLeast)p+=b.add;}return clamp(p,T.min,T.max);}
+export function trainCheck(s,id,trick,{trainer=false}={}){const sh=byId(s,id);if(!sh)return 'pick';if(!CFG.tricks.some(t=>t.id===trick))return 'trick';
+ if((sh.tricks[trick]||0)>=CFG.trickMaxLevel)return 'max';const st=statusOf(s,sh);if(st==='walking'||st==='hospital'||st==='sleeping')return st;
+ if(!trainer&&s.hearts<CFG.training.hearts)return 'hearts';return null;}
+function addTrickRep(s,sh,trick,now){sh.trickExp[trick]=(sh.trickExp[trick]||0)+1;let up=false;if(sh.trickExp[trick]>=sh.tricks[trick]+1){sh.trickExp[trick]=0;sh.tricks[trick]++;up=true;} // 단계 N→N+1에 성공 N+1번
+ changeGauges(s,sh,{fatigue:CFG.training.fatigue},now);return up;}
+export function train(s,id,trick,r=Math.random,now=Date.now()){if(trainCheck(s,id,trick))return null;spendHearts(s,CFG.training.hearts,now);const sh=byId(s,id);
+ const p=trainChance(sh),ok=r()<p;const up=ok?addTrickRep(s,sh,trick,now):false;return {ok,p,up,level:sh.tricks[trick],exp:sh.trickExp[trick]};}
 
-// ---------- walk (D-08), fatigue (D-09), rescue (D-10) ----------
-export function isBusy(s,id){return !!(s.walk&&s.walk.shibaId===id);}
-export function walkCost(sec){const c=CFG.walk.heartCost;return c==null||c[sec]==null?null:c[sec];} // null = 미정
-export function walkStopRule(){return CFG.walk.stopRule??(CFG.TEMP.walkStopNoRefund?'noRefund':null);}
-export function fatigueOf(s,id){const o=s.owned.find(o=>o.id===id);return o?(o.fatigue||0):0;}
-export function fatigueState(s,id){if(!CFG.FEATURES.fatigue)return 'normal';const f=fatigueOf(s,id),F=CFG.walk.fatigue;
- if(f>=1)return 'sleep';if(F.tiredAt!=null&&f>=F.tiredAt)return 'tired';return 'normal';}
-export function setFatigue(s,id,v){const o=s.owned.find(o=>o.id===id);if(o)o.fatigue=Math.max(0,Math.min(1,v));} // debug / recovery
-export function canPlay(s,id){return !isBusy(s,id)&&fatigueState(s,id)!=='sleep';} // 1.7.1 놀이 (healing) uses this
-// null = ok, else reason code
-export function walkCheck(s,id,sec){if(s.walk)return 'walking';const o=s.owned.find(o=>o.id===id);if(!o)return 'pick';if(!CFG.walk.durationsSec.includes(sec))return 'duration';
- if(CFG.FEATURES.fatigue&&(fatigueState(s,id)==='sleep'||fatigueOf(s,id)>=(CFG.walk.fatigue.max??1)))return 'fatigue';
- const cost=walkCost(sec);if(cost==null)return CFG.TEMP.walkFreeWhenCostNull?null:'costUndecided';if(s.hearts<cost)return 'hearts';return null;}
-export function startWalk(s,id,sec,now=Date.now(),r=Math.random){if(walkCheck(s,id,sec))return null;const cost=walkCost(sec);if(cost)spendHearts(s,cost,now);
- s.walk={shibaId:id,walkStartAt:now,walkDurationSec:sec,rescue:rollRescue(r,now,sec)};return s.walk;}
-export function walkProgress(s,now=Date.now()){if(!s.walk)return null;return Math.min(1,Math.max(0,(now-s.walk.walkStartAt)/(s.walk.walkDurationSec*1000)));}
-// rescue is decided at start (time inside the walk + which shiba), shown when that moment passes — or batched on the next launch
-function rollRescue(r,now,sec){const R=CFG.walk.rescue;if(!CFG.FEATURES.rescue||R.chance==null||!(r()<R.chance))return null;
- const sh=rescueShiba(r);return sh?{at:now+r()*sec*1000,shiba:sh,done:false}:null;}
-export function rescueShiba(r){const R=CFG.walk.rescue;if(!R.gradeWeights||R.levelDist!=='uniform')return null; // grade odds / level distribution 미정 → no rescue
- const tot=GRADES.reduce((a,g)=>a+(R.gradeWeights[g]||0),0);let x=r()*tot,grade='N';for(const g of GRADES){if((x-=R.gradeWeights[g]||0)<0){grade=g;break;}}
- const [a,b]=CFG.grades.bands[grade],lv=a+Math.floor(r()*(b-a+1));const coats=Object.keys(CFG.coats),coat=coats[Math.floor(r()*coats.length)];
- return {coat,expr:CFG.coatExprs(coat)[0],lv};} // expression is not specified → the coat's first (base) expression
-// called every frame and on load. Rescue then settlement; settlement clears s.walk so it can only happen once.
-export function tickWalk(s,now=Date.now()){const W=s.walk;if(!W)return null;const out={rescued:null,returned:null};
- if(W.rescue&&!W.rescue.done&&now>=W.rescue.at){W.rescue.done=true;const o={id:s.nextId++,...W.rescue.shiba};s.owned.push(o);if(!s.dex.includes(dexKey(o)))s.dex.push(dexKey(o));s.rescueQueue.push(o.id);out.rescued=o;}
- if(now>=W.walkStartAt+W.walkDurationSec*1000){s.walk=null;out.returned=W.shibaId;
-  const g=CFG.walk.fatigue.gainBySec;if(CFG.FEATURES.fatigue&&g&&g[W.walkDurationSec]!=null)setFatigue(s,W.shibaId,fatigueOf(s,W.shibaId)+g[W.walkDurationSec]);
-  if(CFG.walk.reward)grant(s,CFG.walk.reward[W.walkDurationSec]||{});} // 보상량 미정 → nothing granted while null
- return out.rescued||out.returned?out:null;}
-export function stopWalk(s,now=Date.now()){if(!s.walk||walkStopRule()!=='noRefund')return null;const id=s.walk.shibaId;s.walk=null;return id;} // TEMP rule: back at once, no reward / refund / rescue
-export function feedSnack(s,id){const v=CFG.walk.fatigue.snackRecover;if(!CFG.FEATURES.fatigue||v==null)return false;setFatigue(s,id,fatigueOf(s,id)-v);return true;}
-export function sleepRecover(s,dt){const v=CFG.walk.fatigue.sleepRecoverPerSec;if(!CFG.FEATURES.fatigue||v==null)return;for(const o of s.owned)if(o.fatigue>0&&!isBusy(s,o.id))setFatigue(s,o.id,o.fatigue-v*dt);}
+// ───────────────────────── 알바 (갱신 99·118·123·125) ─────────────────────────
+export function albaCheck(s,kind,ids=[],now=Date.now(),trick=null){const A=CFG.alba[kind];if(!A)return 'kind';if(s.cafe.level<A.unlock)return 'locked';if(s.coins<A.cost)return 'coins';
+ if(kind==='manager')return now<s.cafe.managerUntil?'active':null;
+ if(!ids.length)return 'pick';if(kind==='walk'?ids.length>A.maxShibas:ids.length!==1)return 'count';
+ for(const id of ids){const sh=byId(s,id);if(!sh)return 'pick';if((sh.cd[kind]||0)>now)return 'cooldown';const st=statusOf(s,sh);if(st==='walking'||st==='hospital')return st;}
+ if(kind==='trainer')return trainCheck(s,ids[0],trick,{trainer:true});return null;}
+export function hireAlba(s,kind,ids=[],now=Date.now(),trick=null){if(albaCheck(s,kind,ids,now,trick))return null;const A=CFG.alba[kind];s.coins-=A.cost;
+ if(kind==='manager'){s.cafe.managerUntil=now+A.hireSec*1000;return {kind};}
+ for(const id of ids){const sh=byId(s,id);sh.cd[kind]=now+A.cooldownSec*1000;
+  if(kind==='walk')changeGauges(s,sh,{boredom:A.boredom},now); // 지루함 50 즉시 해소, 하트·경험치·친밀도·구조견 없음
+  if(kind==='daycare'){const P=CFG.care.play;changeGauges(s,sh,{boredom:P.boredom,dirt:P.dirt,fatigue:P.fatigue,happy:P.happy,intimacy:P.intimacy*A.intimacyMul},now);} // 놀아주기와 같음, 친밀도 절반, 경험치 없음
+  if(kind==='trainer')addTrickRep(s,sh,trick,now);} // 항상 성공, 하트·경험치 없음
+ return {kind,ids};}
+export const managerActive=(s,now=Date.now())=>now<s.cafe.managerUntil;
 
-// ---------- themes (D-12) ----------
-export function selectTheme(s,id){const t=CFG.themes.find(t=>t.id===id);if(!t)return false;
- if(!s.themesOwned.includes(id)){if(t.price==null||s.coins<t.price)return false;s.coins-=t.price;s.themesOwned.push(id);} // price null = 미정 → not buyable
- s.theme=id;return true;}
-export const currentTheme=s=>CFG.themes.find(t=>t.id===s.theme)||CFG.themes[0];
+// ───────────────────────── 병원 (갱신 58·111·111-1·112·131) ─────────────────────────
+export function hospitalCost(s,kind){const col={light:1,snake:2,sick:3,rescueBath:4}[kind];let row=CFG.hospital.costs[0];for(const c of CFG.hospital.costs)if(s.cafe.level>=c[0])row=c;return row[col];}
+export function hospitalCheck(s,id){const sh=byId(s,id);if(!sh)return 'pick';if(sh.status!=='injured'&&sh.status!=='sick')return 'healthy';
+ if(s.coins<hospitalCost(s,sh.status==='sick'?'sick':sh.injury))return 'coins';return null;} // 갱신 111-1: 외상 없음
+export function sendToHospital(s,id,now=Date.now(),stayMul=1){if(hospitalCheck(s,id))return null;const sh=byId(s,id),kind=sh.status==='sick'?'sick':sh.injury;
+ s.coins-=hospitalCost(s,kind);sh.status='hospital';sh.hospitalKind=kind;sh.hospitalUntil=now+CFG.hospital.stays[kind]*1000*stayMul;return sh;}
+function releaseHospital(s,now){for(const sh of s.shibas)if(sh.status==='hospital'&&now>=sh.hospitalUntil){sh.status='ok';sh.injury=null;sh.hospitalKind=null;sh.sickSince=null;sh.zeroSince=null;updateZero(sh,now);}} // a gauge still at 0 restarts the 2-hour clock
+function tickHealth(s,now){releaseHospital(s,now);for(const sh of s.shibas){
+ if(sh.status==='ok'&&sh.zeroSince!=null&&now-sh.zeroSince>=CFG.sick.zeroHours*H){sh.status='sick';sh.sickSince=now;}
+ if(sh.status==='sick'&&sh.sickSince!=null&&now-sh.sickSince>=CFG.neglect.donguAfterH*H&&s.coins>=hospitalCost(s,'sick')){ // 갱신 112: 동구가 대신 데려감, 입원 2배
+  sendToHospital(s,sh.id,now,CFG.neglect.donguStayMul);if(!isUnset(CFG.neglect.donguIntimacyDrop))changeGauges(s,sh,{intimacy:-CFG.neglect.donguIntimacyDrop},now);}}}
 
-// ---------- quests / tutorial ----------
-export function questStatus(s){return CFG.quests.map(q=>({...q,done:q.goal(s),claimed:s.questsClaimed.includes(q.id)}));}
-export function claimQuest(s,id){const q=CFG.quests.find(q=>q.id===id);if(!q||!q.goal(s)||s.questsClaimed.includes(id))return false;s.questsClaimed.push(id);grant(s,q.reward);return true;}
-export function tutStep(s){return CFG.tutorial[s.tut]||null;}
-// a step that needs the gacha can be passed with 다음 while pulls are blocked (N·R 확률 미정)
-export const tutCanSkip=t=>!!(t&&t.needsGacha&&!gachaReady());
-export function tutAdvance(s,force=false){const t=tutStep(s);if(!t)return false;if(force?(t.next||tutCanSkip(t)):(t.done&&t.done(s))){grant(s,t.reward);s.tut++;return true;}return false;}
+// ───────────────────────── 산책 (1.10, 갱신 82·83·85·87·90·124·125) ─────────────────────────
+export const walkHearts=sec=>CFG.walk.heartsPer10Min*sec/600;
+export function walkCheck(s,id,sec,now=Date.now()){if(s.walk)return 'walking';const sh=byId(s,id);if(!sh)return 'pick';if(!CFG.walk.durationsSec.includes(sec))return 'duration';
+ const st=statusOf(s,sh);if(st!=='ok')return st; // 다침·입원·앓아누움·잠(피로 100%)이면 못 감
+ settleHearts(s,now);if(s.hearts<walkHearts(sec))return 'hearts';return null;} // 쿨타임 없음(125-1)
+// the rescue moment is drawn at the start (shown during the walk, 1.10.1); the other events are drawn when the walk settles
+export function startWalk(s,id,sec,now=Date.now(),r=Math.random){if(walkCheck(s,id,sec,now))return null;spendHearts(s,walkHearts(sec),now);
+ const rescueAt=r()<CFG.walk.events.rescue?now+r()*sec*1000:null;s.walk={shibaId:id,walkStartAt:now,walkDurationSec:sec,rescueAt,rescueShown:false};return s.walk;}
+export const walkProgress=(s,now=Date.now())=>s.walk?clamp((now-s.walk.walkStartAt)/(s.walk.walkDurationSec*1000),0,1):null;
+export const canStopWalk=()=>!isUnset(CFG.walk.stopRule); // UNSET 질문 1-4
+function newRescue(s,r,now){return {rid:'r'+now+'_'+Math.floor(r()*1e6),foundAt:now,breed:pick(r,CFG.breeds),pic:Math.floor(r()*2),bathed:false};} // 갱신 61: 그림 2장 중 랜덤, 견종과 무관
+// returns {rescued, settled}; settles exactly once (s.walk cleared)
+export function tickWalk(s,now=Date.now(),r=Math.random){const W=s.walk;if(!W)return null;const out={};
+ if(W.rescueAt!=null&&!W.rescueShown&&now>=W.rescueAt){W.rescueShown=true;const x=newRescue(s,r,W.rescueAt);s.rescues.push(x);out.rescued=x;}
+ if(now>=W.walkStartAt+W.walkDurationSec*1000){const sh=byId(s,W.shibaId),E=CFG.walk.events,sec=W.walkDurationSec,res={shibaId:W.shibaId,sec,at:now,events:[]};s.walk=null;
+  if(sh){const fx=CFG.walkEffect[sec];changeGauges(s,sh,fx,now);addCafeExp(s,CFG.cafeExp.walkPer10Min*sec/600);
+   // 갱신 82·83 independent rolls
+   if(r()<E.snake){sh.status='injured';sh.injury='snake';res.events.push('snake');}
+   if(r()<E.light){if(sh.status!=='injured'){sh.status='injured';sh.injury='light';}res.events.push('light');}
+   if(r()<E.extra){if(isUnset(E.extraCoins)){s.hearts+=E.extraHeart;res.events.push('extraHeart');}else{res.events.push('extra');}} // UNSET 멍코인 '소량' → 하트 1만
+   if(r()<E.capsule){s.items.capsule++;res.events.push('capsule');}
+   if(W.rescueAt!=null)res.events.push('rescue');}
+  s.walkResults.push(res);out.settled=res;}
+ return out.rescued||out.settled?out:null;}
+// 갱신 65·66·81·131: find → bath right there (fixed 멍코인 by café level) → reveal → bring / "안데려갈래"
+export function bathRescue(s,rid){const x=s.rescues.find(x=>x.rid===rid);if(!x||x.bathed)return null;const c=hospitalCost(s,'rescueBath');if(s.coins<c)return null;s.coins-=c;x.bathed=true;return x;}
+export function bringCheck(s,rid){const x=s.rescues.find(x=>x.rid===rid);if(!x)return 'pick';if(!x.bathed)return 'bath';if(s.shibas.length>=CFG.cafe.maxOwned)return 'owned';return null;}
+export function bringRescue(s,rid,r=Math.random,now=Date.now()){if(bringCheck(s,rid))return null;const x=s.rescues.find(x=>x.rid===rid);
+ const sh=makeShiba(s,{breed:x.breed,level:CFG.rescueLevel??1,r,now});s.shibas.push(sh);if(placedShibas(s).length<slotsOf(s))sh.placed=true;
+ s.rescues=s.rescues.filter(y=>y!==x);addCafeExp(s,CFG.cafeExp.rescueAdopt);return sh;}
+export function declineRescue(s,rid){const n=s.rescues.length;s.rescues=s.rescues.filter(x=>x.rid!==rid);return s.rescues.length<n;}
 
-// ---------- the cafe floor (runtime only, not saved) ----------
-const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
-function moveTo(p,t,v,dt){const d=dist(p,t);if(d<=v*dt){p.x=t.x;p.z=t.z;return true;}p.x+=(t.x-p.x)/d*v*dt;p.z+=(t.z-p.z)/d*v*dt;return false;}
-export function newWorld(s,seed=7){const r=rng(seed);const w={t:0,r,customers:[],shibas:[],nextCust:1,spawnT:CFG.customer.firstSpawn,tableBusy:CFG.tables.map(()=>null),events:[],tod:'day',
-  play:{checkT:CFG.healing.play.checkIntervalSec,globalCdUntil:0,pairs:[]}};
- for(const o of activeOwned(s).slice(0,CFG.cafe.maxShibas))addShiba(w,o);return w;}
-export function addShiba(w,o){if(w.shibas.length>=CFG.cafe.maxShibas)return null;const R=CFG.roam;const sh={id:o.id,coat:o.coat,expr:o.expr,phase:'idle',t:w.r()*2,x:R.x0+w.r()*(R.x1-R.x0),y:0,z:R.z0+w.r()*(R.z1-R.z0),cd:0,heading:0};w.shibas.push(sh);return sh;}
-// floor membership while walking: the walker's free slot is lent to a reserve shiba (recorded in w.standIn) and taken back when it returns.
-// After a reload the loan is not remembered → the floor shiba last in owned order goes back to the reserve.
-export function leaveFloor(w,s,id){removeShiba(w,id);for(const o of activeOwned(s))if(w.shibas.length<CFG.cafe.maxShibas&&!w.shibas.some(x=>x.id===o.id)){addShiba(w,o);(w.standIn||(w.standIn={}))[id]=o.id;break;}}
-export function returnToFloor(w,s,id){const o=s.owned.find(o=>o.id===id);if(!o||isBusy(s,id))return null;const lent=w.standIn?.[id];if(w.standIn)delete w.standIn[id];
- const on=w.shibas.find(x=>x.id===id);if(on)return on;
- if(w.shibas.length>=CFG.cafe.maxShibas){const rank=x=>s.owned.findIndex(o=>o.id===x.id);
-  const out=w.shibas.find(x=>x.id===lent)||[...w.shibas].sort((a,b)=>rank(b)-rank(a))[0];removeShiba(w,out.id);}
- return addShiba(w,o);}
-export function removeShiba(w,id){const i=w.shibas.findIndex(x=>x.id===id);if(i<0)return false;const sh=w.shibas[i];w.shibas.splice(i,1);
- const c=w.customers.find(c=>c.id===sh.cust);if(c){c.shiba=null;c.petting=false;c.t=0;}w.tableBusy=w.tableBusy.map(b=>b===id?null:b);return true;}
-function roamTarget(w){const R=CFG.roam;return {x:R.x0+w.r()*(R.x1-R.x0),z:R.z0+w.r()*(R.z1-R.z0)};}
-function topSpot(c){const tb=CFG.tables[c.seatDef.table];return {x:tb.x+(c.seatDef.face?.22:0),z:tb.z+(c.seatDef.face?0:.22)};}
-export function tick(w,s,dt){w.t+=dt;const C=CFG.customer,V=CFG.visit;
- // spawn: customers only come in when a seat is free
- w.spawnT-=dt;const used=new Set(w.customers.map(c=>c.seat));const free=CFG.seats.map((_,i)=>i).filter(i=>!used.has(i));
- if(w.spawnT<=0&&free.length){const seat=free[Math.floor(w.r()*free.length)],sd=CFG.seats[seat];
-  w.customers.push({id:w.nextCust++,kind:w.r()<.5?'boy':'girl',seat,seatDef:sd,phase:'enter',x:CFG.door.x,z:CFG.door.z,path:sd.via?[{x:CFG.door.x,z:CFG.aisleZ},{x:sd.via.x,z:CFG.aisleZ},{x:sd.via.x,z:sd.via.z},{x:sd.x,z:sd.z}]:[{x:CFG.door.x,z:CFG.aisleZ},{x:sd.x,z:CFG.aisleZ},{x:sd.x,z:sd.z}],t:0,visits:0,shiba:null,heading:Math.PI});w.spawnT=C.spawnEvery/customerMix(w.tod).countMul;}
- for(const c of w.customers){c.t+=dt;
-  if(c.phase==='enter'||c.phase==='leave'){const tgt=c.path[0];const px=c.x,pz=c.z;if(moveTo(c,tgt,C.speed,dt))c.path.shift();if(c.x!==px||c.z!==pz)c.heading=Math.atan2(c.x-px,c.z-pz);
-   if(!c.path.length){if(c.phase==='enter'){c.phase='wait';c.t=0;c.heading=c.seatDef.face*Math.PI/2;}else c.gone=true;}}
-  else if(c.phase==='wait'&&c.visits>=C.visits&&!c.shiba&&c.t>=C.happyPause){ // pay & go home
-   const coins=Math.round((C.payBase+C.payPerShiba*Math.min(activeOwned(s).length,CFG.cafe.maxShibas))*customerMix(w.tod).tipMul);s.coins+=coins;s.paws+=C.paws;s.served++;
-   w.events.push({type:'pay',coins,paws:C.paws,x:c.x,z:c.z,id:c.id});c.phase='leave';c.path=[...(c.seatDef.via?[{x:c.seatDef.via.x,z:c.seatDef.via.z},{x:c.seatDef.via.x,z:CFG.aisleZ}]:[{x:c.x,z:CFG.aisleZ}]),{x:CFG.door.x,z:CFG.aisleZ},{x:CFG.door.x,z:CFG.door.z}];}
-  else if(c.phase==='wait'&&c.visits<C.visits&&!c.shiba&&c.t>=C.waitBeforeVisit&&!w.tableBusy[c.seatDef.table]){ // call the nearest free shiba
-   // playing shibas count as free: guests always come first (1.7.1 — the pair is interrupted in this same frame)
-   let best=null,bd=1e9;for(const sh of w.shibas)if((sh.phase==='roam'||sh.phase==='idle'||sh.phase==='approach'||sh.phase==='play')&&sh.cd<=0){const d=dist(sh,c);if(d<bd){bd=d;best=sh;}}
-   if(best){if(best.phase==='approach'||best.phase==='play')interruptPlay(w,best);const top=topSpot(c);best.phase='toTable';best.cust=c.id;best.from={x:top.x,z:Math.max(CFG.roam.z0,CFG.tables[c.seatDef.table].z+.85)};best.top=top;best.tgt=best.from;c.shiba=best.id;w.tableBusy[c.seatDef.table]=best.id;}}}
- w.customers=w.customers.filter(c=>!c.gone);
- const tableH=.55;
- for(const sh of w.shibas){sh.t+=dt;sh.cd-=dt;const c=w.customers.find(c=>c.id===sh.cust);
-  // D-09: a 100%-tired shiba only sleeps (no serving, no play) — only when FEATURES.fatigue is on
-  if(CFG.FEATURES.fatigue){const sl=fatigueState(s,sh.id)==='sleep';if(sl&&(sh.phase==='idle'||sh.phase==='roam'))sh.phase='sleep';else if(!sl&&sh.phase==='sleep'){sh.phase='idle';sh.t=0;}}
-  if(sh.phase==='sleep'||sh.phase==='approach'||sh.phase==='play'){} // play phases are driven by stepPlay
-  else if(sh.phase==='idle'){if(sh.t>0){sh.phase='roam';sh.tgt=roamTarget(w);}}
-  else if(sh.phase==='roam'||sh.phase==='toTable'){const px=sh.x,pz=sh.z;const arrived=moveTo(sh,sh.tgt,CFG.roam.speed*(sh.phase==='toTable'?1.3:1),dt);if(sh.x!==px||sh.z!==pz)sh.heading=Math.atan2(sh.x-px,sh.z-pz);
-   if(arrived){if(sh.phase==='roam'){sh.phase='idle';sh.t=-(CFG.roam.idleMin+w.r()*(CFG.roam.idleMax-CFG.roam.idleMin));}else{sh.phase='climb';sh.t=0;}}}
-  else if(sh.phase==='climb'){const k=Math.min(1,sh.t/V.climb),e=k*k*(3-2*k);sh.x=sh.from.x+(sh.top.x-sh.from.x)*e;sh.z=sh.from.z+(sh.top.z-sh.from.z)*e;sh.y=tableH*e+Math.sin(k*Math.PI)*.25;sh.heading=Math.PI;
-   if(k>=1){sh.phase='pet';sh.t=0;s.hearts+=V.heartsPerPet;s.petted++;w.events.push({type:'pet',id:sh.id,cust:sh.cust});if(c)c.petting=true;}}
-  else if(sh.phase==='pet'){sh.heading=c?-c.seatDef.face*Math.PI/2:0;if(sh.t>=V.pet){sh.phase='descend';sh.t=0;if(c)c.petting=false;}}
-  else if(sh.phase==='descend'){const k=Math.min(1,sh.t/V.descend),e=k*k*(3-2*k);sh.x=sh.top.x+(sh.from.x-sh.top.x)*e;sh.z=sh.top.z+(sh.from.z-sh.top.z)*e;sh.y=tableH*(1-e)+Math.sin(k*Math.PI)*.22;sh.heading=0;
-   if(k>=1){sh.y=0;sh.phase='idle';sh.t=-.5;sh.cd=V.cooldown;if(c){c.visits++;c.shiba=null;c.t=0;w.tableBusy[c.seatDef.table]=null;}else w.tableBusy=w.tableBusy.map(b=>b===sh.id?null:b);sh.cust=null;}}}
- stepPlay(w,s,dt);
+// ───────────────────────── 메뉴·결제 (갱신 120·129) ─────────────────────────
+export const menuCheck=(s,id)=>{const m=CFG.menu.premium.find(m=>m.id===id);if(!m)return 'pick';if(s.menus.includes(id))return 'owned';if(isUnset(m.devCost)||isUnset(m.unlockLevel))return 'unset';
+ if(s.cafe.level<m.unlockLevel)return 'locked';if(s.coins<m.devCost)return 'coins';return null;};
+export function developMenu(s,id){if(menuCheck(s,id))return false;s.coins-=CFG.menu.premium.find(m=>m.id===id).devCost;s.menus.push(id);return true;}
+export function premiumChance(rep,satisfied){const M=CFG.menu;return Math.min(M.premiumCap,M.premiumBase+Math.max(0,rep-50)*M.premiumPerRepAbove50+(satisfied?M.premiumSatisfiedBonus:0));}
+export function itemIncomeMul(s,now=Date.now()){return now<s.cafe.boostUntil?Math.min(CFG.itemIncome.paidCapMul,CFG.itemIncome.boostMul):1;}
+// the order is decided when the guest leaves; only developed menus can be ordered
+export function chooseOrder(s,satisfied,r){const avail=CFG.menu.premium.filter(m=>s.menus.includes(m.id));const p=premiumChance(s.cafe.rep,satisfied);
+ if(avail.length&&r()<p){const [wd,ws]=CFG.menu.drinkToDessert,kinds=['drink','dessert'].filter(k=>avail.some(m=>m.kind===k));
+  let kind=kinds[0];if(kinds.length===2)kind=r()*(wd+ws)<wd?'drink':'dessert';const m=pick(r,avail.filter(m=>m.kind===kind));return {id:m.id,price:m.price,p};}
+ return {id:'coffee',price:CFG.menu.coffee.price,p};}
+// 갱신 75·120: 기본 수익 × 시바 레벨 효과(만난 시바 평균, 아무도 못 만났으면 ×1) × 아이템 효과
+export function payFor(s,met,order,now=Date.now()){const lvs=met.map(id=>byId(s,id)).filter(Boolean).map(o=>levelEffect(o.level));
+ const lvMul=lvs.length?lvs.reduce((a,b)=>a+b,0)/lvs.length:1,item=itemIncomeMul(s,now);return {base:order.price,lvMul,item,total:order.price*lvMul*item};}
+
+// ───────────────────────── 얼룩 (갱신 101-3·117-2) ─────────────────────────
+export function cleanStain(s){if(s.cafe.stains<=0)return false;s.cafe.stains--;addCafeExp(s,CFG.cafeExp.stainClean);return true;}
+
+// ───────────────────────── 임시휴무 (갱신 126) ─────────────────────────
+export function closeCafe(s,now,w){const C=s.cafe;if(C.closed)return;C.closed=true;C.closedAt=now;C.rep=Math.max(C.rep,CFG.rep.closureFloor);
+ for(const sh of s.shibas)sh.g.fatigue=0; // 126-3: 집에서 잠, 피로도 0
+ if(w){w.custs=[];w.queue=[];w.sh={};}}
+// 126-2·126-4: opening the app reopens at 평판 30; the 앓아눕기·방치 clocks did not run while closed
+export function reopenCafe(s,now){const C=s.cafe;if(!C.closed)return null;const gap=Math.max(0,now-C.closedAt);
+ for(const sh of s.shibas){if(sh.zeroSince!=null)sh.zeroSince+=gap;if(sh.sickSince!=null)sh.sickSince+=gap;}
+ C.closed=false;C.closedAt=null;C.rep=CFG.rep.closureFloor;return {gapSec:gap/1000};}
+
+// ───────────────────────── the café floor (runtime world) ─────────────────────────
+export const NPC_NORMAL=['commuter','mom','dad','girl','boykid','grandma','grandpa','coupleman','couplewoman','friend']; // 갱신 51 (진상·부동산 제외)
+export function newWorld(s,r=Math.random){return {r,t:0,custs:[],queue:[],nextCust:1,spawnT:arrivalInterval(s),sh:{},events:[],lastPay:null};}
+function makeRequest(s,w){const T=[];const working=s.shibas.filter(o=>canWork(s,o));
+ if(working.length)T.push('meetShiba');const known=CFG.tricks.filter(t=>working.some(o=>o.tricks[t.id]>0));if(known.length)T.push('seeTrick');
+ if(!T.length)return null;const type=pick(w.r,T);return type==='meetShiba'?{type,shibaId:pick(w.r,working).id}:{type,trick:pick(w.r,known).id};}
+function seat(s,w,c){const used=new Set(w.custs.map(x=>x.seat));let i=0;while(used.has(i))i++;
+ Object.assign(c,{phase:'seated',seat:i,t:CFG.cafe.stayingSec,score:0,met:[],with:null,fulfilled:false,request:makeRequest(s,w)});w.custs.push(c);w.events.push({type:'seat',id:c.id});}
+function spawn(s,w,now){const c={id:w.nextCust++,kind:pick(w.r,NPC_NORMAL)};
+ if(w.custs.length<capOf(s)&&!w.queue.length)seat(s,w,c);
+ else if(w.queue.length<CFG.cafe.queueMax){c.phase='queue';c.t=CFG.cafe.queueWaitSec;w.queue.push(c);w.events.push({type:'queue',id:c.id});}
+ else{s.stats.lost++;w.events.push({type:'lost'});}}
+function startMeeting(s,w,sh,c,ctx){const o=byId(s,sh.id);
+ // 갱신 100: the shiba shows one learned trick — the requested one when it knows it, otherwise a random learned one
+ const learned=CFG.tricks.filter(t=>o.tricks[t.id]>0).map(t=>t.id);const req=c.request;
+ const shown=req&&req.type==='seeTrick'&&learned.includes(req.trick)?req.trick:learned.length?pick(w.r,learned):null;
+ c.score+=meetingScore(o,shown?o.tricks[shown]:0);c.met.push(o.id);c.with=o.id;
+ if(req&&!c.fulfilled&&((req.type==='meetShiba'&&req.shibaId===o.id)||(req.type==='seeTrick'&&shown===req.trick)))c.fulfilled=true;
+ sh.phase='meet';sh.t=CFG.visit.meetSec;sh.cust=c.id;w.events.push({type:'meet',shibaId:o.id,custId:c.id,trick:shown,fulfilled:c.fulfilled});}
+function endMeeting(w,sh){const c=w.custs.find(c=>c.id===sh.cust);if(c&&c.with===sh.id)c.with=null;sh.phase='roam';sh.t=CFG.visit.roamSec;sh.cust=null;}
+function managerCanFulfil(s,c){const q=c.request;if(!q)return false;const working=s.shibas.filter(o=>canWork(s,o));
+ return q.type==='meetShiba'?working.some(o=>o.id===q.shibaId):q.type==='seeTrick'?working.some(o=>o.tricks[q.trick]>0):false;} // 갱신 118: 인테리어·진상 요구는 못 함
+function leave(s,w,c,ctx){const V=CFG.visit,E=CFG.cafeExp;let outcome,repD=0,exp=0,byManager=false;
+ if(c.score<V.scoreDisappointedBelow){outcome='disappointed';repD=CFG.rep.disappointed;exp=E.custDisappointed;}
+ else if(c.fulfilled){outcome='satisfied';repD=satisfiedGain(s.cafe.rep);exp=E.custSatisfied;}
+ else if(managerActive(s,ctx.now)&&managerCanFulfil(s,c)&&w.r()<CFG.requests.managerChance){outcome='satisfied';byManager=true;repD=satisfiedGain(s.cafe.rep,CFG.rep.satisfied*CFG.requests.managerRepMul);exp=0;}
+ else{outcome='normal';repD=CFG.rep.normal;exp=E.custNormal;}
+ const order=chooseOrder(s,outcome==='satisfied',w.r),pay=payFor(s,c.met,order,ctx.now);addCoins(s,pay.total);
+ s.stats.served++;s.stats[outcome]++;addCafeExp(s,exp);w.lastPay={...pay,order:order.id,outcome,met:[...c.met]};
+ w.events.push({type:'leave',id:c.id,outcome,coins:pay.total,order:order.id,byManager,seat:c.seat});if(repD)addRep(s,repD,{...ctx,world:w});}
+// one step of everything that runs with time (online, or fast-forwarded while the app was closed)
+export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};w.t+=dt;const C=s.cafe;
+ if(C.closed){decayGauges(s,dt,true,now);return w;} // 126-3: 휴무 중엔 배고픔만 (속도 UNSET → 변화 없음)
+ const wr=tickWalk(s,now,w.r);if(wr)w.events.push({type:'walk',...wr});
+ tickHealth(s,now);decayGauges(s,dt,false,now);
+ // 얼룩: 배치되어 카페에 있는 시바 1마리당 2시간마다 1개
+ const present=s.shibas.filter(o=>o.placed&&statusOf(s,o)!=='walking').length;const St=CFG.stains;
+ C.stainAcc+=dt*present;while(C.stainAcc>=St.everySecPerShiba){C.stainAcc-=St.everySecPerShiba;C.stains++;w.events.push({type:'stain'});}
+ if(managerActive(s,now)){C.managerCleanAcc+=dt;while(C.managerCleanAcc>=CFG.alba.manager.cleanEverySec){C.managerCleanAcc-=CFG.alba.manager.cleanEverySec;if(C.stains>0)C.stains--;}}else C.managerCleanAcc=0;
+ if(C.stains>=St.badAt){C.badStainAcc+=dt;while(C.badStainAcc>=St.badRepEverySec&&!C.closed){C.badStainAcc-=St.badRepEverySec;addRep(s,St.badRep,{...ctx,world:w});}}else C.badStainAcc=0;
+ if(C.closed)return w;
+ // 갱신 106: 1시간마다 50 쪽으로 1점
+ C.driftAcc+=dt;while(C.driftAcc>=3600){C.driftAcc-=3600;const d=CFG.rep.driftTo-C.rep;if(d)C.rep+=Math.sign(d)*Math.min(Math.abs(d),CFG.rep.driftPerHour);}
+ // customers
+ w.spawnT-=dt;while(w.spawnT<=0){w.spawnT+=arrivalInterval(s);spawn(s,w,now);}
+ for(const c of [...w.queue]){c.t-=dt;if(c.t<=0){w.queue=w.queue.filter(x=>x!==c);s.stats.angry++;w.events.push({type:'angry',id:c.id});addRep(s,CFG.rep.queueAngry,{...ctx,world:w});if(C.closed)return w;}} // 갱신 68·87: 돈은 잃지 않고 평판 −2
+ for(const c of [...w.custs]){c.t-=dt;if(c.t<=0){if(c.with!=null&&w.sh[c.with])endMeeting(w,w.sh[c.with]);w.custs=w.custs.filter(x=>x!==c);leave(s,w,c,ctx);if(C.closed)return w;}}
+ while(w.queue.length&&w.custs.length<capOf(s))seat(s,w,w.queue.shift());
+ // shibas: 갱신 70 손님 곁 7초 → 5초 돌아다님 → 다시 7초
+ const work=new Set(s.shibas.filter(o=>canWork(s,o)).map(o=>o.id));
+ for(const id of Object.keys(w.sh).map(Number))if(!work.has(id)){const sh=w.sh[id];if(sh.phase==='meet')endMeeting(w,sh);delete w.sh[id];}
+ for(const id of work)if(!w.sh[id])w.sh[id]={id,phase:'roam',t:0,cust:null};
+ for(const sh of Object.values(w.sh)){sh.t-=dt;
+  if(sh.phase==='meet'&&sh.t<=0)endMeeting(w,sh);
+  if(sh.phase==='roam'&&sh.t<=0){const free=w.custs.filter(c=>c.with==null);if(free.length){free.sort((a,b)=>a.met.length-b.met.length||a.t-b.t);startMeeting(s,w,sh,free[0],ctx);}}}
  return w;}
+// 갱신 105: a roaming shiba (not with a guest) can be brought straight to a chosen guest → normal 7-second meeting
+export function deliverCheck(s,w,shibaId,custId){const sh=w.sh[shibaId];if(!sh)return 'notWorking';if(sh.phase==='meet')return 'busy';const c=w.custs.find(c=>c.id===custId);if(!c)return 'cust';if(c.with!=null)return 'custBusy';return null;}
+export function deliver(s,w,shibaId,custId,now=Date.now()){if(deliverCheck(s,w,shibaId,custId))return false;startMeeting(s,w,w.sh[shibaId],w.custs.find(c=>c.id===custId),{now});return true;}
+function decayGauges(s,dt,closed,now){const D=CFG.decayPerHour;for(const sh of s.shibas){const placed=sh.placed&&!closed;
+ for(const k of CFG.gauges){if(closed&&k!=='full')continue;const rate=D[k];if(isUnset(rate)||sh.status==='hospital')continue;
+  let m=placed?1:CFG.homeDecayMul;if(k==='dirt'&&placed){if(s.cafe.stains>=CFG.stains.badAt)m*=CFG.stains.badDirtMul;else if(s.cafe.stains>=CFG.stains.warnAt)m*=CFG.stains.warnDirtMul;}
+  const sign=k==='dirt'||k==='fatigue'||k==='boredom'?1:-1;sh.g[k]=clamp(sh.g[k]+sign*rate*m*dt/3600,0,100);}updateZero(sh,now);}}
 
-// ---------- 1.7.1 시바끼리 놀기 (D-13, FEATURES.healingPlay) ----------
-// IDLE → APPROACH (walk to each other, ≤ approachMaxSec) → PLAY (type.dur) → COOLDOWN → IDLE. A guest assignment interrupts at once (half cooldown).
-const P=()=>CFG.healing.play;
-function affinity(a,b){const A=P().affinity,pa=P().personality[a.coat],pb=P().personality[b.coat];return A[pa]?.[pb]??A[pb]?.[pa]??1;}
-function playTypes(w,s,a,b){const out=[];for(const [k,T] of Object.entries(P().types)){if(T.notAt&&T.notAt.includes(w.tod))continue;if(T.needsToy&&!(s.items&&s.items.toy>0))continue;
-  if(k===a.lastPlayType||k===b.lastPlayType)continue;let wt=(T.weightAt&&T.weightAt[w.tod])||1;for(const sh of [a,b])wt*=P().prefer[P().personality[sh.coat]]?.[k]||1;out.push([k,wt]);}return out;}
-export function playIdle(w,s,sh){return (sh.phase==='idle'||sh.phase==='roam')&&sh.cd<=0&&w.t>=(sh.playCdUntil||0)&&canPlay(s,sh.id);}
-export function stepPlay(w,s,dt){if(!CFG.FEATURES.healingPlay)return;const G=w.play,C=P();
- for(const pr of [...G.pairs]){const [a,b]=pr.ids.map(id=>w.shibas.find(x=>x.id===id));if(!a||!b||a.phase!==pr.phase&&!(pr.phase==='approach'&&a.phase==='play')){endPair(w,pr,1);continue;}
-  if(pr.phase==='approach'){let done=true;for(const [sh,tg] of [[a,pr.ta],[b,pr.tb]]){const px=sh.x,pz=sh.z;if(!moveTo(sh,tg,CFG.roam.speed,dt))done=false;if(sh.x!==px||sh.z!==pz)sh.heading=Math.atan2(sh.x-px,sh.z-pz);}
-   if(done||w.t-pr.t0>=C.approachMaxSec){pr.phase='play';pr.until=w.t+C.types[pr.type].dur;a.phase=b.phase='play';w.events.push({type:'playStart',ids:pr.ids,play:pr.type,dongu:pr.dongu});}}
-  else if(w.t>=pr.until)endPair(w,pr,1);}
- G.checkT-=dt;if(G.checkT>0)return;G.checkT=C.checkIntervalSec;
- if(G.pairs.length>=C.maxConcurrentPairs||w.t<G.globalCdUntil)return;
- const free=w.shibas.filter(sh=>playIdle(w,s,sh)),cands=[];
- for(let i=0;i<free.length;i++)for(let j=i+1;j<free.length;j++)if(dist(free[i],free[j])<=C.pairRadius)cands.push([free[i],free[j]]);
- if(!cands.length)return; // a single shiba never plays
- const [a,b]=cands[Math.floor(w.r()*cands.length)];if(!(w.r()<C.pairChance*affinity(a,b)))return;
- const types=playTypes(w,s,a,b);if(!types.length)return;let x=w.r()*types.reduce((t,[,v])=>t+v,0),type=types[0][0];for(const [k,v] of types){if((x-=v)<0){type=k;break;}}
- const mid={x:(a.x+b.x)/2,z:(a.z+b.z)/2},off=.28,dongu=(type==='sitTogether'||type==='napLean')&&w.r()<C.donguJoinChance;
- G.pairs.push({ids:[a.id,b.id],type,phase:'approach',t0:w.t,ta:{x:mid.x-off,z:mid.z},tb:{x:mid.x+off,z:mid.z},dongu});a.phase=b.phase='approach';}
-function endPair(w,pr,cdMul){const C=P();w.play.pairs=w.play.pairs.filter(p=>p!==pr);w.play.globalCdUntil=w.t+C.globalCooldownSec*cdMul;
- for(const id of pr.ids){const sh=w.shibas.find(x=>x.id===id);if(!sh)continue;sh.playCdUntil=w.t+C.personalCooldownSec*cdMul;sh.lastPlayType=pr.type;if(sh.phase==='approach'||sh.phase==='play'){sh.phase='idle';sh.t=0;}}}
-export function interruptPlay(w,sh){const pr=w.play.pairs.find(p=>p.ids.includes(sh.id));if(pr){endPair(w,pr,.5);w.events.push({type:'playInterrupt',id:sh.id});}}
-// tapping a playing shiba gives a small heart reward; the play goes on
-export function tapPlay(w,s,id){const sh=w.shibas.find(x=>x.id===id);if(!CFG.FEATURES.healingPlay||!sh||sh.phase!=='play')return 0;s.hearts+=P().heartOnTap;return P().heartOnTap;}
+// fast-forward from `from` to `to` (both ms). Café income runs for at most offline.capHours (갱신 56); timed things (walk end, hospital,
+// hearts) still settle at `to`. `offline` turns on the 임시휴무 rule (126).
+export function fastForward(s,w,from,to,{offline=true}={}){const step=CFG.offline.stepSec,end=Math.min(to,from+CFG.offline.capHours*H);
+ const c0=s.coins+s.coinFrac,r0=s.cafe.rep,st0={...s.stats};let t=from;
+ while(t<end&&!s.cafe.closed){const dt=Math.min(step,(end-t)/1000);t+=dt*1000;tick(s,w,dt,t,{offline});w.events.length=0;}
+ if(t<to){if(s.walk)tickWalk(s,to,w.r);if(s.cafe.closed)releaseHospital(s,to);else tickHealth(s,to);} // 126-4: 휴무 중엔 앓아눕기·방치 시계가 멈춤
+ settleHearts(s,to);
+ return {sec:Math.round((to-from)/1000),simSec:Math.round((Math.min(t,end)-from)/1000),coins:Math.floor(s.coins+s.coinFrac-c0),repFrom:r0,repTo:s.cafe.rep,
+  served:s.stats.served-st0.served,closed:s.cafe.closed,closedAt:s.cafe.closedAt};}
+
+// ───────────────────────── save / load ─────────────────────────
+export function save(storage,s,now=Date.now()){s.lastSeen=now;storage.setItem(CFG.saveKey,JSON.stringify(s));}
+// v3 uses its own save key; v1/v2 saves (grades, old currencies) are left untouched and not migrated (spec v3 abolished their model).
+export function load(storage,now=Date.now(),r=Math.random){let s=null;try{s=JSON.parse(storage.getItem(CFG.saveKey));}catch{}
+ if(!s||s.v!==CFG.saveVersion)return {state:newState(now),fresh:true,offline:null,reopened:null};
+ const d=newState(now);s={...d,...s,items:{...d.items,...s.items},cafe:{...d.cafe,...s.cafe},stats:{...d.stats,...s.stats},settings:{...d.settings,...s.settings}};
+ let offline=null;if(s.started&&now>s.lastSeen){const w=newWorld(s,r);offline=fastForward(s,w,s.lastSeen,now,{offline:true});}
+ const reopened=reopenCafe(s,now);s.lastSeen=now;return {state:s,fresh:false,offline,reopened};}
+
+// ───────────────────────── UNSET-gated features (stubs) ─────────────────────────
+export function gachaCheck(){const G=CFG.gacha;if(isUnset(G.startLevel)||isUnset(G.breedOdds))return 'unset';return 'payment';} // 다이아는 유료 전용(132-2), 결제 미연결
+export function slotUnlockCheck(){return isUnset(CFG.cafe.paidSlotUnlockDia)?'unset':'payment';}
+export const regularsCheck=()=>isUnset(CFG.stub.regulars.population)?'unset':'stub'; // 갱신 102·108·122: '같은 손님' 개체 수 UNSET
+// 갱신 116 potions (bought with 다이아 only — stub shop); using one you own works
+export function usePotion(s,id,kind,gauge,now=Date.now()){const sh=byId(s,id),k=kind==='big'?'potionBig':'potionSmall';if(!sh||!(s.items[k]>0))return false;
+ if(kind==='big'){Object.assign(sh.g,CFG.gaugeFull);}else{if(!CFG.gauges.includes(gauge))return false;sh.g[gauge]=CFG.gaugeFull[gauge];}
+ s.items[k]--;updateZero(sh,now);return true;} // 116 보완: 지능·재주·친밀도·레벨에는 영향 없음
