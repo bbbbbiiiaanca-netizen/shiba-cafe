@@ -5,6 +5,11 @@ import {CFG,pressureAt,isUnset} from './config.js';
 export function rng(seed=1){let a=seed>>>0||1;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const pick=(r,arr)=>arr[Math.floor(r()*arr.length)];
+// weighted draw from {key:weight}; only used once the spec gives the odds (UNSET odds → the draw is gated, never equal odds)
+function pickWeighted(r,keys,odds){let x=r()*keys.reduce((a,k)=>a+(odds[k]||0),0);for(const k of keys){x-=odds[k]||0;if(x<0)return k;}return keys.at(-1);}
+// 1.2 / 갱신 38: personality is drawn at adoption — gated while 질문 9(다) odds are UNSET (personality stays null = 미정)
+export const personalityOddsSet=()=>!isUnset(CFG.personalityOdds);
+const drawPersonality=r=>personalityOddsSet()?pickWeighted(r,CFG.personalities,CFG.personalityOdds):null;
 const H=3600e3;
 
 // ───────────────────────── state ─────────────────────────
@@ -21,7 +26,7 @@ export function newState(now=Date.now()){
 export function makeShiba(s,{breed,level=1,name=null,tricks={},r=Math.random,now=Date.now()}){
  const g={...(CFG.gaugeStart??CFG.gaugeFull)}; // UNSET gaugeStart → the 116 full state (START_FALLBACK)
  const tr={},te={};for(const t of CFG.tricks){tr[t.id]=clamp(tricks[t.id]||0,0,CFG.trickMaxLevel);te[t.id]=0;}
- return {id:s.nextId++,breed,name,personality:pick(r,CFG.personalities),level:clamp(level,1,CFG.level.max),paws:0,
+ return {id:s.nextId++,breed,name,personality:drawPersonality(r),level:clamp(level,1,CFG.level.max),paws:0,
   intimacy:CFG.intimacy.start??CFG.intimacy.min,g,tricks:tr,trickExp:te,placed:false,status:'ok',injury:null,hospitalUntil:0,hospitalKind:null,
   zeroSince:null,sickSince:null,cd:{},joinedAt:now,acc:null,accUnlocked:false,likesFound:{snacks:[],toys:[]}};
 }
@@ -190,11 +195,12 @@ export function declineRescue(s,rid){const n=s.rescues.length;s.rescues=s.rescue
 // ───────────────────────── 시바뽑기 (갱신 137·81·82) ─────────────────────────
 // n = 1 (100다이아 또는 뽑기권 1장) or 10 (900다이아). 견종 4종; 이미 가진 견종이면 그 견종의 가장 먼저 온 시바에게 발바닥 10개.
 export const gachaPrice=n=>n===CFG.gacha.tenCount?CFG.gacha.tenDia:n===1?CFG.gacha.priceDia:null;
-export function gachaCheck(s,n=1,{ticket=false}={}){if(!s.started)return 'pick';if(ticket){if(n!==1)return 'count';if(!(s.items.capsule>0))return 'ticket';}
+export const gachaOddsSet=()=>!isUnset(CFG.gacha.breedOdds);
+export function gachaCheck(s,n=1,{ticket=false}={}){if(!s.started)return 'pick';if(!gachaOddsSet())return 'odds'; // UNSET 질문 9(바) 확률표 → 뽑기 비활성
+ if(ticket){if(n!==1)return 'count';if(!(s.items.capsule>0))return 'ticket';}
  else{const p=gachaPrice(n);if(p==null)return 'count';if(s.dia<p)return 'dia';}
  if(s.shibas.length>=CFG.cafe.maxOwned&&CFG.breeds.some(b=>!s.shibas.some(o=>o.breed===b)))return 'owned';return null;}
-function pickBreed(r){const O=CFG.gacha.breedOdds;if(isUnset(O))return pick(r,CFG.breeds); // UNSET 확률표 → 균등
- let x=r()*CFG.breeds.reduce((a,b)=>a+O[b],0);for(const b of CFG.breeds){x-=O[b];if(x<0)return b;}return CFG.breeds.at(-1);}
+const pickBreed=r=>pickWeighted(r,CFG.breeds,CFG.gacha.breedOdds); // gachaCheck guarantees the odds are set
 export function gachaPull(s,n=1,r=Math.random,now=Date.now(),{ticket=false}={}){if(gachaCheck(s,n,{ticket}))return null;
  if(ticket)s.items.capsule--;else s.dia-=gachaPrice(n);const out=[];
  for(let i=0;i<n;i++){const breed=pickBreed(r),own=s.shibas.find(o=>o.breed===breed);

@@ -12,6 +12,10 @@ const near=(a,b,eps=1e-9,msg)=>assert.ok(Math.abs(a-b)<=eps,`${msg||''} ${a} ≉
 const freshGame=(breed='red',now=0,seed=1)=>{const r=S.rng(seed),s=S.newState(now);S.chooseStart(s,breed,'',r,now);return {s,r,sh:s.shibas[0],w:S.newWorld(s,r)};};
 // scripted RNG: returns the given values in order, then `rest`
 const script=(vals,rest=.99)=>{let i=0;return()=>i<vals.length?vals[i++]:rest;};
+// temporarily set config values (e.g. odds the spec has not decided) and restore them afterwards
+const withCfg=(obj,patch,fn)=>{const bak={};for(const k in patch){bak[k]=obj[k];obj[k]=patch[k];}try{return fn();}finally{Object.assign(obj,bak);}};
+const TEST_ODDS={red:1,sesame:1,kuro:1,white:1}; // test fixture only — the spec's gacha odds are UNSET (질문 9(바))
+const gachaOn=fn=>withCfg(CFG.gacha,{breedOdds:TEST_ODDS},fn);
 const run=(s,w,sec,t0=0,dt=.5)=>{let t=t0;const ev=[];for(let k=0;k<sec/dt;k++){t+=dt*1000;S.tick(s,w,dt,t);ev.push(...w.events.splice(0));}return {t,ev};};
 
 // ───────── spec numbers used (config ↔ spec) ─────────
@@ -56,7 +60,7 @@ test('intelligence = sum of trick steps × 4, capped at 100 (133)',()=>{const {s
  CFG.tricks.push({id:'extra'});sh.tricks.extra=5;try{assert.equal(S.intelligence(sh),100);}finally{CFG.tricks.pop();}});
 test('139-5·139-6: one accessory slot per shiba (no Lv5/15/25 slots); only the starting shiba has it open',()=>{const {s,r,sh}=freshGame();
  assert.equal(CFG.accessory.slots,1);assert.equal(CFG.accessorySlots,undefined);assert.ok(sh.accUnlocked&&sh.starter);
- s.items.capsule=1;s.dia=0;const res=S.gachaPull(s,1,()=>.3,0,{ticket:true})[0];const n=S.byId(s,res.id);assert.equal(n.accUnlocked,false);assert.ok(!n.starter);
+ s.items.capsule=1;s.dia=0;const res=gachaOn(()=>S.gachaPull(s,1,()=>.3,0,{ticket:true}))[0];const n=S.byId(s,res.id);assert.equal(n.accUnlocked,false);assert.ok(!n.starter);
  n.level=30;assert.equal(n.accUnlocked,false,'levels do not open slots');});
 test('139-5: unlock costs that shiba\'s 1,000 paws or 1,000 diamonds; paws used are no longer there for level-ups',()=>{const {s,sh}=freshGame();s.dia=0;
  const n=S.makeShiba(s,{breed:'kuro',level:1});s.shibas.push(n);assert.equal(CFG.accessory.unlockPaws,1000);assert.equal(CFG.accessory.unlockDia,1000);
@@ -246,19 +250,27 @@ test('136: development finishes while the app is closed (offline fast-forward, a
  const b=S.load(st,49*H,S.rng(2)).state;assert.ok(b.menus.includes('P-06'));assert.equal(b.menuDev,null);});
 
 // ───────── 갱신 137 시바뽑기 ─────────
-test('137: gacha 100 diamonds per pull, 900 for 10 (10% off); not enough diamonds → refused',()=>{const {s}=freshGame();
+test('137: gacha 100 diamonds per pull, 900 for 10 (10% off); not enough diamonds → refused',()=>gachaOn(()=>{const {s}=freshGame();
  assert.deepEqual([CFG.gacha.priceDia,CFG.gacha.tenDia,CFG.gacha.tenCount,CFG.gacha.dupPaws],[100,900,10,10]);assert.equal(S.gachaPrice(1),100);assert.equal(S.gachaPrice(10),900);assert.equal(S.gachaPrice(5),null);
  s.dia=99;assert.equal(S.gachaCheck(s,1),'dia');assert.equal(S.gachaPull(s,1,S.rng(1),0),null);assert.equal(s.dia,99);
- s.dia=1000;assert.equal(S.gachaPull(s,10,S.rng(1),0).length,10);assert.equal(s.dia,100);assert.equal(S.gachaPull(s,1,S.rng(2),0).length,1);assert.equal(s.dia,0);});
-test('137 + 81: new breed → new Lv1 shiba (no random level); owned breed → 10 paws to that breed\'s first shiba, no new shiba',()=>{const {s,sh}=freshGame('red');s.dia=100;
+ s.dia=1000;assert.equal(S.gachaPull(s,10,S.rng(1),0).length,10);assert.equal(s.dia,100);assert.equal(S.gachaPull(s,1,S.rng(2),0).length,1);assert.equal(s.dia,0);}));
+test('137 + 81: new breed → new Lv1 shiba (no random level); owned breed → 10 paws to that breed\'s first shiba, no new shiba',()=>gachaOn(()=>{const {s,sh}=freshGame('red');s.dia=100;
  const p0=sh.paws;const dupRes=S.gachaPull(s,1,()=>0,0);assert.deepEqual(dupRes,[{breed:'red',dup:true,toId:sh.id,paws:10}]);assert.equal(sh.paws,p0+10);assert.equal(s.shibas.length,1);
  s.dia=100;const nw=S.gachaPull(s,1,()=>.3,0)[0];assert.equal(nw.dup,false);assert.equal(nw.breed,'sesame');const n=S.byId(s,nw.id);assert.equal(n.level,1);assert.ok(n.placed,'placed when a slot is free');
- assert.equal(s.shibas.length,2);});
-test('137: 4 breeds only, equal odds while the odds table is UNSET; 10-pull from 4 owned breeds = 100 paws, no new shibas',()=>{const {s}=freshGame('red');s.dia=1e7;const r=S.rng(5),cnt={};
- for(let i=0;i<4000;i++)for(const x of S.gachaPull(s,1,r,0))cnt[x.breed]=(cnt[x.breed]||0)+1;assert.deepEqual(Object.keys(cnt).sort(),[...CFG.breeds].sort());for(const b of CFG.breeds)near(cnt[b]/4000,.25,.03,b);
- assert.equal(CFG.gacha.breedOdds,null);assert.equal(s.shibas.length,4);const before=s.shibas.reduce((a,o)=>a+o.paws,0);S.gachaPull(s,10,r,0);assert.equal(s.shibas.reduce((a,o)=>a+o.paws,0)-before,100);assert.equal(s.shibas.length,4);});
-test('137 + 82: a capsule ticket from walks = one free pull',()=>{const {s}=freshGame();assert.equal(S.gachaCheck(s,1,{ticket:true}),'ticket');s.items.capsule=1;
- assert.equal(S.gachaCheck(s,10,{ticket:true}),'count');assert.equal(S.gachaPull(s,1,S.rng(1),0,{ticket:true}).length,1);assert.equal(s.items.capsule,0);assert.equal(s.dia,0);});
+ assert.equal(s.shibas.length,2);}));
+test('137: 4 breeds only, draws follow the configured odds table; 10-pull from 4 owned breeds = 100 paws, no new shibas',()=>{const {s}=freshGame('red');s.dia=1e7;const r=S.rng(5),cnt={};
+ withCfg(CFG.gacha,{breedOdds:{red:1,sesame:3,kuro:0,white:0}},()=>{for(let i=0;i<4000;i++)for(const x of S.gachaPull(s,1,r,0))cnt[x.breed]=(cnt[x.breed]||0)+1;});
+ assert.deepEqual(Object.keys(cnt).sort(),['red','sesame']);near(cnt.sesame/4000,.75,.03,'sesame');
+ gachaOn(()=>{for(let i=0;i<200;i++)S.gachaPull(s,1,r,0);assert.equal(s.shibas.length,4);const before=s.shibas.reduce((a,o)=>a+o.paws,0);S.gachaPull(s,10,r,0);assert.equal(s.shibas.reduce((a,o)=>a+o.paws,0)-before,100);assert.equal(s.shibas.length,4);});});
+test('137 + 82: a capsule ticket from walks = one free pull',()=>gachaOn(()=>{const {s}=freshGame();assert.equal(S.gachaCheck(s,1,{ticket:true}),'ticket');s.items.capsule=1;
+ assert.equal(S.gachaCheck(s,10,{ticket:true}),'count');assert.equal(S.gachaPull(s,1,S.rng(1),0,{ticket:true}).length,1);assert.equal(s.items.capsule,0);assert.equal(s.dia,0);}));
+// red-team #1: UNSET odds must never become equal odds
+test('red-team #1: gacha odds UNSET (질문 9(바)) → every pull gated with \'odds\', nothing spent, no shiba',()=>{const {s}=freshGame();assert.equal(CFG.gacha.breedOdds,null);assert.equal(S.gachaOddsSet(),false);
+ s.dia=10000;s.items.capsule=3;for(const [n,o] of [[1,{}],[10,{}],[1,{ticket:true}]]){assert.equal(S.gachaCheck(s,n,o),'odds');assert.equal(S.gachaPull(s,n,S.rng(1),0,o),null);}
+ assert.equal(s.dia,10000);assert.equal(s.items.capsule,3);assert.equal(s.shibas.length,1);});
+test('red-team #1: personality odds UNSET (질문 9(다)) → no personality is drawn (start and rescue); set odds are followed',()=>{assert.equal(CFG.personalityOdds,null);assert.equal(S.personalityOddsSet(),false);
+ const {s,sh}=freshGame();assert.equal(sh.personality,null);s.coins=1e6;s.rescues.push({rid:'x',foundAt:0,breed:'kuro',pic:0,bathed:false});assert.ok(S.bathRescue(s,'x'));const n=S.bringRescue(s,'x',S.rng(1),0);assert.ok(n,'rescue still works');assert.equal(n.personality,null);
+ withCfg(CFG,{personalityOdds:{foodie:1}},()=>{const g=freshGame('red',0,3);assert.equal(g.sh.personality,'foodie');});});
 
 // ───────── 갱신 139-1·139-2 활동 발바닥 ─────────
 test('139-1: walk 2, play 1, trick step done 3 (failures and partial reps give none), no daily cap',()=>{const {s,sh}=freshGame();s.hearts=999;
@@ -319,7 +331,7 @@ test('UNSET features are disabled: paid slot, regulars, walk stop, rescue level 
  for(const [k,v] of Object.entries(CFG.decayPerHour))assert.equal(v,null,k);for(const k of ['feed','snack','bath','sleep'])assert.ok(Object.values(CFG.care[k]).every(v=>v===null),k);});
 test('potions (116): big fills all gauges, small one gauge; no effect on tricks/intimacy/level',()=>{const {s,sh}=freshGame();Object.assign(sh.g,{full:10,dirt:90,fatigue:90,happy:10,boredom:90});s.items.potionSmall=1;s.items.potionBig=1;
  assert.ok(S.usePotion(s,sh.id,'small','dirt'));assert.equal(sh.g.dirt,0);assert.equal(sh.g.full,10);assert.ok(S.usePotion(s,sh.id,'big'));assert.deepEqual(sh.g,CFG.gaugeFull);assert.equal(sh.level,21);assert.equal(S.intelligence(sh),24);});
-test('start: choose 1 of 4 breeds, Lv21, 앉아·기다려 3 (109·90·100); personality from 15 (38·52)',()=>{for(const b of CFG.breeds){const {sh}=freshGame(b);assert.equal(sh.breed,b);assert.equal(sh.level,21);assert.deepEqual([sh.tricks.sit,sh.tricks.wait,sh.tricks.paw],[3,3,0]);assert.ok(CFG.personalities.includes(sh.personality));}
+test('start: choose 1 of 4 breeds, Lv21, 앉아·기다려 3 (109·90·100); 15 personalities listed (38·52), not drawn while odds UNSET',()=>{for(const b of CFG.breeds){const {sh}=freshGame(b);assert.equal(sh.breed,b);assert.equal(sh.level,21);assert.deepEqual([sh.tricks.sit,sh.tricks.wait,sh.tricks.paw],[3,3,0]);assert.equal(sh.personality,null);}
  assert.equal(CFG.personalities.length,15);const s=S.newState(0);assert.equal(S.chooseStart(s,'rare_red','',Math.random,0),null);});
 
 for(const [n,e] of fails)console.log('  FAIL',n,'\n       ',String(e.message).split('\n').slice(0,4).join('\n        '));

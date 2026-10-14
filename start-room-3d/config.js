@@ -94,7 +94,8 @@ export const CFG={
 
  // ── 시바 ──
  breeds:['red','sesame','kuro','white'], // 1.2 기본 4종 (레어 4종 ⏸️ 보류)
- personalities:['prankster','shy','tomboy','sweet','mopey','lazy','curious','boss','peopleLover','dogLover','tomgirl','zoomies','fighter','foodie','walkLover'], // 1.2 13개 + 갱신 52 먹보·산책광 = 15. 확률: 균등(성격별 확률 UNSET: 질문 9(다))
+ personalities:['prankster','shy','tomboy','sweet','mopey','lazy','curious','boss','peopleLover','dogLover','tomgirl','zoomies','fighter','foodie','walkLover'], // 1.2 13개 + 갱신 52 먹보·산책광 = 15
+ personalityOdds:U, // UNSET: 질문 9(다) '성격별 확률은 모두 같나요?' → 성격을 뽑지 않음(시바의 성격 = 미정, 화면 '확률 미정'). {id:weight} 로 채우면 입양 때 뽑음
  level:{max:30,pawsPerLevel:20,dupPaws:10, // 갱신 138: Lv N→N+1 발바닥 20×N (81의 10×N 대체, 누적 8,700) · 81: 중복 1마리당 10
   incomePerLevel:.05}, // 갱신 81: ×(1 + 0.05×(레벨−1))
  // 갱신 139-1·139-2 활동 발바닥 (시바 개인, 하루 최대 없음). 알바가 대신한 활동도 똑같이, 매니저 운영 시간도 카페 근무
@@ -181,7 +182,7 @@ export const CFG={
   startLevel:1, // 갱신 137 '레벨이 랜덤으로 나오는 방식은 쓰지 않는다' + 138 'Lv1→30 = 중복 870마리' → 새 시바 Lv1 (notes 참고)
   dupPaws:10, // 갱신 137·81: 이미 가진 견종이 또 나오면 발바닥 10개 (레벨업 재료)
   priceCoins:U, // UNSET: 갱신 57 멍코인 뽑기 가격 → 멍코인 뽑기 없음
-  breedOdds:U, // UNSET: 질문 9(바) 4종 확률표 → 균등(1/4)으로 뽑음 (notes 참고)
+  breedOdds:U, // UNSET: 질문 9(바) 가챠 확률표 → 뽑기 비활성(버튼 '확률 미정'). {red:w,sesame:w,kuro:w,white:w} 로 채우면 열림
   video:'drive-images/영상/media-generation-gacha-reveal-video-v7-with-sfx.mp4'}, // not copied: 뽑기 disabled
 
  // ── stubs: confirmed systems outside the core, kept as config only ──
