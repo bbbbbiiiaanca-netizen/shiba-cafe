@@ -296,17 +296,17 @@ test('140: bandana sheets are byte-identical copies of the Drive ITEM images',()
   'bandana-frontknot-single.webp':'앞 매듭형.webp','bandana-chart-yellowgreen.webp':'옐로그린 차트.webp','bandana-chart-warm.webp':'웜 차트.webp'};
  const h=f=>createHash('sha256').update(readFileSync(f)).digest('hex');for(const f of Object.values(CFG.accessory.bandana.sheet))assert.ok(map[f],f);
  for(const [a,b] of Object.entries(map)){const here=join(ROOT,'assets/drive',a);assert.ok(existsSync(here),a);if(existsSync(src+b))assert.equal(h(here),h(src+b),a);}});
-test('140: buying costs 5,000멍 and adds one to the bag; not enough coins → refused',()=>{const {s}=freshGame();const id='bandana-loop-navy';
+test('140: buying costs 5,000멍 and adds one to the bag; not enough coins → refused',()=>{const {s}=freshGame();const id='bandana-loop-cell6';
  s.coins=4999;assert.equal(S.buyAccCheck(s,id),'coins');assert.equal(S.buyAcc(s,id),false);s.coins=10000;assert.ok(S.buyAcc(s,id));assert.ok(S.buyAcc(s,id));assert.equal(s.coins,0);assert.equal(s.accInv[id],2);});
-test('139-6 + 140: the starting shiba starts wearing one accessory (UNSET which → first item); bought items fit only unlocked slots',()=>{const {s,sh}=freshGame();
- assert.equal(sh.acc,'bandana-triangle-red');assert.equal(S.accOwned(s,'bandana-triangle-red'),1);
- const n=S.makeShiba(s,{breed:'kuro',level:1});s.shibas.push(n);s.coins=5000;S.buyAcc(s,'bandana-loop-blue');assert.equal(S.equipCheck(s,n.id,'bandana-loop-blue'),'slot');
- n.paws=1000;S.unlockAccSlot(s,n.id,'paws');assert.ok(S.equipAcc(s,n.id,'bandana-loop-blue'));assert.equal(n.acc,'bandana-loop-blue');assert.equal(s.accInv['bandana-loop-blue'],0);});
+test('139-6 + 140: the starting shiba starts wearing one accessory (UNSET which → PENDING_CONFIRM cell1); bought items fit only unlocked slots',()=>{const {s,sh}=freshGame();
+ assert.equal(sh.acc,'bandana-triangle-cell1');assert.equal(S.accOwned(s,'bandana-triangle-cell1'),1);
+ const n=S.makeShiba(s,{breed:'kuro',level:1});s.shibas.push(n);s.coins=5000;S.buyAcc(s,'bandana-loop-cell2');assert.equal(S.equipCheck(s,n.id,'bandana-loop-cell2'),'slot');
+ n.paws=1000;S.unlockAccSlot(s,n.id,'paws');assert.ok(S.equipAcc(s,n.id,'bandana-loop-cell2'));assert.equal(n.acc,'bandana-loop-cell2');assert.equal(s.accInv['bandana-loop-cell2'],0);});
 test('140-1: one item = one shiba at a time; to move it, take it off first; swapping returns the old one to the bag; counts tracked',()=>{const {s,sh}=freshGame();
- const n=S.makeShiba(s,{breed:'white',level:1});n.accUnlocked=true;s.shibas.push(n);s.coins=5000;const id='bandana-frontKnot-yellow';S.buyAcc(s,id);
- assert.ok(S.equipAcc(s,sh.id,id));assert.equal(s.accInv['bandana-triangle-red'],1,'old one back to the bag');assert.equal(S.equipCheck(s,n.id,id),'none','already worn by another shiba');
+ const n=S.makeShiba(s,{breed:'white',level:1});n.accUnlocked=true;s.shibas.push(n);s.coins=5000;const id='bandana-frontKnot-cell4';S.buyAcc(s,id);
+ assert.ok(S.equipAcc(s,sh.id,id));assert.equal(s.accInv['bandana-triangle-cell1'],1,'old one back to the bag');assert.equal(S.equipCheck(s,n.id,id),'none','already worn by another shiba');
  assert.deepEqual([S.accOwned(s,id),S.accWorn(s,id)],[1,1]);assert.ok(S.unequipAcc(s,sh.id));assert.equal(sh.acc,null);assert.ok(S.equipAcc(s,n.id,id));assert.equal(n.acc,id);
- assert.ok(S.equipAcc(s,sh.id,'bandana-triangle-red'));assert.deepEqual([s.accInv[id],s.accInv['bandana-triangle-red']],[0,0]);
+ assert.ok(S.equipAcc(s,sh.id,'bandana-triangle-cell1'));assert.deepEqual([s.accInv[id],s.accInv['bandana-triangle-cell1']],[0,0]);
  s.coins=5000;S.buyAcc(s,id);assert.equal(S.accOwned(s,id),2,'buy one per shiba');S.abandon(s,n.id,0);assert.equal(s.accInv[id],2,'abandoned shiba\'s accessory returns to the bag');});
 
 // ───────── 갱신 135-2 남은 시간 바로 완료 ─────────
@@ -347,6 +347,12 @@ test('red-team #2: walk extra reward follows pending.walkExtraReward; \'coins\' 
  withCfg(CFG.pending,{walkExtraReward:'coins'},()=>{assert.equal(S.extraRewardKind(),null);o=go();assert.deepEqual(o.ev,[]);assert.equal(o.dc,0);
   withCfg(CFG.walk.events,{extraCoins:7},()=>{o=go();assert.deepEqual(o.ev,['extraCoins']);assert.equal(o.dc,7);});});});
 test('red-team #2: gacha start level UNSET → gated even when odds are set',()=>withCfg(CFG.gacha,{breedOdds:TEST_ODDS},()=>{const {s}=freshGame();s.dia=1000;assert.equal(S.gachaCheck(s,1),'unset');assert.equal(S.gachaPull(s,1,S.rng(1),0),null);assert.equal(s.dia,1000);}));
+
+// red-team #3: bandana colours are neutral sheet-cell ids, no invented names
+test('red-team #3: bandana colour ids are cell1..cell9 (no colour names); old colour-named saves migrate to the same cell',()=>{const B=CFG.accessory.bandana;
+ assert.deepEqual(B.colors,Array.from({length:9},(_,i)=>'cell'+(i+1)));assert.ok(S.bandanaItems().every(x=>/^bandana-\w+-cell[1-9]$/.test(x.id)));assert.equal(CFG.pending.starterAccessory,'bandana-triangle-cell1');
+ const {s}=freshGame();s.shibas[0].acc='bandana-triangle-red';s.accInv={'bandana-loop-teal':2,'bandana-loop-cell9':1};const mem={v:null,getItem(){return this.v;},setItem(k,v){this.v=v;}};S.save(mem,s,0);
+ const L=S.load(mem,0,S.rng(1)).state;assert.equal(L.shibas[0].acc,'bandana-triangle-cell1');assert.deepEqual(L.accInv,{'bandana-loop-cell9':3});});
 
 for(const [n,e] of fails)console.log('  FAIL',n,'\n       ',String(e.message).split('\n').slice(0,4).join('\n        '));
 console.log(`spec-v3: ${pass}/${pass+fails.length} passed`);process.exitCode=fails.length?1:0;

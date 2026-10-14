@@ -335,6 +335,9 @@ export function load(storage,now=Date.now(),r=Math.random){let s=null;try{s=JSON
  if(!s||s.v!==CFG.saveVersion)return {state:newState(now),fresh:true,offline:null,reopened:null};
  const d=newState(now);s={...d,...s,items:{...d.items,...s.items},cafe:{...d.cafe,...s.cafe},stats:{...d.stats,...s.stats},settings:{...d.settings,...s.settings}};
  s.menus=(s.menus||[]).filter(id=>menuItem(id));if(s.menuDev&&!menuItem(s.menuDev.id))s.menuDev=null;
+ // older v3 saves: bandana ids named after guessed colours → neutral sheet-cell ids (same position)
+ const B=CFG.accessory.bandana,cellId=id=>{const m=/^bandana-(\w+)-(\w+)$/.exec(id||'');const i=m?B.legacyColorIds.indexOf(m[2]):-1;return i<0?id:`bandana-${m[1]}-${B.colors[i]}`;};
+ const inv={};for(const [k,n] of Object.entries(s.accInv||{})){const k2=cellId(k);inv[k2]=(inv[k2]||0)+n;}s.accInv=inv;for(const sh of s.shibas)if(sh.acc)sh.acc=cellId(sh.acc);
  // older v3 saves: 90's level slots → 139-6 one slot (the first shiba is the starter)
  for(const sh of s.shibas){if(!('accUnlocked' in sh)){sh.starter=sh.id===Math.min(...s.shibas.map(o=>o.id));sh.accUnlocked=sh.starter;sh.acc=sh.starter?starterItem():null;delete sh.accessories;}}let offline=null;if(s.started&&now>s.lastSeen){const w=newWorld(s,r);offline=fastForward(s,w,s.lastSeen,now,{offline:true});}
  const reopened=reopenCafe(s,now);s.lastSeen=now;return {state:s,fresh:false,offline,reopened};}

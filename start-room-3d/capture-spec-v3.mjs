@@ -42,7 +42,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev('window.__bak=JSON.stringify({l:__game.state.cafe.level,c:__game.state.coins,m:__game.state.menus,d:__game.state.dia,inv:__game.state.accInv,sh:__game.state.shibas.map(o=>[o.acc,o.accUnlocked,o.paws])});__game.state.cafe.level=20;__game.state.coins=100000;__game.state.dia=50;__game.state.menus=["M-05"];__game.refresh();true');
  await click('[data-act=dev][data-id=M-02]');await ev('__game.advance(7*60e3);true');await shot('12b-shop-menu-dev-in-progress.png');
  // 액세서리 상점 (갱신 140·140-1): 2 bought (staged coins above), loop tab open
- await click('[data-act=accType][data-type=loop]');await click('[data-act=buyAcc][data-item=bandana-loop-teal]');await click('[data-act=buyAcc][data-item=bandana-loop-pink]');
+ await click('[data-act=accType][data-type=loop]');await click('[data-act=buyAcc][data-item=bandana-loop-cell9]');await click('[data-act=buyAcc][data-item=bandana-loop-cell5]');
  await ev('document.querySelector("[data-accshop]").scrollIntoView();true');await shot('12c-shop-accessories.png');
  // 시바뽑기 (갱신 137): staged 100 다이아 → 1 pull result card
  await ev('__game.state.dia=100;__game.refresh();document.querySelector("[data-gacha]").scrollIntoView();true');await shot('12d-shop-gacha.png');

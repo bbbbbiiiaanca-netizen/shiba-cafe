@@ -29,7 +29,7 @@ export const CFG={
   intimacyStart:0, // spec key intimacy.start is UNSET: 친밀도 0~100 (갱신 82·90) has no start value, yet every shiba stores one → 0 = range minimum.
   gaugeStart:{full:100,dirt:0,fatigue:0,happy:100,boredom:0}, // spec key gaugeStart is UNSET (1.2-3 asks it): every shiba stores 5 gauges → 갱신 116 멍포션 '가득' state.
   rescueLevel:1, // spec key rescueLevel is UNSET (질문 9(사)): bringing a rescue home (1.10.1, 갱신 65·66) creates a shiba that needs a level → 1 = level minimum (81).
-  starterAccessory:'bandana-triangle-red', // spec key accessory.starterItem is UNSET: 139-6 gives the first shiba 1 accessory but not which → first item of the 140 list.
+  starterAccessory:'bandana-triangle-cell1', // spec key accessory.starterItem is UNSET: 139-6 gives the first shiba 1 accessory but not which → first item of the 140 list.
   walkExtraReward:'heart', // 갱신 82 extra reward = '멍코인 소량 또는 하트 1' — which of the two is not said and the 멍코인 amount is UNSET (walk.events.extraCoins),
                            // but the 1/2 roll is confirmed and needs an outcome → 'heart' (하트 1, the only option with a number). 'coins' is rejected while extraCoins is UNSET.
  },
@@ -122,7 +122,9 @@ export const CFG={
   // 갱신 140 액세서리 상점 · 140-1 액세서리 1개 = 한 번에 시바 1마리 (시바 수만큼 따로 사고, 옮기려면 벗김)
   bandana:{priceCoins:5000, // 140: 무료템 반다나 4종(F p11) × 원색 9색, 1개 5,000멍
    types:['triangle','loop','knotTail','frontKnot'], // 1.5 / F p11: 클래식 삼각형, 루프 스누드형, 매듭 테일형, 앞 매듭형
-   colors:['red','blue','green','yellow','pink','navy','orange','purple','teal'], // 원색 9색 — 이름은 그림(3×3 시트, 왼쪽 위부터)을 보고 붙임
+   // 원색 9색 (1.5·140): 색 이름·순서는 정해지지 않음 → 시트 칸 번호만 씀 (3×3, 왼쪽 위부터 cell1..cell9). 이름이 정해지면 i18n acc.color.<id>만 바꿈
+   colors:['cell1','cell2','cell3','cell4','cell5','cell6','cell7','cell8','cell9'],
+   legacyColorIds:['red','blue','green','yellow','pink','navy','orange','purple','teal'], // 이전 v3 저장의 id (같은 순서 = 같은 칸) → 불러올 때 cellN으로 바꿈
    sheet:{triangle:'bandana-triangle-sheet.webp',loop:'bandana-loop-sheet.webp',knotTail:'bandana-knottail-sheet.webp',frontKnot:'bandana-frontknot-sheet.webp'},
    grid:[3,3]}, // 시트 1장 = 3×3, 색 1개 = 칸 1개 (CSS 영역 표시만, 그림은 그대로)
   special:{priceDia:300,items:U}}, // 140: 유료템 특별 액세서리 1개 300다이아(3,000원) · UNSET: 종류·디자인(그림 없음) → 빈 칸
