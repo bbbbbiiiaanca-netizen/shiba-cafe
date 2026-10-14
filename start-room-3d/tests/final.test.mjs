@@ -48,7 +48,7 @@ console.log('Starter modal: breed + bandana gating, selection refresh, chosen Lv
 // Production cache must react to multiplier edits within the same clock second.
 const menuNodes={paws:{parentElement:{}},menuList:{classList:{add(){}},innerHTML:'',querySelector(){return null;}},heading:{innerHTML:''}};
 const menuState=S.newState(0);menuState.items.expBoost4h=1;menuState.items.incomeBoost4h=1;
-const menuContext={s:menuState,w:{custs:[],queue:[],recent:[]},ui:{seen:{}},CFG,S,iso:{edit:false},clock:{now:()=>0},renderTabs(){},fmt:String,$:id=>menuNodes[id],itemIcon:()=>'',document:{querySelector:()=>menuNodes.heading}};
+const menuContext={s:menuState,w:{custs:[],queue:[],recent:[]},ui:{seen:{}},CFG,S,iso:{edit:false},clock:{now:()=>0},renderTabs(){},fmt:String,$:id=>menuNodes[id],itemIcon:()=>'',ITEM_FX:(await import('../effects.js')).ITEM_FX,document:{querySelector:()=>menuNodes.heading}};
 const consumablesSource=mainSource.slice(mainSource.indexOf('function consumables()'),mainSource.indexOf('\n',mainSource.indexOf('function consumables()')));
 const menuSource=mainSource.slice(mainSource.indexOf('function renderMainMenu()'),mainSource.indexOf("document.querySelectorAll('[data-main-tab]').forEach(b=>b.addEventListener"));
 const renderMenu=runInNewContext("let menuSig='',mainTab='shop';"+consumablesSource+";const P={shop:()=>({html:consumables()})};"+menuSource+';renderMainMenu',menuContext);
@@ -66,7 +66,7 @@ console.log('Consumables renderer: same-second CFG activation, consumption and n
 // Task A: actual heart row/HTML rendering, approved assets and cooldown priority.
 const taskState=S.newState(0);taskState.cafe.level=40;taskState.hearts=0;
 const heartSource=mainSource.slice(mainSource.indexOf('const heartRow='),mainSource.indexOf('// Reuse the daycare'));
-const heartRowRender=runInNewContext('const LP={};'+heartSource+';heartRow', {s:taskState,S,CFG,clock:{now:()=>0},IMG:{shiba:()=>null},lockedLine:lv=>'Lv'+lv+' 해금',nameOf:sh=>sh.name});
+const heartRowRender=runInNewContext('const LP={};'+heartSource+';heartRow', {s:taskState,S,CFG,clock:{now:()=>0},IMG:{shiba:()=>null},lockedLine:lv=>'Lv'+lv+' 해금',nameOf:sh=>sh.name,heartFx:(await import('../effects.js')).heartFx});
 const walkRow=heartRowRender(CFG.heartUse.items.find(it=>it.id==='walk'));
 assert.equal(walkRow.disabled,true);assert.equal(walkRow.price,CFG.walk.heartsPer10Min);assert.equal(walkRow.unit,'heart');assert.equal(walkRow.label,null);
 taskState.hearts=CFG.walk.heartsPer10Min;assert.equal(heartRowRender(CFG.heartUse.items.find(it=>it.id==='walk')).disabled,false);

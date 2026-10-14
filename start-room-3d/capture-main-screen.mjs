@@ -210,6 +210,14 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   }
   await ev(`(()=>{const g=__game;g.state.coins=g.S.spacePrice('row',null,'coins',g.state)-1;g.refresh();g.openExpand();document.querySelector('#mbox [data-act=confirmYes]').click();return true;})()`);await sleep(150);await shot('main-screen-u12b-confirm-short.png',{keepToast:true});
  }
+ else if(process.argv.includes('--fx')){
+  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+  await ev('(()=>{const g=__game;g.state.cafe.level=40;g.state.hearts=3;Object.assign(g.state.items,{incomeBoost4h:1,expBoost4h:1,cooldownTicket:2,heartReset:1,potionBig:1,potionSmall:1});g.refresh();return true;})()');
+  await click('#hud [data-act=hearts]');await sleep(200);await shot('main-screen-fx-hearts-1.png');
+  for(const [i,f] of [[2,0.5],[3,1]]){await ev(`(()=>{const b=document.querySelector('#mbox');const sc=[b,...b.querySelectorAll('*')].find(e=>e.scrollHeight>e.clientHeight+20&&getComputedStyle(e).overflowY!=='visible');if(sc)sc.scrollTop=(sc.scrollHeight-sc.clientHeight)*${f};return !!sc;})()`);await sleep(150);await shot('main-screen-fx-hearts-'+i+'.png');}
+  console.log('ROWS',JSON.stringify(await ev(`[...document.querySelectorAll('#mbox [data-lp-row]')].map(r=>r.querySelector('.lp-name')?.textContent+' | '+r.querySelector('.lp-effect')?.textContent)`)));
+  await ev('__game.ui.modals=[];__game.refresh();true');await click('[data-main-tab=bag]');await sleep(200);await shot('main-screen-fx-bag.png');
+ }
  else if(process.argv.includes('--polish')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
   await click('[data-main-tab=manage]');

@@ -825,3 +825,8 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - Edit grid on new cells, placement on new cells and save/reload: covered by existing §12 checks (grid 0..3, "expansion and new-cell placement survive reload").
 - Known flake: smoke "Task A mailbox boost icon" (image `.complete` timing) failed once, passed on rerun.
 - 08:27 똑또기: cameraEaseMs 400 and markerMinScale 0.6 approved. + marker art stays unmodified; gentle bounce added (`CFG.expansion.markerBounce` periodSec 1.2, scale 1.0→1.1→1.0 via sin, starting values). `iso.setMarkerPhase(v)` pins the phase for captures/pixel tests.
+
+## Effect-text standing rule (수인님 2026-10-15 08:49)
+- All effect lines (하트 쓰기 rows + menu picker, 가방 boosts/items, 알바 cards) are generated in `effects.js` from CFG: duration + exact %/±value. Null → "미정".
+- Still 미정 in effect lines: brush affinity/fatigue/cleanliness, music stay, cookie odds + coin amount, special tip + guest odds (special guests don't spawn until guestOdds set), wish item list.
+- 알바 lines now: "친밀도 50% 놀이", "4마리 산책·지루함-50", "훈련 1회 성공", "12시간 대신 운영" (card length cap relaxed 12→14).
