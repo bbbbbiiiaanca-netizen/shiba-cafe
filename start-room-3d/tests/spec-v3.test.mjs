@@ -364,5 +364,7 @@ test('red-team #6: requested trick does not override random learned trick',()=>{
 
 test('red-team #7: UNSET aggregation gates payments for no, single, repeated and multiple meetings',()=>{assert.equal(CFG.income.levelAggregation,null);const {s,w,sh}=freshGame();for(const met of [[],[sh.id],[sh.id,sh.id]]){const p=S.payFor(s,met,{price:3},0);assert.equal(p.total,null);assert.equal(p.lvMul,null);assert.ok(p.pending);}w.spawnT=1e9;w.custs.push({id:1,seat:0,t:0,score:1,met:[sh.id],fulfilled:true});const before=s.coins;S.tick(s,w,0,0);assert.equal(s.coins,before);assert.equal(w.lastPay.total,null);});
 
+test('red-team #8: incapacitated dogs cannot play, train or buy activities',()=>{for(const status of ['sick','injured','hospital']){const {s,sh}=freshGame();sh.status=status;s.coins=1e6;s.cafe.level=25;const before=[s.hearts,s.coins,sh.paws];assert.equal(S.careCheck(s,sh.id,'play'),status);assert.equal(S.playWith(s,sh.id,0),null);assert.equal(S.trainCheck(s,sh.id,'paw'),status);assert.equal(S.train(s,sh.id,'paw',()=>0,0),null);for(const kind of ['daycare','walk','trainer']){assert.equal(S.albaCheck(s,kind,[sh.id],0,'paw'),status);assert.equal(S.hireAlba(s,kind,[sh.id],0,'paw'),null);}assert.deepEqual([s.hearts,s.coins,sh.paws],before);}});
+
 for(const [n,e] of fails)console.log('  FAIL',n,'\n       ',String(e.message).split('\n').slice(0,4).join('\n        '));
 console.log(`spec-v3: ${pass}/${pass+fails.length} passed`);process.exitCode=fails.length?1:0;

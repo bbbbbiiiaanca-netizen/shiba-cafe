@@ -108,7 +108,7 @@ export function abandon(s,id,now=Date.now()){if(abandonCheck(s,id))return null;c
 
 // ───────────────────────── care (1.2-3) ─────────────────────────
 export function careCheck(s,id,kind){const sh=byId(s,id);if(!sh)return 'pick';const st=statusOf(s,sh);
- if(kind==='play'){if(st==='walking'||st==='hospital')return st;if(st==='sleeping')return 'sleeping';if(s.hearts<CFG.care.play.hearts)return 'hearts';return null;}
+ if(kind==='play'){if(st!=='ok')return st;if(s.hearts<CFG.care.play.hearts)return 'hearts';return null;}
  const c=CFG.care[kind];if(!c)return 'pick';if(Object.values(c).some(isUnset))return 'unset';return null;} // feed / snack / bath / sleep: amounts UNSET
 export function playWith(s,id,now=Date.now()){if(careCheck(s,id,'play'))return null;const P=CFG.care.play;spendHearts(s,P.hearts,now);const sh=byId(s,id);
  changeGauges(s,sh,P,now);addCafeExp(s,CFG.cafeExp.play);addPaws(sh,CFG.activityPaws.play);return sh;} // 갱신 84·88·90: 하트 1, 사고·랜덤 보상 없음
@@ -116,7 +116,7 @@ export function playWith(s,id,now=Date.now()){if(careCheck(s,id,'play'))return n
 // 갱신 100·133 training
 export function trainChance(sh){const T=CFG.training;let p=T.successBase;for(const b of T.bonuses){const v=b.stat==='intimacy'?sh.intimacy:sh.g[b.stat];if(v>=b.atLeast)p+=b.add;}return clamp(p,T.min,T.max);}
 export function trainCheck(s,id,trick,{trainer=false}={}){const sh=byId(s,id);if(!sh)return 'pick';if(!CFG.tricks.some(t=>t.id===trick))return 'trick';
- if((sh.tricks[trick]||0)>=CFG.trickMaxLevel)return 'max';const st=statusOf(s,sh);if(st==='walking'||st==='hospital'||st==='sleeping')return st;
+ if((sh.tricks[trick]||0)>=CFG.trickMaxLevel)return 'max';const st=statusOf(s,sh);if(st!=='ok')return st;
  if(!trainer&&s.hearts<CFG.training.hearts)return 'hearts';return null;}
 function addTrickRep(s,sh,trick,now,paws=CFG.activityPaws.trickLevel){sh.trickExp[trick]=(sh.trickExp[trick]||0)+1;let up=false;if(sh.trickExp[trick]>=sh.tricks[trick]+1){sh.trickExp[trick]=0;sh.tricks[trick]++;up=true;addPaws(sh,paws);} // 단계 N→N+1에 성공 N+1번 · 139-1 1단계 완료 발바닥 3
  changeGauges(s,sh,{fatigue:CFG.training.fatigue},now);return up;}
@@ -127,7 +127,7 @@ export function train(s,id,trick,r=Math.random,now=Date.now()){if(trainCheck(s,i
 export function albaCheck(s,kind,ids=[],now=Date.now(),trick=null){const A=CFG.alba[kind];if(!A)return 'kind';if(s.cafe.level<A.unlock)return 'locked';if(s.coins<A.cost)return 'coins';
  if(kind==='manager')return now<s.cafe.managerUntil?'active':null;
  if(!ids.length)return 'pick';if(kind==='walk'?ids.length>A.maxShibas:ids.length!==1)return 'count';
- for(const id of ids){const sh=byId(s,id);if(!sh)return 'pick';if((sh.cd[kind]||0)>now)return 'cooldown';const st=statusOf(s,sh);if(st==='walking'||st==='hospital')return st;}
+ for(const id of ids){const sh=byId(s,id);if(!sh)return 'pick';if((sh.cd[kind]||0)>now)return 'cooldown';const st=statusOf(s,sh);if(st!=='ok')return st;}
  if(kind==='trainer')return trainCheck(s,ids[0],trick,{trainer:true});return null;}
 export function hireAlba(s,kind,ids=[],now=Date.now(),trick=null){if(albaCheck(s,kind,ids,now,trick))return null;const A=CFG.alba[kind];s.coins-=A.cost;
  if(kind==='manager'){s.cafe.managerUntil=now+A.hireSec*1000;return {kind};}
