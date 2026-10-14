@@ -356,5 +356,7 @@ test('red-team #3: bandana colour ids are cell1..cell9 (no colour names); old co
 
 test('red-team #4: all levels use 100 × cap hourly arrivals before reputation',()=>{const s=S.newState(0);for(let lv=1;lv<=50;lv++){s.cafe.level=lv;near(3600/S.arrivalInterval(s),100*S.capOf(s));}});
 
+test('red-team #5: fulfilled and manager requests win over low score',()=>{for(const manager of [false,true]){const {s,w,sh}=freshGame();w.r=()=>0;w.spawnT=1e9;if(manager)s.cafe.managerUntil=H;w.custs.push({id:1,seat:0,t:0,score:0,met:[],fulfilled:!manager,request:{type:'meetShiba',shibaId:sh.id}});S.tick(s,w,0,0);assert.equal(w.lastPay.outcome,'satisfied');assert.ok(s.cafe.rep>50);}});
+
 for(const [n,e] of fails)console.log('  FAIL',n,'\n       ',String(e.message).split('\n').slice(0,4).join('\n        '));
 console.log(`spec-v3: ${pass}/${pass+fails.length} passed`);process.exitCode=fails.length?1:0;
