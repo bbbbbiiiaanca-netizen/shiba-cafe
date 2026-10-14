@@ -1,5 +1,5 @@
 // Main cafe capture using capture-spec-v3.mjs Chrome CDP pipe approach, portrait 390×844.
-// Usage (from the repo root or start-room-3d/): node start-room-3d/capture-main-screen.mjs [OUTDIR] [--u12]
+// Usage (from the repo root or start-room-3d/): node start-room-3d/capture-main-screen.mjs [OUTDIR] [--u12 | --rf]
 // Default OUTDIR: /workspace/shiba-cafe-docs/spec-v3-build
 import {spawn} from 'node:child_process';import {mkdirSync,writeFileSync,readFileSync,rmSync} from 'node:fs';import {resolve,dirname,join} from 'node:path';import {fileURLToPath} from 'node:url';
 const ROOT=dirname(fileURLToPath(import.meta.url));
@@ -18,7 +18,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:+(process.env.DSF||2),mobile:true});await c('Page.enable');await c('Runtime.enable');
  const ev=async x=>{const r=await c('Runtime.evaluate',{expression:x,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(x.slice(0,90)+' -> '+JSON.stringify(r.exceptionDetails).slice(0,3000));return r.result.value;};
  const settle=()=>ev('new Promise(r=>{const imgs=[...document.images].filter(i=>!i.complete);if(!imgs.length)return r(true);let n=imgs.length;for(const i of imgs)i.onload=i.onerror=()=>--n||r(true);setTimeout(()=>r(true),4000);})');
- const shot=async(name,{keepToast=false}={})=>{if(!keepToast)await ev('__game.refresh();__game.ui.toastT=0;document.getElementById("toast").style.opacity=0;true');await settle();await sleep(150);const {data}=await c('Page.captureScreenshot',{format:'png'});writeFileSync(join(out,name),Buffer.from(data,'base64'));shots.push(name);};
+ const shot=async(name,{keepToast=false}={})=>{if(!keepToast)await ev('__game.refresh();__game.ui.toastT=0;document.getElementById("toast").style.opacity=0;document.getElementById("toast").textContent="";true');await settle();await sleep(150);const {data}=await c('Page.captureScreenshot',{format:'png'});writeFileSync(join(out,name),Buffer.from(data,'base64'));shots.push(name);};
  const click=sel=>ev(`(()=>{const e=document.querySelector(${JSON.stringify(sel)});if(!e)throw Error('no '+${JSON.stringify(sel)});e.click();return true;})()`);
  const stage=async(edit=false)=>{
  await c('Page.navigate',{url:'file://'+resolve(ROOT,'index.html')+'?temp=1&still=1&fresh=1&seed=7'+(edit?'&edit=1':'')});
@@ -88,8 +88,8 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  // guest's floats (coin+heart, or 빠직), hold them a quarter of the way up, check the icon files are loaded, then shoot.
  const floatShot=async(kind,name)=>{
   await ev(`(()=>{const g=__game,has=()=>(g.world.floats||[]).some(f=>f.kind==='${kind}');for(let i=0;i<20000&&!has();i++)g.step(.1);if(!has())throw Error('no ${kind} float');
-   const keep='${kind}'==='angry'?['angry']:['coin','heart'],t=Math.min(...g.world.floats.filter(f=>f.kind==='${kind}').map(f=>f.age));
-   g.world.floats=g.world.floats.filter(f=>keep.includes(f.kind)&&f.age===t);for(const f of g.world.floats)f.age=.25*f.dur;g.refresh();
+   const keep='${kind}'==='angry'?['angry']:['coin','heart'],guest=g.world.floats.find(f=>f.kind==='${kind}').guestId;
+   g.world.floats=g.world.floats.filter(f=>keep.includes(f.kind)&&f.guestId===guest);for(const f of g.world.floats)f.age=.25*f.dur;g.refresh();
    return Promise.all(['res-coin','res-heart','emo-angry'].map(n=>{const i=new Image();i.src='assets/drive/ui/'+n+'.png';return i.decode();})).then(()=>{g.refresh();return true;});})()`);
   if(!(await ev(`(__game.world.floats||[]).some(f=>f.kind==='${kind}')`)))throw Error(name+': float missing');
   await sleep(100);await shot(name);};
@@ -109,7 +109,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   if(!(await ev(`document.getElementById('toast').textContent==='입구가 막혔어요!'`)))throw Error('blocked toast missing');
   await shot('main-screen-u17-walls-blocked.png',{keepToast:true});
   await ev(`(()=>{const g=__game;g.iso.setEdit(false);g.state.cafe.level=g.CFG.alba.manager.unlock;g.state.coins=g.CFG.alba.manager.cost;g.S.hireAlba(g.state,'manager',[],g.clock.now());g.step(g.CFG.navigation.cellStepSec);g.refresh();return true;})()`);
-  if(!(await ev(`__game.world.manager?.role==='manager'&&document.getElementById('manager-debug').textContent.includes('매니저')`)))throw Error('manager navigation missing');
+  if(!(await ev(`__game.world.manager?.role==='manager'&&!document.getElementById('manager-debug')`)))throw Error('manager navigation missing');
   await shot('main-screen-u17-manager.png');
  };
  // §11·§12: requested expansion stages, always DPR2, isolated TEMP fixture.
@@ -121,14 +121,41 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
    await sleep(300);await shot('main-screen-u12-expand-'+n+'.png');
   }
   // Pan by an actual sideways drag; travel is derived from the current bounds.
-  const p=await ev(`(()=>{const g=__game,r=document.getElementById('isomap').getBoundingClientRect();g.iso.panTo(g.iso.panBounds.minX,g.iso.maxScroll);return {x:r.left+r.width/2,y:r.top+r.height/2,dx:g.iso.panBounds.maxX-g.iso.panBounds.minX};})()`);
+  const p=await ev(`(()=>{const g=__game,r=document.getElementById('isomap').getBoundingClientRect();g.iso.panTo(g.iso.panBounds.minX,g.iso.maxScroll);return {x:r.left+r.width/2,y:r.top+r.height/2,dx:Math.ceil(g.iso.panBounds.maxX-g.iso.panBounds.minX)+r.width};})()`);
   await c('Input.dispatchMouseEvent',{type:'mousePressed',x:p.x,y:p.y,button:'left',buttons:1,clickCount:1});
   await c('Input.dispatchMouseEvent',{type:'mouseMoved',x:p.x-p.dx,y:p.y,button:'left',buttons:1});
   await c('Input.dispatchMouseEvent',{type:'mouseReleased',x:p.x-p.dx,y:p.y,button:'left',buttons:0,clickCount:1});
   if(!(await ev('__game.iso.panX===__game.iso.panBounds.maxX&&__game.iso.panX>0')))throw Error('sideways drag failed');
   await shot('main-screen-u12-pan.png');
  };
- if(process.argv.includes('--u12')){await u12();if(errors.length)throw Error(errors.join('\n'));}
+ // Review fixes: isolated unsaved fixtures; all output is DPR2 and has no debug query.
+ const rf=async()=>{
+  const dpr=()=>c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+  await stage();await dpr();
+  await ev(`(()=>{const g=__game;g.world.floats=[];g.world.events=[];
+   for(let i=0;i<20000&&!g.world.custs.some(c=>c.phase==='seated');i++)g.step(.1);
+   const guest=g.world.custs.find(c=>c.phase==='seated');if(!guest)throw Error('no seated guest');
+   guest.fulfilled=true;guest.t=0;const cell=[...guest.cell];g.world.floats=[];g.world.events=[];g.step(0);
+   if(!['coin','heart'].every(kind=>g.world.floats.some(f=>f.kind===kind&&f.guestId===guest.id&&f.cell.join()===cell.join())))throw Error('floats not at paying seat');
+   // Freeze the payment instant at the seat; characters have no art and stay invisible.
+   guest.phase='seated';guest.cell=cell;g.world.custs=[guest];g.world.queue=[];
+   g.world.floats=g.world.floats.filter(f=>f.guestId===guest.id&&f.cell.join()===cell.join());g.refresh();
+   if(document.getElementById('manager-debug'))throw Error('debug leaked');return true;})()`);
+  await shot('main-screen-rf-floats.png');
+  await stage();await dpr();
+  await ev('__game.state.shibas[0].paws=0;__game.refresh();true');
+  await click('[data-main-tab=shiba]');
+  if(!(await ev(`document.querySelector('#menuList [data-act=levelUp]').disabled`)))throw Error('level-up not disabled');
+  await shot('main-screen-rf-levelup-dim.png');
+  await stage();await dpr();
+  await ev('__game.debugExpand(3);__game.iso.panTo(0,__game.iso.maxScroll);true');
+  await shot('main-screen-rf-expand-tatami.png');
+  await stage();await dpr();
+  await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.alba.manager.unlock;g.state.coins=g.CFG.alba.manager.cost;g.S.hireAlba(g.state,'manager',[],g.clock.now());g.step(g.CFG.navigation.cellStepSec);g.refresh();if(!g.world.manager||document.getElementById('manager-debug'))throw Error('manager fixture');return true;})()`);
+  await shot('main-screen-rf-manager.png');
+ };
+ if(process.argv.includes('--rf')){await rf();if(errors.length)throw Error(errors.join('\n'));}
+ else if(process.argv.includes('--u12')){await u12();if(errors.length)throw Error(errors.join('\n'));}
  else if(process.argv.includes('--u141')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
   await click('[data-main-tab=shiba]');await shot('main-screen-u141-shiba.png');

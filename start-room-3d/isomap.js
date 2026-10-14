@@ -1,5 +1,5 @@
 import {preservesEntrance} from './navigation.js';
-import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,FLOAT_ICONS,FLOOR_ART,nextExpansion} from './map-data.js';
+import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
@@ -103,8 +103,8 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
     }
     // §17-5·17-6: icon floats rise from the guest's head and fade (age advanced by main.js); kinds with a null icon draw nothing
     for(const f of world.floats||[]){const file=FLOAT_ICONS[f.kind];if(!file||!f.cell)continue;const im=load(file);if(!(im.complete&&im.naturalWidth))continue;
-     const k=Math.min(1,Math.max(0,f.age/f.dur)),p=cellToScreen(...f.cell,view,z),size=FLOAT_LAYOUT.iconPx[f.kind]*scale,F=FLOAT_LAYOUT;
-     const x=p.x+(F.headOffset[0]+(f.dx||0))*scale,y=p.y+F.headOffset[1]*scale-F.risePx*scale*k;
+     const k=Math.min(1,Math.max(0,f.age/f.dur)),p=floatOrigin(f,view,z),size=FLOAT_LAYOUT.iconPx[f.kind]*scale,F=FLOAT_LAYOUT;
+     const x=p.x+(f.dx||0)*scale,y=p.y-F.risePx*scale*k;
      ctx.save();ctx.globalAlpha=k<.4?1:1-(k-.4)/.6;ctx.drawImage(im,x-size/2,y-size,size,size);ctx.restore();}
    }
    if(z.floor===1&&!state.space.floor2Unlocked){

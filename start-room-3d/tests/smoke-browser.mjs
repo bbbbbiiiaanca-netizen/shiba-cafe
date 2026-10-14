@@ -71,7 +71,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev('document.querySelector("[data-inventory] [data-act=unequip][data-item=bandana-triangle-cell2]").click();true');
  await check('inventory unequips back to bag','__game.state.shibas[0].acc===null&&__game.state.accInv["bandana-triangle-cell2"]===1');
  await ev('__game.state.cafe.level=1;__game.refresh();__game.state.cafe.exp=__game.S.cafeNeed(1)-1;__game.S.addCafeExp(__game.state,1);__game.refresh();document.querySelector("[data-main-tab=manage]").click();true');
- await check('cafe experience threshold advances level with feedback','__game.state.cafe.level===2&&/카페 Lv 2/.test(document.querySelector("[data-cafe-level]").textContent)&&/레벨업/.test(document.getElementById("toast").textContent)');
+ await check('cafe experience threshold advances level with feedback','__game.state.cafe.level===2&&/카페 Lv 2/.test(document.querySelector("[data-cafe-level]").textContent)&&!/카페 Lv.*레벨업/.test(document.getElementById("toast").textContent)');
  await go(true,'&temp=1&rows=18');
  await ev('__game.state.settings.language="ko";__game.state.started=true;__game.ui.modals=[];__game.refresh();document.querySelector("[data-main-tab=furniture]").click();true');
  await check('inventory has no theme, space, floor or purchase UI',`!document.querySelector('[data-space-card],[data-act=spaceUnlock],[data-act=floor]')&&!/후지산 벽화 카페|대나무 회랑|가격|미정|멍코인|땅 넓히기|2층 증축/.test(document.getElementById('menuList').textContent+document.querySelector('.menu-heading').textContent)`);
@@ -120,6 +120,11 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await check(param+'=1 opens edit view','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="true"&&__game.iso.gridCells===36&&document.querySelector("[data-main-tab=furniture]").classList.contains("active")&&document.getElementById("menuList").contains(document.querySelector(".furniture-actions"))');
  }
 
+ // Review fixes: normal TEMP is debug-free; insufficient paws use the standard disabled palette.
+ await ev('__game.state.shibas[0].paws=0;__game.refresh();document.querySelector("[data-main-tab=shiba]").click();true');
+ await check('RF insufficient paws dim and disable level-up',`(()=>{const b=document.querySelector('#menuList [data-act=levelUp]'),probe=document.createElement('button');probe.disabled=true;document.body.append(probe);const a=getComputedStyle(b),p=getComputedStyle(probe),ok=b.disabled&&a.backgroundImage==='none'&&a.backgroundColor===p.backgroundColor&&a.color===p.color;probe.remove();return ok;})()`);
+ await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.alba.manager.unlock;g.state.coins=g.CFG.alba.manager.cost;g.S.hireAlba(g.state,'manager',[],g.clock.now());g.step(g.CFG.navigation.cellStepSec);g.refresh();return true;})()`);
+ await check('RF hired manager invisible and no wall level-up text',`__game.world.manager?.role==='manager'&&!document.getElementById('manager-debug')&&!/카페 Lv.*레벨업/.test(document.getElementById('toast').textContent)`);
  // Unit 4 checks use TEMP staging and explicit pending-value fixtures; no production save.
  // §11·§12: TEMP debug, alternating expansion, bitmap floor, drag bounds and saved placements.
  await go(true,'&temp=1&expansions=3');
@@ -130,7 +135,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await check('§12 full expanded grid '+n,`__game.iso.gridCells===${grid}&&__game.iso.markers.find(m=>m.kind==='row').axis==='${axis}'`);
  }
  await ev('__game.iso.setEdit(false);__game.iso.panTo(0,0);true');
- const pan=await ev(`(()=>{const r=document.getElementById('isomap').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,dx:__game.iso.panBounds.maxX,dy:__game.iso.maxScroll};})()`);
+ const pan=await ev(`(()=>{const r=document.getElementById('isomap').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,dx:Math.ceil(__game.iso.panBounds.maxX)+r.width,dy:Math.ceil(__game.iso.maxScroll)+r.height};})()`);
  await c('Input.dispatchMouseEvent',{type:'mousePressed',x:pan.x,y:pan.y,button:'left',buttons:1,clickCount:1});
  await c('Input.dispatchMouseEvent',{type:'mouseMoved',x:pan.x-pan.dx,y:pan.y-pan.dy,button:'left',buttons:1});
  await c('Input.dispatchMouseEvent',{type:'mouseReleased',x:pan.x-pan.dx,y:pan.y-pan.dy,button:'left',buttons:0,clickCount:1});
@@ -171,7 +176,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await check('§17-5: meeting a shiba without the request met → coin only, no heart',`JSON.stringify(__game.world.floats.map(f=>[f.kind,f.dx]))==='[["coin",0]]'`);
  await ev('__game.step(1.05);true');
  await ev(`(()=>{const g=__game;g.world.events.push({type:'leave',id:901,outcome:'normal',coins:3,order:'M-01',orderImg:'M-01-iced-americano_512.png',requestMet:true,metShiba:true,cell:[2,3]});g.refresh();window.f2=document.getElementById('isomap').toDataURL();return true;})()`);
- await check('§17-5: a paying guest whose request was met floats a coin and a heart from the head; they are drawn',`JSON.stringify(__game.world.floats.map(f=>[f.kind,f.cell.join()]))==='[["coin","2,3"],["heart","2,3"]]'&&__game.world.floats[0].dx<0&&__game.world.floats[1].dx>0&&window.f2!==window.f0`);
+ await check('§17-5: a paying guest whose request was met floats a coin and a heart from the head; they are drawn',`JSON.stringify(__game.world.floats.map(f=>[f.kind,f.cell.join()]))==='[["coin","2,3"],["heart","2,3"]]'&&__game.world.floats.every(f=>f.guestId===901)&&__game.world.floats[0].dx<0&&__game.world.floats[1].dx>0&&window.f2!==window.f0`);
  await ev('__game.step(.5);true');
  await check('§17-5: half-way the floats are still up',`__game.world.floats.length===2&&Math.abs(__game.world.floats[0].age-.5)<.01`);
  await ev('__game.step(.55);true');

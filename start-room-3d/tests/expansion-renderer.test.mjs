@@ -3,6 +3,7 @@ import {webcrypto} from 'node:crypto';
 if(!globalThis.crypto)Object.defineProperty(globalThis,'crypto',{value:webcrypto});
 import {readFileSync} from 'node:fs';
 import {createIsoMap} from '../isomap.js';
+import {floatOrigin,FLOAT_LAYOUT,FLOAT_ICONS,cellToScreen} from '../map-data.js';
 import {newState} from '../sim.js';
 const draws=[],loads=[],strokes=[],events={};
 const ctx={setTransform(){},fillRect(){},drawImage(im,...args){draws.push({file:im.file,args});},save(){},restore(){},beginPath(){this.path=[];},moveTo(x,y){this.path.push([x,y]);},lineTo(x,y){this.path.push([x,y]);},closePath(){},stroke(){strokes.push({colour:this.strokeStyle,path:this.path});},createRadialGradient(){return {addColorStop(){}};},getImageData(x,y,w,h){return {width:w,height:h,data:new Uint8ClampedArray(w*h*4).fill(255)};}};
@@ -69,7 +70,7 @@ console.log('§17 renderer: no wall image, footprint selection, move/rotate/remo
 const expandIso=createIsoMap(canvas);
 state.space.unlockedRows=3;draws.length=0;expandIso.setEdit(true);expandIso.draw(state,{});
 assert.equal(expandIso.gridCells,7*8);
-assert.equal(draws.filter(d=>d.file==='assets/drive/tiles/tatami-approved.png').length,7*8-36);
+assert.equal(draws.filter(d=>d.file==='assets/drive/tiles/tatami-room-crop.png').length,7*8-36);
 assert.equal(expandIso.markers.find(m=>m.kind==='row').axis,'i');
 expandIso.panTo(Infinity,Infinity);assert.equal(expandIso.panX,expandIso.panBounds.maxX);assert.equal(expandIso.scroll,expandIso.maxScroll);
 expandIso.panTo(-Infinity,-Infinity);assert.equal(expandIso.panX,expandIso.panBounds.minX);assert.equal(expandIso.scroll,0);
@@ -77,3 +78,23 @@ expandIso.setEdit(false);expandIso.panTo(0,0);
 events.pointerdown(pointer(200,150));events.pointermove(pointer(100,100));events.pointerup(pointer(100,100));
 assert.ok(expandIso.panX>0);assert.ok(expandIso.scroll>0);
 console.log('§12 renderer: new floor bitmap count, full grid, alternating marker, clamped two-axis drag passed');
+
+// Verify the actual bitmap draw origin in the furniture view after expansion, pan and scroll.
+expandIso.panTo(expandIso.panBounds.maxX,expandIso.maxScroll);
+for(const kind of ['coin','heart','angry']){
+ const f={kind,cell:[3,3],age:0,dur:1,dx:0};draws.length=0;
+ expandIso.draw(state,{floats:[f]});
+ const view=expandIso.hits.find(h=>h.id==='table').view,zone=expandIso.hits.find(h=>h.id==='table').zone;
+ const foot=cellToScreen(...f.cell,view,zone),origin=floatOrigin(f,view,zone);
+ assert.deepEqual(origin,{x:foot.x+FLOAT_LAYOUT.headOffset[0]*view.scale,y:foot.y+FLOAT_LAYOUT.headOffset[1]*view.scale});
+ const draw=draws.find(d=>d.file===FLOAT_ICONS[kind]),size=FLOAT_LAYOUT.iconPx[kind]*view.scale;
+ assert.deepEqual(draw.args,[origin.x-size/2,origin.y-size,size,size]);
+}
+// Fractional pan bounds must be reached by overshooting with real pointer input.
+expandIso.panTo(expandIso.panBounds.minX,0);
+const distance=expandIso.panBounds.maxX-expandIso.panBounds.minX;
+events.pointerdown(pointer(200,150));
+events.pointermove(pointer(200-Math.ceil(distance)-canvas.clientWidth,150-Math.ceil(expandIso.maxScroll)-canvas.clientHeight));
+events.pointerup(pointer(200-Math.ceil(distance)-canvas.clientWidth,150-Math.ceil(expandIso.maxScroll)-canvas.clientHeight));
+assert.equal(expandIso.panX,expandIso.panBounds.maxX);assert.equal(expandIso.scroll,expandIso.maxScroll);
+console.log('Review fixes: floats use guest cell + head offset in furniture camera view; pointer drag reaches both bounds');

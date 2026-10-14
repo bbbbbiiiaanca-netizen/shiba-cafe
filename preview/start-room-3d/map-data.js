@@ -78,7 +78,8 @@ export function restorePlacement(saved,zone=MAP.zones[0]){
 }
 
 // unlockedRows is the persisted expansion count (legacy key retained).
-export const FLOOR_ART={tatami:'assets/drive/tiles/tatami-approved.png'};
+// Approved room's central tatami cell, cropped by crop-room-tatami.py; original tile alpha retained.
+export const FLOOR_ART={tatami:'assets/drive/tiles/tatami-room-crop.png'};
 // First axis j (down-left): starting value 2026-10-15, pending user confirm.
 export function nextExpansion(zone,count){return count%2===0?{axis:'j',cells:Array.from({length:zone.cols},(_,i)=>[i,zone.rows])}:{axis:'i',cells:Array.from({length:zone.rows},(_,j)=>[zone.cols,j])};}
 export function restoreSpace(saved){
@@ -98,3 +99,9 @@ export const FLOAT_LAYOUT={headOffset:[0,-90],risePx:40,iconPx:{coin:30,heart:26
 // icon per float kind (그림이 UI icons, MAP.md); null = no art → the float event still runs but nothing is drawn
 export const FLOAT_ICONS={coin:'assets/drive/ui/res-coin.png',heart:'assets/drive/ui/res-heart.png',angry:'assets/drive/ui/emo-angry.png'};
 export function tableItemEntries(world){return (world?.custs||[]).filter(c=>c.phase==='seated'&&c.itemSlot&&c.order).map(c=>({tableItem:c,origin:c.itemSlot.cell,cells:[c.itemSlot.cell]}));}
+
+// Float origin uses the exact zone view used by furniture (camera pan, expansion and scale included).
+export function floatOrigin(f,view,zone=MAP.zones[0]){
+ const p=cellToScreen(...f.cell,view,zone);
+ return {x:p.x+FLOAT_LAYOUT.headOffset[0]*view.scale,y:p.y+FLOAT_LAYOUT.headOffset[1]*view.scale};
+}

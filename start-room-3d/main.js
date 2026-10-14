@@ -92,14 +92,14 @@ function handleEvents(){for(const e of w.events.splice(0)){
  if(e.type==='menuDone')toast(L('toast.menuDone',{name:L('menu.'+e.id)}));
  if(e.type==='order')toast(`${L('menu.'+e.order)} 주문`);
  if(e.type==='leave')floatsFor(e);
- if(e.type==='angry')addFloat('angry',e.cell);
+ if(e.type==='angry')addFloat('angry',e.cell,0,e.id);
  if(e.type==='leave')toast(e.coins==null?`${L('menu.'+e.order)} · 결제 미정`:`+${f2(e.coins)} 멍코인`);
 }} // walk results stay in s.walkResults until acknowledged (§17 red dot); renderModal shows them
 // §17-5·17-6 floats: w.floats [{kind,cell,age,dur,dx}] drawn by isomap from the guest's head; aged in step(), gone after CFG.feedback.floatSec.
 // Paying guest → coin; request met (완전 만족; meeting a shiba alone does not count) → heart beside it; angry (queue timeout) → 빠직.
-function addFloat(kind,cell,dx=0){if(!cell)return;(w.floats??=[]).push({kind,cell:[...cell],age:0,dur:CFG.feedback.floatSec,dx});}
+function addFloat(kind,cell,dx=0,guestId=null){if(!cell)return;(w.floats??=[]).push({kind,cell:[...cell],age:0,dur:CFG.feedback.floatSec,dx,guestId});}
 function floatsFor(e){const heart=!!e.requestMet,coin=e.coins!=null,[l,r]=FLOAT_LAYOUT.stagger;
- if(coin)addFloat('coin',e.cell,heart?l:0);if(heart)addFloat('heart',e.cell,coin?r:0);}
+ if(coin)addFloat('coin',e.cell,heart?l:0,e.id);if(heart)addFloat('heart',e.cell,coin?r:0,e.id);}
 function ageFloats(dt){if(w.floats?.length)w.floats=w.floats.filter(f=>(f.age+=dt)<f.dur);}
 
 // ───────── panels ─────────
@@ -262,7 +262,7 @@ function listPopupHtml(m){const v=LP[m.list](m.arg),openKey=ui.lpOpen?.[m.list+(
  return `<div class="lp-ribbon"><h2>${v.title}</h2></div><button class="lp-close" data-act="modalOk" aria-label="닫기">×</button><div class="lp-list" data-list-popup="${m.list}">${v.rows.length?v.rows.map(row).join(''):`<div class="lp-empty">${v.empty||L('app.unset')}</div>`}</div>`;}
 
 // ───────── modals ─────────
-let modalSig='';let observedCafeLevel=s.cafe.level;
+let modalSig='';
 function renderModal(){const m=ui.modals[0]||(!s.settings.language?{kind:'lang'}:!s.started?{kind:'start'}:s.walkResults.length?{kind:'walkResult',res:s.walkResults[0]}:null);
  if(!m){$('modal').hidden=true;modalSig='';return;}
  $('mbox').classList.toggle('list-popup',m.kind==='list');
@@ -342,7 +342,7 @@ $('scene').addEventListener('pointerdown',e=>{const t=e.target.closest('[data-ac
 addEventListener('pointerup',e=>{if(!drag)return;const d=drag;drag=null;if(Math.hypot(e.clientX-d.x,e.clientY-d.y)<12)return;
  const seat=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-cust]');if(seat&&S.deliver(s,w,d.id,+seat.dataset.cust,clock.now())){ui.sel=null;refresh();}});
 function applyStatic(){document.documentElement.lang=s.settings.language||'ko';document.title=L('app.title');document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=L(e.dataset.i18n));sceneSig='';panelSig='';modalSig='';}
-function refresh(){if(temp){let debug=document.getElementById('manager-debug');if(!debug){debug=document.createElement('output');debug.id='manager-debug';debug.style.cssText='position:absolute;top:70px;left:8px;color:white;background:#222;z-index:5';$('isomap').parentElement.append(debug);}debug.textContent=w.manager?'매니저 '+w.manager.phase+' ['+w.manager.cell.join(',')+']':'';}if(s.cafe.level>observedCafeLevel){toast(`카페 Lv ${s.cafe.level} · 레벨업!`);}observedCafeLevel=s.cafe.level;handleEvents();renderHUD();renderScene();renderPanel();renderModal();}
+function refresh(){if(Q.get('debug')==='1'){let debug=document.getElementById('manager-debug');if(!debug){debug=document.createElement('output');debug.id='manager-debug';debug.style.cssText='position:absolute;top:70px;left:8px;color:white;background:#222;z-index:5';$('isomap').parentElement.append(debug);}debug.textContent=w.manager?'매니저 '+w.manager.phase+' ['+w.manager.cell.join(',')+']':'';}handleEvents();renderHUD();renderScene();renderPanel();renderModal();}
 
 // ───────── loop ─────────
 let last=performance.now(),saveT=0;
