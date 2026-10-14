@@ -52,7 +52,11 @@ export function tickManager(s,w,dt,active,seconds){
  const {zone,slots,entrance}=layout(s,w);if(!entrance)return;
  const adjacent=slot=>footprintCells(slot).flatMap(([i,j])=>[[i+1,j],[i-1,j],[i,j+1],[i,j-1]]);
  const reachable=(from,targets)=>targets.map(p=>({p,route:pathfind(zone,slots,from,p)})).filter(x=>x.route).sort((a,b)=>a.route.length-b.route.length)[0]?.p;
- const home=reachable(entrance,slots.filter(x=>x.type==='counter').flatMap(adjacent))||entrance;
+ // Home = beside the counter's short end (same row), so the 150px sprite doesn't stand in front of the counter and cover it;
+ // falls back to any reachable adjacent cell.
+ const counters=slots.filter(x=>x.type==='counter'),side=slot=>{const c=footprintCells(slot),is=c.map(p=>p[0]),js=c.map(p=>p[1]),sameRow=new Set(js).size===1;
+  return sameRow?[[Math.max(...is)+1,js[0]],[Math.min(...is)-1,js[0]]]:[[is[0],Math.max(...js)+1],[is[0],Math.min(...js)-1]];};
+ const home=reachable(entrance,counters.flatMap(side))||reachable(entrance,counters.flatMap(adjacent))||entrance;
  const m=w.manager??={role:'manager',cell:[...home],phase:'idle',route:null,facing:0,anim:0};m.anim+=dt;
  if(!pathfind(zone,slots,m.cell,m.cell)){m.cell=[...home];m.phase='idle';m.target=null;}
  if(m.phase==='visiting'){m.wait-=dt;if(m.wait>0)return;m.returning=true;m.phase='idle';}

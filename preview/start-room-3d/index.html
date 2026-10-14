@@ -167,6 +167,14 @@ button img,.pill img,.badge img,.chip img{display:block;flex:none}
 .village-place{flex-direction:column;gap:4px;min-height:110px;border:2px dashed #d8c3a0;border-radius:16px;background:#fff8ea;color:#5a3b22;padding:8px}
 .village-place .vp-ico{width:48px;height:48px;display:flex;align-items:center;justify-content:center}.village-place .vp-ico img{width:48px;height:48px;object-fit:contain}
 .village-place strong{font-size:15px}.village-place small{font-size:11px;color:#9a8466}
+
+.furn-row{display:flex;align-items:center;gap:10px;padding:4px 6px;border-bottom:1px solid #efe3cc}
+.furn-row img{width:44px;height:44px;object-fit:contain;flex:none}
+.furn-row button{margin-left:auto;min-width:56px}
+.furniture-section .furn-buy{width:calc(50% - 4px);margin:4px 2px}
+.furniture-section{display:flex;flex-wrap:wrap;justify-content:space-between}
+.furniture-section>h3,.furniture-section>.furn-row,.furniture-section>.furniture-grid{width:100%}
+.furniture-card[data-furniture-card=wall]{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px}
 </style>
 <div id="app">
  <div id="hud" aria-label="카페 자원">

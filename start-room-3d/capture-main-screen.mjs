@@ -170,6 +170,14 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await shot('main-screen-nav-main.png');
  for(const t of ['village','shiba','shop','bag']){await click('[data-main-tab='+t+']');await shot('main-screen-nav-'+t+'.png');}
  await click('[data-main-tab=manage]');await click('[data-act=listOpen][data-list=menu]');await shot('main-screen-nav-popup.png');
+ await ev('__game.ui.modals=[];__game.refresh();true');await click('[data-main-tab=manage]');
+ await ev(`(()=>{const a=document.querySelector('[data-alba]');a&&a.scrollIntoView({block:'center'});return true;})()`);await shot('main-screen-nav-manage-alba.png');
+ await ev('__game.state.hearts=3;__game.refresh();true');await click('#hud [data-act=hearts]');await shot('main-screen-nav-hearts.png');
+ await ev('__game.ui.modals=[];__game.refresh();true');await click('[data-act=ledger]');await shot('main-screen-nav-ledger.png');
+ await ev('__game.ui.modals=[];__game.state.wallOwned=3;__game.refresh();true');await click('[data-main-tab=bag]');
+ await ev(`(()=>{const a=document.querySelector('[data-furniture-card=wall]');if(!a)throw Error('no wall card in 가방');a.scrollIntoView({block:'center'});return true;})()`);await shot('main-screen-nav-walls-inv.png');
+ await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.alba.manager.unlock;g.state.coins=g.CFG.alba.manager.cost;g.S.hireAlba(g.state,'manager',[],g.clock.now());for(let k=0;k<3;k++)g.step(g.CFG.navigation.cellStepSec);g.refresh();return true;})()`);
+ await click('[data-main-tab=manage]');await shot('main-screen-nav-manager.png');
  }
  else if(process.argv.includes('--final')){
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
