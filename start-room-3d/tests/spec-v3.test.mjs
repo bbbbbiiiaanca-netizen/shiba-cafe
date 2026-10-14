@@ -252,6 +252,21 @@ test('137: 4 breeds only, equal odds while the odds table is UNSET; 10-pull from
 test('137 + 82: a capsule ticket from walks = one free pull',()=>{const {s}=freshGame();assert.equal(S.gachaCheck(s,1,{ticket:true}),'ticket');s.items.capsule=1;
  assert.equal(S.gachaCheck(s,10,{ticket:true}),'count');assert.equal(S.gachaPull(s,1,S.rng(1),0,{ticket:true}).length,1);assert.equal(s.items.capsule,0);assert.equal(s.dia,0);});
 
+// ───────── 갱신 139-1·139-2 활동 발바닥 ─────────
+test('139-1: walk 2, play 1, trick step done 3 (failures and partial reps give none), no daily cap',()=>{const {s,sh}=freshGame();s.hearts=999;
+ assert.deepEqual([CFG.activityPaws.walk,CFG.activityPaws.play,CFG.activityPaws.cafeWorkHour,CFG.activityPaws.trickLevel],[2,1,1,3]);
+ for(let i=0;i<50;i++){sh.g.fatigue=0;S.playWith(s,sh.id,0);}assert.equal(sh.paws,50,'no daily cap');
+ sh.paws=0;S.train(s,sh.id,'paw',()=>.999,0);assert.equal(sh.paws,0,'failed rep');S.train(s,sh.id,'paw',()=>0,0);assert.equal(sh.paws,3,'0→1 done');
+ S.train(s,sh.id,'paw',()=>0,0);assert.equal(sh.paws,3,'1 of 2 reps');S.train(s,sh.id,'paw',()=>0,0);assert.equal(sh.paws,6,'1→2 done');
+ sh.paws=0;sh.g.fatigue=0;S.startWalk(s,sh.id,600,0,()=>.99);const res=S.tickWalk(s,10*MIN,()=>.99);assert.equal(res.settled.paws,2);assert.equal(sh.paws,2);});
+test('139-1: café work 1 paw per hour per working shiba (online and offline, not when at home)',()=>{const {s,w,sh}=freshGame();w.spawnT=1e12;
+ run(s,w,3600-10,0,10);assert.equal(sh.paws,0);run(s,w,20,(3600-10)*1000,10);assert.equal(sh.paws,1);
+ sh.placed=false;run(s,w,7200,3610e3,10);assert.equal(sh.paws,1,'home shiba does not work');
+ const g=freshGame();g.w.spawnT=1e12;S.fastForward(g.s,g.w,0,5*H,{offline:true});assert.equal(g.sh.paws,5);});
+test('139-2: part-timers give the same paws: walk part-timer 2, daycare 1, trainer 3 per step; manager hours count as café work',()=>{const {s,w,sh}=freshGame();s.coins=1e6;s.cafe.level=25;
+ S.hireAlba(s,'walk',[sh.id],0);assert.equal(sh.paws,2);S.hireAlba(s,'daycare',[sh.id],0);assert.equal(sh.paws,3);S.hireAlba(s,'trainer',[sh.id],0,'paw');assert.equal(sh.paws,6);
+ S.hireAlba(s,'manager',[],0);w.spawnT=1e12;run(s,w,2*3600,0,10);assert.equal(sh.paws,8);});
+
 // ───────── 갱신 135-2 남은 시간 바로 완료 ─────────
 test('135-2: instant finish = 1 diamond per remaining minute, rounded up per minute (37 min → 37, 4 h → 240, 30 s → 1)',()=>{
  assert.equal(CFG.timeSkip.diaPerMin,1);assert.equal(S.skipCost(37*60),37);assert.equal(S.skipCost(4*3600),240);assert.equal(S.skipCost(30),1);assert.equal(S.skipCost(60.001),2);assert.equal(S.skipCost(0),0);

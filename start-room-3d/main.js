@@ -89,7 +89,7 @@ P.care=id=>{const sh=S.byId(s,id);if(!sh)return P.shibas();const st=S.statusOf(s
  let h=`<div class="card"><div class="big">${img(shibaImg(sh),nameOf(sh))}</div><div style="text-align:center"><div class="nm" style="font-size:18px;font-weight:900">${nameOf(sh)}</div>
   <div class="note">${L('shiba.breed.'+sh.breed)} · ${L('care.personality')}: ${L('per.'+sh.personality)} · ${statusText(sh,st)}</div></div>
   <div class="g"><span>${L('care.level')} ${sh.level}</span>${bar(need?sh.paws/need:1)}<span class="ico paw"></span></div><div class="btns"><span class="note grow">${need?L('care.paws',{n:fmt(sh.paws),need:fmt(need)}):L('care.pawsMax',{n:fmt(sh.paws)})} · ${L('care.levelEff',{m:f2(S.levelEffect(sh.level))})}</span>
-   ${need?`<button data-act="levelUp" data-id="${id}" ${S.levelUpCheck(s,id)?'disabled':''}>${L('care.levelUp',{n:fmt(need)})}</button>`:''}</div>
+   ${need?`<button data-act="levelUp" data-id="${id}" ${S.levelUpCheck(s,id)?'disabled':''}>${L('care.levelUp',{n:fmt(need)})}</button>`:''}</div><div class="note">${L('care.pawsSrc')}</div>
   <div class="g"><span>${L('care.intimacy')}</span>${bar(sh.intimacy/100,'#e98aa0')}<span>${Math.round(sh.intimacy)}</span></div>
   <div class="g"><span>${L('care.intel')}</span>${bar(S.intelligence(sh)/100,'#6aa5d8')}<span>${S.intelligence(sh)}</span></div></div>`;
  h+=`<div class="card">${CFG.gauges.map(k=>`<div class="g"><span>${L('g.'+k)}</span>${bar(sh.g[k]/100,(k==='dirt'||k==='fatigue'||k==='boredom')?'#b58a5a':'#7fbf6a')}<span>${Math.round(sh.g[k])}</span></div>`).join('')}
@@ -183,7 +183,7 @@ function renderModal(){const m=ui.modals[0]||(!s.settings.language?{kind:'lang'}
  if(m.kind==='offline'){const o=m.o,mins=Math.round(o.sec/60);h=`<h2>${L('off.title')}</h2><div class="note" style="font-size:14px">${L('off.body',{h:Math.floor(mins/60),m:mins%60,n:o.served,coins:fmt(o.coins),r0:Math.round(o.repFrom),r1:Math.round(o.repTo)})}</div>
   ${o.sec>CFG.offline.capHours*3600?`<div class="note">${L('off.cap')}</div>`:''}${m.closed?`<div class="note" style="font-size:13px;color:#9c4136">${L('off.closed')}</div>`:''}<button data-act="modalOk">${L('app.ok')}</button>`;}
  if(m.kind==='walkResult'){const sh=S.byId(s,m.res.shibaId);h=`<h2>${L('walk.back',{name:sh?nameOf(sh):'?'})}</h2><div class="big" style="width:120px;height:120px">${sh?img(IMG.shiba(sh.breed)):''}</div>
-  <div class="note" style="text-align:center">${m.res.events.length?m.res.events.map(e=>L('walk.ev.'+e)).join(' · '):''}</div><button data-act="modalOk">${L('app.ok')}</button>`;}
+  <div class="note" style="text-align:center">${[m.res.paws?L('walk.paws',{n:m.res.paws}):'',...m.res.events.map(e=>L('walk.ev.'+e))].filter(Boolean).join(' · ')}</div><button data-act="modalOk">${L('app.ok')}</button>`;}
  if(m.kind==='rescue'){const x=m.x,cost=S.hospitalCost(s,'rescueBath');
   h=x.bathed?`<h2>${L('rescue.reveal',{breed:L('shiba.breed.'+x.breed)})}</h2><div class="big">${img(IMG.shiba(x.breed))}</div><div class="note" style="text-align:center">${L('rescue.lvNote')}</div>
     <button data-act="rescueBring" ${S.bringCheck(s,x.rid)?'disabled':''}>${L('rescue.bring')}</button>${S.bringCheck(s,x.rid)==='owned'?`<div class="note">${L('rescue.full')}</div>`:''}<button class="sec" data-act="rescueDecline">${L('rescue.decline')}</button>`

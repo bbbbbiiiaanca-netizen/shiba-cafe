@@ -97,6 +97,9 @@ export const CFG={
  personalities:['prankster','shy','tomboy','sweet','mopey','lazy','curious','boss','peopleLover','dogLover','tomgirl','zoomies','fighter','foodie','walkLover'], // 1.2 13개 + 갱신 52 먹보·산책광 = 15. 확률: 균등(성격별 확률 UNSET: 질문 9(다))
  level:{max:30,pawsPerLevel:20,dupPaws:10, // 갱신 138: Lv N→N+1 발바닥 20×N (81의 10×N 대체, 누적 8,700) · 81: 중복 1마리당 10
   incomePerLevel:.05}, // 갱신 81: ×(1 + 0.05×(레벨−1))
+ // 갱신 139-1·139-2 활동 발바닥 (시바 개인, 하루 최대 없음). 알바가 대신한 활동도 똑같이, 매니저 운영 시간도 카페 근무
+ activityPaws:{walk:2,play:1,cafeWorkHour:1,trickLevel:3, // 139-1: 직접 산책 1회 2, 놀아주기 1회 1, 카페 근무 1시간 1, 훈련 1단계 완료 3
+  walkAlba:2,daycare:1,trainer:3,dailyCap:null}, // 139-2: 산책 알바 = 산책 2, 데이케어 = 놀아주기 1, 훈련사 = 훈련 1단계 3 · dailyCap null = '하루 최대 없음'(정해진 값)
  accessorySlots:[[25,3],[15,2],[5,1]], // 갱신 90: Lv5 1칸, Lv15 2칸, Lv25 3칸
  accessories:U, // UNSET: 1.2 / 질문 9(가) 어떤 액세서리가 열리는지
  likes:{snacks:{basic:2,rare:1},toys:U,list:U}, // 갱신 40: 좋아하는 간식 기본 2 + 레어 1 · UNSET: 장난감 구조(제안), 간식·장난감 목록(질문 9(카))

@@ -60,6 +60,7 @@ export const STR={
   'app.hm':'{h}시간 {m}분','app.h':'{h}시간','app.m':'{m}분','shop.devTime':'개발 {t}','shop.developing':'{name} 개발 중','shop.developingShort':'개발 중','shop.devLeft':'{t} 남음','shop.devIdle':'메뉴는 한 번에 1개만 개발해요. 멍코인을 내면 개발 시간이 지나야 완성돼요.','toast.menuDone':'{name} 개발 완료!','toast.devBusy':'지금 개발 중인 메뉴가 있어요 (한 번에 1개)',
   'care.levelUp':'레벨업 🐾{n}','toast.levelUpShiba':'Lv{lv}이 됐어요!','toast.paws':'발바닥이 모자라요',
   'shop.gacha1':'1회 {dia}💎','shop.gacha10':'{n}연차 {dia}💎','shop.gachaTicket':'뽑기권 사용 ({n}장)','gacha.title':'시바뽑기 결과','gacha.new':'새 친구! {breed} Lv{lv}','gacha.dup':'중복 → {name} 발바닥 +{p}','toast.ticket':'뽑기권이 없어요',
+  'walk.paws':'발바닥 +{n}','care.pawsSrc':'발바닥 얻는 법: 산책 2 · 놀아주기 1 · 카페 근무 1시간 1 · 재주 1단계 3 · 중복 시바 10 (알바도 같음, 하루 최대 없음)',
  },
  en:{
   'lang.name.ko':'한국어','lang.name.en':'English','lang.select.title':'Choose your language','lang.select.hint':'You can change it any time in Settings','lang.select.confirm':'OK',
@@ -118,6 +119,7 @@ export const STR={
   'app.hm':'{h} h {m} min','app.h':'{h} h','app.m':'{m} min','shop.devTime':'takes {t}','shop.developing':'Developing {name}','shop.developingShort':'Developing','shop.devLeft':'{t} left','shop.devIdle':'One menu at a time. After paying, it is ready when the development time has passed.','toast.menuDone':'{name} is ready!','toast.devBusy':'Another menu is in development (one at a time)',
   'care.levelUp':'Level up 🐾{n}','toast.levelUpShiba':'Now Lv{lv}!','toast.paws':'Not enough paws',
   'shop.gacha1':'1 pull {dia}💎','shop.gacha10':'{n} pulls {dia}💎','shop.gachaTicket':'Use ticket (×{n})','gacha.title':'Capsule results','gacha.new':'New! {breed} Lv{lv}','gacha.dup':'Duplicate → {name} +{p} paws','toast.ticket':'No capsule tickets',
+  'walk.paws':'+{n} paws','care.pawsSrc':'Paws: walk 2 · play 1 · 1 h in the café 1 · trick step 3 · duplicate 10 (part-timers too, no daily cap)',
  },
 };
 export function makeT(getLang){return (key,vars={})=>{const l=getLang()||'ko';let t=STR[l]?.[key]??STR.en[key]??key;for(const [k,v] of Object.entries(vars))t=t.split('{'+k+'}').join(v);return t;};}

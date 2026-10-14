@@ -89,14 +89,14 @@ export function careCheck(s,id,kind){const sh=byId(s,id);if(!sh)return 'pick';co
  if(kind==='play'){if(st==='walking'||st==='hospital')return st;if(st==='sleeping')return 'sleeping';if(s.hearts<CFG.care.play.hearts)return 'hearts';return null;}
  const c=CFG.care[kind];if(!c)return 'pick';if(Object.values(c).some(isUnset))return 'unset';return null;} // feed / snack / bath / sleep: amounts UNSET
 export function playWith(s,id,now=Date.now()){if(careCheck(s,id,'play'))return null;const P=CFG.care.play;spendHearts(s,P.hearts,now);const sh=byId(s,id);
- changeGauges(s,sh,P,now);addCafeExp(s,CFG.cafeExp.play);return sh;} // 갱신 84·88·90: 하트 1, 사고·랜덤 보상 없음
+ changeGauges(s,sh,P,now);addCafeExp(s,CFG.cafeExp.play);addPaws(sh,CFG.activityPaws.play);return sh;} // 갱신 84·88·90: 하트 1, 사고·랜덤 보상 없음
 
 // 갱신 100·133 training
 export function trainChance(sh){const T=CFG.training;let p=T.successBase;for(const b of T.bonuses){const v=b.stat==='intimacy'?sh.intimacy:sh.g[b.stat];if(v>=b.atLeast)p+=b.add;}return clamp(p,T.min,T.max);}
 export function trainCheck(s,id,trick,{trainer=false}={}){const sh=byId(s,id);if(!sh)return 'pick';if(!CFG.tricks.some(t=>t.id===trick))return 'trick';
  if((sh.tricks[trick]||0)>=CFG.trickMaxLevel)return 'max';const st=statusOf(s,sh);if(st==='walking'||st==='hospital'||st==='sleeping')return st;
  if(!trainer&&s.hearts<CFG.training.hearts)return 'hearts';return null;}
-function addTrickRep(s,sh,trick,now){sh.trickExp[trick]=(sh.trickExp[trick]||0)+1;let up=false;if(sh.trickExp[trick]>=sh.tricks[trick]+1){sh.trickExp[trick]=0;sh.tricks[trick]++;up=true;} // 단계 N→N+1에 성공 N+1번
+function addTrickRep(s,sh,trick,now,paws=CFG.activityPaws.trickLevel){sh.trickExp[trick]=(sh.trickExp[trick]||0)+1;let up=false;if(sh.trickExp[trick]>=sh.tricks[trick]+1){sh.trickExp[trick]=0;sh.tricks[trick]++;up=true;addPaws(sh,paws);} // 단계 N→N+1에 성공 N+1번 · 139-1 1단계 완료 발바닥 3
  changeGauges(s,sh,{fatigue:CFG.training.fatigue},now);return up;}
 export function train(s,id,trick,r=Math.random,now=Date.now()){if(trainCheck(s,id,trick))return null;spendHearts(s,CFG.training.hearts,now);const sh=byId(s,id);
  const p=trainChance(sh),ok=r()<p;const up=ok?addTrickRep(s,sh,trick,now):false;return {ok,p,up,level:sh.tricks[trick],exp:sh.trickExp[trick]};}
@@ -110,9 +110,9 @@ export function albaCheck(s,kind,ids=[],now=Date.now(),trick=null){const A=CFG.a
 export function hireAlba(s,kind,ids=[],now=Date.now(),trick=null){if(albaCheck(s,kind,ids,now,trick))return null;const A=CFG.alba[kind];s.coins-=A.cost;
  if(kind==='manager'){s.cafe.managerUntil=now+A.hireSec*1000;return {kind};}
  for(const id of ids){const sh=byId(s,id);sh.cd[kind]=now+A.cooldownSec*1000;
-  if(kind==='walk')changeGauges(s,sh,{boredom:A.boredom},now); // 지루함 50 즉시 해소, 하트·경험치·친밀도·구조견 없음
-  if(kind==='daycare'){const P=CFG.care.play;changeGauges(s,sh,{boredom:P.boredom,dirt:P.dirt,fatigue:P.fatigue,happy:P.happy,intimacy:P.intimacy*A.intimacyMul},now);} // 놀아주기와 같음, 친밀도 절반, 경험치 없음
-  if(kind==='trainer')addTrickRep(s,sh,trick,now);} // 항상 성공, 하트·경험치 없음
+  if(kind==='walk'){changeGauges(s,sh,{boredom:A.boredom},now);addPaws(sh,CFG.activityPaws.walkAlba);} // 지루함 50 즉시 해소, 하트·경험치·친밀도·구조견 없음 · 139-2 발바닥 2
+  if(kind==='daycare'){const P=CFG.care.play;changeGauges(s,sh,{boredom:P.boredom,dirt:P.dirt,fatigue:P.fatigue,happy:P.happy,intimacy:P.intimacy*A.intimacyMul},now);addPaws(sh,CFG.activityPaws.daycare);} // 놀아주기와 같음, 친밀도 절반, 경험치 없음
+  if(kind==='trainer')addTrickRep(s,sh,trick,now,CFG.activityPaws.trainer);} // 항상 성공, 하트·경험치 없음
  return {kind,ids};}
 export const managerActive=(s,now=Date.now())=>now<s.cafe.managerUntil;
 
@@ -153,7 +153,7 @@ function newRescue(s,r,now){return {rid:'r'+now+'_'+Math.floor(r()*1e6),foundAt:
 export function tickWalk(s,now=Date.now(),r=Math.random){const W=s.walk;if(!W)return null;const out={};
  if(W.rescueAt!=null&&!W.rescueShown&&now>=W.rescueAt){W.rescueShown=true;const x=newRescue(s,r,W.rescueAt);s.rescues.push(x);out.rescued=x;}
  if(now>=W.walkStartAt+W.walkDurationSec*1000){const sh=byId(s,W.shibaId),E=CFG.walk.events,sec=W.walkDurationSec,res={shibaId:W.shibaId,sec,at:now,events:[]};s.walk=null;
-  if(sh){const fx=CFG.walkEffect[sec];changeGauges(s,sh,fx,now);addCafeExp(s,CFG.cafeExp.walkPer10Min*sec/600);
+  if(sh){const fx=CFG.walkEffect[sec];changeGauges(s,sh,fx,now);addCafeExp(s,CFG.cafeExp.walkPer10Min*sec/600);addPaws(sh,CFG.activityPaws.walk);res.paws=CFG.activityPaws.walk; // 139-1 직접 산책 1회 2
    // 갱신 82·83 independent rolls
    if(r()<E.snake){sh.status='injured';sh.injury='snake';res.events.push('snake');}
    if(r()<E.light){if(sh.status!=='injured'){sh.status='injured';sh.injury='light';}res.events.push('light');}
@@ -279,6 +279,8 @@ export function tick(s,w,dt,now,ctx={}){ctx={...ctx,now};w.t+=dt;const C=s.cafe;
  const work=new Set(s.shibas.filter(o=>canWork(s,o)).map(o=>o.id));
  for(const id of Object.keys(w.sh).map(Number))if(!work.has(id)){const sh=w.sh[id];if(sh.phase==='meet')endMeeting(w,sh);delete w.sh[id];}
  for(const id of work)if(!w.sh[id])w.sh[id]={id,phase:'roam',t:0,cust:null};
+ // 139-1·139-2: 카페 근무 1시간마다 발바닥 1 (매니저가 운영하는 시간 포함, 오프라인 12시간 정산 안에서)
+ for(const id of work){const o=byId(s,id);o.workAcc=(o.workAcc||0)+dt;while(o.workAcc>=3600){o.workAcc-=3600;addPaws(o,CFG.activityPaws.cafeWorkHour);}}
  for(const sh of Object.values(w.sh)){sh.t-=dt;
   if(sh.phase==='meet'&&sh.t<=0)endMeeting(w,sh);
   if(sh.phase==='roam'&&sh.t<=0){const free=w.custs.filter(c=>c.with==null);if(free.length){free.sort((a,b)=>a.met.length-b.met.length||a.t-b.t);startMeeting(s,w,sh,free[0],ctx);}}}
