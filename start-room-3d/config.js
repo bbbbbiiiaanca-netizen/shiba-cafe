@@ -41,7 +41,8 @@ export const CFG={
 
  // ── 카페 ──
  cafe:{maxLevel:50, // 갱신 73
-  pressure:PRESSURE, // 갱신 75
+  customersPerHourPerCap:100, // 갱신 132-4 supersedes 갱신 75 arrival intervals
+  pressure:PRESSURE, // 갱신 75 (interval column retained as source history only)
   expToNext:CAFE_EXP, // 갱신 98
   capFromSlots:2.2, // 갱신 70·71: 손님 상한 = 배치 가능 시바 수 × 2.2, 올림 (표 값과 일치; 표가 우선)
   maxPlaced:10, // 갱신 74

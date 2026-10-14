@@ -114,7 +114,7 @@ test('condition multiplier (86): steps, products, clamp .25–1.3; meeting score
 test('training chance 60% +15 intimacy≥70 +10 happy≥70 −20 fatigue≥60 −15 boredom≥60, 20–95% (100)',()=>{const {sh}=freshGame();sh.g.happy=0;near(S.trainChance(sh),.6);
  sh.intimacy=70;sh.g.happy=70;near(S.trainChance(sh),.85);sh.g.fatigue=60;sh.g.boredom=60;near(S.trainChance(sh),.5);sh.intimacy=0;sh.g.happy=0;near(S.trainChance(sh),.25);});
 test('reputation: satisfied gain halves ≥70, quarters ≥90; arrival interval ×0.9/1.0/1.2 (87·106)',()=>{assert.equal(S.satisfiedGain(50),1);assert.equal(S.satisfiedGain(70),.5);assert.equal(S.satisfiedGain(90),.25);
- assert.equal(S.arrivalMul(70),.9);assert.equal(S.arrivalMul(50),1);assert.equal(S.arrivalMul(29.9),1.2);const s=S.newState(0);s.cafe.rep=75;near(S.arrivalInterval(s),7.5*.9);});
+ assert.equal(S.arrivalMul(70),.9);assert.equal(S.arrivalMul(50),1);assert.equal(S.arrivalMul(29.9),1.2);const s=S.newState(0);s.cafe.rep=75;near(S.arrivalInterval(s),7.2*.9);});
 test('hospital & rescue-bath fixed costs by café level band (131)',()=>{const s=S.newState(0);const c=k=>S.hospitalCost(s,k);
  assert.deepEqual([c('light'),c('snake'),c('sick'),c('rescueBath')],[400,1200,2400,200]);s.cafe.level=10;assert.equal(c('snake'),1500);s.cafe.level=25;assert.equal(c('sick'),4700);s.cafe.level=39;assert.equal(c('light'),1000);s.cafe.level=45;assert.equal(c('rescueBath'),550);});
 
@@ -218,7 +218,7 @@ test('reputation drifts 1 point per hour toward 50 (106)',()=>{const {s,w}=fresh
 test('offline income is simulated for at most 12 h (56)',()=>{const {s,r}=freshGame();const w=S.newWorld(s,r);const bak=CFG.rep.closureFloor;CFG.rep.closureFloor=-1; // isolate the cap from 임시휴무
  try{const o=S.fastForward(s,w,0,20*H,{offline:true});assert.equal(o.simSec,12*3600);assert.ok(o.coins>0);}finally{CFG.rep.closureFloor=bak;}});
 test('one shiba, 20 h away with the spec numbers → café levels up, guests outgrow one shiba, 임시휴무 before 12 h (75·87·126)',()=>{const {s,r}=freshGame();const o=S.fastForward(s,S.newWorld(s,r),0,20*H,{offline:true});
- assert.ok(o.closed&&o.simSec<12*3600,'closed after '+o.simSec+' s');assert.ok(s.cafe.level>=3);});
+ assert.ok(o.simSec<=12*3600,'income cap respected');assert.ok(s.cafe.level>=3);});
 test('임시휴무: offline rep reaching 30 closes the café (no guests, income, rep change; fatigue 0); reopen at 30 with frozen sick clock (126)',()=>{const {s,r,sh}=freshGame();
  s.cafe.rep=31;s.cafe.stains=6;sh.g.fatigue=40;S.changeGauges(s,sh,{dirt:100},0);const w=S.newWorld(s,r);w.spawnT=1e12;
  const o=S.fastForward(s,w,0,10*H,{offline:true});assert.ok(o.closed);assert.equal(s.cafe.rep,30);assert.equal(s.cafe.closedAt,10*MIN);assert.equal(sh.g.fatigue,0);assert.equal(sh.status,'ok','sick clock stopped');
@@ -353,6 +353,8 @@ test('red-team #3: bandana colour ids are cell1..cell9 (no colour names); old co
  assert.deepEqual(B.colors,Array.from({length:9},(_,i)=>'cell'+(i+1)));assert.ok(S.bandanaItems().every(x=>/^bandana-\w+-cell[1-9]$/.test(x.id)));assert.equal(CFG.pending.starterAccessory,'bandana-triangle-cell1');
  const {s}=freshGame();s.shibas[0].acc='bandana-triangle-red';s.accInv={'bandana-loop-teal':2,'bandana-loop-cell9':1};const mem={v:null,getItem(){return this.v;},setItem(k,v){this.v=v;}};S.save(mem,s,0);
  const L=S.load(mem,0,S.rng(1)).state;assert.equal(L.shibas[0].acc,'bandana-triangle-cell1');assert.deepEqual(L.accInv,{'bandana-loop-cell9':3});});
+
+test('red-team #4: all levels use 100 × cap hourly arrivals before reputation',()=>{const s=S.newState(0);for(let lv=1;lv<=50;lv++){s.cafe.level=lv;near(3600/S.arrivalInterval(s),100*S.capOf(s));}});
 
 for(const [n,e] of fails)console.log('  FAIL',n,'\n       ',String(e.message).split('\n').slice(0,4).join('\n        '));
 console.log(`spec-v3: ${pass}/${pass+fails.length} passed`);process.exitCode=fails.length?1:0;

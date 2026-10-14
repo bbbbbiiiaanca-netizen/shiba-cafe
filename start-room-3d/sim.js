@@ -76,7 +76,7 @@ export function addCafeExp(s,n){if(!(n>0))return 0;const C=s.cafe;let up=0;if(C.
 export const slotsOf=s=>Math.min(CFG.cafe.maxPlaced,pressureAt(s.cafe.level).slots);
 export const capOf=s=>pressureAt(s.cafe.level).cap;
 export function arrivalMul(rep){for(const [at,m] of CFG.rep.arrivalMul)if(rep>=at)return m;return CFG.rep.arrivalMul.at(-1)[1];}
-export const arrivalInterval=s=>pressureAt(s.cafe.level).interval*arrivalMul(s.cafe.rep);
+export const arrivalInterval=s=>3600/(CFG.cafe.customersPerHourPerCap*capOf(s))*arrivalMul(s.cafe.rep);
 export function satisfiedGain(rep,base=CFG.rep.satisfied){for(const [at,m] of CFG.rep.damp)if(rep>=at)return base*m;return base;}
 // offline: if a drop reaches the floor the café closes for the day (갱신 126-1)
 export function addRep(s,d,ctx={}){const C=s.cafe;C.rep=clamp(C.rep+d,CFG.rep.min,CFG.rep.max);
