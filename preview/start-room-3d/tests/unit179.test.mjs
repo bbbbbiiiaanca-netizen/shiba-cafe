@@ -18,7 +18,7 @@ const item=id=>CFG.heartUse.items.find(x=>x.id===id);
  const old=other.g.happy;S.useHeartItem(s,'play',other.id,CFG.ledger.periodMs);assert.equal(other.g.happy,old,'unknown gauges stay unknown');
 }
 {
- const s=fresh();assert.equal(S.heartUseCheck(s,'praise',null,0),'locked');S.heartState(s);s.cafe.level=8;assert.deepEqual(S.heartUnlocks(s).map(x=>x.id),['praise','brush']);assert.deepEqual(S.heartUnlocks(s),[]);
+ const s=fresh();assert.equal(S.heartUseCheck(s,'praise',null,0),'locked');S.heartState(s);s.cafe.level=8;assert.deepEqual(S.heartUnlocks(s).map(x=>x.id),['praise','brush']);assert.deepEqual(S.heartUnlocks(s),[]);s.cafe.level=1;assert.deepEqual(S.heartUnlocks(s),[]);s.cafe.level=8;assert.deepEqual(S.heartUnlocks(s),[],'previous unlocks are not repeated after staging a lower level');
  S.useHeartItem(s,'call',null,0);assert.equal(S.heartMultiplier(s,'guests',0),1.5);assert.equal(S.heartMultiplier(s,'guests',10*minute),1);assert.equal(S.activeHeartEffects(s,10*minute).length,0);
  S.useHeartItem(s,'praise',null,0);assert.equal(S.heartMultiplier(s,'satisfaction',0),1.5);
  S.useHeartItem(s,'brush',s.shibas[0].id,0);assert.equal(S.heartMultiplier(s,'shibaMul',0,s.shibas[0].id),1.2);assert.equal(S.heartMultiplier(s,'shibaMul',0,-1),1);

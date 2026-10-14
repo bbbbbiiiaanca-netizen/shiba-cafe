@@ -135,7 +135,8 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await ev(`(()=>{const g=__game;g.world.floats=[];g.world.events=[];
    for(let i=0;i<20000&&!g.world.custs.some(c=>c.phase==='seated');i++)g.step(.1);
    const guest=g.world.custs.find(c=>c.phase==='seated');if(!guest)throw Error('no seated guest');
-   guest.fulfilled=true;guest.t=0;const cell=[...guest.cell];g.world.floats=[];g.world.events=[];g.step(0);
+   // Finish eating/playing before forcing this real guest's payment at their seat.
+   guest.activity='interact';guest.eatRemaining=0;guest.fulfilled=true;guest.t=0;const cell=[...guest.cell];g.world.floats=[];g.world.events=[];g.step(g.CFG.navigation.cellStepSec);
    if(!['coin','heart'].every(kind=>g.world.floats.some(f=>f.kind===kind&&f.guestId===guest.id&&f.cell.join()===cell.join())))throw Error('floats not at paying seat');
    // Freeze the payment instant at the seat; characters have no art and stay invisible.
    guest.phase='seated';guest.cell=cell;g.world.custs=[guest];g.world.queue=[];

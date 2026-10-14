@@ -128,19 +128,21 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  // Unit 4 checks use TEMP staging and explicit pending-value fixtures; no production save.
  // §11·§12: TEMP debug, alternating expansion, bitmap floor, drag bounds and saved placements.
  await go(true,'&temp=1&expansions=3');
- await ev('__game.ui.modals=[];__game.state.started=true;__game.refresh();true');
+ await ev('__game.ui.modals=[];__game.state.settings.language="ko";__game.state.started=true;__game.refresh();true');
  await check('§12 query unlocks N alternating strips with null price',`__game.state.space.unlockedRows===3&&__game.CFG.expansion.rowCost===null&&__game.iso.markers.find(m=>m.kind==='row').axis==='i'`);
  for(const [n,grid,axis] of [[0,36,'j'],[1,42,'i'],[2,49,'j'],[3,56,'i']]){
   await ev(`__game.debugExpand(${n});__game.iso.setEdit(true);true`);
   await check('§12 full expanded grid '+n,`__game.iso.gridCells===${grid}&&__game.iso.markers.find(m=>m.kind==='row').axis==='${axis}'`);
  }
- await ev('__game.iso.setEdit(false);__game.iso.panTo(0,0);true');
- const pan=await ev(`(()=>{const r=document.getElementById('isomap').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,dx:Math.ceil(__game.iso.panBounds.maxX)+r.width,dy:Math.ceil(__game.iso.maxScroll)+r.height};})()`);
+ await ev('__game.debugExpand(18);__game.iso.setEdit(false);__game.iso.panTo(__game.iso.panBounds.minX,0);true');
+ const pan=await ev(`(()=>{const r=document.getElementById('isomap').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,dx:Math.ceil(__game.iso.panBounds.maxX-__game.iso.panBounds.minX)+r.width,dy:Math.ceil(__game.iso.maxScroll)+r.height};})()`);
  await c('Input.dispatchMouseEvent',{type:'mousePressed',x:pan.x,y:pan.y,button:'left',buttons:1,clickCount:1});
  await c('Input.dispatchMouseEvent',{type:'mouseMoved',x:pan.x-pan.dx,y:pan.y-pan.dy,button:'left',buttons:1});
  await c('Input.dispatchMouseEvent',{type:'mouseReleased',x:pan.x-pan.dx,y:pan.y-pan.dy,button:'left',buttons:0,clickCount:1});
  await check('§12 actual drag reaches horizontal and vertical bounds',`__game.iso.panX>0&&__game.iso.panX===__game.iso.panBounds.maxX&&__game.iso.scroll===__game.iso.maxScroll`);
- await ev('__game.iso.panTo(-Infinity,-Infinity);true');
+ await c('Input.dispatchMouseEvent',{type:'mousePressed',x:pan.x,y:pan.y,button:'left',buttons:1,clickCount:1});
+ await c('Input.dispatchMouseEvent',{type:'mouseMoved',x:pan.x+pan.dx,y:pan.y+pan.dy,button:'left',buttons:1});
+ await c('Input.dispatchMouseEvent',{type:'mouseReleased',x:pan.x+pan.dx,y:pan.y+pan.dy,button:'left',buttons:0,clickCount:1});
  await check('§12 opposite bounds clamp',`__game.iso.panX===__game.iso.panBounds.minX&&__game.iso.scroll===0`);
  // Production save reload: TEMP never writes a production save.
  await go(true);
@@ -175,8 +177,10 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev(`(()=>{const g=__game;g.world.events.push({type:'leave',id:904,outcome:'normal',coins:3,order:'M-01',requestMet:false,metShiba:true,cell:[2,3]});g.refresh();return true;})()`);
  await check('§17-5: meeting a shiba without the request met → coin only, no heart',`JSON.stringify(__game.world.floats.map(f=>[f.kind,f.dx]))==='[["coin",0]]'`);
  await ev('__game.step(1.05);true');
- await ev(`(()=>{const g=__game;g.world.events.push({type:'leave',id:901,outcome:'normal',coins:3,order:'M-01',orderImg:'M-01-iced-americano_512.png',requestMet:true,metShiba:true,cell:[2,3]});g.refresh();window.f2=document.getElementById('isomap').toDataURL();return true;})()`);
- await check('§17-5: a paying guest whose request was met floats a coin and a heart from the head; they are drawn',`JSON.stringify(__game.world.floats.map(f=>[f.kind,f.cell.join()]))==='[["coin","2,3"],["heart","2,3"]]'&&__game.world.floats.every(f=>f.guestId===901)&&__game.world.floats[0].dx<0&&__game.world.floats[1].dx>0&&window.f2!==window.f0`);
+ await ev(`(()=>{const g=__game,cell=g.S.seatSlots(g.state,g.world)[0].cell;
+  const guest={id:901,kind:'mom',phase:'seated',cell:[...cell],t:0,activity:'interact',met:[],score:1,with:null,fulfilled:true,order:{id:'M-01',kind:'coffee',price:g.CFG.menu.coffee.price,img:g.CFG.menu.coffee.img}};
+  g.world.floats=[];g.world.custs=[guest];window.payingCell=[...cell];g.step(g.CFG.navigation.cellStepSec);for(const f of g.world.floats)f.age=0;g.refresh();window.f2=document.getElementById('isomap').toDataURL();return true;})()`);
+ await check('§17-5: a paying guest whose request was met floats a coin and a heart from the head; they are drawn',`JSON.stringify(__game.world.floats.map(f=>f.kind))==='["coin","heart"]'&&__game.world.floats.every(f=>f.cell.join()===window.payingCell.join())&&__game.world.floats.every(f=>f.guestId===901)&&__game.world.floats[0].dx<0&&__game.world.floats[1].dx>0&&window.f2!==window.f0`);
  await ev('__game.step(.5);true');
  await check('§17-5: half-way the floats are still up',`__game.world.floats.length===2&&Math.abs(__game.world.floats[0].age-.5)<.01`);
  await ev('__game.step(.55);true');

@@ -646,3 +646,20 @@ Questions (all unspecified magnitudes remain null):
 Art requests: 16 heart-action card icons (including walk) as supplied bitmap art; all reserved slots remain null. No guest/staff/character art added; invisible figures remain invisible.
 
 Validation: `npm test` includes `tests/unit179.test.mjs`; browser smoke updated, not executed (Chrome sandbox limitation). Capture script updated, not executed: `node start-room-3d/capture-main-screen.mjs --u179` writes DPR2 `main-screen-u179-hearts.png`, `main-screen-u179-noheart.png`, `main-screen-u179-pick.png` under `/workspace/shiba-cafe-docs/spec-v3-build/`. Capture fixtures are unsaved; no output written outside the allowed workspace during this task.
+
+## Executed Chrome regression fixes — 2026-10-15
+
+- All three failures came from fixtures; existing app behavior and float projection were correct. No app or balance changes were needed.
+- §17-9 smoke had already consumed unlock notifications at the manager level, then lowered the café to Lv1 without resetting the notification baseline. The isolated heart-list scenario now starts its notification baseline at its staged café level. Unit coverage confirms previously announced unlocks do not repeat after a level decrease/re-increase.
+- §12 TEMP smoke left first-run language selection open; Chrome's real pointer hit the modal instead of the canvas. Set the fixture language before refresh. Three expansions also fit vertically in the real viewport, so the two-axis scenario now reuses the existing 18-expansion fixture to create actual vertical travel. Real Chrome pointer drags reach both horizontal and vertical bounds in both directions; renderer unit coverage checks the same return drag. The existing 0/1/2/3 grid and capture stages remain covered.
+- `--rf` called `step(0)`, which correctly consumes no simulation time and emits no payment. It now advances by `CFG.navigation.cellStepSec`, after ending the staged guest's eating/playing activity. Existing payment checks require both floats to retain that guest's ID and exact seated cell. Smoke now creates an actual seated payment through `step()` instead of injecting a leave event. Unit coverage checks zero elapsed time, positive elapsed settlement, and the immutable seat-cell snapshot during exit.
+- Executed `npm test` and `npm run test:browser` successfully (163/163 Chrome checks, zero page errors). Executed `node capture-main-screen.mjs captures --rf` and `node capture-main-screen.mjs captures --u12` successfully. All generated PNGs and result logs are under `start-room-3d/captures/`, within the authorized edit area.
+- Read `captures/main-screen-rf-floats.png` visually: coin and heart appear above the occupied rear cushion/seat cell inside the room, rather than on empty floor or outside the left pillar. Guest sprite remains invisible, as required by its null art. Read `captures/main-screen-u12-pan.png` visually as well: the camera pans sideways over expanded tatami.
+
+Starting values: none added; fixture counts reuse existing tests/configuration, travel derives from viewport/bounds, and payment advances by existing configured navigation time.
+
+Questions: guest sprite head anchor remains null pending art; what is the approved head anchor? No new numerical decisions.
+
+Art requests: existing guest sprite with foot/head anchors remains pending. No substitute art or shapes added.
+
+No git commit or push; all edits and capture outputs are under `start-room-3d/`.

@@ -98,3 +98,9 @@ events.pointermove(pointer(200-Math.ceil(distance)-canvas.clientWidth,150-Math.c
 events.pointerup(pointer(200-Math.ceil(distance)-canvas.clientWidth,150-Math.ceil(expandIso.maxScroll)-canvas.clientHeight));
 assert.equal(expandIso.panX,expandIso.panBounds.maxX);assert.equal(expandIso.scroll,expandIso.maxScroll);
 console.log('Review fixes: floats use guest cell + head offset in furniture camera view; pointer drag reaches both bounds');
+
+// Returning by pointer drag reaches the opposite camera bounds too.
+events.pointerdown(pointer(200,150));
+const reverse=pointer(200+Math.ceil(distance)+canvas.clientWidth,150+Math.ceil(expandIso.maxScroll)+canvas.clientHeight);
+events.pointermove(reverse);events.pointerup(reverse);
+assert.equal(expandIso.panX,expandIso.panBounds.minX);assert.equal(expandIso.scroll,0);

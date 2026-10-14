@@ -98,6 +98,16 @@ test('§17-5 leave events carry what the floats need: paid coins, request met, m
  assert.deepEqual(CFG.feedback,{floatSec:1});
  const main=readFileSync(root+'main.js','utf8');assert.ok(/function floatsFor\(e\)\{const heart=!!e\.requestMet,/.test(main),'heart float only when the request was met');});
 
+test('§17-5 elapsed payment stays at the seat and zero elapsed does not settle',()=>{
+ const s=fresh(),w=S.newWorld(s,S.rng(1));w.spawnT=Infinity;
+ const cell=S.seatSlots(s,w)[0].cell;
+ const guest={id:w.nextCust++,kind:'mom',phase:'seated',cell:[...cell],t:0,activity:'interact',met:[],score:1,with:null,fulfilled:true,order:{id:'M-01',kind:'coffee',price:CFG.menu.coffee.price,img:CFG.menu.coffee.img}};
+ w.custs=[guest];S.consumeElapsed(s,w,0,now);assert.equal(w.events.length,0);
+ S.consumeElapsed(s,w,CFG.navigation.cellStepSec,now);
+ const event=w.events.find(e=>e.type==='leave');assert.ok(event);assert.equal(event.id,guest.id);assert.deepEqual(event.cell,cell);assert.ok(event.requestMet);assert.ok(Number.isFinite(event.coins));
+ guest.cell[0]++;assert.deepEqual(event.cell,cell,'payment retains a snapshot while the guest exits');
+});
+
 test('§17-5/6 float layout: head = foot cell + offset (invisible guest), coin/heart/빠직 are 그림이 icons, 빠직 drawn at coin size',()=>{
  assert.equal(CHAR_SPRITES.guest.file,null);assert.ok(FLOAT_LAYOUT.headOffset[1]<0);assert.ok(FLOAT_LAYOUT.risePx>0);
  assert.equal(FLOAT_ICONS.coin,'assets/drive/ui/res-coin.png');assert.equal(FLOAT_ICONS.heart,'assets/drive/ui/res-heart.png');assert.equal(FLOAT_ICONS.angry,'assets/drive/ui/emo-angry.png');
