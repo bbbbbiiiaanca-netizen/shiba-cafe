@@ -13,13 +13,16 @@ export const SPRITES={
 // Opaque top-face bounds measured from alpha: x [1,127), y [0,64).
 // Anchor uses pixel-edge coordinates, the diamond's centre (64,32).
 export const MAP_MARKERS={
- lockedTile:{file:'assets/drive/tiles/tile-floor-locked.png',anchor:[64,32],topFaceBounds:[1,0,127,64]},
  expansion:{file:'assets/drive/tiles/marker-expand-land.png',anchor:[64,72]},
  floor2:{file:'assets/drive/ui/ui-lock.png',anchor:[32,32]}
 };
 export const ROOM_BG='assets/drive/room-tatami-noline.png';
 export const MAP={zones:[{
  id:'A',image:ROOM_BG,origin:{x:429,y:181},
+ // Display placeholder until expansion land art exists. Alpha scan of 방_기본_다다미_선없음 / 시험
+ // front-left rim: lowest opaque pixel (429,614); outer edge y-x/2 <= 401. Offset 0 overlaps
+ // 18,193 opaque pixels; offset 1 overlaps zero (smallest whole-row offset).
+ expansionRowOffset:1,
  cols:6,rows:6,cell:{w:128,h:64},locked:false,unlockCost:null,floor:1,
  slots:[
   {id:'counter',type:'counter',origin:[0,0],dir:0},

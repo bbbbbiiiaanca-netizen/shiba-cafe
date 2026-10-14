@@ -45,19 +45,14 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await click('[data-main-tab=shiba]');await ev('__game.state.shibas[0].paws=__game.S.pawsToNext(__game.state.shibas[0].level);__game.refresh();true');
  await click('#menuList [data-act=levelUp]');await shot('main-screen-u2-levelup.png');
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
- await click('[data-main-tab=furniture]');await shot('main-screen-u3-furniture.png');
- await ev(`(()=>{const list=document.getElementById('menuList'),grid=document.querySelector('.furniture-grid');list.scrollTop+=grid.getBoundingClientRect().top-list.getBoundingClientRect().top-8;return true;})()`);
- await shot('main-screen-u3-furniture-grid.png');
- await ev('document.getElementById("menuList").scrollTop=0;true');
+ await click('[data-main-tab=furniture]');await ev('document.getElementById("menuList").scrollTop=0;true');await shot('main-screen-u3-inventory.png');
  await click('[data-main-tab=menu]');
  await ev('__game.iso.scrollTo(__game.iso.maxScroll);true');await shot('main-screen-u3-locked-row.png');
- await click('[data-main-tab=furniture]');
- await ev('__game.iso.scrollTo(0);document.getElementById("menuList").scrollTop=0;true');
- await click('[data-act=floor][data-floor=\"2\"]');
- {const st=await ev('JSON.stringify({f:__game.state.cafe.floor||1,t:__game.ui.toastT,m:__game.iso.markers.map(m=>m.kind)})');console.log('2F state',st);if(!st.includes('"f":1')||!st.includes('floor2'))throw Error('2F locked state missing '+st);}
- await shot('main-screen-u3-2f.png',{keepToast:true});
- const unit3=['locked-row','2f','furniture'].map(name=>readFileSync(join(out,'main-screen-u3-'+name+'.png')));
- if(unit3.some((image,i)=>unit3.slice(i+1).some(other=>image.equals(other))))throw Error('Unit 3 captures must be distinct');
+ const expansionPoint=await ev('(()=>{const m=__game.iso.markers.find(m=>m.kind==="row"),r=document.getElementById("isomap").getBoundingClientRect();return {x:r.left+m.buttonX,y:r.top+m.buttonY};})()');
+ for(const type of ['mousePressed','mouseReleased'])await c('Input.dispatchMouseEvent',{type,...expansionPoint,button:'left',buttons:type==='mousePressed'?1:0,clickCount:1});
+ if(!(await ev(`document.getElementById('toast').textContent==='상점 준비 중이에요'&&document.querySelector('[data-main-tab=menu]').classList.contains('active')&&!document.querySelector('[data-space-card]')`)))throw Error('Expansion + did not show pending shop toast');
+ const unit3=['locked-row','inventory'].map(name=>readFileSync(join(out,'main-screen-u3-'+name+'.png')));
+ if(unit3[0].equals(unit3[1]))throw Error('Unit 3 captures must be distinct');
  writeFileSync(join(out,'main-screen-v7-state.txt'),'Same normal staging as v6; edit: counter origin [0,1], dir1, footprint (0,1)-(0,2); stairs unchanged; 가구 tab active with action bar in bottom panel. 390x844, normal DPR1/DPR2, edit DPR2.\n');
  console.log('Staged capture: cafe level 5, M-02 developing; coins 21,500, diamonds 30; 390x844 CSS px, DPR 1 and 2.');
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}

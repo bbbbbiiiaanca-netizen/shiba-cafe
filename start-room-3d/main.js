@@ -51,11 +51,7 @@ function renderHUD(){const now=clock.now();$('coins').textContent=fmt(s.coins);$
  $('closed').hidden=!C.closed;$('closed').textContent=L('hud.closed');}
 
 let sceneSig='';
-const iso=createIsoMap($('isomap'),{onChange:()=>persist(),onBlocked:()=>toast('다른 가구와 겹치거나 방 밖으로 나갈 수 없어요.'),onEditChange:()=>{mainTab='furniture';menuSig='';renderMainMenu();}});
-function spaceCards(){
- const card=(kind,title,cost,id='',owned=false)=>`<div class="card space-card" data-space-card="${kind}" style="background-image:url('assets/drive/ui/ui-card-${owned?'default':'locked'}.png')"><img class="space-lock" src="assets/drive/ui/ui-lock.png" alt="잠금" ${owned?'hidden':''}><strong>${title}</strong><button data-act="spaceUnlock" data-kind="${kind}" data-id="${id}" ${S.spaceUnlockCheck(s,kind,id)?'disabled':''}>${owned?'해금됨':cost==null?'미정':fmt(cost)+' 멍코인'}</button></div>`;
- return `<div class="btns" aria-label="층 선택"><button data-act="floor" data-floor="1" aria-pressed="${(s.cafe.floor||1)===1}">1층</button><button data-act="floor" data-floor="2" aria-disabled="${!s.space.floor2Unlocked}" aria-pressed="${s.cafe.floor===2}">2층</button></div>`+card('row','땅 넓히기',CFG.expansion.rowCost)+card('floor2','2층 증축',CFG.cafe.expansion2FCost,'',s.space.floor2Unlocked)+CFG.themes.filter(t=>t.locked).map(t=>card('theme',t.name,t.unlockCost,t.id,s.space.themes.includes(t.id))).join('')+(CFG.themes.some(t=>t.locked)?'':'<div class="card">테마 (준비 중)</div>');
-}
+const iso=createIsoMap($('isomap'),{onChange:()=>persist(),onExpand:()=>toast('상점 준비 중이에요'),onBlocked:()=>toast('다른 가구와 겹치거나 방 밖으로 나갈 수 없어요.'),onEditChange:()=>{mainTab='furniture';menuSig='';renderMainMenu();}});
 function renderScene(){iso.draw(s,w);renderMainMenu();}
 let menuSig='',mainTab=iso.edit?'furniture':'menu';
 function renderMainMenu(){
@@ -63,9 +59,9 @@ function renderMainMenu(){
  $('paws').textContent=fmt(s.shibas.reduce((n,sh)=>n+(sh.paws||0),0));
  const now=clock.now(),sig=JSON.stringify([mainTab,s,ui.accType,iso.edit,s.settings.language,Math.floor(now/1000)]);
  if(sig===menuSig)return;menuSig=sig;
- const headers={menu:['메뉴 개발','새로운 맛을 준비해요'],shiba:['시바','돌봄 · 레벨업 · 산책'],furniture:['가구','배치 · 가격 미정'],store:['가게','반다나 · 액세서리 · 가방']};const [title,hint]=headers[mainTab];document.querySelector('.menu-heading').innerHTML=title+' <small>'+hint+'</small>';
+ const headers={menu:['메뉴 개발','새로운 맛을 준비해요'],shiba:['시바','돌봄 · 레벨업 · 산책'],furniture:['가구','보유 가구 · 배치'],store:['가게','반다나 · 액세서리 · 가방']};const [title,hint]=headers[mainTab];document.querySelector('.menu-heading').innerHTML=title+' <small>'+hint+'</small>';
  $('menuList').classList.toggle('tab-list',mainTab!=='menu');
- if(mainTab!=='menu'){const content=mainTab==='shiba'?P.shibas().html:mainTab==='store'?P.shop().html:`<button data-edit-toggle aria-pressed="${iso.edit}">${iso.edit?'편집 끝':'배치 편집'}</button><div class="note">가구 배치 · 가격 미정</div>${spaceCards()}<section class="furniture-section" aria-labelledby="furniture-heading"><h3 id="furniture-heading">가구</h3><div class="furniture-grid">${CFG.furniture.items.map(({id,name,price})=>`<article class="furniture-card" data-furniture-card="${id}"><img class="furniture-icon" src="assets/drive/ui/ui-icon-${id}.png" alt=""><strong>${name}</strong><span>가격 ${price==null?L('app.unset'):fmt(price)}</span></article>`).join('')}</div></section>`;const scroll=$('menuList').scrollTop;$('menuList').innerHTML=content;$('menuList').scrollTop=scroll;if(mainTab==='furniture'&&iso.edit)$('menuList').prepend(iso.actions);$('menuList').querySelector('[data-edit-toggle]')?.addEventListener('click',()=>{iso.setEdit(!iso.edit);});return;}
+ if(mainTab!=='menu'){const content=mainTab==='shiba'?P.shibas().html:mainTab==='store'?P.shop().html:`<button data-edit-toggle aria-pressed="${iso.edit}">${iso.edit?'편집 끝':'배치 편집'}</button><section class="furniture-section" aria-labelledby="furniture-heading"><h3 id="furniture-heading">가구</h3><div class="furniture-grid">${CFG.furniture.items.filter(({id})=>s.placement.slots.some(slot=>slot.type===({'tea-table':'table',zabuton:'cushion'}[id]||id))).map(({id,name})=>`<article class="furniture-card" data-furniture-card="${id}"><img class="furniture-icon" src="assets/drive/ui/ui-icon-${id}.png" alt=""><strong>${name}</strong></article>`).join('')}</div></section>`;const scroll=$('menuList').scrollTop;$('menuList').innerHTML=content;$('menuList').scrollTop=scroll;if(mainTab==='furniture'&&iso.edit)$('menuList').prepend(iso.actions);$('menuList').querySelector('[data-edit-toggle]')?.addEventListener('click',()=>{iso.setEdit(!iso.edit);});return;}
  const items=[CFG.menu.coffee,...CFG.menu.items].sort((a,b)=>a.id.localeCompare(b.id));
  const value=n=>n==null?'미정':fmt(n);
  $('menuList').innerHTML=items.map(m=>{const basic=m.id===CFG.menu.coffee.id,locked=!basic&&s.cafe.level<m.unlockLevel,dev=s.menuDev?.id===m.id,owned=s.menus.includes(m.id);
@@ -222,7 +218,6 @@ if(L0.offline&&(L0.offline.sec>=60||L0.reopened))ui.modals.push({kind:'offline',
 
 // ───────── actions ─────────
 const act={
- spaceUnlock:d=>{if(S.unlockSpace(s,d.kind,d.id))persist();},floor:d=>{if(+d.floor===2&&!s.space.floor2Unlocked){toast('2층은 아직 잠겨 있어요.');return;}if(S.switchFloor(s,+d.floor))persist();},
  close,income:()=>open('income'),care:d=>open('care',+d.id),
  place:d=>{if(!S.setPlaced(s,+d.id,d.on==='1'))why(S.placeCheck(s,+d.id));},
  dongu:()=>{s.dongu.placed=!s.dongu.placed;},
