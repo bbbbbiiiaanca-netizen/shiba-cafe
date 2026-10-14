@@ -803,3 +803,24 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - Resulting sequence: 170,000 · 270,000 · 440,000 · 700,000 · 1,100,000 · 1,800,000 · 2,900,000 …
 - Supersedes the earlier "nearest 1,000" starting value above.
 - Confirm popup polish (2026-10-15 08:23 KST): shows "N번째 땅 넓히기", coin icon + rounded price, centred; when coins < price the 확인 button is dimmed, tapping it toasts "멍코인이 부족해요" and keeps the popup (no charge). Smoke check added.
+
+## §17 audit (2026-10-15 08:35 KST, by hand)
+| Item | Status | Evidence |
+|---|---|---|
+| 17-1 hearts 5 slots, mm:ss timer, +N, cap 10 | done | smoke §17-1 ×5 |
+| 17-2 ledger lines/order | done | smoke §17-2 |
+| 17-3 ledger row spacing ≤ half | done | smoke §17-3 |
+| 17-4 short card text, "LvN 해금", tap for detail | done | smoke §17-4 ×6 |
+| 17-5 coin/heart float ~1 s | done | smoke §17-5 ×5 |
+| 17-6 빠직 float ~1 s | done | smoke §17-6 ×2 |
+| 17-7 가벽 + "입구가 막혔어요!" + entrance block | done | smoke wall/u17, capture u17-walls-blocked |
+| 17-8 only manager animated; other 알바 effect-only | done (faces = blocked: art) | smoke u18 manager |
+| 17-9 heart-use popup (stay open, active timers, LvN, dim + ad 1, order, ad 3/30min/10) | done | smoke §17-9 ×6 |
+| 17-10 centring, OFL fonts, 5 tabs, 알바 in 가게관리, 마을 병원+산책 | done (마을/가방 tab icons, village map art = blocked: art) | smoke §17 tabs, nav captures |
+
+## Land expansion polish (2026-10-15 08:35 KST)
+- + marker: verified present, alternating axis and tappable inside the map for expansions 0..9 (new smoke check); tier-rounded price per step.
+- + marker art drawn at max(map scale, `CFG.expansion.markerMinScale` 0.6, starting value) — at map scale ~0.3 it was ~30px and read as a white blob. **Question:** the approved marker art is a faint glow+plus; is it legible enough, or should 그림이 make a stronger one?
+- Camera eases (ease-out cubic, `CFG.expansion.cameraEaseMs` 400, starting value) to centre the newly bought strip after purchase; clamped by pan bounds (smoke check).
+- Edit grid on new cells, placement on new cells and save/reload: covered by existing §12 checks (grid 0..3, "expansion and new-cell placement survive reload").
+- Known flake: smoke "Task A mailbox boost icon" (image `.complete` timing) failed once, passed on rerun.

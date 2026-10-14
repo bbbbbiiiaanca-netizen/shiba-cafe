@@ -68,7 +68,7 @@ export const CFG={
   ].map(x=>({...x,art:`assets/drive/ui/card-${({blanket:'nap',special:'vip'})[x.id]||x.id}.png`}))},
  heartReset:{fillTo:10}, // 1.4 / 갱신 32: 10개 미만일 때만 10개까지, 10개 이상이면 사용 불가(소모 없음)
 
- expansion:{rowCost:170000,rowMultiplier:1.6,rowRoundTiers:[[100000,1000],[1000000,10000],[Infinity,100000]]}, // 똑또기 starting value 2026-10-15: exact ×1.6 chain; shown/charged price rounded: <100,000→1,000, 100,000–<1,000,000→10,000, ≥1,000,000→100,000
+ expansion:{rowCost:170000,rowMultiplier:1.6,rowRoundTiers:[[100000,1000],[1000000,10000],[Infinity,100000]],cameraEaseMs:400,markerMinScale:0.6}, // 똑또기 starting value 2026-10-15: exact ×1.6 chain; shown/charged price rounded: <100,000→1,000, 100,000–<1,000,000→10,000, ≥1,000,000→100,000; cameraEaseMs 400 and markerMinScale 0.6 (+ marker min draw scale) = starting values 2026-10-15, pending user confirm
  themes:[
   {id:'tatami',name:'다다미',locked:false,unlockCost:null,art:'assets/drive/room-tatami-noline.png'}, // §1.3 default
   // unlockCost (멍코인) / unlockDia / unlockLevel: starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm. art UNSET (interior §6). Theme UI offers either currency while retaining level gates.

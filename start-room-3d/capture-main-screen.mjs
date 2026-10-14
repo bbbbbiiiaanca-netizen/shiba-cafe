@@ -210,6 +210,16 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   }
   await ev(`(()=>{const g=__game;g.state.coins=g.S.spacePrice('row',null,'coins',g.state)-1;g.refresh();g.openExpand();document.querySelector('#mbox [data-act=confirmYes]').click();return true;})()`);await sleep(150);await shot('main-screen-u12b-confirm-short.png',{keepToast:true});
  }
+ else if(process.argv.includes('--polish')){
+  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+  await click('[data-main-tab=manage]');
+  await ev(`(()=>{const g=__game;g.state.coins=g.S.spacePrice('row',null,'coins',g.state);g.refresh();g.openExpand();return true;})()`);await shot('main-screen-polish-confirm.png');
+  await click('#mbox [data-act=confirmYes]');await sleep(80);await shot('main-screen-polish-ease-mid.png');
+  await sleep(600);await shot('main-screen-polish-ease-end.png');
+  await ev(`(()=>{const g=__game;g.debugExpand(6);g.refresh();g.iso.panTo(g.iso.panX,g.iso.scroll);const m=g.iso.markers.find(x=>x.kind==='row'),cv=document.getElementById('isomap');g.iso.panTo(g.iso.panX+m.buttonX-cv.clientWidth/2,g.iso.scroll+m.buttonY-cv.clientHeight/2);return true;})()`);await sleep(300);console.log('MARKER',JSON.stringify(await ev(`(()=>{const g=__game,m=g.iso.markers.find(x=>x.kind==='row'),r=document.getElementById('isomap').getBoundingClientRect();return m&&{x:m.buttonX,y:m.buttonY,axis:m.axis,cells:m.cells.length,r:[r.width,r.height],pan:[g.iso.panX,g.iso.scroll],b:g.iso.panBounds,ms:g.iso.maxScroll};})()`)));await shot('main-screen-polish-expand6-marker.png');
+  await ev(`(()=>{const g=__game;g.iso.setEdit(true);g.iso.panTo(g.iso.panX,g.iso.scroll);return true;})()`);await sleep(300);await shot('main-screen-polish-expand6-edit.png');
+  if(errors.length)throw Error(errors.join('\n'));
+ }
  else if(process.argv.includes('--u18')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
   await ev(`(()=>{const g=__game;g.debugExpand(3);g.world.custs=[];g.world.queue=[];g.world.manager=null;g.refresh();return true;})()`);
