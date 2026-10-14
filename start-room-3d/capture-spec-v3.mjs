@@ -33,9 +33,6 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev('document.querySelector("[data-acc]").scrollIntoView();true');await shot('06b-shiba-care-accessory.png'); // 139-6: starter slot open, wearing 1 bandana
  await click('[data-nav=walk]');await shot('07-walk-pick.png');
  await click('[data-act=walk][data-sec="600"]');await ev('__game.advance(4*60e3);true');await shot('08-walk-in-progress.png');
- // 구조견: staged — a rescue is pushed into the save the way tickWalk() does when the 5% roll hits (the seeded roll may not hit)
- await ev('__game.state.rescues.push({rid:"cap",foundAt:__game.clock.now(),breed:"kuro",pic:0,bathed:false});true');await shot('09-rescue-found.png');
- await click('[data-act=rescueBath]');await shot('10-rescue-reveal.png');await click('[data-act=rescueDecline]');
  await ev('__game.advance(7*60e3);true');await shot('11-walk-result.png');await click('[data-act=modalOk]');
  await click('[data-nav=shop]');await shot('12-shop-menu-dev.png');
  // 메뉴 개발 (갱신 134·136): staged — café level 20, 100,000 멍코인, 50 다이아; M-05 developed earlier (staged), M-02 started by clicking and 7 min passed

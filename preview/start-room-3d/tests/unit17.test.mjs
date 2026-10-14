@@ -41,11 +41,10 @@ test('§17 upgrades survive save/load (older saves get level 0)',()=>{const mem=
  const s=fresh();s.upgrades.seat=2;S.save(st,s,now);assert.equal(S.load(st,now).state.upgrades.seat,2);
  const old=JSON.parse(mem.get(CFG.saveKey));delete old.upgrades;mem.set(CFG.saveKey,JSON.stringify(old));assert.deepEqual(S.load(st,now).state.upgrades,{seat:0,interval:0,price:0,queue:0});});
 
-test('§17 red dots: 시바 lights for a waiting walk result and a waiting rescue (real state); 미션 has no tab',()=>{
+test('§17 red dots: 시바 lights for a waiting walk result (real state); 미션 has no tab',()=>{
  let s=fresh();assert.equal(tabBadges(s,now).shiba,false);assert.ok(!('mission' in tabBadges(s,now)));
  S.startWalk(s,s.shibas[0].id,600,now,()=>.99);S.tickWalk(s,now+600e3,()=>.99);assert.equal(s.walkResults.length,1);assert.equal(tabBadges(s,now+600e3).shiba,true,'walk returned');
  s.walkResults.shift();assert.equal(tabBadges(s,now).shiba,false);
- s.rescues.push({rid:'r1',foundAt:now,breed:'kuro',pic:0,bathed:false});assert.equal(tabBadges(s,now).shiba,true,'rescue waiting');
  s=fresh();withCfg(CFG.upgrades.queue,{price:10},()=>{s.coins=10;assert.equal(tabBadges(s,now).manage,true,'affordable upgrade');});s.coins=1e9;assert.equal(tabBadges(s,now).manage,false,'null upgrade prices never light');});
 // ───────── §17-1 … §17-6 (2026-10-14) ─────────
 const {readFileSync,existsSync}=await import('node:fs');const root=new URL('..',import.meta.url).pathname;
@@ -81,7 +80,7 @@ test('§17-2 ledger: income/expense lines in the requested order; 가구 구입 
  assert.ok(!('upgrade' in S.ledgerCategories));S.recordLedger(s,'upgrade',100,now);assert.equal(S.ledgerStatement(s,now).lines.at(-1).label,'가구 구입');assert.equal(S.ledgerStatement(s,now).net,0);});
 
 test('§17-2 ledger: walk coin rewards are 기타 수입 (also during offline catch-up); café payments while closed are 오프라인 수입 only',()=>{
- withCfg(CFG.walk.events,{extraCoins:7,extra:1,snake:0,light:0,capsule:0,rescue:0},()=>withCfg(CFG.pending,{walkExtraReward:'coins'},()=>{
+ withCfg(CFG.walk.events,{extraCoins:7,extra:1,snake:0,light:0,capsule:0},()=>withCfg(CFG.pending,{walkExtraReward:'coins'},()=>{
   const s=fresh();s.coins=0;S.startWalk(s,s.shibas[0].id,600,now,()=>.99);S.tickWalk(s,now+600e3,()=>0);
   const L=S.ledgerStatement(s,now+600e3).lines;assert.equal(L.find(x=>x.id==='other').amount,7);assert.equal(L.find(x=>x.id==='offline').amount,0);assert.equal(s.coins,7);}));
  const s=fresh();s.coins=0;S.recordPayment(s,{pending:false,base:3,total:6},now,{offline:true});S.recordPayment(s,{pending:false,base:1,total:2},now);

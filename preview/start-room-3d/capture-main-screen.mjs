@@ -112,7 +112,14 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   if(!(await ev(`__game.world.manager?.role==='manager'&&document.getElementById('manager-debug').textContent.includes('매니저')`)))throw Error('manager navigation missing');
   await shot('main-screen-u17-manager.png');
  };
- if(process.argv.includes('--u17d')){await u17d();if(errors.length)throw Error(errors.join('\n'));}
+ if(process.argv.includes('--u141')){
+  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+  await click('[data-main-tab=shiba]');await shot('main-screen-u141-shiba.png');
+  await ev('(()=>{const g=__game,sh=g.state.shibas[0];sh.paws=g.S.pawsToNext(sh.level);g.refresh();return true;})()');
+  await click('#menuList [data-act=levelUp]');await shot('main-screen-u141-levelup.png');
+  await ev('__game.ui.modals=[];__game.refresh();true');await click('[data-main-tab=shop]');await click('[data-act=gachaOdds]');await shot('main-screen-u141-odds.png');
+ }
+ else if(process.argv.includes('--u17d')){await u17d();if(errors.length)throw Error(errors.join('\n'));}
  else if(process.argv.includes('--u17c')){await u17c();if(errors.length)throw Error(errors.join('\n'));}
  else if(process.argv.includes('--u17b')){await u17b();if(errors.length)throw Error(errors.join('\n'));}
  else if(process.argv.includes('--u17')){await u17();if(errors.length)throw Error(errors.join('\n'));}

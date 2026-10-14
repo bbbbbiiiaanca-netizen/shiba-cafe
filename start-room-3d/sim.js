@@ -3,7 +3,7 @@ export {seatSlots,syncRoutes,pathfind};
 // Spec v3 game core — pure logic (no DOM), deterministic with an injected RNG so tests can replay it.
 // Times: `now` is epoch ms; `dt` is seconds. Every number comes from CFG (config.js); UNSET (null) values disable what depends on them.
 import {defaultPlacement,restorePlacement,restoreSpace,zonesForSpace} from './map-data.js';
-import {CFG,pressureAt,isUnset} from './config.js';
+import {CFG,GACHA_TABLE,pressureAt,isUnset} from './config.js';
 
 export function rng(seed=1){let a=seed>>>0||1;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -51,7 +51,7 @@ export function newState(now=Date.now()){
   ledger:{days:{},now},placement:defaultPlacement(),space:restoreSpace(null),
   items:{heartReset:0,capsule:0,potionBig:0,potionSmall:0,cooldownTicket:0},
   cafe:{level:1,exp:0,rep:CFG.rep.start,stains:0,stainAcc:0,badStainAcc:0,driftAcc:0,closed:false,closedAt:null,managerUntil:0,managerCleanAcc:0,boostUntil:0},
-  upgrades:Object.fromEntries(Object.keys(CFG.upgrades).map(k=>[k,0])),shibas:[],nextId:1,dongu:{placed:true},walk:null,rescues:[],walkResults:[],menus:[],menuDev:null,accInv:{},lastAbandonAt:null,
+  upgrades:Object.fromEntries(Object.keys(CFG.upgrades).map(k=>[k,0])),shibas:[],nextId:1,dongu:{placed:true},walk:null,gachaStamps:0,walkResults:[],menus:[],menuDev:null,accInv:{},lastAbandonAt:null,
   stats:{served:0,satisfied:0,normal:0,disappointed:0,angry:0,lost:0},
   settings:{language:null,sound:true,music:true},lastSeen:now};
 }
@@ -99,8 +99,8 @@ export function conditionMul(sh){if(CFG.condition.some(c=>isUnset(sh.g[c.gauge])
  return clamp(m,CFG.visit.condMin,CFG.visit.condMax);}
 // 갱신 86·100: meeting score = condition multiplier + 0.05 × shown trick level (≤ +0.25), all within the 1.3 cap
 export function meetingScore(sh,trickLv=0){if(isUnset(conditionMul(sh)))return null;return Math.min(CFG.visit.condMax,conditionMul(sh)+Math.min(CFG.visit.trickBonusMax,CFG.visit.trickBonusPerLevel*trickLv));}
-export function statusOf(s,sh){if(s.walk&&s.walk.shibaId===sh.id)return 'walking';if(sh.status!=='ok')return sh.status;if(sh.g.fatigue>=CFG.care.fatigueMax)return 'sleeping';return 'ok';}
-// works in the café: placed, healthy, not walking, not asleep (1.10.0: 피로도 100% → 잠만 잠), café open
+export function statusOf(s,sh){if(s.walk&&s.walk.shibaId===sh.id)return 'walking';if(sh.status!=='ok')return sh.status;return 'ok';}
+// 갱신 141: fatigue only gates walks; healthy placed shibas can work.
 export const canWork=(s,sh)=>sh.placed&&statusOf(s,sh)==='ok'&&!s.cafe.closed;
 
 // ───────────────────────── café level, reputation, hearts ─────────────────────────
@@ -173,7 +173,7 @@ export function hireAlba(s,kind,ids=[],now=Date.now(),trick=null){if(albaCheck(s
 export const managerActive=(s,now=Date.now())=>now<s.cafe.managerUntil;
 
 // ───────────────────────── 병원 (갱신 58·111·111-1·112·131) ─────────────────────────
-export function hospitalCost(s,kind){const col={light:1,snake:2,sick:3,rescueBath:4}[kind];let row=CFG.hospital.costs[0];for(const c of CFG.hospital.costs)if(s.cafe.level>=c[0])row=c;return row[col];}
+export function hospitalCost(s,kind){const col={light:1,snake:2,sick:3}[kind];let row=CFG.hospital.costs[0];for(const c of CFG.hospital.costs)if(s.cafe.level>=c[0])row=c;return row[col];}
 export function hospitalCheck(s,id){const sh=byId(s,id);if(!sh)return 'pick';if(sh.status!=='injured'&&sh.status!=='sick')return 'healthy';
  if(isUnset(s.coins)||s.coins<hospitalCost(s,sh.status==='sick'?'sick':sh.injury))return 'coins';return null;} // 갱신 111-1: 외상 없음
 export function sendToHospital(s,id,now=Date.now(),stayMul=1){if(hospitalCheck(s,id))return null;const sh=byId(s,id),kind=sh.status==='sick'?'sick':sh.injury;
@@ -197,19 +197,16 @@ export function skipNow(s,t,now=Date.now()){if(skipCheck(s,t,now))return null;co
 // ───────────────────────── 산책 (1.10, 갱신 82·83·85·87·90·124·125) ─────────────────────────
 export const walkHearts=sec=>CFG.walk.heartsPer10Min*sec/600;
 export function walkCheck(s,id,sec,now=Date.now()){if(s.walk)return 'walking';const sh=byId(s,id);if(!sh)return 'pick';if(!CFG.walk.durationsSec.includes(sec))return 'duration';
- const st=statusOf(s,sh);if(st!=='ok')return st; // 다침·입원·앓아누움·잠(피로 100%)이면 못 감
+ const st=statusOf(s,sh);if(st!=='ok')return st;if(sh.g.fatigue>=CFG.care.fatigueMax)return 'fatigue'; // 갱신 141: only walking is blocked
  settleHearts(s,now);if(s.hearts<walkHearts(sec))return 'hearts';return null;} // 쿨타임 없음(125-1)
-// the rescue moment is drawn at the start (shown during the walk, 1.10.1); the other events are drawn when the walk settles
+// Walk events settle once on return.
 export function startWalk(s,id,sec,now=Date.now(),r=Math.random){if(walkCheck(s,id,sec,now))return null;spendHearts(s,walkHearts(sec),now);
- const rescueAt=r()<CFG.walk.events.rescue?now+r()*sec*1000:null;s.walk={shibaId:id,walkStartAt:now,walkDurationSec:sec,rescueAt,rescueShown:false};return s.walk;}
+ s.walk={shibaId:id,walkStartAt:now,walkDurationSec:sec};return s.walk;}
 export const walkProgress=(s,now=Date.now())=>s.walk?clamp((now-s.walk.walkStartAt)/(s.walk.walkDurationSec*1000),0,1):null;
 export const canStopWalk=()=>!isUnset(CFG.walk.stopRule); // UNSET 질문 1-4
 // 갱신 82 extra reward: which of '멍코인 소량 / 하트 1' is PENDING_CONFIRM; the coin option needs the UNSET amount, so it never pays a guessed sum
 export const extraRewardKind=()=>{const k=CFG.pending.walkExtraReward;return k==='coins'&&isUnset(CFG.walk.events.extraCoins)?null:k;};
-function newRescue(s,r,now){return {rid:'r'+now+'_'+Math.floor(r()*1e6),foundAt:now,breed:pick(r,CFG.breeds),pic:Math.floor(r()*2),bathed:false};} // 갱신 61: 그림 2장 중 랜덤, 견종과 무관
-// returns {rescued, settled}; settles exactly once (s.walk cleared)
 export function tickWalk(s,now=Date.now(),r=Math.random){const W=s.walk;if(!W)return null;const out={};
- if(W.rescueAt!=null&&!W.rescueShown&&now>=W.rescueAt){W.rescueShown=true;const x=newRescue(s,r,W.rescueAt);s.rescues.push(x);out.rescued=x;}
  if(now>=W.walkStartAt+W.walkDurationSec*1000){const sh=byId(s,W.shibaId),E=CFG.walk.events,sec=W.walkDurationSec,res={shibaId:W.shibaId,sec,at:now,events:[]};s.walk=null;
   if(sh){const fx=CFG.walkEffect[sec];changeGauges(s,sh,fx,now);addCafeExp(s,CFG.cafeExp.walkPer10Min*sec/600);addPaws(sh,CFG.activityPaws.walk);res.paws=CFG.activityPaws.walk; // 139-1 직접 산책 1회 2
    // 갱신 82·83 independent rolls
@@ -217,17 +214,9 @@ export function tickWalk(s,now=Date.now(),r=Math.random){const W=s.walk;if(!W)re
    if(r()<E.light){if(sh.status!=='injured'){sh.status='injured';sh.injury='light';}res.events.push('light');}
    if(r()<E.extra){const kind=extraRewardKind();if(kind==='heart'){s.hearts+=E.extraHeart;res.events.push('extraHeart');}else if(kind==='coins'){addCoins(s,E.extraCoins);recordLedger(s,'other',E.extraCoins,now);res.paidCoins=E.extraCoins;res.events.push('extraCoins');}}
    if(r()<E.capsule){s.items.capsule++;res.events.push('capsule');}
-   if(W.rescueAt!=null)res.events.push('rescue');}
+   }
   s.walkResults.push(res);out.settled=res;}
- return out.rescued||out.settled?out:null;}
-// 갱신 65·66·81·131: find → bath right there (fixed 멍코인 by café level) → reveal → bring / "안데려갈래"
-export function bathRescue(s,rid,now=Date.now()){const x=s.rescues.find(x=>x.rid===rid);if(!x||x.bathed)return null;const c=hospitalCost(s,'rescueBath');if(isUnset(s.coins)||s.coins<c)return null;s.coins-=c;recordLedger(s,'hospital',c,now);x.bathed=true;return x;}
-export function bringCheck(s,rid){const x=s.rescues.find(x=>x.rid===rid);if(!x)return 'pick';if(!x.bathed)return 'bath';if(isUnset(CFG.rescueLevel))return 'unset';if(s.shibas.length>=CFG.cafe.maxOwned)return 'owned';return null;}
-export function bringRescue(s,rid,r=Math.random,now=Date.now()){if(bringCheck(s,rid))return null;const x=s.rescues.find(x=>x.rid===rid);
- const sh=makeShiba(s,{breed:x.breed,level:CFG.rescueLevel,r,now});s.shibas.push(sh);if(placedShibas(s).length<slotsOf(s))sh.placed=true;
- s.rescues=s.rescues.filter(y=>y!==x);addCafeExp(s,CFG.cafeExp.rescueAdopt);return sh;}
-export function declineRescue(s,rid){const n=s.rescues.length;s.rescues=s.rescues.filter(x=>x.rid!==rid);return s.rescues.length<n;}
-
+ return out.settled?out:null;}
 // ───────────────────────── 시바뽑기 (갱신 137·81·82) ─────────────────────────
 // n = 1 (100다이아 또는 뽑기권 1장) or 10 (900다이아). 견종 4종; 이미 가진 견종이면 그 견종의 가장 먼저 온 시바에게 발바닥 10개.
 export const gachaPrice=n=>n===CFG.gacha.tenCount?CFG.gacha.tenDia:n===1?CFG.gacha.priceDia:null;
@@ -242,7 +231,13 @@ export function gachaPull(s,n=1,r=Math.random,now=Date.now(),{ticket=false}={}){
  for(let i=0;i<n;i++){const breed=pickBreed(r),own=s.shibas.find(o=>o.breed===breed);
   if(own){addPaws(own,CFG.gacha.dupPaws);out.push({breed,dup:true,toId:own.id,paws:CFG.gacha.dupPaws});continue;}
   const sh=makeShiba(s,{breed,level:CFG.gacha.startLevel,r,now});s.shibas.push(sh);if(placedShibas(s).length<slotsOf(s))sh.placed=true;out.push({breed,dup:false,id:sh.id});}
- return out;}
+ s.gachaStamps=(s.gachaStamps||0)+n*GACHA_TABLE.pity.stampPerPull;return out;}
+
+export function pityCheck(s,breed){if(!s.started||!CFG.breeds.includes(breed))return 'pick';if((s.gachaStamps||0)<GACHA_TABLE.pity.stampsForPick)return 'stamps';if(!s.shibas.some(sh=>sh.breed===breed)){if(isUnset(CFG.gacha.startLevel))return 'unset';if(s.shibas.length>=CFG.cafe.maxOwned)return 'owned';}return null;}
+export function pityPick(s,breed,r=Math.random,now=Date.now()){if(pityCheck(s,breed))return null;const own=s.shibas.find(sh=>sh.breed===breed);let result;
+ if(own){addPaws(own,CFG.gacha.dupPaws);result={breed,dup:true,toId:own.id,paws:CFG.gacha.dupPaws};}
+ else{const sh=makeShiba(s,{breed,level:CFG.gacha.startLevel,r,now});s.shibas.push(sh);if(placedShibas(s).length<slotsOf(s))sh.placed=true;result={breed,dup:false,id:sh.id};}
+ s.gachaStamps-=GACHA_TABLE.pity.stampsForPick;return result;}
 
 // ───────────────────────── 메뉴·결제 (갱신 120·129) ─────────────────────────
 export const menuItem=id=>CFG.menu.items.find(m=>m.id===id);

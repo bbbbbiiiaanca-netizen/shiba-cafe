@@ -24,9 +24,17 @@ export default async function({ev,check,sleep,reload}){
  await ev('document.querySelector("[data-act=walk][data-sec=\'600\']").click();true');
  await check('walk started, shiba left the café','!!__game.state.walk&&!__game.world.sh[__game.state.walk.shibaId]&&[...document.querySelectorAll("#pbody button")].some(b=>/Stop/.test(b.textContent)&&b.disabled)');
  await ev('document.querySelector("[data-main-tab=shop]").click();true');
- await check('shop inventory and disabled gacha','!!document.querySelector("[data-inventory]")&&[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled&&/준비 중/.test(b.textContent))');
+ await ev('document.querySelector("[data-act=gachaOdds]").click();true');
+ await check('141: odds popup reads JSON',`(async()=>{const t=await import('./gacha-table.json',{with:{type:'json'}});return t.default.pool.every(x=>document.querySelector('[data-gacha-odds]').textContent.includes(x.w/t.default.pool.reduce((n,y)=>n+y.w,0)*100+'%'));})()`);
+ await ev('document.querySelector("[data-act=modalOk]").click();true');
+ // TEMP fixture supplies an explicit test-only level; restore state/config afterwards.
+ await ev('window.u141Before=JSON.stringify(__game.state);window.u141Start=__game.CFG.gacha.startLevel;__game.CFG.gacha.startLevel=1;__game.state.dia=__game.CFG.gacha.priceDia;__game.refresh();true');
+ await ev('window.u141Level=__game.state.shibas[0].level;window.u141Paws=__game.state.shibas[0].paws;__game.state.gachaStamps=50;__game.refresh();document.querySelector("[data-act=pityPick][data-breed="+__game.state.shibas[0].breed+"]").click();true');
+ await check('141: choosing owned shiba gives personal paws, keeps level and spends stamps','__game.state.gachaStamps===0&&__game.state.shibas[0].paws===window.u141Paws+__game.CFG.gacha.dupPaws&&__game.state.shibas[0].level===window.u141Level&&!!document.querySelector("[data-act=modalOk]")');
+ await ev('document.querySelector("[data-act=modalOk]").click();const old=JSON.parse(window.u141Before);Object.assign(__game.state,old);__game.CFG.gacha.startLevel=window.u141Start;__game.refresh();true');
+ await check('shop inventory and disabled gacha','!!document.querySelector("[data-inventory]")&&[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled)');
  await ev('__game.state.dia=1000;__game.state.items.capsule=1;__game.refresh();document.querySelector("[data-act=gacha][data-n=\'1\']:not([data-ticket])").click();true');
- await check('red-team #1: gacha odds UNSET → all 3 pull buttons disabled "Odds TBD" even with diamonds and a ticket, nothing spent','[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled&&/준비 중/.test(b.textContent))&&__game.state.dia===1000&&__game.state.items.capsule===1&&__game.state.shibas.length===1');
+ await check('red-team #1: gacha start level UNSET → all 3 pull buttons disabled for unknown start level even with diamonds and a ticket, nothing spent','[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled)&&__game.state.dia===1000&&__game.state.items.capsule===1&&__game.state.shibas.length===1');
  await ev('__game.state.dia=0;__game.state.items.capsule=0;__game.open("care",__game.state.shibas[0].id);true');
  await check('red-team #1: personality shown as "Odds TBD" (not drawn)','__game.state.shibas[0].personality===null&&/Personality: Odds TBD/.test(document.getElementById("pbody").textContent)');
  await ev('document.querySelector("[data-main-tab=shop]").click();true');

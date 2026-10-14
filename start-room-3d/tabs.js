@@ -21,8 +21,8 @@ export function albaAvailable(s,now){
  return false;}
 
 // Red dots come only from real state. seen.menuDone = a development finished and the player has not opened 가게 관리 / 메뉴 개발 since.
-// 시바 also lights for a returned walk whose result is still waiting (s.walkResults) and a rescue waiting for a decision (s.rescues).
+// 시바 also lights for a returned walk whose result is still waiting (s.walkResults).
 export function tabBadges(s,now,seen={}){
  const manage=!!seen.menuDone||(!s.menuDev&&CFG.menu.items.some(m=>!S.menuCheck(s,m.id)))||Object.keys(CFG.upgrades).some(k=>!S.upgradeCheck(s,k));
- const shiba=s.shibas.some(sh=>sh.status==='injured'||sh.status==='sick'||!S.levelUpCheck(s,sh.id))||s.walkResults.length>0||s.rescues.length>0;
+ const shiba=s.shibas.some(sh=>sh.status==='injured'||sh.status==='sick'||!S.levelUpCheck(s,sh.id))||s.walkResults.length>0;
  return {shiba,alba:albaAvailable(s,now),manage,furniture:false,shop:false};}

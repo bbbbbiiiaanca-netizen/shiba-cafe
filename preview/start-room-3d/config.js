@@ -1,3 +1,5 @@
+import GACHA_TABLE from './gacha-table.json' with {type:'json'};
+export {GACHA_TABLE}; // 갱신 141 confirmed: single source for gacha probabilities and pity.
 // 시바카페 spec v3 — every tunable lives here. Each value carries its spec source (갱신 N = "v3 갱신 N" in spec-v3.md).
 // Rule: numbers come from the spec only. Anything the spec leaves undecided is `null` with a comment "UNSET: <spec ref>";
 // code that depends on an UNSET value disables that feature (button off / "미정" label) instead of guessing.
@@ -27,7 +29,6 @@ export const CFG={
  pending:{
   intimacyStart:U, // UNSET: 갱신 82·90 starting intimacy unspecified
   gaugeStart:U, // UNSET: §1.2-3 starting gauges unspecified
-  rescueLevel:U, // UNSET: 질문 9(사) rescue level unspecified
   starterAccessory:U, // UNSET: 갱신 139-6 accessory identity unspecified
   walkExtraReward:U, // UNSET: 갱신 82 reward branch unspecified
  },
@@ -72,7 +73,7 @@ export const CFG={
   expansion2FLevel:30, // starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: 2층 증축 Lv30부터
  },
  // 갱신 87 카페 경험치
- cafeExp:{custNormal:1,custSatisfied:2,custDisappointed:0,walkPer10Min:2,play:1,feed:1,bath:1,snack:1,rescueAdopt:10, // 갱신 87 café experience
+ cafeExp:{custNormal:1,custSatisfied:2,custDisappointed:0,walkPer10Min:2,play:1,feed:1,bath:1,snack:1, // 갱신 87 café experience
   stainClean:1, // 갱신 101-3
   albaGivesExp:false}, // 갱신 99-2 · 118: 알바·훈련사·매니저가 한 일은 경험치 없음
 
@@ -102,7 +103,6 @@ export const CFG={
  // 갱신 86 컨디션 배율 (곱해서 적용). 같은 게이지의 두 단계는 더 높은 단계 하나만 적용.
  condition:[
   {gauge:'dirt',atLeast:80,mul:.5},{gauge:'dirt',atLeast:60,mul:.7}, // 갱신 86 condition thresholds
-  {gauge:'fatigue',atLeast:80,mul:.5},{gauge:'fatigue',atLeast:60,mul:.7}, // 갱신 86 condition thresholds
   {gauge:'full',atMost:30,mul:.8}, // 갱신 86 condition thresholds
   {gauge:'happy',atLeast:70,mul:1.2}], // 갱신 86 condition thresholds
  // 갱신 106 일반손님 요구 (124-4: 필수 아님, 안 들어줘도 벌 없음). 113: 인테리어 요구 — 인테리어 점수·아이템 미정이라 꺼 둠.
@@ -151,7 +151,7 @@ export const CFG={
  breeds:['red','sesame','kuro','white'], // 1.2 기본 4종 (레어 4종 ⏸️ 보류)
  personalities:['prankster','shy','tomboy','sweet','mopey','lazy','curious','boss','peopleLover','dogLover','tomgirl','zoomies','fighter','foodie','walkLover'], // 1.2 13개 + 갱신 52 먹보·산책광 = 15
  personalityOdds:U, // UNSET: 질문 9(다) '성격별 확률은 모두 같나요?' → 성격을 뽑지 않음(시바의 성격 = 미정, 화면 '확률 미정'). {id:weight} 로 채우면 입양 때 뽑음
- level:{max:30,pawsPerLevel:20,dupPaws:10, // 갱신 138: Lv N→N+1 발바닥 20×N (81의 10×N 대체, 누적 8,700) · 81: 중복 1마리당 10
+ level:{max:GACHA_TABLE.maxLevel,pawsPerLevel:Number(GACHA_TABLE.pawPerLevel.split('*')[0]),dupPaws:GACHA_TABLE.dupToPaw, // 갱신 138: Lv N→N+1 발바닥 20×N (81의 10×N 대체, 누적 8,700) · 81: 중복 1마리당 10
   incomePerLevel:.05}, // 갱신 81: ×(1 + 0.05×(레벨−1))
  // 갱신 139-1·139-2 활동 발바닥 (시바 개인, 하루 최대 없음). 알바가 대신한 활동도 똑같이, 매니저 운영 시간도 카페 근무
  activityPaws:{walk:2,play:1,cafeWorkHour:1,trickLevel:3, // 139-1: 직접 산책 1회 2, 놀아주기 1회 1, 카페 근무 1시간 1, 훈련 1단계 완료 3
@@ -172,7 +172,6 @@ export const CFG={
   special:{priceDia:300,items:U}}, // 140: 유료템 특별 액세서리 1개 300다이아(3,000원) · UNSET: 종류·디자인(그림 없음) → 빈 칸
  likes:{snacks:{basic:2,rare:1},toys:U,list:U}, // 갱신 40: 좋아하는 간식 기본 2 + 레어 1 · UNSET: 장난감 구조(제안), 간식·장난감 목록(질문 9(카))
  startShiba:{level:21,tricks:{sit:3,wait:3}}, // 갱신 90 레벨 21 · 갱신 100·109·133 앉아·기다려 3단계 · 갱신 109 4종 중 선택
- rescueLevel:U, // UNSET: 질문 9(사) 구조한 시바의 레벨
  intimacy:{min:0,max:100,start:U, // 갱신 82·90 range; UNSET: starting intimacy
   abandonShock:-15,abandonShockRepeat:-20,abandonRepeatWithinH:24}, // 갱신 82
  // 게이지 0~100 (1.2-3, 갱신 53·85·86·116). full=포만(배고픔 게이지), dirt=더러움(청결의 반대), fatigue=피로도(=졸림), happy=행복(=기분), boredom=지루함(=놀고 싶음)
@@ -189,16 +188,16 @@ export const CFG={
   play:{hearts:1,boredom:-28,dirt:3,fatigue:5,happy:7,intimacy:3}, // 갱신 84·88·90 놀아주기
   feed:{full:U,cost:U}, // UNSET: 밥 회복량·비용 (1.2-3 질문)
   snack:{fatigue:U,cost:U}, // UNSET: 1.10.0 질문 9(다-2) 간식 1개당 피로 회복량, (다-3) 비용
-  bath:{dirt:U,cost:U}, // UNSET: 내 시바 목욕 효과·비용 (구조견 목욕비는 hospital.rescueBath)
+  bath:{dirt:U,cost:U}, // UNSET: 내 시바 목욕 효과·비용
   sleep:{fatiguePerHour:U}, // UNSET: 1.10.0 질문 9(다-1) 수면 회복 속도 (수면 > 간식은 확정)
-  fatigueMax:100}, // 1.10.0: 100%면 놀기·산책 불가, 잠만 잠
+  fatigueMax:100}, // 1.10.0: 갱신 141: 100이면 산책만 불가
  potion:{bigDia:150,smallDia:50}, // 갱신 116 (다이아 = 유료 전용, stub)
 
  // ── 재주 (갱신 100 · 133) ──
  tricks:[{id:'sit'},{id:'paw'},{id:'wait'},{id:'down'},{id:'bow'}], // 갱신 133: 앉아·손·기다려·엎드려·인사. 더 넣으려면 여기에 추가(이름은 i18n trick.<id>)
  trickMaxLevel:5,intelligencePerLevel:4,intelligenceMax:100, // 갱신 133: 지능 = 단계 합 × 4, 최대 100
  training:{hearts:1,fatigue:5, // 갱신 100: 하트 1, 성공 시 피로 +5
-  successBase:.6,bonuses:[{stat:'intimacy',atLeast:70,add:.15},{stat:'happy',atLeast:70,add:.10},{stat:'fatigue',atLeast:60,add:-.20},{stat:'boredom',atLeast:60,add:-.15}], // 갱신 100 training success table
+  successBase:.6,bonuses:[{stat:'intimacy',atLeast:70,add:.15},{stat:'happy',atLeast:70,add:.10},{stat:'boredom',atLeast:60,add:-.15}], // 갱신 100 training success table
   min:.2,max:.95}, // 갱신 100 성공률 · 단계 N→N+1 성공 N+1번
 
  // ── 산책 (1.10, 갱신 82·83·85·87·90·124·125) ──
@@ -206,15 +205,15 @@ export const CFG={
   heartsPer10Min:1, // 갱신 87·124-5
   cooldownSec:0, // 갱신 125-1: 직접 산책 쿨타임 없음
   stopRule:U, // UNSET: 질문 1-4 멈췄을 때 규칙 → 멈추기 버튼 꺼 둠
-  events:{rescue:.05, // 갱신 124-2 (82의 1/30 대체)
+  events:{ // 갱신 141: MVP walk events
    snake:1/40,light:1/30, // 갱신 83
    extra:.5,extraCoins:U,extraHeart:1, // 갱신 82: 1/2 확률로 멍코인 소량 또는 하트 1 · UNSET: 멍코인 양 · 어느 쪽인지 → pending.walkExtraReward
    capsule:1/30}}, // 갱신 82 시바 뽑기권
 
  // ── 병원 (갱신 58·111·111-1·112·131) ──
  hospital:{stays:{light:1800,snake:7200,sick:14400}, // 갱신 111: 30분, 2시간, 4시간
-  // 갱신 131 카페 레벨 구간별 고정 멍코인 [최저레벨, 가벼운 부상, 뱀 물림, 앓아누움, 구조견 목욕]
-  costs:[[1,400,1200,2400,200],[10,500,1500,3000,250],[20,800,2400,4700,400],[30,1000,3000,6100,500],[40,1100,3400,6800,550]], // 갱신 131 hospital cost table
+  // 갱신 131 카페 레벨 구간별 고정 멍코인 [최저레벨, 가벼운 부상, 뱀 물림, 앓아누움]
+  costs:[[1,400,1200,2400],[10,500,1500,3000],[20,800,2400,4700],[30,1000,3000,6100],[40,1100,3400,6800]], // 갱신 131 hospital cost table
   }, // 치료 앞당기기 = timeSkip (갱신 135-2)
 
  // ── 알바 (갱신 99·99-2·118·118-1·123-x·124-1·125-1) ──
@@ -238,10 +237,10 @@ export const CFG={
 
  // ── 시바뽑기 (갱신 137: 132-3의 200다이아 대체) ──
  gacha:{priceDia:100,tenDia:900,tenCount:10, // 갱신 137: 1회 100다이아(1,000원), 10연차 900다이아(9,000원)
-  startLevel:U, // UNSET: 질문 9(바) '뽑기로 나온 시바의 시작 레벨' (137은 '랜덤 레벨 아님'만, 138의 Lv1→30 계산은 추론) → 뽑기 비활성(확률표와 함께)
-  dupPaws:10, // 갱신 137·81: 이미 가진 견종이 또 나오면 발바닥 10개 (레벨업 재료)
+  startLevel:U, // UNSET: 질문 9(바) '뽑기로 나온 시바의 시작 레벨' (137은 '랜덤 레벨 아님'만, 138의 Lv1→30 계산은 추론) → 뽑기 비활성 (갱신 141 확률은 확정, 시작 레벨만 미정)
+  dupPaws:GACHA_TABLE.dupToPaw, // 갱신 137·81: 이미 가진 견종이 또 나오면 발바닥 10개 (레벨업 재료)
   priceCoins:U, // UNSET: 갱신 57 멍코인 뽑기 가격 → 멍코인 뽑기 없음
-  breedOdds:U, // UNSET: 질문 9(바) 가챠 확률표 → 뽑기 비활성(버튼 '확률 미정'). {red:w,sesame:w,kuro:w,white:w} 로 채우면 열림
+  breedOdds:Object.fromEntries(GACHA_TABLE.pool.map(x=>[x.id,x.w])), // 갱신 141 confirmed; rates only in JSON
   video:'drive-images/영상/media-generation-gacha-reveal-video-v7-with-sfx.mp4'}, // not copied: 뽑기 disabled
 
  // ── stubs: confirmed systems outside the core, kept as config only ──
@@ -258,7 +257,7 @@ export const CFG={
   shibaPlay:{checkIntervalSec:20,pairChance:.25}, // 1.7.1 · 갱신 127
   interior:{score:[0,100],recommended:{10:20,30:50,50:80},maxArrivalPenalty:.2,walkoutChance:.01}, // 갱신 113 (아이템별 점수 UNSET)
   expBoost:{mul:1.2,hours:4,maxHours:24,capTotal:.2,priceDia:U}, // 갱신 98 · UNSET 가격
-  diaPriceWon:10, // 갱신 132-3
+  diaPriceWon:10, // 갱신 141 confirmed: 1다이아 = 10원; free grants only events/onboarding/ranking
   // 1.4 · 갱신 29·33 28일 온보딩 (확정분만): 1~7일 하트 리셋권 1장, 캡슐 4·11·18·25일 1개 + 9일 5개 + 19일 10개. 3·17·26일 하트 개수 UNSET(질문 1(다)), 날짜 진행 방식 UNSET(보상표 Q5·Q6)
   onboarding:{days:28,dayMode:U,rewards:{1:{heartReset:1},2:{heartReset:1},3:{heartReset:1,hearts:U},4:{heartReset:1,capsule:1},5:{heartReset:1},6:{heartReset:1},7:{heartReset:1}, // §1.4 · 갱신 29·33 onboarding days and quantities
    9:{capsule:5},11:{capsule:1},17:{hearts:U},18:{capsule:1},19:{capsule:10},25:{capsule:1},26:{hearts:U}}}, // §1.4 · 갱신 29·33 onboarding days and quantities

@@ -177,7 +177,6 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await check('§16-1: red dots for shiba level-up and an available 알바 come from state',`(${dots}).shiba&&(${dots}).alba&&!(${dots}).shop&&!(${dots}).furniture`);
  await ev('window.u17Before=JSON.stringify(__game.state);document.querySelector("#hud [data-act=mission]").click();true');
  await check('§17: top-right 미션 button is a 준비 중 stub (toast only)',`document.getElementById('toast').textContent==='준비 중'&&document.getElementById('modal').hidden&&JSON.stringify(__game.state)===window.u17Before`);
- // §17: 시바 dot from a returned walk (result waiting) and a waiting rescue — real state, cleared when handled
  await ev('__game.state.shibas[0].paws=0;__game.state.coins=0;__game.ui.modals=[];__game.refresh();true');
  await check('§17: no 시바 dot before a walk returns',`!(${dots}).shiba`);
  await ev('__game.ui.modals=[{kind:"confirm",text:"hold",yes:()=>{}}];__game.state.walkResults.push({shibaId:__game.state.shibas[0].id,sec:600,at:__game.clock.now(),events:[]});__game.refresh();true');
@@ -186,9 +185,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await check('§17: the waiting walk result shows its popup',`/walk|산책|돌아/i.test(document.getElementById('mbox').textContent)&&!!document.querySelector('#mbox [data-act=walkResultOk]')`);
  await ev('document.querySelector("#mbox [data-act=walkResultOk]").click();true');
  await check('§17: acknowledging the result clears it and the dot',`__game.state.walkResults.length===0&&!(${dots}).shiba`);
- await ev('__game.ui.modals=[{kind:"confirm",text:"hold",yes:()=>{}}];__game.state.rescues.push({rid:"r-smoke",foundAt:__game.clock.now(),breed:"kuro",pic:0,bathed:false});__game.refresh();true');
- await check('§17: 시바 dot while a rescue is waiting',`(${dots}).shiba`);
- await ev('__game.ui.modals=[];__game.state.rescues=[];__game.state.coins=__game.CFG.alba.daycare.cost;__game.refresh();true'); // restore the café Lv10 / daycare-price coin fixture used below (the dot checks above zeroed coins)
+ await ev('__game.ui.modals=[];__game.state.coins=__game.CFG.alba.daycare.cost;__game.refresh();true'); // restore the café Lv10 / daycare-price coin fixture used below (the dot checks above zeroed coins)
  await ev('document.querySelector("[data-main-tab=shiba]").click();document.querySelector("#menuList [data-act=care]").click();true');
  await check('§16-1: full panels stop above the tab row so tabs stay usable',`!document.getElementById('panel').hidden&&document.getElementById('panel').getBoundingClientRect().bottom<=document.querySelector('.main-tabs').getBoundingClientRect().top+1`);
  await ev('document.querySelector("[data-main-tab=alba]").click();document.querySelector("[data-act=listOpen][data-list=alba]").click();true');

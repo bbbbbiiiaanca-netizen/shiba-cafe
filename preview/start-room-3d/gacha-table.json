@@ -1,0 +1,6 @@
+{
+  "version": "2026-10-15",
+  "pool": [{"id":"red","w":25},{"id":"sesame","w":25},{"id":"kuro","w":25},{"id":"white","w":25}],
+  "pity": {"stampPerPull":1,"stampsForPick":50},
+  "dupToPaw":10,"pawPerLevel":"20*N","maxLevel":30
+}

@@ -8,14 +8,14 @@ const ROOT=join(dirname(fileURLToPath(import.meta.url)),'..');
 
 let pass=0;const fails=[];
 // Explicit fixtures for isolated mechanics tests; production audit/start tests use unchanged null config.
-// The wrapper sets coins/gauges/intimacy/rescue level only for mechanics unrelated to start defaults.
+// The wrapper sets coins/gauges/intimacy only for mechanics unrelated to start defaults.
 const fixtureAggregation=lvs=>lvs.length?lvs.reduce((a,b)=>a+b,0)/lvs.length:1;
 function test(name,fn){const savedEntrance=MAP.zones[0].entrance,savedSlots=MAP.zones[0].slots,savedSpeed=CFG.navigation.cellStepSec,savedShibaSpeed=CFG.navigation.shibaCellStepSec,savedBehaviour=CFG.behaviour;CFG.navigation.shibaCellStepSec=.001;CFG.behaviour={eatSec:0,weights:{sit:1},durations:{sit:0},walkCells:[2,4]};
  // Explicit geometry/speed fixture preserves the original economy tests' capacity. Production values stay null.
  MAP.zones[0].entrance=[0,5];CFG.navigation.cellStepSec=.001;
  const occupied=new Set(savedSlots.flatMap(x=>footprintCells(x).map(c=>c.join(','))));
  MAP.zones[0].slots=[...savedSlots];for(const j of [0,2,4])for(const i of [1,3,5])if(!occupied.has(`${i},${j}`))MAP.zones[0].slots.push({id:`fixture-${i}-${j}`,type:'cushion',origin:[i,j],dir:0});
- const old=CFG.income.levelAggregation;if(!name.startsWith('red-team #7'))CFG.income.levelAggregation=fixtureAggregation;try{const production=/red-team #2|gauges do not|UNSET features|139-6|fresh default|audit null/.test(name);if(production)fn();else withCfg(CFG.start,{coins:0,dia:0},()=>withCfg(CFG,{gaugeStart:{full:100,dirt:0,fatigue:0,happy:100,boredom:0},rescueLevel:1},()=>withCfg(CFG.intimacy,{start:0},fn)));pass++;}catch(e){fails.push([name,e]);}finally{CFG.income.levelAggregation=old;MAP.zones[0].entrance=savedEntrance;MAP.zones[0].slots=savedSlots;CFG.navigation.cellStepSec=savedSpeed;CFG.navigation.shibaCellStepSec=savedShibaSpeed;CFG.behaviour=savedBehaviour;}}
+ const old=CFG.income.levelAggregation;if(!name.startsWith('red-team #7'))CFG.income.levelAggregation=fixtureAggregation;try{const production=/red-team #2|gauges do not|UNSET features|139-6|fresh default|audit null/.test(name);if(production)fn();else withCfg(CFG.start,{coins:0,dia:0},()=>withCfg(CFG,{gaugeStart:{full:100,dirt:0,fatigue:0,happy:100,boredom:0}},()=>withCfg(CFG.intimacy,{start:0},fn)));pass++;}catch(e){fails.push([name,e]);}finally{CFG.income.levelAggregation=old;MAP.zones[0].entrance=savedEntrance;MAP.zones[0].slots=savedSlots;CFG.navigation.cellStepSec=savedSpeed;CFG.navigation.shibaCellStepSec=savedShibaSpeed;CFG.behaviour=savedBehaviour;}}
 const H=3600e3,MIN=60e3;
 const near=(a,b,eps=1e-9,msg)=>assert.ok(Math.abs(a-b)<=eps,`${msg||''} ${a} ≉ ${b}`);
 const freshGame=(breed='red',now=0,seed=1)=>{const r=S.rng(seed),s=S.newState(now);S.chooseStart(s,breed,'',r,now);return {s,r,sh:s.shibas[0],w:S.newWorld(s,r)};};
@@ -23,7 +23,7 @@ const freshGame=(breed='red',now=0,seed=1)=>{const r=S.rng(seed),s=S.newState(no
 const script=(vals,rest=.99)=>{let i=0;return()=>i<vals.length?vals[i++]:rest;};
 // temporarily set config values (e.g. odds the spec has not decided) and restore them afterwards
 const withCfg=(obj,patch,fn)=>{const bak={};for(const k in patch){bak[k]=obj[k];obj[k]=patch[k];}try{return fn();}finally{Object.assign(obj,bak);}};
-const TEST_ODDS={red:1,sesame:1,kuro:1,white:1}; // test fixtures only — the spec's gacha odds and start level are UNSET (질문 9(바))
+const TEST_ODDS=CFG.gacha.breedOdds; // only startLevel is a test fixture
 const gachaOn=fn=>withCfg(CFG.gacha,{breedOdds:TEST_ODDS,startLevel:1},fn);
 const run=(s,w,sec,t0=0,dt=.5)=>{let t=t0;const ev=[];for(let k=0;k<sec/dt;k++){t+=dt*1000;S.tick(s,w,dt,t);ev.push(...w.events.splice(0));}return {t,ev};};
 
@@ -50,7 +50,7 @@ test('spec numbers: stay/queue/visit/rep/hearts/walk/hospital/part-timers/paymen
  assert.equal(C.rep.start,50);assert.equal(C.rep.queueAngry,-2);assert.equal(C.rep.closureFloor,30);
  assert.deepEqual([C.hearts.regenCap,C.hearts.slots,C.hearts.regenEverySec],[10,5,1800]); // cap 10 (spec v3 1.4, confirmed 2026-10-15), 5 top-bar slots (confirmed), 30 min: spec v3
 assert.deepEqual(C.walk.durationsSec,[600,1200,1800]);assert.equal(C.walk.cooldownSec,0);
- assert.equal(C.walk.events.rescue,.05);assert.equal(C.walk.events.snake,1/40);assert.equal(C.walk.events.light,1/30);assert.equal(C.walk.events.capsule,1/30);assert.equal(C.walk.events.extra,.5);
+ assert.equal(C.walk.events.snake,1/40);assert.equal(C.walk.events.light,1/30);assert.equal(C.walk.events.capsule,1/30);assert.equal(C.walk.events.extra,.5);
  assert.deepEqual(C.hospital.stays,{light:1800,snake:7200,sick:14400});assert.equal(C.offline.capHours,12);
  assert.deepEqual([C.alba.daycare.cost,C.alba.walk.cost,C.alba.trainer.cost,C.alba.manager.cost],[120000,270000,360000,900000]); // 밸런스_2년.md §3: 15× 갱신 125-1 (8,000·18,000·24,000·60,000)
  assert.deepEqual([C.alba.daycare.cooldownSec,C.alba.walk.cooldownSec,C.alba.trainer.cooldownSec,C.alba.manager.hireSec],[7200,14400,14400,43200]);
@@ -126,15 +126,15 @@ test('guests pay the ordered menu price × level effect, and the leave event car
  assert.ok(L.some(e=>e.order==='M-02')&&L.some(e=>e.order==='M-05'));assert.ok(L.every(e=>/^(M-01|M-02|M-05)-/.test(e.orderImg)));});
 test('condition multiplier (86): steps, products, clamp .25–1.3; meeting score + trick bonus within 1.3 (100)',()=>{const {sh}=freshGame();
  near(S.conditionMul(sh),1.2); // full state: happy 100
- Object.assign(sh.g,{happy:50,dirt:60});near(S.conditionMul(sh),.7);sh.g.dirt=80;near(S.conditionMul(sh),.5);sh.g.fatigue=80;near(S.conditionMul(sh),.25);sh.g.full=30;near(S.conditionMul(sh),.25);
- Object.assign(sh.g,{dirt:0,fatigue:60,full:30});near(S.conditionMul(sh),.7*.8);
+ Object.assign(sh.g,{happy:50,dirt:60});near(S.conditionMul(sh),.7);sh.g.dirt=80;near(S.conditionMul(sh),.5);sh.g.fatigue=80;near(S.conditionMul(sh),.5);sh.g.full=30;near(S.conditionMul(sh),.4);
+ Object.assign(sh.g,{dirt:0,fatigue:60,full:30});near(S.conditionMul(sh),.8);
  Object.assign(sh.g,{dirt:0,fatigue:0,full:100,happy:70});near(S.meetingScore(sh,0),1.2);near(S.meetingScore(sh,3),1.3);sh.g.happy=0;near(S.meetingScore(sh,5),1.25);});
-test('training chance 60% +15 intimacy≥70 +10 happy≥70 −20 fatigue≥60 −15 boredom≥60, 20–95% (100)',()=>{const {sh}=freshGame();sh.g.happy=0;near(S.trainChance(sh),.6);
- sh.intimacy=70;sh.g.happy=70;near(S.trainChance(sh),.85);sh.g.fatigue=60;sh.g.boredom=60;near(S.trainChance(sh),.5);sh.intimacy=0;sh.g.happy=0;near(S.trainChance(sh),.25);});
+test('training chance 60% +15 intimacy≥70 +10 happy≥70 −15 boredom≥60, 20–95% (100)',()=>{const {sh}=freshGame();sh.g.happy=0;near(S.trainChance(sh),.6);
+ sh.intimacy=70;sh.g.happy=70;near(S.trainChance(sh),.85);sh.g.fatigue=60;sh.g.boredom=60;near(S.trainChance(sh),.7);sh.intimacy=0;sh.g.happy=0;near(S.trainChance(sh),.45);});
 test('reputation: satisfied gain halves ≥70, quarters ≥90; arrival interval ×0.9/1.0/1.2 (87·106)',()=>{assert.equal(S.satisfiedGain(50),1);assert.equal(S.satisfiedGain(70),.5);assert.equal(S.satisfiedGain(90),.25);
  assert.equal(S.arrivalMul(70),.9);assert.equal(S.arrivalMul(50),1);assert.equal(S.arrivalMul(29.9),1.2);const s=S.newState(0);s.cafe.rep=75;near(S.arrivalInterval(s),7.2*.9);});
-test('hospital & rescue-bath fixed costs by café level band (131)',()=>{const s=S.newState(0);const c=k=>S.hospitalCost(s,k);
- assert.deepEqual([c('light'),c('snake'),c('sick'),c('rescueBath')],[400,1200,2400,200]);s.cafe.level=10;assert.equal(c('snake'),1500);s.cafe.level=25;assert.equal(c('sick'),4700);s.cafe.level=39;assert.equal(c('light'),1000);s.cafe.level=45;assert.equal(c('rescueBath'),550);});
+test('hospital fixed costs by café level band (131)',()=>{const s=S.newState(0);const c=k=>S.hospitalCost(s,k);
+ assert.deepEqual([c('light'),c('snake'),c('sick')],[400,1200,2400]);s.cafe.level=10;assert.equal(c('snake'),1500);s.cafe.level=25;assert.equal(c('sick'),4700);s.cafe.level=39;assert.equal(c('light'),1000);});
 
 // ───────── customers ─────────
 test('customer flow: arrive → seat → shiba 5 s meeting / 3 s roam (starting values 2026-10-14) → leave after 30 s → pay (69·70·120)',()=>{const {s,w,sh}=freshGame();
@@ -172,7 +172,7 @@ test('a walking shiba gives no meetings; the rest keep working (15)',()=>{const 
 // ───────── shiba care ─────────
 test('play: ♥1, boredom −28 dirt +3 fatigue +5 happy +7 intimacy +3, café exp +1 (84·88·90)',()=>{const {s,sh}=freshGame();Object.assign(sh.g,{boredom:50,happy:50});
  assert.ok(S.playWith(s,sh.id,0));assert.equal(s.hearts,9);assert.deepEqual([sh.g.boredom,sh.g.dirt,sh.g.fatigue,sh.g.happy,sh.intimacy],[22,3,5,57,3]);assert.equal(s.cafe.exp,1);
- sh.g.fatigue=100;assert.equal(S.careCheck(s,sh.id,'play'),'sleeping');s.hearts=0;sh.g.fatigue=0;assert.equal(S.careCheck(s,sh.id,'play'),'hearts');});
+ sh.g.fatigue=100;assert.equal(S.careCheck(s,sh.id,'play'),null);s.hearts=0;sh.g.fatigue=0;assert.equal(S.careCheck(s,sh.id,'play'),'hearts');});
 test('training: ♥1, step N→N+1 needs N+1 successes, fatigue +5 on success (100·133); all 5 trainable from start',()=>{const {s,sh}=freshGame();s.hearts=100;
  for(const t of CFG.tricks)assert.equal(S.trainCheck(s,sh.id,t.id),null,t.id);
  let r=S.train(s,sh.id,'paw',()=>0,0);assert.ok(r.ok&&r.up&&sh.tricks.paw===1);assert.equal(sh.g.fatigue,5);
@@ -181,8 +181,7 @@ test('training: ♥1, step N→N+1 needs N+1 successes, fatigue +5 on success (1
  sh.tricks.bow=5;assert.equal(S.trainCheck(s,sh.id,'bow'),'max');});
 test('feed / snack / bath / sleep stay disabled while their amounts are UNSET',()=>{const {s,sh}=freshGame();for(const k of ['feed','snack','bath','sleep'])assert.equal(S.careCheck(s,sh.id,k),'unset',k);});
 test('gauges do not change while starting values and decay are UNSET',()=>{const {s,w,sh}=freshGame();const unknown=Object.fromEntries(CFG.gauges.map(k=>[k,null]));assert.deepEqual(sh.g,unknown);run(s,w,3600,0,2);assert.deepEqual(sh.g,unknown);assert.equal(sh.zeroSince,null);});
-test('fatigue 100% → only sleeps: no walk, no play, no guests (1.10.0)',()=>{const {s,w,sh}=freshGame();sh.g.fatigue=100;assert.equal(S.statusOf(s,sh),'sleeping');assert.equal(S.walkCheck(s,sh.id,600,0),'sleeping');
- const {ev}=run(s,w,60);assert.equal(ev.filter(e=>e.type==='meet').length,0);});
+test('141: fatigue 100 blocks only walks; work and play remain available',()=>{const {s,sh}=freshGame();sh.g.fatigue=100;assert.equal(S.statusOf(s,sh),'ok');assert.equal(S.walkCheck(s,sh.id,600,0),'fatigue');assert.equal(S.canWork(s,sh),true);assert.equal(S.careCheck(s,sh.id,'play'),null);});
 test('sick after a 0 gauge for 2 h; hospital needs coins (no credit); 4 h stay; 동구 takes it after 24 h with 2× stay (111·111-1·112)',()=>{const {s,w,sh}=freshGame();
  S.changeGauges(s,sh,{dirt:100},0);run(s,w,2*3600-10,0,10);assert.equal(sh.status,'ok');run(s,w,20,2*3600e3-10e3,10);assert.equal(sh.status,'sick');
  assert.equal(S.hospitalCheck(s,sh.id),'coins');s.coins=2400;assert.ok(S.sendToHospital(s,sh.id,3*H));assert.equal(s.coins,0);assert.equal(sh.hospitalUntil,7*H);assert.equal(S.statusOf(s,sh),'hospital');
@@ -199,21 +198,15 @@ test('walk: hearts 1 per 10 min, no cooldown, effects by duration, exp +2/10 min
  S.tickWalk(s,1799e3,()=>.99);assert.ok(s.walk);const out=S.tickWalk(s,1800e3,()=>.99);assert.ok(out.settled&&!s.walk);
  assert.deepEqual([sh.g.boredom,sh.g.dirt,sh.g.fatigue,sh.g.happy,sh.intimacy],[0,35,35,100,6]);assert.equal(s.cafe.exp,6);
  assert.equal(S.walkCheck(s,sh.id,600,1800e3),null,'no cooldown');s.hearts=0;assert.equal(S.walkCheck(s,sh.id,600,1800e3),'hearts');});
-test('walk outcomes with a scripted RNG: rescue at start, snake/light/extra/capsule at the end (82·83·124-2)',()=>{const {s,sh}=freshGame();
- S.startWalk(s,sh.id,600,0,script([.049,.5]));assert.equal(s.walk.rescueAt,300e3);
- const mid=S.tickWalk(s,300e3,script([.1,.1]));assert.ok(mid.rescued);assert.equal(s.rescues.length,1);
+test('walk outcomes with scripted RNG settle once on return (141)',()=>{const {s,sh}=freshGame();
+ S.startWalk(s,sh.id,600,0);
+ assert.equal(S.tickWalk(s,300e3),null);
  const h=s.hearts;S.tickWalk(s,600e3,script([1/40-1e-9,.99,.49,1/30-1e-9]));assert.equal(sh.status,'injured');assert.equal(sh.injury,'snake');assert.equal(s.hearts,h);assert.equal(s.items.capsule,1);
- const g=freshGame();S.startWalk(g.s,g.sh.id,600,0,()=>.06);assert.equal(g.s.walk.rescueAt,null);S.tickWalk(g.s,600e3,script([.5,1/30-1e-9,.6,.5]));assert.equal(g.sh.injury,'light');assert.equal(g.s.items.capsule,0);});
-test('walk event rates over 20,000 seeded walks ≈ 5% rescue, 2.5% snake, 3.33% light, 50% extra, 3.33% capsule',()=>{const r=S.rng(42);const n=20000,k={rescue:0,snake:0,light:0,extraHeart:0,capsule:0};
+ const g=freshGame();S.startWalk(g.s,g.sh.id,600,0,()=>.06);S.tickWalk(g.s,600e3,script([.5,1/30-1e-9,.6,.5]));assert.equal(g.sh.injury,'light');assert.equal(g.s.items.capsule,0);});
+test('walk event rates over 20,000 seeded walks ≈ 2.5% snake, 3.33% light, 50% extra, 3.33% capsule',()=>{const r=S.rng(42);const n=20000,k={snake:0,light:0,extraHeart:0,capsule:0};
  for(let i=0;i<n;i++){const s=S.newState(0);S.chooseStart(s,'red','',r,0);S.startWalk(s,s.shibas[0].id,600,0,r);S.tickWalk(s,600e3,r);for(const e of s.walkResults[0].events)k[e]++;}
- near(k.rescue/n,.05,.006,'rescue');near(k.snake/n,1/40,.004,'snake');near(k.light/n,1/30,.005,'light');assert.equal(k.extraHeart,0,'unknown reward branch disabled');near(k.capsule/n,1/30,.005,'capsule');});
+ near(k.snake/n,1/40,.004,'snake');near(k.light/n,1/30,.005,'light');assert.equal(k.extraHeart,0,'unknown reward branch disabled');near(k.capsule/n,1/30,.005,'capsule');});
 test('walk stop disabled while 질문 1-4 is UNSET; injured / hospital shibas cannot walk',()=>{assert.equal(S.canStopWalk(),false);const {s,sh}=freshGame();sh.status='injured';sh.injury='light';assert.equal(S.walkCheck(s,sh.id,600,0),'injured');});
-test('rescue flow: bath (fixed 200 at Lv1) → reveal → bring (explicit test level fixture, café exp +10) or decline; owned cap 50 (65·66·81·131)',()=>{const {s,r}=freshGame();
- s.rescues.push({rid:'a',foundAt:0,breed:'kuro',pic:1,bathed:false},{rid:'b',foundAt:0,breed:'white',pic:0,bathed:false});
- assert.equal(S.bringCheck(s,'a'),'bath');assert.equal(S.bathRescue(s,'a'),null,'no coins');s.coins=250;assert.ok(S.bathRescue(s,'a'));assert.equal(s.coins,50);
- const o=S.bringRescue(s,'a',r,0);assert.equal(o.breed,'kuro');assert.equal(o.level,1);assert.ok(o.placed,'free slot at Lv1 (2 slots)');assert.equal(s.cafe.exp,10);
- assert.ok(S.declineRescue(s,'b'));assert.equal(s.rescues.length,0);
- while(s.shibas.length<50)s.shibas.push(S.makeShiba(s,{breed:'red'}));s.rescues.push({rid:'c',foundAt:0,breed:'red',pic:0,bathed:true});assert.equal(S.bringCheck(s,'c'),'owned');});
 test('walk part-timer: Lv15, 270,000, ≤4 shibas, boredom −50 now, 4 h cooldown each, no hearts/exp (123-x·124-1·125-1)',()=>{const {s,sh}=freshGame();assert.equal(S.albaCheck(s,'walk',[sh.id],0),'locked');
  s.cafe.level=15;s.coins=270000;sh.g.boredom=80;const h=s.hearts;assert.ok(S.hireAlba(s,'walk',[sh.id],0));assert.equal(sh.g.boredom,30);assert.equal(s.coins,0);assert.equal(s.hearts,h);assert.equal(s.cafe.exp,0);assert.equal(s.walk,null,'stays in the café');
  s.coins=1e6;assert.equal(S.albaCheck(s,'walk',[sh.id],4*H-1),'cooldown');assert.equal(S.albaCheck(s,'walk',[sh.id],4*H),null);
@@ -283,17 +276,17 @@ test('137 + 81: new breed → new Lv1 shiba (no random level); owned breed → 1
  s.dia=100;const nw=S.gachaPull(s,1,()=>.3,0)[0];assert.equal(nw.dup,false);assert.equal(nw.breed,'sesame');const n=S.byId(s,nw.id);assert.equal(n.level,1);assert.ok(n.placed,'placed when a slot is free');
  assert.equal(s.shibas.length,2);}));
 test('137: 4 breeds only, draws follow the configured odds table; 10-pull from 4 owned breeds = 100 paws, no new shibas',()=>{const {s}=freshGame('red');s.dia=1e7;const r=S.rng(5),cnt={};
- withCfg(CFG.gacha,{breedOdds:{red:1,sesame:3,kuro:0,white:0},startLevel:1},()=>{for(let i=0;i<4000;i++)for(const x of S.gachaPull(s,1,r,0))cnt[x.breed]=(cnt[x.breed]||0)+1;});
- assert.deepEqual(Object.keys(cnt).sort(),['red','sesame']);near(cnt.sesame/4000,.75,.03,'sesame');
+ withCfg(CFG.gacha,{startLevel:1},()=>{for(let i=0;i<4000;i++)for(const x of S.gachaPull(s,1,r,0))cnt[x.breed]=(cnt[x.breed]||0)+1;});
+ assert.deepEqual(Object.keys(cnt).sort(),[...CFG.breeds].sort());for(const b of CFG.breeds)near(cnt[b]/4000,CFG.gacha.breedOdds[b]/Object.values(CFG.gacha.breedOdds).reduce((a,b)=>a+b),.03,b);
  gachaOn(()=>{for(let i=0;i<200;i++)S.gachaPull(s,1,r,0);assert.equal(s.shibas.length,4);const before=s.shibas.reduce((a,o)=>a+o.paws,0);S.gachaPull(s,10,r,0);assert.equal(s.shibas.reduce((a,o)=>a+o.paws,0)-before,100);assert.equal(s.shibas.length,4);});});
 test('137 + 82: a capsule ticket from walks = one free pull',()=>gachaOn(()=>{const {s}=freshGame();assert.equal(S.gachaCheck(s,1,{ticket:true}),'ticket');s.items.capsule=1;
  assert.equal(S.gachaCheck(s,10,{ticket:true}),'count');assert.equal(S.gachaPull(s,1,S.rng(1),0,{ticket:true}).length,1);assert.equal(s.items.capsule,0);assert.equal(s.dia,0);}));
 // red-team #1: UNSET odds must never become equal odds
-test('red-team #1: gacha odds UNSET (질문 9(바)) → every pull gated with \'odds\', nothing spent, no shiba',()=>{const {s}=freshGame();assert.equal(CFG.gacha.breedOdds,null);assert.equal(S.gachaOddsSet(),false);
- s.dia=10000;s.items.capsule=3;for(const [n,o] of [[1,{}],[10,{}],[1,{ticket:true}]]){assert.equal(S.gachaCheck(s,n,o),'odds');assert.equal(S.gachaPull(s,n,S.rng(1),0,o),null);}
+test('red-team #1: 141: confirmed odds with unknown start level: nothing spent',()=>{const {s}=freshGame();assert.equal(S.gachaOddsSet(),true);
+ s.dia=10000;s.items.capsule=3;for(const [n,o] of [[1,{}],[10,{}],[1,{ticket:true}]]){assert.equal(S.gachaCheck(s,n,o),'unset');assert.equal(S.gachaPull(s,n,S.rng(1),0,o),null);}
  assert.equal(s.dia,10000);assert.equal(s.items.capsule,3);assert.equal(s.shibas.length,1);});
-test('red-team #1: personality odds UNSET (질문 9(다)) → no personality is drawn (start and explicit rescue-level fixture); set odds are followed',()=>{assert.equal(CFG.personalityOdds,null);assert.equal(S.personalityOddsSet(),false);
- const {s,sh}=freshGame();assert.equal(sh.personality,null);s.coins=1e6;s.rescues.push({rid:'x',foundAt:0,breed:'kuro',pic:0,bathed:false});assert.ok(S.bathRescue(s,'x'));const n=S.bringRescue(s,'x',S.rng(1),0);assert.ok(n,'rescue still works');assert.equal(n.personality,null);
+test('red-team #1: personality odds UNSET (질문 9(다)) → no personality is drawn (start); set odds are followed',()=>{assert.equal(CFG.personalityOdds,null);assert.equal(S.personalityOddsSet(),false);
+ const {s,sh}=freshGame();assert.equal(sh.personality,null);
  withCfg(CFG,{personalityOdds:{foodie:1}},()=>{const g=freshGame('red',0,3);assert.equal(g.sh.personality,'foodie');});});
 
 // ───────── 갱신 139-1·139-2 활동 발바닥 ─────────
@@ -350,9 +343,9 @@ test('135-2: part-timer cooldowns (데이케어·산책 알바·훈련사) finis
  assert.equal(S.skipCheck(s,{type:'manager'},0),'none','manager hire time is not a wait');});
 
 // ───────── UNSET features stay off ─────────
-test('UNSET features are disabled: paid slot, regulars, walk stop, rescue level → Lv1',()=>{const {s}=freshGame();s.coins=1e9;
+test('UNSET features are disabled: paid slot, regulars, walk stop',()=>{const {s}=freshGame();s.coins=1e9;
  assert.equal(S.slotUnlockCheck(),'unset');
- assert.equal(S.regularsCheck(),'unset');assert.equal(S.canStopWalk(),false);assert.equal(CFG.rescueLevel,null);assert.equal(CFG.gacha.startLevel,null);
+ assert.equal(S.regularsCheck(),'unset');assert.equal(S.canStopWalk(),false);assert.equal(CFG.gacha.startLevel,null);
  for(const [k,v] of Object.entries(CFG.decayPerHour))assert.equal(v,null,k);for(const k of ['feed','snack','bath','sleep'])assert.ok(Object.values(CFG.care[k]).every(v=>v===null),k);});
 test('potions (116): big fills all gauges, small one gauge; no effect on tricks/intimacy/level',()=>{const {s,sh}=freshGame();Object.assign(sh.g,{full:10,dirt:90,fatigue:90,happy:10,boredom:90});s.items.potionSmall=1;s.items.potionBig=1;
  assert.ok(S.usePotion(s,sh.id,'small','dirt'));assert.equal(sh.g.dirt,0);assert.equal(sh.g.full,10);assert.ok(S.usePotion(s,sh.id,'big'));assert.deepEqual(sh.g,CFG.gaugeFull);assert.equal(sh.level,21);assert.equal(S.intelligence(sh),24);});
@@ -360,7 +353,7 @@ test('start: choose 1 of 4 breeds, Lv21, 앉아·기다려 3 (109·90·100); 15 
  assert.equal(CFG.personalities.length,15);const s=S.newState(0);assert.equal(S.chooseStart(s,'rare_red','',Math.random,0),null);});
 
 // red-team #2: start values the game needs are PENDING_CONFIRM placeholders (spec keys stay UNSET); unnecessary ones are UNSET and gated
-test('red-team #2: unsupported starts stay null and rescue is disabled',()=>{for(const v of Object.values(CFG.pending))assert.equal(v,null);const {s,sh}=freshGame();assert.equal(s.coins,30000,'밸런스_2년.md §5 start coins');assert.equal(s.dia,300,'밸런스_2년.md §5 start diamonds');assert.equal(sh.intimacy,null);assert.equal(sh.acc,null);assert.ok(Object.values(sh.g).every(v=>v===null));s.rescues.push({rid:'x',breed:'kuro',bathed:true});assert.equal(S.bringCheck(s,'x'),'unset');assert.equal(S.bringRescue(s,'x'),null);S.playWith(s,sh.id,0);assert.equal(sh.intimacy,null);assert.ok(Object.values(sh.g).every(v=>v===null));assert.equal(S.buyAccCheck(s,'bandana-loop-cell2'),null,'start coins (밸런스_2년.md §5) cover one 5,000 bandana');assert.equal(S.conditionMul(sh),null);assert.equal(S.trainChance(sh),null);assert.equal(S.trainCheck(s,sh.id,'paw'),'unset');});
+test('red-team #2: unsupported starts stay null',()=>{for(const v of Object.values(CFG.pending))assert.equal(v,null);const {s,sh}=freshGame();assert.equal(s.coins,30000,'밸런스_2년.md §5 start coins');assert.equal(s.dia,300,'밸런스_2년.md §5 start diamonds');assert.equal(sh.intimacy,null);assert.equal(sh.acc,null);assert.ok(Object.values(sh.g).every(v=>v===null));S.playWith(s,sh.id,0);assert.equal(sh.intimacy,null);assert.ok(Object.values(sh.g).every(v=>v===null));assert.equal(S.buyAccCheck(s,'bandana-loop-cell2'),null,'start coins (밸런스_2년.md §5) cover one 5,000 bandana');assert.equal(S.conditionMul(sh),null);assert.equal(S.trainChance(sh),null);assert.equal(S.trainCheck(s,sh.id,'paw'),'unset');});
 test('red-team #2: unknown walk reward branch is disabled',()=>{const {s,sh}=freshGame();S.startWalk(s,sh.id,600,0,()=>.99);const h=s.hearts;S.tickWalk(s,600e3,script([.99,.99,0,.99]));assert.deepEqual(s.walkResults[0].events,[]);assert.equal(s.hearts,h);assert.equal(s.coins,CFG.start.coins,'no walk coins');});
 test('red-team #2: gacha start level UNSET → gated even when odds are set',()=>withCfg(CFG.gacha,{breedOdds:TEST_ODDS},()=>{const {s}=freshGame();s.dia=1000;assert.equal(S.gachaCheck(s,1),'unset');assert.equal(S.gachaPull(s,1,S.rng(1),0),null);assert.equal(s.dia,1000);}));
 
@@ -384,6 +377,8 @@ test('Unit 2: paw curve exhaustively spends only the chosen shiba balance; max r
 test('Unit 2: bandana purchases and swaps conserve counted inventory through save/load',()=>{const {s,sh}=freshGame();const id='bandana-frontKnot-cell3',second=S.makeShiba(s,{breed:'white'});second.accUnlocked=true;s.shibas.push(second);s.coins=9999;assert.ok(S.buyAcc(s,id));assert.equal(S.buyAcc(s,id),false);assert.equal(s.coins,4999);assert.ok(S.equipAcc(s,sh.id,id));assert.equal(S.equipAcc(s,second.id,id),false);assert.equal(S.accOwned(s,id),1);S.unequipAcc(s,sh.id);assert.ok(S.equipAcc(s,second.id,id));const mem={value:null,setItem(k,v){this.value=v;},getItem(){return this.value;}};S.save(mem,s,0);const loaded=S.load(mem,0).state;assert.equal(S.accOwned(loaded,id),1);assert.equal(S.accWorn(loaded,id),1);assert.equal(loaded.accInv[id],0);});
 test('Unit 2: development rejects another job without charging, insufficient diamonds never finish, rounded finish once',()=>{const {s}=freshGame();s.cafe.level=5;s.coins=30000;assert.ok(S.developMenu(s,'M-02',0));const coins=s.coins;assert.equal(S.developMenu(s,'M-05',1),false);assert.equal(s.coins,coins);s.dia=29;assert.equal(S.skipNow(s,{type:'menu'},1),null);assert.equal(s.menuDev.id,'M-02');s.dia=30;assert.equal(S.skipNow(s,{type:'menu'},1),30);assert.equal(s.dia,0);assert.deepEqual(s.menus,['M-02']);assert.equal(S.skipNow(s,{type:'menu'},1),null);assert.deepEqual(s.menus,['M-02']);});
 test('Unit 2: unknown cafe threshold does not consume exp or advance; furniture prices null',()=>withCfg(CFG.cafe,{expToNext:[null]},()=>{const s=S.newState(0);S.addCafeExp(s,200);assert.equal(s.cafe.level,1);assert.equal(s.cafe.exp,200);assert.ok(CFG.furniture.items.every(it=>it.price===null));}));
+
+test('141: pity stamps count all paid/ticket pulls; choice uses personal paws, never duplicate levels',()=>gachaOn(()=>{const {s,sh}=freshGame();const level=sh.level;s.dia=10000;for(let i=0;i<5;i++)S.gachaPull(s,10,()=>0,0);assert.equal(s.gachaStamps,50);assert.equal(sh.level,level);assert.equal(sh.paws,500);const coins=s.coins,dia=s.dia;const picked=S.pityPick(s,'red',()=>0,0);assert.equal(picked.paws,10);assert.equal(sh.paws,510);assert.equal(sh.level,level);assert.equal(s.gachaStamps,0);assert.equal(s.dia,dia);assert.equal(s.coins,coins);assert.equal(S.pityPick(s,'white'),null);s.items.capsule=1;S.gachaPull(s,1,()=>0,0,{ticket:true});assert.equal(s.gachaStamps,1);s.gachaStamps=50;const nw=S.pityPick(s,'white',()=>0,0);assert.equal(S.byId(s,nw.id).breed,'white');assert.equal(s.gachaStamps,0);const store={value:null,setItem(k,v){this.value=v},getItem(){return this.value}};s.gachaStamps=49;S.save(store,s,0);assert.equal(S.load(store,0).state.gachaStamps,49);}));
 
 for(const [n,e] of fails)console.log('  FAIL',n,'\n       ',String(e.message).split('\n').slice(0,4).join('\n        '));
 console.log(`spec-v3: ${pass}/${pass+fails.length} passed`);process.exitCode=fails.length?1:0;
