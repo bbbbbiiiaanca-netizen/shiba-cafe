@@ -6,13 +6,13 @@ const state=newState(0);state.coins=Number.MAX_SAFE_INTEGER;
 assert.equal(state.space.unlockedRows,0);assert.equal(state.space.floor2Unlocked,false);
 assert.equal(switchFloor(state,2),false);
 // row cost stays UNSET (밸런스_2년.md §3 땅 넓히기 not applied); 2층·themes have starting values and a level gate → at café Lv1 they are 'locked'
-for(const [kind,id,why] of [['row',undefined,'unset'],['floor2',undefined,'locked'],['theme','fuji','locked'],['theme','bamboo','locked']]){
+for(const [kind,id,why] of [['floor2',undefined,'locked'],['theme','fuji','locked'],['theme','bamboo','locked']]){
  assert.equal(spaceUnlockCheck(state,kind,id),why,kind+(id||''));const before=JSON.stringify(state);assert.equal(unlockSpace(state,kind,id),false);assert.equal(JSON.stringify(state),before);
 }
 assert.deepEqual(CFG.themes.map(t=>t.name),['다다미','후지산 벽화 카페','대나무 회랑']);assert.equal(CFG.themes[0].locked,false);
 assert.ok(CFG.themes.filter(t=>t.locked).every(t=>t.art===null));
 // starting values 2026-10-15 (밸런스_2년.md §3), pending user confirm
-assert.equal(CFG.expansion.rowCost,null);assert.deepEqual([CFG.cafe.expansion2FCost,CFG.cafe.expansion2FLevel],[7000000,30]);
+assert.equal(CFG.expansion.rowCost,170000);assert.deepEqual([CFG.cafe.expansion2FCost,CFG.cafe.expansion2FLevel],[7000000,30]);
 assert.deepEqual(CFG.themes.filter(t=>t.locked).map(t=>[t.id,t.unlockLevel,t.unlockCost,t.unlockDia]),[['fuji',20,2400000,1500],['bamboo',35,5400000,3000]]);
 for(const [kind,id,lv] of [['floor2',undefined,30],['theme','fuji',20],['theme','bamboo',35]]){state.cafe.level=lv-1;assert.equal(spaceUnlockCheck(state,kind,id),'locked');state.cafe.level=lv;assert.equal(spaceUnlockCheck(state,kind,id),null);}
 const second=MAP.zones.find(z=>z.floor===2);assert.equal(second.image,null);assert.ok(second.screenOffset.y<0);assert.deepEqual(second.connects,{zone:'A',slot:'stairs'});
@@ -51,3 +51,19 @@ console.log('§12: alternating grass conversion, placement, navigation and expan
 const {selectFlooring}=await import('../sim.js');
 assert.equal(selectFlooring(expanded,'fuji'),false);assert.equal(selectFlooring(expanded,'tatami'),true);
 assert.equal(restoreSpace({flooring:'missing'}).flooring,'tatami');
+
+// Task B production values and real purchases: exponential pricing from the first row,
+// rounding each quoted total (not recursively multiplying rounded previous quotes).
+const B=await import('../sim.js'),land=B.newState(0);
+assert.equal(land.coins,30000);assert.equal(B.makeShiba(land,{breed:'white',now:0}).level,1);
+B.chooseStart(land,'red','',B.rng(1),0,B.bandanaItems()[0].id);assert.equal(land.shibas[0].level,21);
+assert.ok(!B.ledgerStatement(land,0).lines.some(x=>x.id==='land'));
+for(const [n,price] of [170000,272000,435000,696000].entries()){
+ assert.equal(B.spacePrice('row',null,'coins',land),price);
+ land.coins=price-1;const before=JSON.stringify(land);assert.equal(B.unlockSpace(land,'row',null,'coins',0),false);assert.equal(JSON.stringify(land),before);
+ land.coins=price;assert.ok(B.unlockSpace(land,'row',null,'coins',0));assert.equal(land.coins,0);assert.equal(land.space.unlockedRows,n+1);
+}
+const report=B.ledgerStatement(land,0);assert.equal(report.lines.find(x=>x.id==='land').amount,170000+272000+435000+696000);assert.equal(report.lines.find(x=>x.id==='furniture').amount,0);
+assert.ok(!B.ledgerStatement(land,CFG.ledger.periodMs).lines.some(x=>x.id==='land'));
+const savedPrice=CFG.expansion.rowCost;try{CFG.expansion.rowCost=null;assert.equal(B.spacePrice('row',null,'coins',land),null);assert.equal(B.spaceUnlockCheck(land,'row'),'unset');}finally{CFG.expansion.rowCost=savedPrice;}
+console.log('Task B: price progression/rounding, failed purchase atomicity, land-only daily ledger and Lv1 arrivals passed');

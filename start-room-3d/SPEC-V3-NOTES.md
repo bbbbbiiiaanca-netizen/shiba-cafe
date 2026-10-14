@@ -1,3 +1,5 @@
+> Current Task B (2026-10-15) supersedes historical entries below that leave land price or new-shiba start level null: land 170,000 ×1.6, nearest 1,000; later arrivals Lv1. See the final Task B section for current questions and art requests.
+
 # Spec v3 build notes (start-room-3d)
 
 Source: `shiba-cafe-docs/spec-v3-build/spec-v3.md` (최신 갱신 140-1 기준; 높은 갱신 번호가 앞의 내용을 대체, ~~취소선~~은 폐지로 처리),
@@ -766,3 +768,15 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - Validation: unit tests include production heart rows, approved assets, wall draw/rotation/edit/purchase, actual ×2 income, EXP ×1.5, duration/expiry, day-10 idempotence and ticket completion order. Chrome smoke and capture scripts updated and syntax checked only; user runs them. No commit/push/staging; edits restricted to `start-room-3d/`.
 
 - Task A final validation: `npm test` passed all suites; smoke/capture Node syntax checks and `git diff --check` passed. All 26 batch-3 assets match source SHA-256 hashes. Chrome was not launched.
+
+## Task B — land expansion + start (2026-10-15)
+- Starting values (`starting value 2026-10-15, pending user confirm`): first row **170,000 멍코인**, multiplier **×1.6**, quote rounded to the nearest **1,000 멍코인**. Formula uses the unrounded first price × multiplier^purchased-row-count, then rounds each quote (170,000 → 272,000 → 435,000 → 696,000); it does not compound rounded quotes. Existing start coin config remains **30,000** with its pending-confirm annotation. No new unlock price, art dimension or timing balance values were introduced.
+- User Task B takes precedence over handoff-v1/spec-v3.md's earlier N/R/S arrival levels: later new shibas start at **Lv1**, starter stays **Lv21**. Existing null odds/other undecided rules remain guarded.
+- Land '+' opens the cost confirmation; cancel spends nothing, confirm rechecks funds and the expansion count. Down-left first, then down-right, alternating. Expanded cells participate in placement/navigation/save.
+- Ledger had neither a land expense nor 기타 지출. Added **땅 넓히기**, hidden at zero per day; no land expense is recorded as 가구 구입. Question: approve this new ledger line, or introduce 기타 지출 and move land purchases there?
+- Approved art only: original room is cropped at the specified 6×6 floor boundaries (`room-merged-j.png`, `room-merged-ij.png`, reproducible with `crop-room-tatami.py`) so its front rim does not remain inside the merged floor. New floor cells use `tatami-room-crop.png`; approved `wall-inner.png` / `wall-inner-flip.png` extend the rear outer edges. Existing plate-edge crops remain on front outer edges. No replacement character art or drawn wall shapes.
+- Art request: two transparent repeatable **outer back-wall extension** PNGs (down-left / down-right) matching the original room's full wall height, thick top beam, wood trim, warm lighting and 128×64 cell angle, with contact anchors; also matching endpoint/junction crops joining the original tall back walls. Current approved inner-wall tiles are the best available fallback but their height/beam style cannot make a seamless outer-wall continuation. A seamless repeatable tatami floor tile matching the room texture/light would eliminate visible cropped texture repetition. Browser visual review remains for the user.
+- `--final`: completes starter flow, checks consumed EXP boost and chip, places level-reward cushions before seats capture, opens real 공간 해금 popup with 멍코인/다이아 choices (unset 2F diamond price remains disabled/미정).
+- `--u12b`: DPR2, real '+' confirmation/purchases; writes `main-screen-u12b-confirm.png` and `main-screen-u12b-expand-1.png`, `-2.png`, `-3.png` to the existing default `/workspace/shiba-cafe-docs/spec-v3-build/` when the user runs it. Scripts and smoke tests updated, not launched in this sandbox.
+- Questions: confirm 30,000 start coins and expansion starting values/rounding; confirm the ledger line above. 2F diamond unlock cost stays null: what should it be?
+- Validation: `npm test` in `start-room-3d` passed all suites, including production price progression, rounding, funds failure atomicity, day-hidden land expense, Lv1 arrivals/Lv21 starter and renderer image/draw-order checks. `node --check` passed for main, browser smoke and capture scripts. Browser smoke and screenshots were deliberately not run.

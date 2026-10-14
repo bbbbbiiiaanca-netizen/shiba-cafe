@@ -20,7 +20,7 @@ const H=3600e3;
 // expense 알바비 · 병원비 · 메뉴 개발비 · 액세서리 구입 (all accessories) · 가구 구입 (always shown, no purchase exists yet).
 // 가게 업그레이드 is not a ledger line (user 2026-10-15): upgrade purchases spend coins without a statement row.
 export const ledgerCategories={sales:['메뉴 판매','income'],meeting:['시바 만남 추가 수입','income'],offline:['오프라인 수입','income'],other:['기타 수입','income'],
- alba:['알바비','expense'],hospital:['병원비','expense'],menu:['메뉴 개발비','expense'],accessory:['액세서리 구입','expense'],furniture:['가구 구입','expense']};
+ alba:['알바비','expense'],hospital:['병원비','expense'],menu:['메뉴 개발비','expense'],accessory:['액세서리 구입','expense'],furniture:['가구 구입','expense'],land:['땅 넓히기','expense']};
 export const ledgerDay=now=>Math.floor((now+CFG.ledger.dayOffsetMs)/CFG.ledger.periodMs);
 export function settleLedger(s,now){
  const today=ledgerDay(now);s.ledger??={days:{},now};s.ledger.now=Math.max(now,s.ledger.now??now);const latest=ledgerDay(s.ledger.now);
@@ -33,7 +33,7 @@ export function recordLedger(s,category,amount,now=s.ledger?.now??s.lastSeen){
 }
 export function ledgerStatement(s,now,offset=0){
  const day=settleLedger(s,now)+(offset===-1?-1:0),row=s.ledger.days[day]||{};
- const lines=Object.entries(ledgerCategories).map(([id,[label,kind]])=>({id,label,kind,amount:row[id]||0}));
+ const lines=Object.entries(ledgerCategories).map(([id,[label,kind]])=>({id,label,kind,amount:row[id]||0})).filter(x=>x.id!=='land'||x.amount!==0);
  return {day,lines,net:lines.reduce((n,x)=>n+(x.kind==='expense'?-x.amount:x.amount),0)};
 }
 export function recordPayment(s,pay,now,{offline=false}={}){
@@ -57,7 +57,7 @@ export function newState(now=Date.now()){
 }
 
 // ───────────────────────── shibas ─────────────────────────
-export function makeShiba(s,{breed,level=null,name=null,tricks={},r=Math.random,now=Date.now()}){
+export function makeShiba(s,{breed,level=CFG.gacha.startLevel,name=null,tricks={},r=Math.random,now=Date.now()}){
  const g=Object.fromEntries(CFG.gauges.map(k=>[k,CFG.gaugeStart?.[k]??null])); // §1.2-3: unknown remains null
  const tr={},te={};for(const t of CFG.tricks){tr[t.id]=clamp(tricks[t.id]||0,0,CFG.trickMaxLevel);te[t.id]=0;}
  return {id:s.nextId++,breed,name,personality:drawPersonality(r),level:isUnset(level)?null:clamp(level,1,CFG.level.max),paws:0,
@@ -437,18 +437,18 @@ export function spaceUnlockCheck(s,kind,id,via="coins"){
  const space=s.space,theme=CFG.themes.find(t=>t.id===id);
  if(!['row','floor2','theme'].includes(kind)||kind==='theme'&&!theme)return 'invalid';
  if(kind==='floor2'&&space.floor2Unlocked||kind==='theme'&&(!theme.locked||space.themes.includes(id)))return 'owned';
- const cost=spacePrice(kind,id,via);
+ const cost=spacePrice(kind,id,via,s);
  if(!Number.isFinite(cost)||cost<=0)return 'unset';
  const level=kind==='floor2'?CFG.cafe.expansion2FLevel:kind==='theme'?theme.unlockLevel:null; // 밸런스_2년.md §3 'Lv N부터' (starting values)
  if(Number.isFinite(level)&&s.cafe.level<level)return 'locked';
  if(!Number.isFinite(s[via])||s[via]<cost)return via;
  return null;
 }
-export function unlockSpace(s,kind,id,via="coins"){
+export function unlockSpace(s,kind,id,via="coins",now=s.ledger?.now??s.lastSeen){
  if(spaceUnlockCheck(s,kind,id,via))return false;
- const cost=spacePrice(kind,id,via);
+ const cost=spacePrice(kind,id,via,s);
  s[via]-=cost;
- if(kind==='row')s.space.unlockedRows++;
+ if(kind==='row'){s.space.unlockedRows++;recordLedger(s,'land',cost,now);}
  else if(kind==='floor2')s.space.floor2Unlocked=true;
  else s.space.themes.push(id);
  return true;
@@ -501,7 +501,7 @@ export function buyWall(s,now=Date.now()){if(!Number.isFinite(s.coins)||s.coins<
 // Current income rate basis is unspecified; never guess an earning rate. Coins per second.
 export const currentIncomeRate=(s,now)=>CFG.heartUse.incomeRatePerSec;
 export function recoverFatigue(s,sh,dt,now){const rate=CFG.care.sleep.fatiguePerHour;if(Number.isFinite(rate)&&Number.isFinite(sh.g.fatigue))sh.g.fatigue=Math.max(0,sh.g.fatigue-rate*heartMultiplier(s,'recovery',now)*dt/3600);}
-export function spacePrice(kind,id,via='coins') {if(!['coins','dia'].includes(via))return null;return kind==='row'?(via==='coins'?CFG.expansion.rowCost:null):kind==='floor2'?(via==='coins'?CFG.cafe.expansion2FCost:CFG.cafe.expansion2FDia):CFG.themes.find(t=>t.id===id)?.[via==='coins'?'unlockCost':'unlockDia'];}
+export function spacePrice(kind,id,via='coins',s=null) {if(!['coins','dia'].includes(via))return null;return kind==='row'?(via==='coins'&&Number.isFinite(CFG.expansion.rowCost)?Math.round(CFG.expansion.rowCost*CFG.expansion.rowMultiplier**(s?.space.unlockedRows||0)/CFG.expansion.rowRound)*CFG.expansion.rowRound:null):kind==='floor2'?(via==='coins'?CFG.cafe.expansion2FCost:CFG.cafe.expansion2FDia):CFG.themes.find(t=>t.id===id)?.[via==='coins'?'unlockCost':'unlockDia'];}
 export const seatCount=s=>s.placement.slots.filter(x=>['chair','cushion'].includes(x.type)).length;
 export function grantSeatRewards(s){const prev=s.seatRewardLevel||1;s.furnitureInv??={};s.furnitureInv.cushion=(s.furnitureInv.cushion||0)+Math.max(0,CFG.cafe.seatRewards[s.cafe.level-1]-CFG.cafe.seatRewards[prev-1]);s.seatRewardLevel=Math.max(prev,s.cafe.level);}
 export function placeFurniture(s,type,origin){if(!(s.furnitureInv?.[type]>0)||!SPRITES[type]?.file)return false;const item={id:'placed-'+s.nextId,type,origin,dir:0};const zone=zonesForSpace(s.space)[0];if(!validPlacement(item,s.placement.slots,zone))return false;s.nextId++;s.placement.slots.push(item);s.furnitureInv[type]--;return true;}

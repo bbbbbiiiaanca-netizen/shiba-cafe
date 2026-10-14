@@ -117,3 +117,15 @@ assert.ok(managerIndex>=0&&managerIndex<draws.findIndex(d=>d.file.includes('furn
 assert.equal(draws.some(d=>d.file.includes('manager-sheet')),false);
 draws.length=0;iso.draw(state,{});assert.equal(draws.some(d=>d.file.includes('/chars/manager/')),false);
 console.log('u18 approved plate edges and manager render/occlusion passed');
+
+// Merged room image has cropped front rims; approved walls extend only on rear edges.
+for(const n of [1,2,3]){
+ const merged=newState(0);merged.space.unlockedRows=n;draws.length=0;iso.draw(merged,{});
+ assert.ok(draws.some(d=>d.file.endsWith(n===1?'room-merged-j.png':'room-merged-ij.png')));
+ assert.ok(!draws.some(d=>d.file.endsWith('room-tatami-noline.png')));
+ assert.equal(draws.filter(d=>d.file.endsWith('wall-inner.png')||d.file.endsWith('wall-inner-flip.png')).length,n);
+ assert.ok(draws.every(d=>d.args.every(Number.isFinite)),'wall flip scaling and all draw coordinates finite');
+ const walls=draws.map((d,i)=>d.file.includes('/wall-inner')?i:-1).filter(i=>i>=0);
+ assert.ok(Math.max(...walls)<draws.findIndex(d=>d.file.includes('/furn-')));
+}
+console.log('Task B: cropped room rims, both approved rear wall axes, finite scale and furniture layering passed');

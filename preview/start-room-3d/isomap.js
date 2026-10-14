@@ -60,13 +60,23 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
     const lo=k=>Math.floor(Math.min(...corners.map(c=>c[k])))-1,hi=k=>Math.ceil(Math.max(...corners.map(c=>c[k])))+1;
     for(let i=lo(0);i<=hi(0);i++)for(let j=lo(1);j<=hi(1);j++){if(i>=0&&j>=0&&i<z.cols&&j<z.rows)continue;const p=cellToScreen(i,j,view,z);ctx.drawImage(grass,p.x-64*scale,p.y-32*scale,128*scale,64*scale);}
    }}
-   const room=z.image?load(z.image):null;if(room?.complete&&room.naturalWidth)ctx.drawImage(room,view.x,view.y,room.naturalWidth*scale,room.naturalHeight*scale);
+   const roomFile=z.floor===1&&state.space.unlockedRows>0?'assets/drive/tiles/room-merged-'+(z.cols>MAP.zones[0].cols?'ij':'j')+'.png':z.image;
+   const room=roomFile?load(roomFile):null;if(room?.complete&&room.naturalWidth)ctx.drawImage(room,view.x,view.y,room.naturalWidth*scale,room.naturalHeight*scale);
    if(z.floor===1){
     // Approved floor bitmaps replace the grass in every newly owned cell.
     const floor=load(FLOOR_ART[z.flooring]);
     if(floor.complete&&floor.naturalWidth)for(let j=0;j<z.rows;j++)for(let i=0;i<z.cols;i++){
      if(i<MAP.zones[0].cols&&j<MAP.zones[0].rows)continue;
      const p=cellToScreen(i,j,view,z);ctx.drawImage(floor,p.x-z.cell.w*scale/2,p.y-z.cell.h*scale/2,z.cell.w*scale,z.cell.h*scale);
+    }
+    // Extend approved bitmap walls along the two outer rear edges, never inside the floor.
+    for(const [axis,count,base] of [['i',z.cols,MAP.zones[0].cols],['j',z.rows,MAP.zones[0].rows]]){
+     const sprite=axis==='i'?SPRITES.wall:SPRITES.wall.flip,im=load(sprite.file),fit=scale*SPRITES.wall.scale;
+     if(im.complete&&im.naturalWidth)for(let n=base;n<count;n++){
+      const p=cellToScreen(...(axis==='i'?[n,0]:[0,n]),view,z);
+      p.x+=(axis==='i'?1:-1)*z.cell.w*scale/4;p.y-=z.cell.h*scale/4;
+      ctx.drawImage(im,p.x-sprite.anchor[0]*fit,p.y-sprite.anchor[1]*fit,im.naturalWidth*fit,im.naturalHeight*fit);
+     }
     }
     const strip=nextExpansion(z,state.space.unlockedRows),centre=strip.cells.reduce((p,c)=>p.map((v,k)=>v+c[k]/strip.cells.length),[0,0]);
     const p=cellToScreen(...centre,view,z),meta=MAP_MARKERS.expansion,im=load(meta.file);

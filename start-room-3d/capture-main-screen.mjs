@@ -1,6 +1,6 @@
 import {startFlow} from './tests/start-flow.mjs';
 // Main cafe capture using capture-spec-v3.mjs Chrome CDP pipe approach, portrait 390×844.
-// Usage (from the repo root or start-room-3d/): node start-room-3d/capture-main-screen.mjs [OUTDIR] [--final | --u18 | --u179 | --u12 | --rf]
+// Usage (from the repo root or start-room-3d/): node start-room-3d/capture-main-screen.mjs [OUTDIR] [--final | --u18 | --u179 | --u12b | --u12 | --rf]
 // Default OUTDIR: /workspace/shiba-cafe-docs/spec-v3-build
 import {spawn} from 'node:child_process';import {mkdirSync,writeFileSync,readFileSync,rmSync} from 'node:fs';import {resolve,dirname,join} from 'node:path';import {fileURLToPath} from 'node:url';
 const ROOT=dirname(fileURLToPath(import.meta.url));
@@ -173,10 +173,25 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await click('[data-act=useItem][data-item=expBoost4h]');
  if(!(await ev(`__game.state.items.expBoost4h===0&&document.getElementById('boostChip').textContent.includes('경험치')`)))throw Error('EXP boost consumption/timer missing');
  await shot('main-screen-final-boost.png');
+ await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.cafe.seatRewards.findIndex(n=>n>g.CFG.cafe.seatRewards[0])+1;g.S.grantSeatRewards(g.state);const before=g.S.seatCount(g.state);for(let j=0;j<6;j++)for(let i=0;i<6;i++)g.S.placeFurniture(g.state,'cushion',[i,j]);if(g.S.seatCount(g.state)<=before)throw Error('Reward seats not placed');g.refresh();return true;})()`);
  await click('[data-main-tab=furniture]');await shot('main-screen-final-seats.png');
 
- await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.themes.find(t=>t.id==='bamboo').unlockLevel;g.state.coins=g.CFG.cafe.expansion2FCost;g.state.dia=g.CFG.themes.find(t=>t.id==='bamboo').unlockDia;g.refresh();return true;})()`);await click('[data-main-tab=shop]');await shot('main-screen-final-unlock.png');
+ await ev(`(()=>{const g=__game;g.state.cafe.level=g.CFG.themes.find(t=>t.id==='bamboo').unlockLevel;g.state.coins=g.CFG.cafe.expansion2FCost;g.state.dia=g.CFG.themes.find(t=>t.id==='bamboo').unlockDia;g.refresh();return true;})()`);await click('[data-main-tab=shop]');await click('[data-act=unlockPopup]');if(!(await ev(`document.querySelector('#mbox [data-kind=floor2][data-via=coins]')&&document.querySelector('#mbox [data-kind=theme][data-via=dia]')`)))throw Error('Unlock popup choices missing');await shot('main-screen-final-unlock.png');
  if(errors.length)throw Error(errors.join('\n'));
+ }
+ else if(process.argv.includes('--u12b')){
+  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+  await click('[data-main-tab=manage]');
+  for(const n of [1,2,3]){
+   await ev(`(()=>{const g=__game;g.state.coins=g.S.spacePrice('row',null,'coins',g.state);g.refresh();g.iso.panTo(0,g.iso.maxScroll);return true;})()`);
+   const point=await ev(`(()=>{const m=__game.iso.markers.find(m=>m.kind==='row'),r=document.getElementById('isomap').getBoundingClientRect();return {x:r.left+m.buttonX,y:r.top+m.buttonY};})()`);
+   for(const type of ['mousePressed','mouseReleased'])await c('Input.dispatchMouseEvent',{type,...point,button:'left',buttons:type==='mousePressed'?1:0,clickCount:1});
+   if(!(await ev(`__game.ui.modals[0]?.kind==='confirm'`)))throw Error('Expansion confirmation missing');
+   if(n===1)await shot('main-screen-u12b-confirm.png');
+   await click('#mbox [data-act=confirmYes]');
+   if(!(await ev(`__game.state.space.unlockedRows===${n}&&__game.state.coins===0`)))throw Error('Expansion purchase failed');
+   await ev('__game.iso.panTo(0,0);true');await shot('main-screen-u12b-expand-'+n+'.png');
+  }
  }
  else if(process.argv.includes('--u18')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
@@ -257,7 +272,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev('__game.iso.scrollTo(__game.iso.maxScroll);true');await shot('main-screen-u3-locked-row.png');
  const expansionPoint=await ev('(()=>{const m=__game.iso.markers.find(m=>m.kind==="row"),r=document.getElementById("isomap").getBoundingClientRect();return {x:r.left+m.buttonX,y:r.top+m.buttonY};})()');
  for(const type of ['mousePressed','mouseReleased'])await c('Input.dispatchMouseEvent',{type,...expansionPoint,button:'left',buttons:type==='mousePressed'?1:0,clickCount:1});
- if(!(await ev(`document.getElementById('toast').textContent==='상점 준비 중이에요'&&document.querySelector('[data-main-tab=manage]').classList.contains('active')&&!document.querySelector('[data-space-card]')`)))throw Error('Expansion + did not show pending shop toast');
+ if(!(await ev(`__game.ui.modals[0]?.kind==='confirm'&&document.getElementById('mbox').textContent.includes('멍코인')`)))throw Error('Expansion + did not show price confirmation');
  const unit3=['locked-row','inventory'].map(name=>readFileSync(join(out,'main-screen-u3-'+name+'.png')));
  if(unit3[0].equals(unit3[1]))throw Error('Unit 3 captures must be distinct');
  // Unit 4 fixture supplies undecided navigation/payment values only in unsaved TEMP mode.

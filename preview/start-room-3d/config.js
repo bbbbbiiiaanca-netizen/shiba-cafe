@@ -68,7 +68,7 @@ export const CFG={
   ].map(x=>({...x,art:`assets/drive/ui/card-${({blanket:'nap',special:'vip'})[x.id]||x.id}.png`}))},
  heartReset:{fillTo:10}, // 1.4 / 갱신 32: 10개 미만일 때만 10개까지, 10개 이상이면 사용 불가(소모 없음)
 
- expansion:{rowCost:U}, // UNSET: interior §1 / spec v3 §1.3 land row cost
+ expansion:{rowCost:170000,rowMultiplier:1.6,rowRound:1000}, // starting value 2026-10-15, pending user confirm: nearest 1,000 멍코인
  themes:[
   {id:'tatami',name:'다다미',locked:false,unlockCost:null,art:'assets/drive/room-tatami-noline.png'}, // §1.3 default
   // unlockCost (멍코인) / unlockDia / unlockLevel: starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm. art UNSET (interior §6). Theme UI offers either currency while retaining level gates.
@@ -261,7 +261,7 @@ export const CFG={
  // ── 시바뽑기 (갱신 137: 132-3의 200다이아 대체) ──
  // starting value 2026-10-15, pending user confirm: gacha unlock Lv1.
  gacha:{unlock:1,priceDia:100,tenDia:900,tenCount:10, // 갱신 137: 1회 100다이아(1,000원), 10연차 900다이아(9,000원)
-  startLevel:U, // UNSET: 질문 9(바) '뽑기로 나온 시바의 시작 레벨' (137은 '랜덤 레벨 아님'만, 138의 Lv1→30 계산은 추론) → 뽑기 비활성 (갱신 141 확률은 확정, 시작 레벨만 미정)
+  startLevel:1, // user Task B 2026-10-15: later arrivals Lv1, starter Lv21
   dupPaws:GACHA_TABLE.dupToPaw, // 갱신 137·81: 이미 가진 견종이 또 나오면 발바닥 10개 (레벨업 재료)
   priceCoins:U, // UNSET: 갱신 57 멍코인 뽑기 가격 → 멍코인 뽑기 없음
   breedOdds:Object.fromEntries(GACHA_TABLE.pool.map(x=>[x.id,x.w])), // 갱신 141 confirmed; rates only in JSON

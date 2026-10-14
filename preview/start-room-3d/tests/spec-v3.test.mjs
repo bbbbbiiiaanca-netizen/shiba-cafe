@@ -280,9 +280,9 @@ test('137: 4 breeds only, draws follow the configured odds table; 10-pull from 4
 test('137 + 82: a capsule ticket from walks = one free pull',()=>gachaOn(()=>{const {s}=freshGame();assert.equal(S.gachaCheck(s,1,{ticket:true}),'ticket');s.items.capsule=1;
  assert.equal(S.gachaCheck(s,10,{ticket:true}),'count');assert.equal(S.gachaPull(s,1,S.rng(1),0,{ticket:true}).length,1);assert.equal(s.items.capsule,0);assert.equal(s.dia,0);}));
 // red-team #1: UNSET odds must never become equal odds
-test('red-team #1: 141: confirmed odds with unknown start level: nothing spent',()=>{const {s}=freshGame();assert.equal(S.gachaOddsSet(),true);
+test('red-team #1: 141: confirmed odds with unknown start level: nothing spent',()=>withCfg(CFG.gacha,{startLevel:null},()=>{const {s}=freshGame();assert.equal(S.gachaOddsSet(),true);
  s.dia=10000;s.items.capsule=3;for(const [n,o] of [[1,{}],[10,{}],[1,{ticket:true}]]){assert.equal(S.gachaCheck(s,n,o),'unset');assert.equal(S.gachaPull(s,n,S.rng(1),0,o),null);}
- assert.equal(s.dia,10000);assert.equal(s.items.capsule,3);assert.equal(s.shibas.length,1);});
+ assert.equal(s.dia,10000);assert.equal(s.items.capsule,3);assert.equal(s.shibas.length,1);}));
 test('red-team #1: personality odds UNSET (질문 9(다)) → no personality is drawn (start); set odds are followed',()=>{assert.equal(CFG.personalityOdds,null);assert.equal(S.personalityOddsSet(),false);
  const {s,sh}=freshGame();assert.equal(sh.personality,null);
  withCfg(CFG,{personalityOdds:{foodie:1}},()=>{const g=freshGame('red',0,3);assert.equal(g.sh.personality,'foodie');});});
@@ -343,7 +343,7 @@ test('135-2: part-timer cooldowns (데이케어·산책 알바·훈련사) finis
 // ───────── UNSET features stay off ─────────
 test('UNSET features are disabled: paid slot, regulars, walk stop',()=>{const {s}=freshGame();s.coins=1e9;
  assert.equal(S.slotUnlockCheck(),'unset');
- assert.equal(S.regularsCheck(),'unset');assert.equal(S.canStopWalk(),false);assert.equal(CFG.gacha.startLevel,null);
+ assert.equal(S.regularsCheck(),'unset');assert.equal(S.canStopWalk(),false);assert.equal(CFG.gacha.startLevel,1);
  for(const [k,v] of Object.entries(CFG.decayPerHour))assert.equal(v,null,k);for(const k of ['feed','snack','bath','sleep'])assert.ok(Object.values(CFG.care[k]).every(v=>v===null),k);});
 test('potions (116): big fills all gauges, small one gauge; no effect on tricks/intimacy/level',()=>{const {s,sh}=freshGame();Object.assign(sh.g,{full:10,dirt:90,fatigue:90,happy:10,boredom:90});s.items.potionSmall=1;s.items.potionBig=1;
  assert.ok(S.usePotion(s,sh.id,'small','dirt'));assert.equal(sh.g.dirt,0);assert.equal(sh.g.full,10);assert.ok(S.usePotion(s,sh.id,'big'));assert.deepEqual(sh.g,CFG.gaugeFull);assert.equal(sh.level,21);assert.equal(S.intelligence(sh),24);});
@@ -353,7 +353,7 @@ test('start: choose 1 of 4 breeds, Lv21, 앉아·기다려 3 (109·90·100); 15 
 // red-team #2: start values the game needs are PENDING_CONFIRM placeholders (spec keys stay UNSET); unnecessary ones are UNSET and gated
 test('red-team #2: unsupported starts stay null',()=>{for(const v of Object.values(CFG.pending))assert.equal(v,null);const {s,sh}=freshGame();assert.equal(s.coins,30000,'밸런스_2년.md §5 start coins');assert.equal(s.dia,300,'밸런스_2년.md §5 start diamonds');assert.equal(sh.intimacy,null);assert.equal(sh.acc,null);assert.ok(Object.values(sh.g).every(v=>v===null));S.playWith(s,sh.id,0);assert.equal(sh.intimacy,null);assert.ok(Object.values(sh.g).every(v=>v===null));assert.equal(S.buyAccCheck(s,'bandana-loop-cell2'),null,'start coins (밸런스_2년.md §5) cover one 5,000 bandana');assert.equal(S.conditionMul(sh),null);assert.equal(S.trainChance(sh),null);assert.equal(S.trainCheck(s,sh.id,'paw'),'unset');});
 test('red-team #2: unknown walk reward branch is disabled',()=>{const {s,sh}=freshGame();S.startWalk(s,sh.id,600,0,()=>.99);const h=s.hearts;S.tickWalk(s,600e3,script([.99,.99,0,.99]));assert.deepEqual(s.walkResults[0].events,[]);assert.equal(s.hearts,h);assert.equal(s.coins,CFG.start.coins,'no walk coins');});
-test('red-team #2: gacha start level UNSET → gated even when odds are set',()=>withCfg(CFG.gacha,{breedOdds:TEST_ODDS},()=>{const {s}=freshGame();s.dia=1000;assert.equal(S.gachaCheck(s,1),'unset');assert.equal(S.gachaPull(s,1,S.rng(1),0),null);assert.equal(s.dia,1000);}));
+test('red-team #2: gacha start level UNSET → gated even when odds are set',()=>withCfg(CFG.gacha,{breedOdds:TEST_ODDS,startLevel:null},()=>{const {s}=freshGame();s.dia=1000;assert.equal(S.gachaCheck(s,1),'unset');assert.equal(S.gachaPull(s,1,S.rng(1),0),null);assert.equal(s.dia,1000);}));
 
 // red-team #3: bandana colours are neutral sheet-cell ids, no invented names
 test('red-team #3: bandana colour ids are cell1..cell9 (no colour names); old colour-named saves migrate to the same cell',()=>{const B=CFG.accessory.bandana;

@@ -86,7 +86,13 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev("__game.state.space.unlockedRows=0;__game.iso.scrollTo(0);__game.refresh();true");await sleep(200);
  const expansionPoint=await ev('(()=>{const m=__game.iso.markers.find(m=>m.kind==="row"),r=document.getElementById("isomap").getBoundingClientRect();return {x:r.left+m.buttonX,y:r.top+m.buttonY};})()');
  for(const type of ['mousePressed','mouseReleased'])await c('Input.dispatchMouseEvent',{type,...expansionPoint,button:'left',buttons:type==='mousePressed'?1:0,clickCount:1});
- await check('expansion + shows shop pending toast without changing tab',`document.getElementById('toast').textContent==='상점 준비 중이에요'&&__game.ui.toastT>0&&document.querySelector('[data-main-tab=manage]').classList.contains('active')&&!document.querySelector('[data-space-card]')`);
+ await check('Task B plus opens price confirmation before spending',`!document.getElementById('modal').hidden&&document.getElementById('mbox').textContent.includes('170,000 멍코인')&&__game.state.space.unlockedRows===0`);
+ await ev('document.querySelector("#mbox [data-act=modalOk]").click();__game.state.coins=__game.CFG.expansion.rowCost;__game.refresh();true');
+ for(const type of ['mousePressed','mouseReleased'])await c('Input.dispatchMouseEvent',{type,...expansionPoint,button:'left',buttons:type==='mousePressed'?1:0,clickCount:1});
+ await ev('document.querySelector("#mbox [data-act=confirmYes]").click();true');
+ await check('Task B confirmed purchase merges row and records only land expense',`__game.state.space.unlockedRows===1&&__game.state.coins===0&&__game.S.ledgerStatement(__game.state,__game.clock.now()).lines.find(x=>x.id==='land').amount===__game.CFG.expansion.rowCost&&__game.iso.markers.find(m=>m.kind==='row').axis==='i'`);
+ await ev('document.querySelector("[data-main-tab=shop]").click();document.querySelector("[data-act=unlockPopup]").click();true');
+ await check('Task B unlock popup offers coin and diamond choices, unknown 2F diamonds disabled',`!document.getElementById('modal').hidden&&!!document.querySelector('#mbox [data-kind=theme][data-via=coins]')&&!!document.querySelector('#mbox [data-kind=theme][data-via=dia]')&&document.querySelector('#mbox [data-kind=floor2][data-via=dia]').disabled&&document.querySelector('#mbox [data-kind=floor2][data-via=dia]').textContent.includes('미정')`);
  await go(false);
  await ev('document.querySelector("[data-main-tab=furniture]").click();document.querySelector("[data-edit-toggle]").click();true');
  await check('toggle enters edit in furniture panel','__game.iso.edit && __game.iso.gridCells===36 && document.querySelector("[data-main-tab=furniture]").classList.contains("active")');
@@ -129,7 +135,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  // §11·§12: TEMP debug, alternating expansion, bitmap floor, drag bounds and saved placements.
  await go(true,'&temp=1&expansions=3');
  await ev('__game.ui.modals=[];__game.state.settings.language="ko";__game.state.started=true;__game.refresh();true');
- await check('§12 query unlocks N alternating strips with null price',`__game.state.space.unlockedRows===3&&__game.CFG.expansion.rowCost===null&&__game.iso.markers.find(m=>m.kind==='row').axis==='i'`);
+ await check('§12 query unlocks N alternating strips with configured price',`__game.state.space.unlockedRows===3&&__game.CFG.expansion.rowCost===170000&&__game.iso.markers.find(m=>m.kind==='row').axis==='i'`);
  for(const [n,grid,axis] of [[0,36,'j'],[1,42,'i'],[2,49,'j'],[3,56,'i']]){
   await ev(`__game.debugExpand(${n});__game.iso.setEdit(true);true`);
   await check('§12 full expanded grid '+n,`__game.iso.gridCells===${grid}&&__game.iso.markers.find(m=>m.kind==='row').axis==='${axis}'`);

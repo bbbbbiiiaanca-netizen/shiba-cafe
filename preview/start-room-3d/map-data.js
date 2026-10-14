@@ -81,7 +81,7 @@ export function restorePlacement(saved,zone=MAP.zones[0]){
 // unlockedRows is the persisted expansion count (legacy key retained).
 // Approved room's central tatami cell, cropped by crop-room-tatami.py; original tile alpha retained.
 export const FLOOR_ART={tatami:'assets/drive/tiles/tatami-room-crop.png'};
-// First axis j (down-left): starting value 2026-10-15, pending user confirm.
+// User Task B 2026-10-15: first down-left (j), then down-right (i), alternating.
 export function nextExpansion(zone,count){return count%2===0?{axis:'j',cells:Array.from({length:zone.cols},(_,i)=>[i,zone.rows])}:{axis:'i',cells:Array.from({length:zone.rows},(_,j)=>[zone.cols,j])};}
 export function restoreSpace(saved){
  const unlockedRows=Number.isSafeInteger(saved?.unlockedRows)&&saved.unlockedRows>=0?saved.unlockedRows:0;
