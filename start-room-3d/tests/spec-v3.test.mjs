@@ -6,7 +6,9 @@ import {existsSync,readFileSync} from 'node:fs';import {createHash} from 'node:c
 const ROOT=join(dirname(fileURLToPath(import.meta.url)),'..');
 
 let pass=0;const fails=[];
-function test(name,fn){try{fn();pass++;}catch(e){fails.push([name,e]);}}
+// Explicit fixture for decided payment mechanics only; production aggregation stays UNSET.
+const fixtureAggregation=lvs=>lvs.length?lvs.reduce((a,b)=>a+b,0)/lvs.length:1;
+function test(name,fn){const old=CFG.income.levelAggregation;if(!name.startsWith('red-team #7'))CFG.income.levelAggregation=fixtureAggregation;try{fn();pass++;}catch(e){fails.push([name,e]);}finally{CFG.income.levelAggregation=old;}}
 const H=3600e3,MIN=60e3;
 const near=(a,b,eps=1e-9,msg)=>assert.ok(Math.abs(a-b)<=eps,`${msg||''} ${a} ≉ ${b}`);
 const freshGame=(breed='red',now=0,seed=1)=>{const r=S.rng(seed),s=S.newState(now);S.chooseStart(s,breed,'',r,now);return {s,r,sh:s.shibas[0],w:S.newWorld(s,r)};};
@@ -71,7 +73,7 @@ test('café exp curve: level ups at table values, Lv7 after 2,970 exp, stops at 
  const t=S.newState(0);S.addCafeExp(t,2970);assert.equal(t.cafe.level,7);assert.equal(t.cafe.exp,0);S.addCafeExp(t,1e9);assert.equal(t.cafe.level,50);});
 test('premium chance 5% + (rep−50)×0.3%p, +15%p satisfied, cap 40% (120)',()=>{near(S.premiumChance(50,false),.05);near(S.premiumChance(30,false),.05);near(S.premiumChance(70,false),.11);near(S.premiumChance(90,false),.17);near(S.premiumChance(90,true),.32);near(S.premiumChance(100,true),.35);
  const bak=CFG.menu.premiumSatisfiedBonus;CFG.menu.premiumSatisfiedBonus=.5;try{near(S.premiumChance(100,true),.4);}finally{CFG.menu.premiumSatisfiedBonus=bak;}});
-test('income = base × level effect (met shibas avg) × item (75·120); fractions kept (120)',()=>{const {s,sh}=freshGame();
+test('payment mechanics with explicit test aggregation × item (75·120); fractions kept (120)',()=>{const {s,sh}=freshGame();
  assert.equal(S.payFor(s,[sh.id],{price:1}).total,2);assert.equal(S.payFor(s,[],{price:1}).total,1);
  const o=S.makeShiba(s,{breed:'kuro',level:1});s.shibas.push(o);near(S.payFor(s,[sh.id,o.id],{price:3}).total,3*1.5);
  s.cafe.boostUntil=1e15;near(S.payFor(s,[sh.id],{price:1}).total,2.4);});
@@ -359,6 +361,8 @@ test('red-team #4: all levels use 100 × cap hourly arrivals before reputation',
 test('red-team #5: fulfilled and manager requests win over low score',()=>{for(const manager of [false,true]){const {s,w,sh}=freshGame();w.r=()=>0;w.spawnT=1e9;if(manager)s.cafe.managerUntil=H;w.custs.push({id:1,seat:0,t:0,score:0,met:[],fulfilled:!manager,request:{type:'meetShiba',shibaId:sh.id}});S.tick(s,w,0,0);assert.equal(w.lastPay.outcome,'satisfied');assert.ok(s.cafe.rep>50);}});
 
 test('red-team #6: requested trick does not override random learned trick',()=>{const {s,w,sh}=freshGame();w.r=()=>.99;w.sh[sh.id]={id:sh.id,phase:'roam',t:0};const c={id:1,with:null,score:0,met:[],fulfilled:false,request:{type:'seeTrick',trick:'sit'}};w.custs.push(c);assert.ok(S.deliver(s,w,sh.id,1,0));assert.equal(w.events.at(-1).trick,'wait');assert.equal(c.fulfilled,false);});
+
+test('red-team #7: UNSET aggregation gates payments for no, single, repeated and multiple meetings',()=>{assert.equal(CFG.income.levelAggregation,null);const {s,w,sh}=freshGame();for(const met of [[],[sh.id],[sh.id,sh.id]]){const p=S.payFor(s,met,{price:3},0);assert.equal(p.total,null);assert.equal(p.lvMul,null);assert.ok(p.pending);}w.spawnT=1e9;w.custs.push({id:1,seat:0,t:0,score:1,met:[sh.id],fulfilled:true});const before=s.coins;S.tick(s,w,0,0);assert.equal(s.coins,before);assert.equal(w.lastPay.total,null);});
 
 for(const [n,e] of fails)console.log('  FAIL',n,'\n       ',String(e.message).split('\n').slice(0,4).join('\n        '));
 console.log(`spec-v3: ${pass}/${pass+fails.length} passed`);process.exitCode=fails.length?1:0;

@@ -82,6 +82,7 @@ export const CFG={
  requests:{types:['meetShiba','seeTrick'],interior:{enabled:false,minThemeItems:3}, // 갱신 113 '특정 테마 아이템 3개 이상' (인테리어 시스템 UNSET)
   managerChance:.3,managerRepMul:.5}, // 갱신 118
  // 갱신 120 결제 · 129 메뉴 개발(멍코인) · 134 메뉴 목록·주문 규칙 · 134-1 개발비 (134 표의 개발비는 134-1로 대체)
+ income:{levelAggregation:U}, // UNSET 갱신 75·120: combining meeting-level effects and no-meeting fallback are undecided; payments gated
  menu:{coffee:{id:'M-01',price:1,img:'M-01-iced-americano_512.png'}, // 갱신 134: M-01 아이스 아메리카노 = 처음부터 있는 기본 커피 1멍 (120)
   // kind: drink/dessert = 일반 메뉴, premium = 프리미엄. unlockLevel·price = 갱신 134 표, devCost = 갱신 134-1 표, devSec = 갱신 136 개발 시간
   items:[

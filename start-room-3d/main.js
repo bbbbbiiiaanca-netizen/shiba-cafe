@@ -27,7 +27,7 @@ const shibaImg=sh=>{const st=S.statusOf(s,sh);if(st==='sleeping'&&IMG.sleepPose[
 
 // ───────── formatting ─────────
 const fmt=n=>Math.floor(n).toLocaleString(s.settings.language==='en'?'en-US':'ko-KR');
-const f2=n=>(Math.round(n*100)/100).toString();
+const f2=n=>n==null?L('unset'):(Math.round(n*100)/100).toString();
 const tfmt=sec=>{sec=Math.max(0,Math.ceil(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),x=sec%60;return h?`${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`:`${m}:${String(x).padStart(2,'0')}`;};
 const nameOf=sh=>sh.name||L('shiba.breed.'+sh.breed);
 const bar=(k,col)=>`<div class="bar"><i style="width:${Math.round(Math.max(0,Math.min(1,k))*100)}%${col?';background:'+col:''}"></i></div>`;
@@ -188,7 +188,7 @@ P.income=()=>{const now=clock.now(),item=S.itemIncomeMul(s,now),base=CFG.menu.co
   <div class="note">${s.menus.length?S.developed(s).map(m=>L('menu.'+m.id)+' '+L('app.coins',{n:m.price})).join(' · '):L('inc.noPremium')}</div>
   <div class="note">${L('inc.premium',{p:f2(S.premiumChance(s.cafe.rep,false,S.normalDeveloped(s))*100)})}</div><div class="note">${L('inc.item',{m:item})}</div></div><div class="card">`;
  for(const sh of S.placedShibas(s)){const e=S.levelEffect(sh.level);h+=`<div class="li"><div class="pt" style="width:40px;height:40px">${img(IMG.shiba(sh.breed))}</div><div class="grow"><div class="nm" style="font-size:12px">${L('inc.row',{name:nameOf(sh),lv:sh.level,base,lv2:f2(e),item,total:f2(base*e*item)})}</div><div class="sub">${L('inc.cond',{m:f2(S.conditionMul(sh))})}</div></div></div>`;}
- const p=w.lastPay;if(p)h+=`<div class="note">${L('inc.last',{out:L('out.'+p.outcome),base:p.base,lv:f2(p.lvMul),item:p.item,total:f2(p.total)})} ${p.met.length?'':L('inc.metNone')}</div>`;
+ const p=w.lastPay;if(p)h+=`<div class="note">${L('inc.last',{out:L('out.'+p.outcome),base:p.base,lv:f2(p.lvMul),item:p.item,total:f2(p.total)})} ${p.pending?L('inc.pending'):''}</div>`;
  return {title:L('inc.title'),html:h+'</div>'};};
 let panelSig='';
 function renderPanel(force){if(!ui.panel){$('panel').hidden=true;return;}const v=P[ui.panel](ui.arg);const sig=v.title+v.html;if(!force&&sig===panelSig)return;panelSig=sig;

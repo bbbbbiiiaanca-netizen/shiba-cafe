@@ -9,7 +9,7 @@ export default async function({ev,check,sleep,reload}){
  await check('start shiba is Lv21 kuro with Sit/Wait 3','(s=>s.shibas.length===1&&s.shibas[0].breed==="kuro"&&s.shibas[0].level===21&&s.shibas[0].tricks.sit===3&&s.shibas[0].tricks.wait===3)(__game.state)');
  // café loop runs in the page
  await ev('for(let i=0;i<900;i++)__game.step(.1);true');
- await check('guests served and paid in the page','__game.state.stats.served>0&&__game.state.coins>0&&document.querySelectorAll(".seat").length===5');
+ await check('guests served; unresolved income aggregation gates payment','__game.state.stats.served>0&&__game.state.coins===0&&__game.world.lastPay.pending&&document.querySelectorAll(".seat").length===5');
  await check('no 도감 / dex button anywhere','!/도감|Collection|dex/i.test(document.getElementById("nav").textContent)');
  // screens
  for(const n of ['shibas','walk','shop','settings']){await ev(`document.querySelector("[data-nav=${n}]").click();true`);await check(`${n} screen opens`,'!document.getElementById("panel").hidden&&document.getElementById("pbody").children.length>0');}

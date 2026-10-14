@@ -235,9 +235,11 @@ export function chooseOrder(s,satisfied,r){const M=CFG.menu,p=premiumChance(s.ca
  if(!list.length)return {...coffeeOrder(p),slot:kind};
  if(kind==='dessert'){const prem=developed(s,'premium');if(prem.length&&r()<M.premiumUpgradeChance){const m=pick(r,prem);return {id:m.id,kind:'premium',price:m.price,img:m.img,p,slot:kind};}}
  const m=pick(r,list);return {id:m.id,kind,price:m.price,img:m.img,p,slot:kind};}
-// 갱신 75·120: 기본 수익 × 시바 레벨 효과(만난 시바 평균, 아무도 못 만났으면 ×1) × 아이템 효과
-export function payFor(s,met,order,now=Date.now()){const lvs=met.map(id=>byId(s,id)).filter(Boolean).map(o=>levelEffect(o.level));
- const lvMul=lvs.length?lvs.reduce((a,b)=>a+b,0)/lvs.length:1,item=itemIncomeMul(s,now);return {base:order.price,lvMul,item,total:order.price*lvMul*item};}
+// 갱신 75·120: level aggregation is UNSET; do not invent an average or a no-meeting multiplier.
+export function payFor(s,met,order,now=Date.now()){
+ const aggregate=CFG.income.levelAggregation,item=itemIncomeMul(s,now);
+ const lvMul=typeof aggregate==='function'?aggregate(met.map(id=>byId(s,id)).filter(Boolean).map(o=>levelEffect(o.level))):null;
+ return {base:order.price,lvMul,item,total:lvMul==null?null:order.price*lvMul*item,pending:lvMul==null};}
 
 // ───────────────────────── 얼룩 (갱신 101-3·117-2) ─────────────────────────
 export function cleanStain(s){if(s.cafe.stains<=0)return false;s.cafe.stains--;addCafeExp(s,CFG.cafeExp.stainClean);return true;}
@@ -278,7 +280,7 @@ function leave(s,w,c,ctx){const V=CFG.visit,E=CFG.cafeExp;let outcome,repD=0,exp
  else if(managerActive(s,ctx.now)&&managerCanFulfil(s,c)&&w.r()<CFG.requests.managerChance){outcome='satisfied';byManager=true;repD=satisfiedGain(s.cafe.rep,CFG.rep.satisfied*CFG.requests.managerRepMul);exp=0;}
  else if(c.score<V.scoreDisappointedBelow){outcome='disappointed';repD=CFG.rep.disappointed;exp=E.custDisappointed;}
  else{outcome='normal';repD=CFG.rep.normal;exp=E.custNormal;}
- const order=chooseOrder(s,outcome==='satisfied',w.r),pay=payFor(s,c.met,order,ctx.now);addCoins(s,pay.total);
+ const order=chooseOrder(s,outcome==='satisfied',w.r),pay=payFor(s,c.met,order,ctx.now);if(!pay.pending)addCoins(s,pay.total);
  s.stats.served++;s.stats[outcome]++;addCafeExp(s,exp);w.lastPay={...pay,order:order.id,orderImg:order.img,outcome,met:[...c.met]};
  w.events.push({type:'leave',id:c.id,outcome,coins:pay.total,order:order.id,orderImg:order.img,byManager,seat:c.seat});if(repD)addRep(s,repD,{...ctx,world:w});}
 // one step of everything that runs with time (online, or fast-forwarded while the app was closed)
