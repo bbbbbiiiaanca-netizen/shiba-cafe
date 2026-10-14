@@ -358,5 +358,7 @@ test('red-team #4: all levels use 100 × cap hourly arrivals before reputation',
 
 test('red-team #5: fulfilled and manager requests win over low score',()=>{for(const manager of [false,true]){const {s,w,sh}=freshGame();w.r=()=>0;w.spawnT=1e9;if(manager)s.cafe.managerUntil=H;w.custs.push({id:1,seat:0,t:0,score:0,met:[],fulfilled:!manager,request:{type:'meetShiba',shibaId:sh.id}});S.tick(s,w,0,0);assert.equal(w.lastPay.outcome,'satisfied');assert.ok(s.cafe.rep>50);}});
 
+test('red-team #6: requested trick does not override random learned trick',()=>{const {s,w,sh}=freshGame();w.r=()=>.99;w.sh[sh.id]={id:sh.id,phase:'roam',t:0};const c={id:1,with:null,score:0,met:[],fulfilled:false,request:{type:'seeTrick',trick:'sit'}};w.custs.push(c);assert.ok(S.deliver(s,w,sh.id,1,0));assert.equal(w.events.at(-1).trick,'wait');assert.equal(c.fulfilled,false);});
+
 for(const [n,e] of fails)console.log('  FAIL',n,'\n       ',String(e.message).split('\n').slice(0,4).join('\n        '));
 console.log(`spec-v3: ${pass}/${pass+fails.length} passed`);process.exitCode=fails.length?1:0;

@@ -264,9 +264,9 @@ function spawn(s,w,now){const c={id:w.nextCust++,kind:pick(w.r,NPC_NORMAL)};
  else if(w.queue.length<CFG.cafe.queueMax){c.phase='queue';c.t=CFG.cafe.queueWaitSec;w.queue.push(c);w.events.push({type:'queue',id:c.id});}
  else{s.stats.lost++;w.events.push({type:'lost'});}}
 function startMeeting(s,w,sh,c,ctx){const o=byId(s,sh.id);
- // 갱신 100: the shiba shows one learned trick — the requested one when it knows it, otherwise a random learned one
+ // 갱신 100: the shiba shows one learned trick — a random learned one, independent of the request
  const learned=CFG.tricks.filter(t=>o.tricks[t.id]>0).map(t=>t.id);const req=c.request;
- const shown=req&&req.type==='seeTrick'&&learned.includes(req.trick)?req.trick:learned.length?pick(w.r,learned):null;
+ const shown=learned.length?pick(w.r,learned):null;
  c.score+=meetingScore(o,shown?o.tricks[shown]:0);c.met.push(o.id);c.with=o.id;
  if(req&&!c.fulfilled&&((req.type==='meetShiba'&&req.shibaId===o.id)||(req.type==='seeTrick'&&shown===req.trick)))c.fulfilled=true;
  sh.phase='meet';sh.t=CFG.visit.meetSec;sh.cust=c.id;w.events.push({type:'meet',shibaId:o.id,custId:c.id,trick:shown,fulfilled:c.fulfilled});}
