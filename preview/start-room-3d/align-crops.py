@@ -9,7 +9,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parent
-OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path('/workspace/shiba-cafe-docs/spec-v3-build/align-v5')
+OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path('/workspace/shiba-cafe-docs/spec-v3-build/align-v6')
 OUT.mkdir(parents=True, exist_ok=True)
 data = json.loads(subprocess.check_output(['node', '--input-type=module', '-e',
     "import {MAP,SPRITES,footprintCentre,compareDepth} from './map-data.js'; console.log(JSON.stringify({zone:MAP.zones[0],sprites:SPRITES,items:[...MAP.zones[0].slots].sort(compareDepth).map(s=>({...s,centre:footprintCentre(s)}))}));"], cwd=ROOT))

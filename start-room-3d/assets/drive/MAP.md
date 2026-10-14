@@ -157,3 +157,13 @@ Drive display names: tatami-approved.png = 타일_바닥_다다미_칸.png; tile
 | `furn-cushion.png` | `가구_방석_v2.png` | `1aLdA7U5fd5gMG04Qz0AoNdg1oOG4M-p4` | `f3fa770f2023f7e62da9cf689ab064e33693f6562f402fd5a61058e2bc6b6f7a` |
 | `furn-counter.png` | `가구_카운터_v2.png` | `1PBZ4mkp_6Y3JZunwNma1TPZXCeIcJKPf` | `cf02cbc08b9d11ce7746cf7874705c6bad9dff8a2006dba8c8d4afb11bfeb00f` |
 | `furn-stairs.png` | `가구_계단_v2.png` | `1CNysa_Rg2eGY-qFPM7HhN3dOUH5D-i1J` | `27593897c1f48877136cfb305d3092b76fdbe6ba9f1047663ca28dd0389fabe7` |
+
+### v6 (그림이 v4 furniture + line-free room, used unmodified at scale 1)
+
+| file here | Drive original | Drive id | sha256 |
+|---|---|---|---|
+| `room-tatami-noline.png` | `이미지/interior/방_기본_다다미_선없음.png` | `1V3vO-ZEJfPv30NeDAfVKpLVKjFvtQAGX` | `eb66508857f22f8b800c8799d48e22137a9842c2b9a86f4c04de0bd9bb3079b9` |
+| `furn-stairs-v4.png` | `이미지/interior/가구_계단_v4.png` | `1n01o-36rIiOJMDBDsF3CI6Bv8UYwxTDB` | `717c411a8bbcc3c244ac1479a3be4bdbc5a99c46b9a6e42d6ea59cb3a9e92542` |
+| `furn-counter-v4.png` | `이미지/interior/가구_카운터_v4.png` | `1sIe0w1uNoKXwXK5NbVIEQAICOmtc8iFn` | `aaa38e4037932514fccf686279c91400bcf3c16b5d4702758758ae0fd9ba228e` |
+| `furn-tea-table-v4.png` | `이미지/interior/가구_찻상_v4.png` | `1E-6EamLhmiVXh7QdADFcQbj_KjRMl052` | `64d571bd3a5932a89c014d9bb9a83776dada6b73f07eaf69953c09ddcdb9eb7b` |
+| `furn-cushion-v4.png` | `이미지/interior/가구_방석_v4.png` | `1jkbdj3tgaRkrCeEY9Tyv_K5LRmDoqEaf` | `ed42045bf19743a0b7102b084d76b6be9289bec34337cab03adb09f26795920a` |
