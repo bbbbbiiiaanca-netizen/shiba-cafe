@@ -305,6 +305,7 @@ small.fx{display:block;font-family:'Gowun Dodum',sans-serif;font-size:11px;opaci
 .bag-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:0 2px 8px}
 .bag-cell{position:relative;aspect-ratio:1;min-width:0;padding:8px;border-radius:14px;background:#fff;border:2px solid #ead7b4;box-shadow:none;display:flex;align-items:center;justify-content:center}
 .bag-cell img,.bag-cell .band,.bag-pop-ico img{max-width:100%;max-height:100%;object-fit:contain}
+.bag-cell[data-item=potionSmall] img,[data-bag-pop=potionSmall] .bag-pop-ico img{height:90%;width:auto} /* 작은 멍포션 ≈ 멍포션 높이 70% */
 .bag-cell.empty{filter:grayscale(1);opacity:.45}
 .bag-n{position:absolute;right:4px;bottom:2px;font-family:Jua,sans-serif;font-size:13px;color:#5a3a1e;text-shadow:0 0 3px #fff,0 0 3px #fff}
 .bag-empty{text-align:center;color:#9a7a5a;font-size:13px;margin:16px 0}.bag-extra{display:flex;flex-direction:column;gap:8px;align-items:stretch;text-align:center}

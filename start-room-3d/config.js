@@ -142,10 +142,10 @@ export const CFG={
   {id:'fuji',name:'후지산 벽화 카페',locked:true,unlockCost:2400000,unlockDia:1500,unlockLevel:20,art:null}, // starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: Lv20, 2,400,000멍 or 1,500다이아
   {id:'bamboo',name:'대나무 회랑',locked:true,unlockCost:5400000,unlockDia:3000,unlockLevel:35,art:null} // starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: Lv35, 5,400,000멍 or 3,000다이아
  ],
- bagUi:{ // 가방 아이콘 UI. 아이콘 경로만 바꾸면 교체됨. TEMP = 그림이 시트 오기 전 임시(기존 에셋 재사용)
-  tabs:{furniture:'assets/drive/ui/ui-icon-tea-table.png',items:'assets/drive/ui/tab-bag.png',acc:'assets/drive/ui/tab-shop.png'}, // TEMP 3종
-  items:{incomeBoost4h:'assets/drive/ui/item-income-boost.png',expBoost4h:'assets/drive/ui/item-exp-boost.png',cooldownTicket:'assets/drive/ui/item-cooldown-ticket.png',heartReset:'assets/drive/ui/res-heart.png',potionBig:'assets/drive/mung-potion_256.png',potionSmall:'assets/drive/mung-potion_256.png',capsule:'assets/drive/ui/tab-shiba.png'}, // TEMP 6종(+작은 포션)
-  furniture:{table:'assets/drive/ui/ui-icon-tea-table.png',cushion:'assets/drive/ui/ui-icon-zabuton.png',counter:'assets/drive/ui/ui-icon-counter.png',stairs:'assets/drive/ui/ui-icon-stairs.png',wall:'assets/drive/tiles/tile-wall-left.png'}},
+ bagUi:{ // 가방 아이콘 UI. 아이콘 경로만 바꾸면 교체됨. 그림이 시트(2026-10-16) 반영
+  tabs:{furniture:'assets/drive/ui/bag/tab_furniture.png',items:'assets/drive/ui/bag/tab_item.png',acc:'assets/drive/ui/bag/tab_accessory.png'},
+  items:{incomeBoost4h:'assets/drive/ui/bag/icon_income_boost.png',expBoost4h:'assets/drive/ui/bag/icon_xp_boost.png',cooldownTicket:'assets/drive/ui/bag/icon_cooldown.png',heartReset:'assets/drive/ui/bag/icon_heart_reset.png',potionBig:'assets/drive/ui/bag/icon_potion.png',potionSmall:'assets/drive/ui/bag/icon_potion_small.png',capsule:'assets/drive/ui/bag/icon_gacha_ticket.png'},
+  furniture:{table:'assets/drive/ui/ui-icon-tea-table.png',cushion:'assets/drive/ui/ui-icon-zabuton.png',counter:'assets/drive/ui/ui-icon-counter.png',stairs:'assets/drive/ui/ui-icon-stairs.png',wall:'assets/drive/ui/bag/icon_partition_wall.png'}},
 furniture:{starterExtra:{table:1,cushion:2,counter:1,stairs:1}, // starting value 2026-10-15, pending user confirm: five extra approved-sprite items, unplaced
  // starting value 2026-10-15, pending user confirm: table 40,000; cushion 20,000; extra props 5,000 coins.
  items:[{id:'tea-table',name:'찻상',price:40000},{id:'zabuton',name:'방석',price:20000},{id:'counter',name:'카운터',price:5000},{id:'stairs',name:'계단',price:5000}]}, // Prices: starting value 2026-10-15, pending user confirm; historical source: 1.3 / F p6·9 furniture prices
