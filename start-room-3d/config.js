@@ -131,7 +131,7 @@ export const CFG={
   ].map(x=>({...x,art:`assets/drive/ui/card-${({blanket:'nap',special:'vip'})[x.id]||x.id}.png`}))},
  heartReset:{fillTo:10}, // 1.4 / 갱신 32: 10개 미만일 때만 10개까지, 10개 이상이면 사용 불가(소모 없음)
 
- expansion:{maxSteps:null, // 땅 넓히기 최대 단계 수: 미정(null = 제한 없음, 화면엔 '미정')
+ expansion:{maxSteps:8, // 똑또기 10-15 시작값: 땅 넓히기 최대 8단계 (비용 170,000 ×1.6 확정)
  rowCost:170000,rowMultiplier:1.6,rowRoundTiers:[[100000,1000],[1000000,10000],[Infinity,100000]],cameraEaseMs:400,markerMinScale:0.6,markerBounce:{periodSec:1.2,minScale:1.0,maxScale:1.1}}, // 똑또기 starting value 2026-10-15: exact ×1.6 chain; shown/charged price rounded: <100,000→1,000, 100,000–<1,000,000→10,000, ≥1,000,000→100,000; cameraEaseMs 400 and markerMinScale 0.6 (+ marker min draw scale) = starting values (approved 08:27); markerBounce 1.2s 1.0–1.1 = 똑또기 starting value 2026-10-15, pending user confirm
  themes:[
   {id:'tatami',name:'다다미',locked:false,unlockCost:null,art:'assets/drive/room-tatami-noline.png'}, // §1.3 default
