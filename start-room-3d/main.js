@@ -479,7 +479,7 @@ function bagCells(tab){const U=CFG.bagUi,it=s.items,now=clock.now();
  if(tab==='items'){const mulOk=k=>Number.isFinite(k==='incomeBoost4h'?CFG.itemIncome.boostMul:CFG.stub.expBoost.mul);
   return [...['incomeBoost4h','expBoost4h','cooldownTicket'].map(k=>({id:k,src:U.items[k],n:it[k]||0,name:L('grant.'+k),fx:ITEM_FX[k](),btn:`<button data-act="bagUse" data-item="${k}" ${(it[k]||0)>0&&(k==='cooldownTicket'?S.cooldownTarget(s,now):mulOk(k))?'':'disabled'}>${L('shop.use')}</button>`})),
    {id:'heartReset',src:U.items.heartReset,n:it.heartReset||0,name:L('grant.heartReset'),fx:ITEM_FX.heartReset(),btn:`<button data-act="bagHeartReset" ${S.canUseHeartReset(s)?'':'disabled'}>${L('shop.use')}</button>`},
-   ...['potionBig','potionSmall'].map(k=>({id:k,src:U.items[k],n:it[k]||0,name:L('dia.'+k),fx:ITEM_FX[k](),btn:`<button disabled>${L('shop.use')}</button>`})),
+   ...['potionBig','potionSmall'].map(k=>({id:k,src:U.items[k],n:it[k]||0,name:L('dia.'+k),fx:ITEM_FX[k](),btn:`<button disabled hidden>${L('shop.use')}</button><p class="bag-pop-note">${L('bag.potionNote')}</p>`})),
    {id:'capsule',src:U.items.capsule,n:it.capsule||0,name:L('grant.capsule'),fx:L('bag.fx.capsule'),btn:`<button data-act="bagGacha" ${(it.capsule||0)>0&&!S.gachaCheck(s,1,{ticket:true})?'':'disabled'}>${L('shop.use')}</button>`}];}
  if(tab==='furniture'){const walls=(s.wallOwned??PARTITION.count)-s.placement.slots.filter(x=>x.type==='wall').length;
   return [...Object.entries(s.furnitureInv||{}).map(([type,n])=>({id:'f-'+type,src:U.furniture[type],n,name:furnName(type),fx:L('bag.fx.furn'),btn:`<button data-act="bagPlace" data-item="${type}" ${n>0?'':'disabled'}>${L('bag.place')}</button>`})),
