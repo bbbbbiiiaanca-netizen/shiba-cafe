@@ -278,3 +278,6 @@ Manager v2 frames replace the v1 files at the same local paths (v1 rows above ar
 
 | village/place-hospital.png | Drive 1QBLxb0QjVY2lkv23x29Aozl6Cvla5ZRR (interior 확정본 장소_병원.png, 308×298, unmodified; replaces review copy 1QXT…) | sha256 59e51c1f6522c2cf4dd4174c878c48778b9517a6989cfdff28cc3d33c7cfa370 | 마을 lot index 1 (475,521); anchor (154,209) on lot centre |
 | village/place-walk.png | Drive 1Qw9vCXRXh8AoCkFekIW9F6rx7Lf3tc5a (interior 장소_산책로입구.png, 308×255, unmodified) | sha256 61b132809b17eb258be311abcd46825939ab0eeabecda29f4c68c64234dcde81 | 4번 터 (820,748); scale 1.15, scaled anchor ≈(177,181) on lot centre |
+| village/place-ingredients.png | Drive 1U5COpuzMglBTQwipH4l8U09QU3Z8fxjW (interior 장소_재료가게.png, 308×298, unmodified) | sha256 e0f6a33fa85803844908d36dd142a27e9b4a3dee607f205ae2b52bc0ef15ce21 | 3번 터 (208,747); anchor (154,209), scale 1 |
+| ui/ui-popup-rays.png | Drive 198nrcFLNdx-Euwk2k7jUfi1FOZUsK6nd (interior UI_팝업_빛줄기.png, 1024×1024 RGBA, unmodified) | sha256 a5776f27d236aa718ca88d5d4083e7712990314a9b588c40a3f461db4ad51a08 | item-get popup: above black overlay, behind item |
+| ui/ui-lucky-box.png | Drive 1Fgl1U8v37II7cyBcNbdEFF8U5FL7xDiG (interior UI_행운상자.png, 512×512, unmodified) | sha256 74f35fd13c8024d66f09c3441d0d470459b1ae0e1fe7d7c7ddbfe03036efbffb | 상점 특별상점 행운 상자 cards |

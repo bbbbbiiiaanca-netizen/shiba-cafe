@@ -15,7 +15,7 @@ assert.deepEqual(CFG.shop.itemCategories,{'tea-table':'interior',zabuton:'interi
 for(const [tab,count] of [['interior',3],['kitchen',1],['exterior',0]]){const h=Q.shopHtml(CFG,tab,()=>123);assert.equal((h.match(/class="furn-buy"/g)||[]).length,count);assert.doesNotMatch(h,/undefined|null/);}
 assert.match(Q.shopHtml(CFG,'cash',()=>null),/couponCode/);
 const special=Q.shopHtml(CFG,'special',()=>null);assert.equal((special.match(/<button disabled>/g)||[]).length,3);assert.match(special,/하트 미정/);
-assert.doesNotMatch(Q.shopHtml(CFG,'interior',()=>null).split('data-theme-logos>')[1].split('</div>')[0],/<img/);
+{const row=Q.shopHtml(CFG,'interior',()=>null).split('data-theme-logos>')[1].split('</div>')[0];assert.equal((row.match(/class="theme-logo[ "]/g)||[]).length,3);assert.equal((row.match(/theme-lock/g)||[]).length,2);assert.doesNotMatch(row,/art-slot/);assert.match(row,/aspect-ratio:256\/128/);}
 console.log('q1715/q1717: null config, safe shared dialogues, fixture isolation, progress, shop mapping and disabled prices passed');
 
 const {readFileSync}=await import('node:fs');

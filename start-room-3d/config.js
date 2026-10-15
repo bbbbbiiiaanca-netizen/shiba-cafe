@@ -18,6 +18,8 @@ const PRESSURE=[
 const CAFE_EXP=[7187,7187,11293,10853,10853,14813,14227,18480,18480,99792,77000,77000,77000,62216,62216,75768,75768,75768,91168,175824,177012,175824,175824,175824,206712,206712,239976,239976,239976,421344,421344,421344,417648,413952,413952,460152,460152,511896,511896,755656,750200,752928,752928,755656,755656,826584,826584,826584,886600];
 
 export const CFG={
+ itemGet:{dim:0.6, // starting value 2026-10-15, pending user confirm: black overlay opacity behind the item-get popup
+  rays:{src:'assets/drive/ui/ui-popup-rays.png',size:[1024,1024]}}, // 빛줄기 = interior 198nrcFL… (UI_팝업_빛줄기.png)
  // §17-13 starting value 2026-10-15, pending user confirm: 3 slots, 30–300 sec; energy 1/2.
  // ── 임시 값 (TEMP, 코코아 요청 2026-10-15 via 똑또기 검수): everything in this block is a placeholder until confirmed ──
  cooking:{ingredientBuyCount:1,dishesPerCraft:1, // 임시
@@ -39,7 +41,9 @@ export const CFG={
  // ── end 임시 block ──
  shop:{itemCategories:{'tea-table':'interior',zabuton:'interior',stairs:'interior',counter:'kitchen'}, // starting value 2026-10-15, pending user confirm
   newItems:['tea-table','zabuton','stairs','counter'], // starting value 2026-10-15, pending user confirm: existing catalog launch badges
-  decorScores:{'tea-table':null,zabuton:null,stairs:null,counter:null},themeLogos:null,luckyBoxPrices:{dia:null,coin:null,heart:null}}, // UNSET decor/logo art/lucky box prices pending 똑또기
+  decorScores:{'tea-table':null,zabuton:null,stairs:null,counter:null},themeLogos:{tatami:null,fuji:null,bamboo:null},themeLogoSize:[256,128],luckyBoxArt:'assets/drive/ui/ui-lucky-box.png',luckyBoxArtSize:[512,512], // 행운 상자 = interior 1Fgl1U8v… ; 다다미 logo (256×128) pending
+   // logo/lucky box art pending (empty frames)
+  luckyBoxPrices:{dia:null,coin:null,heart:null}}, // UNSET decor/logo art/lucky box prices pending 똑또기
  run:{playEnergy:1,skipEnergy:2,startEnergy:null,startLevel:null,energyCap:null,regenSec:null,bonusPerShiba:null,upgrades:null,scoreToReward:null}, // UNSET energy/bonus/upgrades/rewards pending 똑또기
 
  ledger:{periodMs:86400000,dayOffsetMs:32400000,historyDays:7,includeDiamonds:false,openFromPill:true,openFromStore:true}, // §15 starting value 똑또기 2026-10-14, pending user batch confirm: KST midnight day, 7 days kept, 멍코인만, opened from 멍코인 pill and 가게 tab
@@ -234,7 +238,8 @@ export const CFG={
  tabs:{iconScale:{shiba:1.1}}, // starting value 2026-10-15, pending user confirm: 시바들 tab art drawn 1.1×
  village:{background:'assets/drive/village/village-map.png',size:[1024,1536], // approved 배경_마을지도_시험.png
   lots:[{x:532,y:158,w:300,h:180},{x:475,y:521,w:300,h:180},{x:208,y:747,w:300,h:180},{x:820,y:748,w:300,h:180},{x:521,y:998,w:300,h:180},{x:513,y:1300,w:300,h:180}], // centres from 그림이 (image px); w/h = midpoint of the given 280–320 × 170–190 range (starting value)
-  places:[{id:'hospital',name:'병원',lot:1,icon:null,art:{src:'assets/drive/village/place-hospital.png',size:[308,298],anchor:[154,209],scale:1}},{id:'walk',name:'산책',lot:3,icon:null,art:{src:'assets/drive/village/place-walk.png',size:[308,255],anchor:[154,157],scale:1.15}}]}, // 병원 = interior 확정본 1QBLxb0…; 산책로 입구 = interior 1Qw9vCXR… (scale 1.15 = starting value); 3번 터 재료 가게 art pending (empty); 4번 터 (820,748)
+  places:[{id:'ingredients',name:'재료 가게',lot:2,icon:null,art:{src:'assets/drive/village/place-ingredients.png',size:[308,298],anchor:[154,209],scale:1}}, // 3번 터 (208,747); interior 1U5COpuz…
+  {id:'hospital',name:'병원',lot:1,icon:null,art:{src:'assets/drive/village/place-hospital.png',size:[308,298],anchor:[154,209],scale:1}},{id:'walk',name:'산책',lot:3,icon:null,art:{src:'assets/drive/village/place-walk.png',size:[308,255],anchor:[154,157],scale:1.15}}]}, // 병원 = interior 확정본 1QBLxb0…; 산책로 입구 = interior 1Qw9vCXR… (scale 1.15 = starting value); 3번 터 재료 가게 art pending (empty); 4번 터 (820,748)
  view:{zoomMin:1,zoomMax:2.5}, // starting value 2026-10-15, pending user confirm: pinch/ctrl+wheel zoom range (1 = fit width)
  people:{scale:1,withMapScale:true}, // starting value 2026-10-15, pending user confirm: people (manager/guests) were drawn at fixed 150 screen px ignoring map scale; now 150 art px × map scale × scale, foot anchor kept
  shibaRisk:{orange:50,red:80,highIsBad:['dirt','fatigue','boredom']}, // starting value 2026-10-15, pending user confirm: 'badness' 0–100 per gauge (full/happy inverted); ≥50 orange, ≥80 red; sick/injured red, hospital orange

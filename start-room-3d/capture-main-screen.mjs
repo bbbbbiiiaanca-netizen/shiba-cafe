@@ -238,7 +238,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await click('[data-main-tab=shiba]');await sleep(200);await shot('main-screen-shibas-grid.png');
   await ev(`(()=>{const sel=document.querySelector('[data-shiba-breed]');sel.value='red';sel.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`);await click('[data-sort-toggle]');await sleep(150);await shot('main-screen-shibas-filter.png');
   await ev(`(()=>{const sel=document.querySelector('[data-shiba-breed]');sel.value='all';sel.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`);await click('[data-sort-toggle]');
-  await click('#menuList [data-act=care]');await click('[data-act=careOpen]');await sleep(500);await shot('main-screen-shibas-detail.png');
+  await click('#menuList [data-act=care]');await sleep(300);await ev(`(()=>{const p=document.querySelector('[data-profile] p');p.scrollIntoView({block:'center'});return true;})()`);await sleep(300);await shot('main-screen-shibas-profile.png');await click('[data-act=careOpen]');await sleep(500);await shot('main-screen-shibas-care.png');
   await ev(`(()=>{const g=__game;g.ui.panel=null;g.refresh();g.state.cafe.level=g.CFG.alba.manager.unlock;g.state.coins=g.CFG.alba.manager.cost;g.S.hireAlba(g.state,'manager',[],g.clock.now());g.step(g.CFG.navigation.cellStepSec);g.refresh();return true;})()`);
   await click('[data-main-tab=manage]');
   await ev('__game.CFG.people.withMapScale=false;__game.refresh();true');await sleep(200);await shot('main-screen-people-before.png');
@@ -322,7 +322,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  const p=await ev(`(async()=>{const h=__game.iso.hits.find(h=>h.id==='counter'),im=new Image();im.src='assets/drive/furn-counter-v4.png';await im.decode();const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const ctx=c.getContext('2d');ctx.drawImage(im,0,0);const d=ctx.getImageData(0,0,c.width,c.height).data,r=document.getElementById('isomap').getBoundingClientRect();for(let y=Math.floor(c.height/2);y<c.height;y++)for(let x=Math.floor(c.width/2);x<c.width;x++)if(d[(y*c.width+x)*4+3])return {x:r.left+h.x+(c.width-1-x)/c.width*h.w,y:r.top+h.y+y/c.height*h.h};throw Error('no counter pixel');})()`);
  for(const type of ['mousePressed','mouseReleased'])await c('Input.dispatchMouseEvent',{type,...p,button:'left',buttons:type==='mousePressed'?1:0,clickCount:1});
  if(!(await ev('__game.iso.selected==="counter"')))throw Error('counter selection failed');
- if(!(await ev(`document.querySelector('[data-main-tab=bag]').classList.contains('active')&&document.getElementById('menuList').contains(document.querySelector('.furniture-actions'))&&!document.querySelector('.furniture-actions').hidden`)))throw Error('edit action bar missing from furniture panel');
+ if(!(await ev(`document.querySelector('[data-main-tab=bag]').classList.contains('active')&&document.getElementById('scene').contains(document.querySelector('.furniture-actions'))&&!document.querySelector('.furniture-actions').hidden`)))throw Error('edit action bar missing from furniture panel');
  await shot('main-screen-v7-edit.png');
  // Unit 2 captures are separate from the reproducible v7 stages above.
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});

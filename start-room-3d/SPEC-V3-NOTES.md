@@ -971,3 +971,10 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - Friends: horizontal cards with photo·name·Lv·놀러 가기 (friend photo = their shiba art; fixture only via ?temp&fixture=friends).
 - 마을: 병원 = interior 1QBLxb0… (same bytes as review copy), 산책로 입구 = 1Qw9vCXR… scale 1.15 on 4번 터; 3번 터 재료 가게 empty.
 - Still waiting for art (left empty): 빛줄기, 책 틀, 요리 그림, 알바 얼굴, 외벽 이음. Daily reward is still null.
+
+## 09:54–10:01 update
+- Edit mode: empty-cell green fill raised to rgba(30,215,80,.55) with a brighter stroke (red overlap unchanged at .32).
+- Coupon input styled (solid border, padding); theme logo row = 3 named tiles (다다미 empty 256×128 frame pending logo, 후지산/대나무 locked with lock icon).
+- 마을: 재료 가게 interior art on 3번 터 (208,747).
+- Item-get popup: black overlay itemGet.dim 0.6 (starting value) + 빛줄기 art behind the item. Lucky box art in 특별상점.
+- Capture script: --polish now finds the edit bar in #scene; --shibas writes grid → profile (intro scrolled into view) → care.
