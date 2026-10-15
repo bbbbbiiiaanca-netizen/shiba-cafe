@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {CFG} from '../config.js';
 import * as S from '../sim.js';
 import * as Q from '../q17.js';
-import {cookingFx,runFx} from '../effects.js';
+import {cookingFx} from '../effects.js';
 import {readFileSync} from 'node:fs';
 const s=S.newState(0);S.chooseStart(s,'red','',S.rng(1),0);Q.initQ17(s);
 assert.deepEqual(s.friends,[]);assert.deepEqual(s.shibas[0].friends,[]);
@@ -20,25 +20,23 @@ s.coins=CFG.ingredients.rice.price+CFG.ingredients.carrot.price;assert.equal(Q.b
 assert.equal(Q.craft(s,r.id,1000),true);assert.equal(Q.craft(s,r.id,1000),false);assert.equal(s.ingredients.rice,0);
 {const resumed=JSON.parse(JSON.stringify(s));assert.equal(Q.settleCraft(resumed,30999),false);assert.equal(Q.settleCraft(resumed,31000),true);assert.equal(resumed.dishes[r.id],1);
 const sh=resumed.shibas[0];sh.g.full=95;sh.g.happy=30;assert.equal(Q.feedDish(resumed,sh,r.id),true);assert.equal(sh.g.full,100);assert.equal(sh.g.happy,40);assert.equal(Q.feedDish(resumed,sh,r.id),false);}
-const oldRewards=CFG.run.scoreToReward;try{s.run.energy=2;assert.equal(Q.skipRun(s),false);s.run.lastScore=0;assert.equal(Q.skipRun(s),false);CFG.run.scoreToReward=[{score:0,ingredients:{rice:3}}];s.ingredients.rice=0;assert.equal(Q.skipRun(s),true);assert.equal(s.run.energy,0);assert.equal(s.ingredients.rice,3);assert.equal(Q.skipRun(s),false);}finally{CFG.run.scoreToReward=oldRewards;}
 const before=Q.rewardSnapshot(s);s.items.expBoost4h++;assert.deepEqual(Q.rewardDiff(before,s),[{id:'expBoost4h',n:1}]);
 const main=readFileSync(new URL('../main.js',import.meta.url),'utf8');assert.match(main,/temp&&Q.get\('fixture'\)==='friends'/);assert.match(main,/care:d=>\{ui.modals=\[\{kind:'book'/);assert.match(main,/careOpen:d=>\{ui.modals=ui.modals.filter\(m=>m.kind!=='book'\);open\('care'/);assert.match(main,/claimMail:d=>\{const before=Q17.rewardSnapshot/);assert.match(main,/heartUse:d=>\{const before=Q17.rewardSnapshot/);
 console.log('q17: friends cap/reset; null gating; craft resume/idempotence; feeding; skip atomicity; grant diff; profile route passed');
 // Execute the production renderers (no copied markup, Chrome-independent).
 const {runInNewContext}=await import('node:vm');
 const renderSource=main.slice(main.indexOf('function furnitureShop(){'),main.indexOf('game.openExpand=openExpand;'));
-s.run.energy=null;
 const P={},ui={};
 const renderers=runInNewContext(renderSource+';({shop:furnitureShop})',{
  temp:false,Q:new URLSearchParams(),P,ui,s,Q17:Q,CFG,S,clock:{now:()=>0},IMG:{shiba:b=>'assets/drive/shiba-'+b+'.png'},
  slot:()=>'<span class="slot"></span>',img:src=>`<img src="${src}">`,nameOf:sh=>sh.name||sh.breed,
- priceText:n=>n==null?'미정':String(n),cookingFx,runFx,fmt:String,itemIcon:()=>'',RES:{},tfmt:String,
+ priceText:n=>n==null?'미정':String(n),cookingFx,fmt:String,itemIcon:()=>'',RES:{},tfmt:String,
 });
 const shop=renderers.shop();for(const it of CFG.furniture.items){assert.ok(shop.includes('assets/drive/ui/ui-icon-'+it.id+'.png'));assert.ok(shop.includes(String(S.furniturePrice(s,it.id))));}
 ui.furnitureCategory=CFG.furniture.items[0].id;assert.equal((renderers.shop().match(/class="q17-product"/g)||[]).length,1);
 assert.match(P.cooking().html,/시바 죽/);assert.doesNotMatch(P.cooking().html,/미정/);assert.match(P.cooking().html,/data-act="craft" disabled/);
 assert.match(P.cooking().html,/data-act="ingredientBuy"[^>]+disabled/);
-assert.match(P.run().html,/data-act="runSkip" disabled/);assert.match(P.run().html,/오늘 남은 판 5/);assert.doesNotMatch(P.run().html,/runAd/);
+assert.match(P.run().html,/data-act="runSkip" disabled/);assert.doesNotMatch(P.run().html,/Lv미정|강화|에너지/);assert.match(P.run().html,/오늘 남은 판 5/);assert.doesNotMatch(P.run().html,/runAd/);
 assert.doesNotMatch(P.profile(s.shibas[0].id).html,/undefined|null|미정/);assert.match(P.profile(s.shibas[0].id).html,new RegExp(CFG.profiles[s.shibas[0].breed].favSnack.name));assert.match(P.profile(s.shibas[0].id).html,/data-act="careOpen"/);
 s.friends=[];assert.match(P.friends().html,/아직 친구가 없어요/);
 console.log('q17 production renderers: placeholder cooking/run, null disabled buttons, empty friends, profile care link passed');

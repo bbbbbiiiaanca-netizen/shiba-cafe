@@ -22,11 +22,22 @@ r=createRun(c,ids,()=>0);r.objs.push({type:'coin',lane:1,y:c.shibaY},{type:'ingr
 let seq=0;r=createRun(c,ids,()=>(seq=(seq+0.137)%1));for(let i=0;i<c.lengthSec*20+5&&!r.over;i++){moveLane(r,0);r.objs=r.objs.filter(o=>o.type!=='obstacle'||o.y<c.shibaY-c.obstacleW);stepRun(r,0.05);}
 assert.equal(r.reason,'time');
 // daily plays, ad stub, rewards, today best
-const now=Date.UTC(2026,9,15,3);const s={coins:100,ingredients:{},shibas:[]};Q.initQ17(s);assert.equal(c.playEnergy,undefined);
+const now=Date.UTC(2026,9,15,3);const s={coins:100,ingredients:{},shibas:[],cafe:{level:3}};Q.initQ17(s);assert.equal(c.playEnergy,undefined);
 assert.equal(Q.runPlaysLeft(s,now),5);for(let i=0;i<5;i++)assert.equal(Q.startRunPlay(s,now),true);assert.equal(Q.startRunPlay(s,now),false);
 assert.equal(c.adsEnabled,false);assert.equal(Q.claimRunAd(s,now),false);assert.equal(Q.runAdsLeft(s,now),0);
 c.adsEnabled=true;for(let i=0;i<3;i++)assert.equal(Q.claimRunAd(s,now),true);assert.equal(Q.claimRunAd(s,now),false);assert.equal(Q.runPlaysLeft(s,now),3);const dk=Q.runDay(s,now).key;assert.deepEqual(s.run.adLog,{[dk]:3});Q.claimRunAd(s,now+86400e3);assert.deepEqual(s.run.adLog,{[dk]:3,[dk+1]:1});c.adsEnabled=false;
 assert.equal(Q.finishRun(s,{coins:4,got:{rice:2,carrot:1},score:7},now),7);assert.equal(s.coins,140);assert.deepEqual(s.ingredients,{rice:2,carrot:1});
 assert.equal(Q.finishRun(s,{coins:0,got:{},score:3},now),7);assert.equal(s.run.lastScore,3);
 assert.equal(Q.runPlaysLeft(s,now+2*86400e3),5);assert.equal(Q.runDay(s,now+86400e3).best,null);
-console.log('run: speed/spawn ramps, 2-hit hearts, daily 5 + 3 ads, 10멍 coins + ingredients, today best, ads off by default, adLog per day; 3 lanes, swipe/keys lane change, obstacles end run, pickups, null art skipped, time limit passed');
+// unlock Lv3, shiba bonus, skip (after a real run, 1 play, 70% of today's best)
+{const L={cafe:{level:2},shibas:[],ingredients:{}};Q.initQ17(L);assert.equal(c.unlockLevel,3);assert.equal(Q.runUnlocked(L),false);assert.equal(Q.startRunPlay(L,now),false);assert.equal(Q.skipCheck(L,now),'locked');L.cafe.level=3;assert.equal(Q.runUnlocked(L),true);}
+for(const k of ['skipEnergy','startEnergy','energyCap','regenSec','scoreToReward','playEnergy','startLevel','bonusPerShiba'])assert.equal(k in c,false,k);assert.equal(c.upgrades,null);
+{const B={cafe:{level:5},coins:0,ingredients:{},shibas:[{id:1,level:20},{id:2,level:80}]};Q.initQ17(B);assert.equal(Q.runBonusPct(B),0);B.run.shibas=[1];assert.equal(Q.runBonusPct(B),20);B.run.shibas=[2];assert.equal(Q.runBonusPct(B),50);
+ assert.equal(Q.skipCheck(B,now),'run');assert.equal(Q.skipRun(B,now),false);
+ B.run.shibas=[1];Q.startRunPlay(B,now);Q.finishRun(B,{coins:10,got:{rice:3,carrot:1},score:14},now);assert.equal(B.coins,120);
+ Q.startRunPlay(B,now);Q.finishRun(B,{coins:1,got:{},score:1},now);assert.equal(B.coins,132);
+ assert.deepEqual(Q.skipReward(B,now),{mung:84,got:{rice:2}});const left=Q.runPlaysLeft(B,now);assert.deepEqual(Q.skipRun(B,now),{mung:84,got:{rice:2}});
+ assert.equal(B.coins,216);assert.equal(B.ingredients.rice,5);assert.equal(Q.runPlaysLeft(B,now),left-1);
+ Q.skipRun(B,now);Q.skipRun(B,now);assert.equal(Q.runPlaysLeft(B,now),0);assert.equal(Q.skipCheck(B,now),'plays');assert.equal(Q.skipRun(B,now),false);
+ assert.equal(Q.skipCheck(B,now+86400e3),'run');}
+console.log('run: Lv3 unlock, shiba bonus 1%/Lv max 50%, skip 70% after real run, old energy keys removed; speed/spawn ramps, 2-hit hearts, daily 5 + 3 ads, 10멍 coins + ingredients, today best, ads off by default, adLog per day; 3 lanes, swipe/keys lane change, obstacles end run, pickups, null art skipped, time limit passed');
