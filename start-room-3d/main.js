@@ -398,7 +398,7 @@ const act={
  seat:d=>{if(ui.sel==null)return;if(S.deliver(s,w,ui.sel,+d.cust,clock.now()))ui.sel=null;},
  langPick:d=>{ui.langPick=d.lang;},langOk:()=>{s.settings.language=ui.langPick;applyStatic();},
  startPick:d=>{ui.startName=$('startName')?.value||'';ui.startPick=d.breed;},
- startGo:()=>{const name=($('startName')?.value||'').trim();if(S.chooseStart(s,ui.startPick,name,r,clock.now(),ui.startBandana)){if(temp){for(const breed of ['red','white','kuro'].filter(b=>b!==ui.startPick).slice(0,2)){const sh=S.makeShiba(s,{breed,level:CFG.startShiba.level,now:clock.now()});sh.placed=true;s.shibas.push(sh);}}w=S.newWorld(s,r);startTutorial();}},
+ startGo:()=>{const name=($('startName')?.value||'').trim();if(S.chooseStart(s,ui.startPick,name,r,clock.now(),ui.startBandana)){if(temp){for(const breed of ['red','white','kuro'].filter(b=>b!==ui.startPick).slice(0,2)){const sh=S.makeShiba(s,{breed,level:CFG.startShiba.level,now:clock.now()});s.shibas.push(sh);S.setPlaced(s,sh.id,true);/* 배치 칸 상한(S.slotsOf, config) 넘으면 집에 머묾 */}}w=S.newWorld(s,r);startTutorial();}},
  modalOk:()=>{ui.modals.shift();},walkResultOk:()=>{s.walkResults.shift();}, // §17: the result stays in state (시바 red dot) until acknowledged
  tutorialSkip:()=>{ui.modals=ui.modals.filter(m=>!m.tutorial);},confirmYes:()=>{const m=ui.modals[0];if(m?.short){toast('코인이 부족해요');return;}ui.modals.shift();m.yes?.();},
 };
