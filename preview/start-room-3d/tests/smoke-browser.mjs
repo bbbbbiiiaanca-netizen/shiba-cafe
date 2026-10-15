@@ -1,3 +1,4 @@
+const debugHits=[];
 import {q1715Browser} from './q1715-browser.mjs';
 import {q17Browser} from './q17-browser.mjs';
 // Headless Chrome smoke test of index.html (CDP pipe, no network). Run from start-room-3d/: node tests/smoke-browser.mjs
@@ -16,7 +17,8 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));const checks=[];
 try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const {sessionId}=await call('Target.attachToTarget',{targetId,flatten:true});const c=(m,p)=>call(m,p,sessionId);
  await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await c('Page.enable');await c('Runtime.enable');
  const ev=async(x)=>{const r=await c('Runtime.evaluate',{expression:x,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(x.slice(0,80)+' -> '+JSON.stringify(r.exceptionDetails).slice(0,500));return r.result.value;};
- const check=async(name,expr)=>{const v=await ev(expr);checks.push([v?'ok':'FAIL',name]);};
+
+ const check=async(name,expr)=>{const v=await ev(expr);checks.push([v?'ok':'FAIL',name]);const hit=await ev(`(()=>{const t=document.body.innerText||'',m=t.match(/\\b(unset|UNSET|null|undefined|NaN)\\b/);return m?m[0]+' … '+t.slice(Math.max(0,m.index-30),m.index+20).replace(/\\s+/g,' '):'';})()`);if(hit)debugHits.push(name+' → '+hit);};
  const steps=(await import('./smoke-steps.mjs')).default;
  const go=async(fresh,view='')=>{await c('Page.navigate',{url:'file://'+resolve(ROOT,'index.html')+'?still=1&seed=7'+(fresh?'&fresh=1':'')+view});await sleep(300);
   for(let i=0;i<300&&!(await ev('Boolean(window.__ready)'));i++)await sleep(100);};
@@ -310,4 +312,5 @@ await new Promise(r=>setTimeout(r,600));
 
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}
 for(const [k,n] of checks)console.log(k==='ok'?'  ok  ':'  FAIL',n);for(const e of errors)console.log('  ERROR',e);
+checks.push([debugHits.length?'FAIL':'ok','no unset/null/undefined/NaN text visible on any checked screen']);if(debugHits.length)console.log('  DEBUG TEXT\n   '+[...new Set(debugHits)].slice(0,30).join('\n   '));
 const fail=checks.filter(c=>c[0]!=='ok').length+errors.length;console.log(`${checks.length-checks.filter(c=>c[0]!=='ok').length}/${checks.length} smoke checks passed, ${errors.length} page errors`);process.exitCode=fail?1:0;

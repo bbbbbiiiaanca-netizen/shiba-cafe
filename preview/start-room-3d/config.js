@@ -18,17 +18,22 @@ const PRESSURE=[
 const CAFE_EXP=[7187,7187,11293,10853,10853,14813,14227,18480,18480,99792,77000,77000,77000,62216,62216,75768,75768,75768,91168,175824,177012,175824,175824,175824,206712,206712,239976,239976,239976,421344,421344,421344,417648,413952,413952,460152,460152,511896,511896,755656,750200,752928,752928,755656,755656,826584,826584,826584,886600];
 
 export const CFG={
- itemGet:{dim:0.6, // starting value 2026-10-15, pending user confirm: black overlay opacity behind the item-get popup
+ // §17-14 시바 상세 = 펼친 책 팝업. Frame art pending (empty popup of the same ratio). Boxes are [x,y,w,h] in frame px; starting values until 그림이 gives coordinates.
+ profileBook:{frame:'assets/drive/ui/ui-shiba-book-frame.png',size:[1080,1600], // interior UI_시바상세_책틀.png 1VZRsBZT…; paper (lower page) = [88,804,900,532]
+  boxes:{art:[88,153,900,561],paper:[88,804,900,532],intro:[112,828,852,202],favs:[112,1042,852,138],friends:[112,1192,852,120], // 그림이 coordinates (frame px)
+   care:[96,1352,330,96]}, // starting value: 돌봄 button in the empty frame area below the paper, left of the ribbon
+  close:{right:-14,top:-14}}, // starting value: close button outside the frame, top-right (CSS px)
+ itemGet:{dim:0.75, // starting value 2026-10-15 (똑또기 10:05: 0.6→0.75), pending user confirm: black overlay opacity behind the item-get popup
   rays:{src:'assets/drive/ui/ui-popup-rays.png',size:[1024,1024]}}, // 빛줄기 = interior 198nrcFL… (UI_팝업_빛줄기.png)
  // §17-13 starting value 2026-10-15, pending user confirm: 3 slots, 30–300 sec; energy 1/2.
  // ── 임시 값 (TEMP, 코코아 요청 2026-10-15 via 똑또기 검수): everything in this block is a placeholder until confirmed ──
  cooking:{ingredientBuyCount:1,dishesPerCraft:1, // 임시
   startUnlocked:1,craftSecRange:[30,300], // 임시: 1 recipe open at start, others by unlockLevel
   recipes:[ // 임시 recipes; dish art pending (slot stays empty)
-   {id:'recipe-1',name:'시바 죽',unlockLevel:1,ingredients:{rice:1,carrot:1},craftSec:30,effect:{full:20,happy:10}}, // 임시
-   {id:'recipe-2',name:'고구마 간식',unlockLevel:3,ingredients:{sweetPotato:1},craftSec:60,effect:{full:15,happy:15}}, // 임시
-   {id:'recipe-3',name:'닭가슴살 큐브',unlockLevel:5,ingredients:{chicken:1},craftSec:90,effect:{full:25,happy:10}}]}, // 임시
- ingredients:{rice:{name:'쌀',price:50},carrot:{name:'당근',price:50},sweetPotato:{name:'고구마',price:80},chicken:{name:'닭고기',price:120}}, // 임시 prices (멍)
+   {id:'recipe-1',img:null,name:'시바 죽',unlockLevel:1,ingredients:{rice:1,carrot:1},craftSec:30,effect:{full:20,happy:10}}, // 임시
+   {id:'recipe-2',img:null,name:'고구마 간식',unlockLevel:3,ingredients:{sweetPotato:1},craftSec:60,effect:{full:15,happy:15}}, // 임시
+   {id:'recipe-3',img:null,name:'닭가슴살 큐브',unlockLevel:5,ingredients:{chicken:1},craftSec:90,effect:{full:25,happy:10}}]}, // 임시
+ ingredients:{rice:{name:'쌀',price:50,img:null},carrot:{name:'당근',price:50,img:null},sweetPotato:{name:'고구마',price:80,img:null},chicken:{name:'닭고기',price:120,img:null}}, // 임시 prices (멍); img = 256 transparent art from 그림이 (pending, slot stays empty)
  quests:{daily:{resetKST:'00:00',reward:null, // 임시 reset time; reward UNSET
    tasks:[{id:'serve',name:'손님 3명 받기',goal:3,tab:'manage',icon:'assets/drive/ui/tab-manage.png'}, // 임시
     {id:'pet',name:'시바 1마리 쓰다듬기',goal:1,tab:'shiba',icon:'assets/drive/ui/tab-shiba.png'}, // 임시
@@ -41,7 +46,7 @@ export const CFG={
  // ── end 임시 block ──
  shop:{itemCategories:{'tea-table':'interior',zabuton:'interior',stairs:'interior',counter:'kitchen'}, // starting value 2026-10-15, pending user confirm
   newItems:['tea-table','zabuton','stairs','counter'], // starting value 2026-10-15, pending user confirm: existing catalog launch badges
-  decorScores:{'tea-table':null,zabuton:null,stairs:null,counter:null},themeLogos:{tatami:null,fuji:null,bamboo:null},themeLogoSize:[256,128],luckyBoxArt:'assets/drive/ui/ui-lucky-box.png',luckyBoxArtSize:[512,512], // 행운 상자 = interior 1Fgl1U8v… ; 다다미 logo (256×128) pending
+  decorScores:{'tea-table':null,zabuton:null,stairs:null,counter:null},themeLogos:{tatami:'assets/drive/ui/ui-theme-logo-tatami.png',fuji:null,bamboo:null},themeLogoSize:[256,128],luckyBoxArt:'assets/drive/ui/ui-lucky-box.png',luckyBoxArtSize:[512,512], // 행운 상자 = interior 1Fgl1U8v… ; 다다미 logo (256×128) pending
    // logo/lucky box art pending (empty frames)
   luckyBoxPrices:{dia:null,coin:null,heart:null}}, // UNSET decor/logo art/lucky box prices pending 똑또기
  run:{playEnergy:1,skipEnergy:2,startEnergy:null,startLevel:null,energyCap:null,regenSec:null,bonusPerShiba:null,upgrades:null,scoreToReward:null}, // UNSET energy/bonus/upgrades/rewards pending 똑또기

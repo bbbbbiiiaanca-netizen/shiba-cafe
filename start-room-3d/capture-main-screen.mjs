@@ -238,7 +238,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await click('[data-main-tab=shiba]');await sleep(200);await shot('main-screen-shibas-grid.png');
   await ev(`(()=>{const sel=document.querySelector('[data-shiba-breed]');sel.value='red';sel.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`);await click('[data-sort-toggle]');await sleep(150);await shot('main-screen-shibas-filter.png');
   await ev(`(()=>{const sel=document.querySelector('[data-shiba-breed]');sel.value='all';sel.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`);await click('[data-sort-toggle]');
-  await click('#menuList [data-act=care]');await sleep(300);await ev(`(()=>{const p=document.querySelector('[data-profile] p');p.scrollIntoView({block:'center'});return true;})()`);await sleep(300);await shot('main-screen-shibas-profile.png');await click('[data-act=careOpen]');await sleep(500);await shot('main-screen-shibas-care.png');
+  await click('#menuList [data-act=care]');await sleep(300);await sleep(300);await shot('main-screen-shibas-profile.png');await click('[data-act=careOpen]');await sleep(500);await shot('main-screen-shibas-care.png');
   await ev(`(()=>{const g=__game;g.ui.panel=null;g.refresh();g.state.cafe.level=g.CFG.alba.manager.unlock;g.state.coins=g.CFG.alba.manager.cost;g.S.hireAlba(g.state,'manager',[],g.clock.now());g.step(g.CFG.navigation.cellStepSec);g.refresh();return true;})()`);
   await click('[data-main-tab=manage]');
   await ev('__game.CFG.people.withMapScale=false;__game.refresh();true');await sleep(200);await shot('main-screen-people-before.png');

@@ -978,3 +978,9 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - 마을: 재료 가게 interior art on 3번 터 (208,747).
 - Item-get popup: black overlay itemGet.dim 0.6 (starting value) + 빛줄기 art behind the item. Lucky box art in 특별상점.
 - Capture script: --polish now finds the edit bar in #scene; --shibas writes grid → profile (intro scrolled into view) → care.
+
+## 10:03–10:08 update
+- 돌봄 친밀도: shows affinity (n / max); L(unset) now renders 미정/TBD. Smoke adds a global check: no unset/null/undefined/NaN text on any checked screen.
+- Item-get: overlay dim 0.75 (starting value); rays were being forced to 180px by the .q17-itemget>img rule — fixed, rays at opacity 1, min(130vw,520px), behind the item; card background removed so rays sit on the overlay.
+- 시바 상세 = centered book popup with frame UI_시바상세_책틀.png; slot boxes in CFG.profileBook.boxes (그림이 coords); close outside top-right; 돌봄 button at [96,1352,330,96] (starting value).
+- 다다미 theme logo art added. Cooking screen (17-13) has config img slots for 3 recipes + 4 ingredients (null → empty slot); menu-development cards untouched.

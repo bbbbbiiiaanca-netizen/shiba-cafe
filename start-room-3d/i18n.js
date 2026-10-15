@@ -3,7 +3,7 @@
 // Missing keys fall back to English, then to the key itself.
 export const LANGS=['ko','en'];
 export const STR={
- ko:{
+ ko:{'unset':'미정',
   'lang.name.ko':'한국어','lang.name.en':'English','lang.select.title':'언어를 골라 주세요','lang.select.hint':'설정에서 언제든 바꿀 수 있어요','lang.select.confirm':'확인',
   'settings.language':'언어','settings.language.current':'지금 언어: {language}',
   'hud.currency.coin':'멍코인','hud.currency.heart':'하트','hud.currency.dia':'다이아',
@@ -62,7 +62,7 @@ export const STR={
   'care.accLockedNote':'시바마다 1칸. 해금해야 액세서리를 찰 수 있어요.','care.accUnlockPaws':'해금 {n} (보유 {have})','care.accUnlockDia':'해금 {n}','care.accOpen':'칸이 열려 있어요. 상점에서 산 액세서리를 채울 수 있어요.',
   'acc.type.triangle':'클래식 삼각형','acc.type.loop':'루프 스누드형','acc.type.knotTail':'매듭 테일형','acc.type.frontKnot':'앞 매듭형','acc.color.cell1':'빨강','acc.color.cell2':'파랑','acc.color.cell3':'초록','acc.color.cell4':'노랑','acc.color.cell5':'분홍','acc.color.cell6':'남색','acc.color.cell7':'주황','acc.color.cell8':'보라','acc.color.cell9':'청록','acc.name':'{c} {t} 반다나','shop.acc':'액세서리','shop.accRule':'반다나 1개 5,000멍. 1개는 한 번에 시바 1마리만 찰 수 있어요(시바마다 따로 사요). 칸을 해금한 시바만 찰 수 있어요.','shop.accOwned':'보유 {n} · 착용 {w}','shop.accSpecial':'특별 액세서리','shop.accSpecialNote':'1개 {dia}다이아 · 종류·디자인 미정 (그림 없음)','care.accWorn':'착용 중','care.accOff':'벗기기','care.accOn':'채우기','care.accBag':'가방에 있는 액세서리','care.accNone':'가방에 액세서리가 없어요. 상점에서 사요.','toast.accBought':'{name}을(를) 샀어요','toast.owned':'보유 한도가 꽉 찼어요','toast.fatigue':'피로 100이면 산책할 수 없어요','toast.slot':'액세서리 칸을 먼저 해금해요','toast.none':'가방에 없어요',
  },
- en:{
+ en:{'unset':'TBD',
   'lang.name.ko':'한국어','lang.name.en':'English','lang.select.title':'Choose your language','lang.select.hint':'You can change it any time in Settings','lang.select.confirm':'OK',
   'settings.language':'Language','settings.language.current':'Current: {language}',
   'hud.currency.coin':'Mung coins','hud.currency.heart':'Hearts','hud.currency.dia':'Diamonds',
