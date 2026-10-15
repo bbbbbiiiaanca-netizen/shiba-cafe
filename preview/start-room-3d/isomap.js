@@ -1,3 +1,4 @@
+import {loadHd} from './hd-assets.js';
 import {CFG} from './config.js';
 import {preservesEntrance} from './navigation.js';
 import {canWalk,walkFrame} from './walk-frames.js';
@@ -34,7 +35,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
  bar.querySelector('[data-furniture-cancel]').onclick=()=>{cancelDrag();if(current()&&selectionNew)slots().splice(slots().indexOf(current()),1);else if(current()&&selectionBefore)Object.assign(current(),selectionBefore);selected=null;selectionBefore=null;selectionNew=false;onChange();repaint();};
  bar.querySelector('[data-furniture-store]').onclick=()=>{const item=current();if(!item)return;if(item.type!=='wall'){const inv=last[0].furnitureInv??={};inv[item.type]=(inv[item.type]||0)+1;}slots().splice(slots().indexOf(item),1);selected=null;selectionBefore=null;onChange();repaint();};
  bar.querySelector('[data-furniture-done]').onclick=()=>{cancelDrag();selected=null;repaint();};
- const load=path=>{if(!images.has(path)){const im=new Image();im.onload=()=>last&&draw(...last);im.src=path;images.set(path,im);}return images.get(path);};
+ const load=path=>{if(!images.has(path)){const im=loadHd(path,()=>last&&draw(...last));images.set(path,im);}return images.get(path);};
  MAP.zones.forEach(z=>{if(z.image)load(z.image);z.slots.forEach(s=>load(SPRITES[s.type].file));});
  function draw(state,world){
   last=[state,world];if(!edit||!selected){delete canvas.dataset.placementValid;if(bar.dataset)delete bar.dataset.valid;}hits=[];gridCells=0;markers=[];dragSprite=null;delete canvas.dataset.dragSprite;const W=canvas.clientWidth,H=canvas.clientHeight,dpr=devicePixelRatio||1;
@@ -164,7 +165,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
  canvas.addEventListener('wheel',e=>{e.preventDefault();if(e.ctrlKey||e.metaKey){const p=point(e);setZoom(zoom*Math.exp(-e.deltaY/200),p.x,p.y);return;}scroll+=e.deltaY;panX+=e.deltaX;last&&draw(...last);},{passive:false});
  // Alpha hit testing uses an offscreen copy only; rendered sprites remain unmodified.
  const masks=new Map();
- function opaque(hit,x,y){if(hit.footprint)return Math.abs((x-hit.x-hit.w/2)/(hit.w/2))+Math.abs((y-hit.y-hit.h/2)/(hit.h/2))<=1;let mask=masks.get(hit.im);if(!mask){const c=document.createElement('canvas');c.width=hit.im.naturalWidth;c.height=hit.im.naturalHeight;const m=c.getContext('2d',{willReadFrequently:true});m.drawImage(hit.im,0,0);try{mask=m.getImageData(0,0,c.width,c.height);masks.set(hit.im,mask);}catch{return true;}}
+ function opaque(hit,x,y){if(hit.footprint)return Math.abs((x-hit.x-hit.w/2)/(hit.w/2))+Math.abs((y-hit.y-hit.h/2)/(hit.h/2))<=1;let mask=masks.get(hit.im);if(!mask){const c=document.createElement('canvas');c.width=hit.im.naturalWidth;c.height=hit.im.naturalHeight;const m=c.getContext('2d',{willReadFrequently:true});m.drawImage(hit.im,0,0,c.width,c.height);try{mask=m.getImageData(0,0,c.width,c.height);masks.set(hit.im,mask);}catch{return true;}}
   let px=Math.floor((x-hit.x)/hit.w*mask.width),py=Math.floor((y-hit.y)/hit.h*mask.height);if(hit.mirrored)px=mask.width-1-px;return mask.data[(py*mask.width+px)*4+3]>0;
  }
  const point=e=>{const r=canvas.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};};

@@ -10,7 +10,7 @@ const ctx={fill(){},translate(){},scale(){},setTransform(){},fillRect(){},drawIm
 const button={disabled:false};
 globalThis.location={search:''};globalThis.devicePixelRatio=1;
 globalThis.ResizeObserver=class{observe(){}};
-globalThis.Image=class{set src(path){loads.push(path);this.file=path;const png=readFileSync(new URL('../'+path,import.meta.url));this.naturalWidth=png.readUInt32BE(16);this.naturalHeight=png.readUInt32BE(20);this.complete=true;}};
+globalThis.Image=class{set src(path){const hd=path.includes('/@2x/'),k=hd?2:1;path=path.replace('/@2x/','/');loads.push(path);this.file=path;const png=readFileSync(new URL('../'+(hd?path.replace(/\/([^/]+)$/,'/@2x/$1'):path),import.meta.url));this.naturalWidth=png.readUInt32BE(16)/k;this.naturalHeight=png.readUInt32BE(20)/k;this.complete=true;}};// @2x는 화면에서 절반 크기(hd-assets.js)
 globalThis.document={createElement(type){return type==='canvas'?{getContext:()=>ctx}:{classList:{toggle(){}},style:{setProperty(){}},buttons:new Map(),setAttribute(){},querySelector(selector){if(!this.buttons.has(selector))this.buttons.set(selector,{...button});return this.buttons.get(selector);},querySelectorAll:()=>[]};}};
 const canvas={dataset:{},clientWidth:390,clientHeight:300,getContext:()=>ctx,addEventListener:(name,fn)=>events[name]=fn,getBoundingClientRect:()=>({left:0,top:0}),setPointerCapture(){}};
 let opens=0;

@@ -272,7 +272,7 @@ const ALBA_DETAIL={daycare:A=>`놀아주기와 같음 · 친밀도 ×${A.intimac
 LP.alba=()=>{const now=clock.now();
  return {title:'알바 고르기',rows:['daycare','walk','trainer','manager'].map(k=>{const A=CFG.alba[k],locked=!isUnset(A.unlock)&&s.cafe.level<A.unlock,active=k==='manager'&&S.managerActive(s,now);
   const gate=isUnset(A.cost)||isUnset(A.unlock)||locked||active||isUnset(s.coins)||s.coins<A.cost||(k==='manager'&&!!S.albaCheck(s,'manager',[],now));
-  return {key:k,face:null,name:ALBA_NAME(k),effect:locked?lockedLine(A.unlock):active?`운영 중 ${tfmt((s.cafe.managerUntil-now)/1000)}`:ALBA_SHORT[k](A),locked,
+  return {key:k,face:UI_ICONS.albaFace[k]||null,name:ALBA_NAME(k),effect:locked?lockedLine(A.unlock):active?`운영 중 ${tfmt((s.cafe.managerUntil-now)/1000)}`:ALBA_SHORT[k](A),locked,
    detail:`${ALBA_DETAIL[k](A)} · ${isUnset(A.unlock)?L('app.unset'):lockedLine(A.unlock)} · ${priceText(A.cost,'coin')}`,price:A.cost,unit:'coin',disabled:gate,
    act:k==='manager'?'manager':k==='walk'?'albaWalkOpen':'listOpen',data:k==='manager'||k==='walk'?{}:{list:'albaShiba',kind:k}};})};};
 // second level for per-shiba helpers: 데이케어 hires here; 훈련사 needs a trick → that shiba's care screen (existing trainer buttons).
