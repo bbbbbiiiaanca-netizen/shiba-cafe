@@ -21,12 +21,12 @@ const rowCost=CFG.expansion.rowCost;
 try{
  CFG.expansion.rowCost=500000;state.cafe.level=50;
  state.coins=499999;assert.equal(unlockSpace(state,'row'),false);
- state.coins=500000+7000000+2400000;assert.equal(unlockSpace(state,'row'),true);assert.equal(state.space.unlockedRows,1);assert.equal(state.coins,9400000);
+ state.coins=500000+7000000+2400000;{const landCost=(await import('../sim.js')).spacePrice('row',null,'coins',state);assert.ok(landCost>0);assert.equal(unlockSpace(state,'row'),true);assert.equal(state.space.unlockedRows,1);assert.equal(state.coins,9900000-landCost);}
  const zone=zonesForSpace(state.space)[0],table=state.placement.slots.find(s=>s.type==='table');
  assert.equal(validPlacement({...table,origin:[2,6]},state.placement.slots),false);
  assert.equal(validPlacement({...table,origin:[2,6]},state.placement.slots,zone),true);
  assert.equal(validPlacement({...table,origin:[2,7]},state.placement.slots,zone),false);
- table.origin=[2,6];assert.equal(unlockSpace(state,'floor2'),true);assert.equal(state.coins,2400000);assert.equal(switchFloor(state,2),true);
+ table.origin=[2,6];const themeP=(await import('../sim.js')).spacePrice('theme','fuji','coins',state);state.coins=7000000+themeP;assert.equal(unlockSpace(state,'floor2'),true);assert.equal(state.coins,themeP);assert.equal(switchFloor(state,2),true);
  assert.equal(unlockSpace(state,'theme','fuji'),true);assert.equal(state.coins,0);assert.equal(unlockSpace(state,'theme','fuji'),false);
  const store={value:null,setItem(k,v){this.value=v;},getItem(){return this.value;}};save(store,state,0);const restored=load(store,0).state;
  assert.deepEqual(restored.space,state.space);assert.deepEqual(restored.placement,state.placement);assert.equal(restored.cafe.floor,2);

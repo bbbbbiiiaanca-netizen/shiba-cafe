@@ -285,8 +285,8 @@ await new Promise(r=>setTimeout(r,600));
 
  await ev(`__game.ui.modals=[];__game.state.wallOwned=3;__game.refresh();document.querySelector('[data-main-tab=bag]').click();true`);
  await check('u18 inventory wall count and buy button',`document.querySelector('[data-wall-count]').textContent==='3'&&!!document.querySelector('[data-act=wallBuy]')&&!!document.querySelector('[data-wall-inventory-place]')`);
- await ev(`(()=>{const g=__game;g.state.coins=50000;document.querySelector('[data-act=wallBuy]').click();return true;})()`);
- await check('u18 wall buy records furniture expense',`__game.state.wallOwned===4&&__game.state.coins===0&&__game.S.ledgerStatement(__game.state,__game.clock.now()).lines.find(x=>x.id==='furniture').amount>=50000&&!document.getElementById('manager-debug')`);
+ await ev(`(()=>{const g=__game;g.state.coins=g.S.wallPrice(g.state);document.querySelector('[data-act=wallBuy]').click();return true;})()`);
+ await check('u18 wall buy records furniture expense',`__game.state.wallOwned===4&&__game.state.coins===0&&__game.S.ledgerStatement(__game.state,__game.clock.now()).lines.find(x=>x.id==='furniture').amount>=__game.S.wallPrice(__game.state)&&!document.getElementById('manager-debug')`);
  await ev(`(()=>{const g=__game;g.ui.modals=[];g.world.manager=null;g.world.custs=[{phase:'seated',cell:[1,3]}];g.S.tickManager(g.state,g.world,0,true,g.CFG.navigation.cellStepSec);g.refresh();return true;})()`);
  await check('u18 hired manager follows cell service routes',`(()=>{const g=__game,m=g.world.manager;return m.role==='manager'&&m.phase==='walking'&&m.route.length>0&&!document.querySelector('#manager-debug');})()`);
  await ev(`__game.S.tickManager(__game.state,__game.world,0,false,__game.CFG.navigation.cellStepSec);__game.refresh();true`);

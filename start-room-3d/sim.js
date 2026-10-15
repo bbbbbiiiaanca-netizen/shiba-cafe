@@ -85,7 +85,7 @@ export function buyAcc(s,id,now=Date.now()){if(buyAccCheck(s,id))return false;s.
 export function equipCheck(s,shId,id){const sh=byId(s,shId);if(!sh)return 'pick';if(!sh.accUnlocked)return 'slot';if(sh.acc===id)return 'worn';if(!(s.accInv[id]>0))return 'none';return null;}
 export function equipAcc(s,shId,id){if(equipCheck(s,shId,id))return false;const sh=byId(s,shId);if(sh.acc)s.accInv[sh.acc]=(s.accInv[sh.acc]||0)+1;s.accInv[id]--;sh.acc=id;return true;}
 export function unequipAcc(s,shId){const sh=byId(s,shId);if(!sh||!sh.acc)return false;s.accInv[sh.acc]=(s.accInv[sh.acc]||0)+1;sh.acc=null;return true;}
-export function unlockAccSlot(s,id,via){if(accUnlockCheck(s,id,via))return false;const sh=byId(s,id);if(via==='paws')sh.paws-=CFG.accessory.unlockPaws;else s.dia-=CFG.accessory.unlockDia;sh.accUnlocked=true;return true;}
+export function unlockAccSlot(s,id,via){if(accUnlockCheck(s,id,via))return false;const sh=byId(s,id);if(via==='paws')sh.paws-=CFG.accessory.unlockPaws;else spendDia(s,CFG.accessory.unlockDia);sh.accUnlocked=true;return true;}
 export const trickSum=sh=>CFG.tricks.reduce((a,t)=>a+(sh.tricks[t.id]||0),0);
 export const intelligence=sh=>Math.min(CFG.intelligenceMax,trickSum(sh)*CFG.intelligencePerLevel); // 갱신 133
 export function changeGauges(s,sh,d,now=Date.now()){for(const k of CFG.gauges)if(d[k]&&!isUnset(sh.g[k]))sh.g[k]=clamp(sh.g[k]+d[k],0,100);
@@ -105,7 +105,7 @@ export const canWork=(s,sh)=>sh.placed&&statusOf(s,sh)==='ok'&&!s.cafe.closed;
 
 // ───────────────────────── café level, reputation, hearts ─────────────────────────
 export const cafeNeed=lv=>lv>=CFG.cafe.maxLevel?null:CFG.cafe.expToNext[lv-1];
-export function addCafeExp(s,n){if(!(n>0))return 0;const C=s.cafe;let up=0;if(C.level>=CFG.cafe.maxLevel)return 0;C.exp+=n*((s.simNow??s.lastSeen)<C.expBoostUntil?(CFG.stub.expBoost.mul??1):1);
+export function addCafeExp(s,n){if(!(n>0))return 0;const C=s.cafe;let up=0;if(C.level>=CFG.cafe.maxLevel)return 0;C.exp+=n*(s.expScale??1)*((s.simNow??s.lastSeen)<C.expBoostUntil?(CFG.stub.expBoost.mul??1):1);
  for(let need=cafeNeed(C.level);need!=null&&C.exp>=need;need=cafeNeed(C.level)){C.exp-=need;C.level++;up++;grantSeatRewards(s);}if(C.level>=CFG.cafe.maxLevel)C.exp=0;return up;}
 export const slotsOf=s=>Math.min(CFG.cafe.maxPlaced,pressureAt(s.cafe.level).slots);
 export const capOf=s=>pressureAt(s.cafe.level).cap; // actual seats come only from placed chairs/cushions
@@ -192,8 +192,8 @@ function skipEnd(s,t){if(!CFG.timeSkip.targets.includes(t.type))return null;if(t
  const sh=byId(s,t.id);if(!sh)return null;if(t.type==='hospital')return sh.status==='hospital'?sh.hospitalUntil:null;return sh.cd[t.type]||null;}
 export function skipLeftSec(s,t,now=Date.now()){const e=skipEnd(s,t);return e==null?0:Math.max(0,(e-now)/1000);}
 export function skipCheck(s,t,now=Date.now()){const left=skipLeftSec(s,t,now);if(!(left>0))return 'none';if(s.dia<skipCost(left))return 'dia';return null;}
-export function skipNow(s,t,now=Date.now()){if(skipCheck(s,t,now))return null;const cost=skipCost(skipLeftSec(s,t,now));s.dia-=cost;
- if(t.type==='menu'){s.menuDev.until=now;settleMenuDev(s,now);}else if(t.type==='hospital'){byId(s,t.id).hospitalUntil=now;releaseHospital(s,now);}else byId(s,t.id).cd[t.type]=now;return cost;}
+export function skipNow(s,t,now=Date.now()){if(skipCheck(s,t,now))return null;const cost=skipCost(skipLeftSec(s,t,now));const pay=spendDia(s,cost);const prevScale=s.expScale;if(!CFG.dia.freeSkipGivesExp&&cost>0)s.expScale=pay.paid/cost;try{
+ if(t.type==='menu'){s.menuDev.until=now;settleMenuDev(s,now);}else if(t.type==='hospital'){byId(s,t.id).hospitalUntil=now;releaseHospital(s,now);}else byId(s,t.id).cd[t.type]=now;}finally{s.expScale=prevScale;}return cost;}
 
 // ───────────────────────── 산책 (1.10, 갱신 82·83·85·87·90·124·125) ─────────────────────────
 export const walkHearts=sec=>CFG.walk.heartsPer10Min*sec/600;
@@ -229,7 +229,7 @@ export function gachaCheck(s,n=1,{ticket=false}={}){if(s.cafe.level<CFG.gacha.un
  if(s.shibas.length>=CFG.cafe.maxOwned&&CFG.breeds.some(b=>!s.shibas.some(o=>o.breed===b)))return 'owned';return null;}
 const pickBreed=r=>pickWeighted(r,CFG.breeds,CFG.gacha.breedOdds); // gachaCheck guarantees the odds are set
 export function gachaPull(s,n=1,r=Math.random,now=Date.now(),{ticket=false}={}){if(gachaCheck(s,n,{ticket}))return null;
- if(ticket)s.items.capsule--;else s.dia-=gachaPrice(n);const out=[];
+ if(ticket)s.items.capsule--;else spendDia(s,gachaPrice(n));const out=[];
  for(let i=0;i<n;i++){const breed=pickBreed(r),own=s.shibas.find(o=>o.breed===breed);
   if(own){addPaws(own,CFG.gacha.dupPaws);out.push({breed,dup:true,toId:own.id,paws:CFG.gacha.dupPaws});continue;}
   const sh=makeShiba(s,{breed,level:CFG.gacha.startLevel,r,now});s.shibas.push(sh);if(placedShibas(s).length<slotsOf(s))sh.placed=true;out.push({breed,dup:false,id:sh.id});}
@@ -279,9 +279,9 @@ export function payFor(s,met,order,now=Date.now()){
 export const upgradeLevel=(s,kind)=>s.upgrades?.[kind]||0;
 const upgradeAdd=(s,kind)=>{const e=CFG.upgrades[kind]?.effect;return Number.isFinite(e)?e*upgradeLevel(s,kind):0;}; // queue: +effect per level
 const upgradeMul=(s,kind)=>{const e=CFG.upgrades[kind]?.effect;return Number.isFinite(e)?e**upgradeLevel(s,kind):1;}; // interval · price: ×effect per level (form pending confirm)
-export function upgradeCheck(s,kind){const U=CFG.upgrades[kind];if(!U)return 'kind';if(!Number.isFinite(U.price))return 'unset';
- if(Number.isFinite(U.maxLevel)&&upgradeLevel(s,kind)>=U.maxLevel)return 'max';if(isUnset(s.coins)||s.coins<U.price)return 'coins';return null;}
-export function buyUpgrade(s,kind,now=Date.now()){if(upgradeCheck(s,kind))return false;const p=CFG.upgrades[kind].price;s.coins-=p;s.upgrades[kind]=upgradeLevel(s,kind)+1;return true;}
+export function upgradeCheck(s,kind){const U=CFG.upgrades[kind];if(!U)return 'kind';if(!Number.isFinite(U.price))return 'unset';const P=upgradePrice(s,kind);
+ if(Number.isFinite(U.maxLevel)&&upgradeLevel(s,kind)>=U.maxLevel)return 'max';if(isUnset(s.coins)||s.coins<P)return 'coins';return null;}
+export function buyUpgrade(s,kind,now=Date.now()){if(upgradeCheck(s,kind))return false;const p=upgradePrice(s,kind);s.coins-=p;s.upgrades[kind]=upgradeLevel(s,kind)+1;return true;}
 
 // ───────────────────────── 얼룩 (갱신 101-3·117-2) ─────────────────────────
 export function cleanStain(s){if(s.cafe.stains<=0)return false;s.cafe.stains--;addCafeExp(s,CFG.cafeExp.stainClean);return true;}
@@ -447,7 +447,7 @@ export function spaceUnlockCheck(s,kind,id,via="coins"){
 export function unlockSpace(s,kind,id,via="coins",now=s.ledger?.now??s.lastSeen){
  if(spaceUnlockCheck(s,kind,id,via))return false;
  const cost=spacePrice(kind,id,via,s);
- s[via]-=cost;
+ if(via==='dia')spendDia(s,cost);else s[via]-=cost;
  if(kind==='row'){s.space.unlockedRows++;recordLedger(s,'land',cost,now);}
  else if(kind==='floor2')s.space.floor2Unlocked=true;
  else s.space.themes.push(id);
@@ -493,20 +493,29 @@ export function useHeartItem(s,id,shibaId=null,now=Date.now(),menuId=null,w=null
  return true;}
 export function heartAdStatus(s,now=Date.now()){const d=heartDay(s,now);return {left:Math.max(0,Math.ceil((d.adUntil-now)/1000)),remaining:Math.max(0,CFG.heartUse.ads.daily-d.ads)};}
 export function claimHeartAd(s,now=Date.now()){const a=heartAdStatus(s,now);if(a.left||!a.remaining)return false;const d=heartDay(s,now),c=CFG.heartUse.ads;s.hearts+=c.grant;d.ads++;if(d.ads>=c.burst)d.adUntil=now+c.cooldownSec*1000;return true;}
-export function buyHearts(s){const b=CFG.heartUse.buy;if(s.dia<b.dia)return false;s.dia-=b.dia;s.hearts+=b.hearts;return true;}
+export function buyHearts(s){const b=CFG.heartUse.buy;if(s.dia<b.dia)return false;spendDia(s,b.dia);s.hearts+=b.hearts;return true;}
 
 // starting value 2026-10-15, pending user confirm: 3 free, additional partitions 50,000 coins.
-export function buyWall(s,now=Date.now()){if(!Number.isFinite(s.coins)||s.coins<PARTITION.price)return false;s.coins-=PARTITION.price;s.wallOwned=(s.wallOwned??PARTITION.count)+1;recordLedger(s,'furniture',PARTITION.price,now);return true;}
+export function buyWall(s,now=Date.now()){const p=wallPrice(s);if(!Number.isFinite(s.coins)||s.coins<p)return false;s.coins-=p;s.wallOwned=(s.wallOwned??PARTITION.count)+1;recordLedger(s,'furniture',p,now);return true;}
 
 // Current income rate basis is unspecified; never guess an earning rate. Coins per second.
 export const currentIncomeRate=(s,now)=>CFG.heartUse.incomeRatePerSec;
 export function recoverFatigue(s,sh,dt,now){const rate=CFG.care.sleep.fatiguePerHour;if(Number.isFinite(rate)&&Number.isFinite(sh.g.fatigue))sh.g.fatigue=Math.max(0,sh.g.fatigue-rate*heartMultiplier(s,'recovery',now)*dt/3600);}
 export function roundLandPrice(v){const t=CFG.expansion.rowRoundTiers.find(([lim])=>v<lim);return Math.round(v/t[1])*t[1];} // exact chain, rounded shown=charged price
-export function spacePrice(kind,id,via='coins',s=null) {if(!['coins','dia'].includes(via))return null;return kind==='row'?(via==='coins'&&Number.isFinite(CFG.expansion.rowCost)?roundLandPrice(CFG.expansion.rowCost*CFG.expansion.rowMultiplier**(s?.space.unlockedRows||0)):null):kind==='floor2'?(via==='coins'?CFG.cafe.expansion2FCost:CFG.cafe.expansion2FDia):CFG.themes.find(t=>t.id===id)?.[via==='coins'?'unlockCost':'unlockDia'];}
+export const priceTierMul=s=>{const lv=s?.cafe?.level??1;return (CFG.priceTiers.find(([max])=>lv<=max)||CFG.priceTiers.at(-1))[1];};
+export const tierPrice=(s,base)=>Number.isFinite(base)?Math.round(base*priceTierMul(s)):base;
+export const wallPrice=s=>tierPrice(s,PARTITION.price);
+export const furniturePrice=(s,id)=>tierPrice(s,CFG.furniture.items.find(x=>x.id===id)?.price);
+export const upgradePrice=(s,kind)=>tierPrice(s,CFG.upgrades[kind]?.price);
+// 다이아 pools: s.dia stays the total; s.diaPaid is the paid part. Grants are free.
+export function spendDia(s,n){const paid0=Math.min(s.diaPaid||0,s.dia);const free0=s.dia-paid0;let fromPaid=CFG.dia.spendOrder==='paidFirst'?Math.min(paid0,n):Math.max(0,n-free0);s.dia-=n;s.diaPaid=Math.max(0,paid0-fromPaid);return {paid:fromPaid,free:n-fromPaid};}
+export const diaPools=s=>{const paid=Math.min(s.diaPaid||0,s.dia);return {free:s.dia-paid,paid};};
+export function addPaidDia(s,n){s.dia+=n;s.diaPaid=(s.diaPaid||0)+n;}
+export function spacePrice(kind,id,via='coins',s=null) {if(!['coins','dia'].includes(via))return null;return kind==='row'?(via==='coins'&&Number.isFinite(CFG.expansion.rowCost)?roundLandPrice(CFG.expansion.rowCost*CFG.expansion.rowMultiplier**(s?.space.unlockedRows||0)*priceTierMul(s)):null):kind==='floor2'?(via==='coins'?CFG.cafe.expansion2FCost:CFG.cafe.expansion2FDia):via==='coins'?tierPrice(s,CFG.themes.find(t=>t.id===id)?.unlockCost):CFG.themes.find(t=>t.id===id)?.unlockDia;}
 export const seatCount=s=>s.placement.slots.filter(x=>['chair','cushion'].includes(x.type)).length;
 export function grantSeatRewards(s){const prev=s.seatRewardLevel||1;s.furnitureInv??={};s.furnitureInv.cushion=(s.furnitureInv.cushion||0)+Math.max(0,CFG.cafe.seatRewards[s.cafe.level-1]-CFG.cafe.seatRewards[prev-1]);s.seatRewardLevel=Math.max(prev,s.cafe.level);}
 export function placeFurniture(s,type,origin){if(!(s.furnitureInv?.[type]>0)||!SPRITES[type]?.file)return false;const item={id:'placed-'+s.nextId,type,origin,dir:0};const zone=zonesForSpace(s.space)[0];if(!validPlacement(item,s.placement.slots,zone))return false;s.nextId++;s.placement.slots.push(item);s.furnitureInv[type]--;return true;}
-export function buyFurniture(s,id,now=Date.now()){const it=CFG.furniture.items.find(x=>x.id===id);if(!Number.isFinite(it?.price)||s.coins<it.price)return false;s.coins-=it.price;const type=({'tea-table':'table',zabuton:'cushion'}[id]||id);s.furnitureInv[type]=(s.furnitureInv[type]||0)+1;recordLedger(s,'furniture',it.price,now);return true;}
+export function buyFurniture(s,id,now=Date.now()){const it=CFG.furniture.items.find(x=>x.id===id),p=furniturePrice(s,id);if(!Number.isFinite(p)||s.coins<p)return false;s.coins-=p;const type=({'tea-table':'table',zabuton:'cushion'}[id]||id);s.furnitureInv[type]=(s.furnitureInv[type]||0)+1;recordLedger(s,'furniture',p,now);return true;}
 // starting value 2026-10-15, pending user confirm: KST calendar days from first launch; income boosts one each on days 8, 10 and 14.
 export function mailbox(s,now=Date.now()){const day=ledgerDay(now)-ledgerDay(s.firstLaunch??s.lastSeen)+1;const rows=[];for(let d=1;d<=Math.min(day,CFG.stub.onboarding.days);d++){const items={...CFG.stub.onboarding.rewards[d]};let coins=0,dia=0;if(d<=7){coins=CFG.grants14.days1to7.coins;dia=CFG.grants14.days1to7.dia;items.expBoost4h=1;}if([8,10,12,14].includes(d)){coins=CFG.grants14.days8to14.coins;dia=CFG.grants14.days8to14.dia;}Object.assign(items,CFG.grants14.itemDays[d]);if(coins||dia||Object.values(items).some(x=>x>0))rows.push({day:d,coins,dia,items,claimed:(s.mailClaimed||[]).includes(d)});}return rows;}
 export function claimMail(s,day,now=Date.now()){const m=mailbox(s,now).find(x=>x.day===day&&!x.claimed);if(!m)return false;s.coins+=m.coins;s.dia+=m.dia;recordLedger(s,'other',m.coins,now);for(const [k,v] of Object.entries(m.items))if(Number.isFinite(v))s.items[k]=(s.items[k]||0)+v;(s.mailClaimed??=[]).push(day);return true;}

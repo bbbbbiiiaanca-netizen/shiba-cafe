@@ -200,6 +200,10 @@ export const CFG={
  // 게이지 0~100 (1.2-3, 갱신 53·85·86·116). full=포만(배고픔 게이지), dirt=더러움(청결의 반대), fatigue=피로도(=졸림), happy=행복(=기분), boredom=지루함(=놀고 싶음)
  gauges:['full','dirt','fatigue','happy','boredom'],
  gaugeStart:U, // UNSET: 1.2-3 게이지 시작값
+ // §17-11 (똑또기 2026-10-15, starting values; 시바카페_멍가격_곡선검토.md §3): cafe-level multiplier on coin prices of decor (furniture/walls/themes), land rows and shop upgrades only — not menus/알바/2F
+ priceTiers:[[10,1],[20,1.5],[35,2.5],[50,4]], // [max cafe level, ×]
+ dia:{spendOrder:'freeFirst', // starting value 2026-10-15, pending user confirm: which 다이아 pool is spent first
+  freeSkipGivesExp:false}, // §17-11: time-skips paid with free 다이아 give no EXP (mixed payment → EXP × paid share)
  view:{zoomMin:1,zoomMax:2.5}, // starting value 2026-10-15, pending user confirm: pinch/ctrl+wheel zoom range (1 = fit width)
  people:{scale:1,withMapScale:true}, // starting value 2026-10-15, pending user confirm: people (manager/guests) were drawn at fixed 150 screen px ignoring map scale; now 150 art px × map scale × scale, foot anchor kept
  shibaRisk:{orange:50,red:80,highIsBad:['dirt','fatigue','boredom']}, // starting value 2026-10-15, pending user confirm: 'badness' 0–100 per gauge (full/happy inverted); ≥50 orange, ≥80 red; sick/injured red, hospital orange

@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import * as S from '../sim.js';
 import {CFG} from '../config.js';
 import {MANAGER,managerFrame,plateEdges,zonesForSpace,FLOAT_LAYOUT,PARTITION,footprintCells} from '../map-data.js';
-const s=S.newState(0);S.chooseStart(s,'red','',()=>0,0);s.cafe.level=40;s.hearts=100;s.coins=PARTITION.price;
-assert.ok(S.buyWall(s,0));assert.equal(s.wallOwned,4);assert.equal(s.coins,0);assert.equal(S.ledgerStatement(s,0).lines.find(x=>x.id==='furniture').amount,PARTITION.price);assert.equal(S.buyWall(s,0),false);
+const s=S.newState(0);S.chooseStart(s,'red','',()=>0,0);s.cafe.level=40;s.hearts=100;s.coins=S.wallPrice(s);
+assert.ok(S.buyWall(s,0));assert.equal(s.wallOwned,4);assert.equal(s.coins,0);assert.equal(S.ledgerStatement(s,0).lines.find(x=>x.id==='furniture').amount,S.wallPrice(s));assert.equal(S.buyWall(s,0),false);
 assert.deepEqual(FLOAT_LAYOUT.iconPx,{coin:30,heart:30,angry:30});assert.equal(CFG.gacha.unlock,1);
 assert.equal(S.buyUpgrade(s,'seat'),false);
 for(const n of [2,3]){s.space.unlockedRows=n;const z=zonesForSpace(s.space)[0],edges=plateEdges(z);assert.equal(edges.length,z.cols+z.rows-1);assert.equal(edges.filter(e=>e.part==='corner').length,1);}

@@ -837,3 +837,9 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - Risk light `CFG.shibaRisk` starting values: per-gauge badness (full/happy inverted) ≥50 orange, ≥80 red; sick/injured red; hospital orange; null gauges ignored. **Note:** gaugeStart/decay are still UNSET, so in play most shibas show green until those are set.
 - People scale: the manager was drawn at a fixed 150 screen px, ignoring the map scale (that is why he looked huge). Now 150 art px × map scale × `CFG.people.scale` (1, starting value); foot anchor unchanged. Guests have no sprite yet.
 - Zoom: did NOT exist before (only drag/wheel pan). Added pinch zoom (2 pointers) and ctrl/⌘+wheel, clamped `CFG.view` zoomMin 1 – zoomMax 2.5 (starting values); pan bounds follow zoom.
+
+## §17-11 (똑또기 2026-10-15, starting values; 시바카페_멍가격_곡선검토.md §3)
+- EXP table unchanged. Free EXP boost only in mailbox days 1–7 (already so; test added).
+- 다이아 pools: `s.dia` = total, `s.diaPaid` = paid part (grants are free; no paid purchase flow exists yet). All 다이아 spends go through `spendDia` (order `CFG.dia.spendOrder`='freeFirst' — **question**: free or paid first?). Time-skips paid with free 다이아 give no EXP (`CFG.dia.freeSkipGivesExp=false`; mixed → EXP × paid share). Note: no current skip target grants EXP directly, so this is a guard for future.
+- `CFG.priceTiers` by **current cafe level**: Lv1–10 ×1, 11–20 ×1.5, 21–35 ×2.5, 36–50 ×4 on coin prices of furniture, walls, themes (coins), land rows (before tier rounding) and shop upgrades. Not menus, 알바, or 2F. **Question:** the review doc says "해금 레벨 구간" (item unlock level) — current cafe level used as instructed; switch if unlock level was meant. Should 2F (7,000,000) be tiered too?
+- Not done (per instruction): late decor score, weekly season shop, furniture recolour.
