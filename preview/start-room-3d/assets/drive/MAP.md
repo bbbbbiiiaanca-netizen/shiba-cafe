@@ -294,3 +294,4 @@ Manager v2 frames replace the v1 files at the same local paths (v1 rows above ar
 | hospital/sick-red-bandage.png | Drive 19xLjdPp_98d5sqpPGgCB3NWfDiy7iqdE (interior 시바_적시바_아픔_붕대.png, 1024×1536, unmodified) | sha256 ae37e5635911a909df7309fec1d92da93d81e291951985387ce468905484354f | 병원: 적시바 아픔·붕대 포즈 |
 | hospital/sick-sesame-bandage.png | Drive 1iCx3q540uXjuLJW4pGKIOx1T6DR9Z4ZU (interior 시바_참깨_아픔_붕대.png, 1024×1536, unmodified) | sha256 340228e929bf19589c6005069d2ddd1cea5949e2f4be51a9c03b2717f92056ab | 병원: 참깨 아픔·붕대 포즈 |
 | hospital/sick-kuro-bandage.png | Drive 1MJxTVuC86P_hQRb6cW4WSqSIeZpCI2N3 (interior 시바_쿠로_아픔_붕대.png, 1024×1536, unmodified) | sha256 3dd6b4a96ecbc10d8524b0f2f07deec05570cb711712f813f766d4545d9b429f | 병원: 쿠로 아픔·붕대 포즈 |
+| hospital/sick-white-bandage.png | Drive 11spBvfH_HM3lZHdT-T18TiqF94p3sOSK (interior 시바_백시바_아픔_붕대.png, 1024×1536, unmodified) | sha256 f606325df71edcd0342b4d798bb30513e2d664e8a66a5d6828dc612f76b01735 | 병원: 백시바 아픔·붕대 포즈 |
