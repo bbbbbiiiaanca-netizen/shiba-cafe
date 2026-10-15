@@ -63,7 +63,7 @@ export const CFG={
   screen:[1080,1920],lanes:3,
   obstacles:{puddle:'assets/drive/run/obs-puddle.png',flowerpot:'assets/drive/run/obs-flowerpot.png',bicycle:'assets/drive/run/obs-bicycle.png',cat:'assets/drive/run/obs-cat.png'}, // 장애물 4종(웅덩이·화분·자전거·고양이) interior; null이면 나오지 않음
   // ── 시작값 2026-10-15 (똑또기 확정, 수인님 확인 전) ──
-  laneX:[330,540,750],shibaY:1480,shibaW:300,shibaBlend:'multiply', runSheets:{red:{src:'assets/drive/run/run-red-back-sheet.png',frameW:360,frameH:480,frames:4,fps:10},white:{src:'assets/drive/run/run-white-back-sheet.png',frameW:360,frameH:480,frames:4,fps:10}}, /* 적시바(v2)·백시바 뒷모습 달리기 시트(투명) → multiply 끔. fps 10 = 시작값 2026-10-15. 다른 시바는 시트가 올 때까지 기존 그림+multiply */ /* 시작값 2026-10-15: 화면 배치(1080 기준 px). 기존 시바 그림은 흰 배경(투명 아님) → 파일은 그대로 두고 화면에서만 곱하기 합성. 투명 달리기 포즈가 오면 null */ obstacleW:230,itemW:150,
+  laneX:[330,540,750],shibaY:1480,shibaW:300,shibaBlend:'multiply', runSheets:{red:{src:'assets/drive/run/run-red-back-sheet.png',frameW:360,frameH:480,frames:4,fps:10},white:{src:'assets/drive/run/run-white-back-sheet.png',frameW:360,frameH:480,frames:4,fps:10},sesame:{src:'assets/drive/run/run-sesame-back-sheet.png',frameW:360,frameH:480,frames:4,fps:10}}, /* 적시바(v2)·백시바·참깨 뒷모습 달리기 시트(투명) → multiply 끔. fps 10 = 시작값 2026-10-15. 다른 시바는 시트가 올 때까지 기존 그림+multiply */ /* 시작값 2026-10-15: 화면 배치(1080 기준 px). 기존 시바 그림은 흰 배경(투명 아님) → 파일은 그대로 두고 화면에서만 곱하기 합성. 투명 달리기 포즈가 오면 null */ obstacleW:230,itemW:150,
   speed:{start:700,end:1000}, // 시작값 2026-10-15: px/초(1080 기준), 한 판 동안 선형 증가
   lengthSec:45, // 시작값 2026-10-15: 한 판 길이(초)
   spawnSec:{start:0.8,end:0.5}, // 시작값 2026-10-15: 물건 나오는 간격(초), 끝날 때까지 선형 감소
