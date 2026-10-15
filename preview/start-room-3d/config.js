@@ -223,7 +223,7 @@ export const CFG={
  tabs:{iconScale:{shiba:1.1}}, // starting value 2026-10-15, pending user confirm: 시바들 tab art drawn 1.1×
  village:{background:'assets/drive/village/village-map.png',size:[1024,1536], // approved 배경_마을지도_시험.png
   lots:[{x:532,y:158,w:300,h:180},{x:475,y:521,w:300,h:180},{x:208,y:747,w:300,h:180},{x:820,y:748,w:300,h:180},{x:521,y:998,w:300,h:180},{x:513,y:1300,w:300,h:180}], // centres from 그림이 (image px); w/h = midpoint of the given 280–320 × 170–190 range (starting value)
-  places:[{id:'hospital',name:'병원',lot:1,icon:null},{id:'walk',name:'산책',lot:2,icon:null}]}, // starting value 2026-10-15, pending user confirm: which lot; building art pending (lots stay empty)
+  places:[{id:'hospital',name:'병원',lot:1,icon:null,art:{src:'assets/drive/village/place-hospital.png',size:[308,298],anchor:[154,209]}},{id:'walk',name:'산책',lot:2,icon:null}]}, // starting value 2026-10-15, pending user confirm: which lot; building art pending (lots stay empty)
  view:{zoomMin:1,zoomMax:2.5}, // starting value 2026-10-15, pending user confirm: pinch/ctrl+wheel zoom range (1 = fit width)
  people:{scale:1,withMapScale:true}, // starting value 2026-10-15, pending user confirm: people (manager/guests) were drawn at fixed 150 screen px ignoring map scale; now 150 art px × map scale × scale, foot anchor kept
  shibaRisk:{orange:50,red:80,highIsBad:['dirt','fatigue','boredom']}, // starting value 2026-10-15, pending user confirm: 'badness' 0–100 per gauge (full/happy inverted); ≥50 orange, ≥80 red; sick/injured red, hospital orange

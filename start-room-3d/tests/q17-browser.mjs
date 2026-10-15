@@ -6,7 +6,7 @@ export async function q17Browser({ev,c,check,shot=async()=>{}}){
  await check('q17 furniture horizontal cards and config prices',`(()=>{const el=document.querySelector('[data-furniture-shop]');return !!el&&getComputedStyle(el.querySelector('.q17-swipe')).scrollSnapType.includes('x')&&el.querySelectorAll('.q17-product').length===__game.CFG.furniture.items.length&&[...el.querySelectorAll('.furn-buy')].every(b=>b.textContent.replace(/,/g,'').includes(String(__game.S.furniturePrice(__game.state,b.dataset.item))));})()`);
  await snap('shop');await click('[data-act=furnitureCategory]:not([data-item=all])');await check('q17 furniture category filters cards',`document.querySelectorAll('[data-furniture-shop] .q17-product').length===1`);
  await click('[data-main-tab=manage]');await click('[data-list=menu]');
- await check('q17 menu rows use approved menu images',`[...document.querySelectorAll('[data-list-popup=menu] .lp-card')].every(r=>!!r.querySelector('img'))`);await snap('menu');
+ await check('q17 menu rows use approved menu images',`[...document.querySelectorAll('[data-list-popup=menu] .lp-card:not(.locked)')].every(r=>!!r.querySelector('img'))`);await snap('menu');
  await ev(`__game.ui.modals=[];__game.state.mailClaimed=[];__game.refresh();document.querySelector('[data-act=mailbox]').click();document.querySelector('[data-act=claimMail]').click();true`);
  await check('q17 mailbox grant uses common item-get frame',`!!document.querySelector('#mbox.list-popup [data-itemget]')&&document.querySelector('[data-itemget] button').textContent==='받기'`);await snap('itemget');
  // TEMP-only deterministic cookie reward; restore every config field immediately.

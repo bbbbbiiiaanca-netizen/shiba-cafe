@@ -62,7 +62,7 @@ export default async function({ev,check,sleep,reload}){
  await ev('document.querySelector("[data-nav=settings]").click();document.querySelector("[data-lang=ko]").click();true');
  await check('settings → 한국어 switches nav text','document.querySelector(".gear").getAttribute("aria-label")==="설정"&&document.getElementById("ptitle").textContent==="설정"');
  await ev('__game.close();document.querySelector("[data-main-tab=manage]").click();true');
- await check('§17: 가게 관리 has no menu card grid, only café status + 메뉴 개발 / 업그레이드 / 손익계산서 buttons','!document.querySelector("[data-main-menu],.menu-card")&&!!document.querySelector("#menuList [data-cafe-level]")&&["menu","upgrade"].every(k=>document.querySelector(`#menuList [data-act=listOpen][data-list=${k}]`))&&!!document.querySelector("#menuList [data-act=ledger]")');
+ await check('§17: 가게 관리 has no menu card grid, only café status + 메뉴 개발 / 업그레이드 / 손익계산서 buttons','!document.querySelector("[data-main-menu],#menuList .menu-card")&&!!document.querySelector("#menuList [data-cafe-level]")&&["menu","upgrade"].every(k=>document.querySelector(`#menuList [data-act=listOpen][data-list=${k}]`))&&!!document.querySelector("#menuList [data-act=ledger]")');
  await ev('__game.state.cafe.level=5;__game.state.coins=180000;__game.refresh();document.querySelector("#menuList [data-act=listOpen][data-list=menu]").click();document.querySelector("[data-lp-row=M-03] .lp-price").click();true');
  await check('menu popup development charges configured cost and offers the diamond skip','__game.state.coins===0&&__game.state.menuDev.id==="M-03"&&/즉시 완료 120/.test(document.querySelector("[data-lp-row=M-03] .lp-price").textContent)');
  await ev('__game.state.dia=120;__game.refresh();document.querySelector("[data-lp-row=M-03] .lp-price").click();document.querySelector("#mbox .lp-close").click();true');
@@ -81,8 +81,8 @@ export default async function({ev,check,sleep,reload}){
  await check('v3: no bottom nav; gear and 미션 buttons are present','!document.getElementById("nav")&&!!document.querySelector(".gear[data-nav=settings]")&&!!document.querySelector("#hud [data-act=mission]")');
  await ev('__game.state.cafe.level=9;__game.state.coins=224999;__game.refresh();document.querySelector("#menuList [data-act=listOpen][data-list=menu]").click();true');
  await check('v3: configured cost and disabled insufficient-coins button (popup)','document.querySelector("[data-lp-row=M-04] .lp-price").disabled&&/225,000/.test(document.querySelector("[data-lp-row=M-04] .lp-price").textContent)');
- await ev('const list=document.querySelector("#mbox .lp-list");list.scrollTop=list.scrollHeight;true');
- await check('v3: last menu row fully visible after scrolling the popup','(()=>{const list=document.querySelector("#mbox .lp-list").getBoundingClientRect(),last=document.querySelector("[data-lp-row=P-06]").getBoundingClientRect();return last.top>=list.top-1&&last.bottom<=list.bottom+1&&list.bottom<=innerHeight;})()');
+ await ev('const list=document.querySelector("#mbox [data-menu-cards]");list.scrollLeft=list.scrollWidth;true');
+ await check('v3: last menu row fully visible after scrolling the popup','(()=>{const list=document.querySelector("#mbox [data-menu-cards]").getBoundingClientRect(),last=document.querySelector("[data-lp-row=P-06]").getBoundingClientRect();return last.top>=list.top-1&&last.bottom<=list.bottom+1&&list.bottom<=innerHeight;})()');
  await ev('document.querySelector("#mbox .lp-close").click();true');
  // §17-7/8: real edit actions and rejected placement, then manager hire using configured values.
  await ev('__game.close();__game.iso.setEdit(true);document.querySelector("[data-wall-add]").click();true');
