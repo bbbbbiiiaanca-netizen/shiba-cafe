@@ -4,10 +4,11 @@ import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compare
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
- let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,panX=0,panBounds={minX:0,maxX:0},drag=null,last,selected=null,hits=[],gridCells=0,maxScroll=0,markers=[],markerPhase=null,zoom=1;
+ let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,panX=0,panBounds={minX:0,maxX:0},drag=null,last,selected=null,selectionBefore=null,selectionNew=false,hits=[],gridCells=0,maxScroll=0,markers=[],markerPhase=null,zoom=1;
  const bar=document.createElement('div');bar.hidden=true;bar.className='furniture-actions';bar.setAttribute('aria-label','가구 편집');
- bar.innerHTML='<button data-furniture-flip>좌우 반전</button><button data-furniture-rotate>회전</button><button data-wall-add hidden>가벽 배치</button><button data-wall-remove>가벽 제거</button><button data-furniture-done>완료/선택 해제</button>';
- function syncBar(){bar.hidden=!edit;for(const button of bar.querySelectorAll('button'))button.disabled=button.hasAttribute('data-wall-add')?false:button.hasAttribute('data-wall-remove')?current()?.type!=='wall':!selected;}
+ bar.innerHTML='<button data-furniture-cancel>취소</button><button data-furniture-store>보관</button><button data-furniture-save>저장하기</button><button data-furniture-flip>뒤집기</button><button data-furniture-rotate>돌리기</button><button data-wall-add hidden>가벽 배치</button><button data-wall-remove>가벽 제거</button><button data-furniture-done>확인</button>';
+
+ function syncBar(){bar.hidden=!edit;bar.classList.toggle('has-selection',!!selected);for(const button of bar.querySelectorAll('button'))button.disabled=button.hasAttribute('data-furniture-save')||button.hasAttribute('data-wall-add')?false:button.hasAttribute('data-wall-remove')?current()?.type!=='wall':!selected;}
  const slots=()=>last?.[0].placement.slots||MAP.zones[0].slots;
  const current=()=>slots().find(s=>s.id===selected);
  syncBar();
@@ -19,7 +20,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
  }
  function placeWall(origin){if(!edit||!last)return false;if((last[0].wallOwned??PARTITION.count)<=slots().filter(x=>x.type==='wall').length)return false;const zone=zonesForSpace(last[0].space)[0];
   const candidate={id:'wall-'+crypto.randomUUID(),type:'wall',origin:[...origin],dir:0};
-  if(!accept(candidate,zone))return false;slots().push(candidate);selected=candidate.id;onChange();repaint();return true;
+  if(!accept(candidate,zone))return false;slots().push(candidate);selected=candidate.id;selectionBefore=null;selectionNew=true;onChange();repaint();return true;
  }
  bar.querySelector('[data-wall-add]').onclick=()=>{const zone=zonesForSpace(last[0].space)[0];for(let j=0;j<zone.rows;j++)for(let i=0;i<zone.cols;i++){
   const c={id:'wall-preview',type:'wall',origin:[i,j],dir:0};if(validPlacement(c,slots(),zone)&&preservesEntrance(zone,slots(),[...slots(),c])){placeWall(c.origin);return;}
@@ -28,11 +29,14 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
  function orient(dir){const item=current();if(!item||drag?.item)return;const candidate={...item,dir};if(!accept(candidate,zonesForSpace(last[0].space)[0]))return;item.dir=dir;onChange();repaint();}
  bar.querySelector('[data-furniture-flip]').onclick=()=>current()&&orient(flipDir(current().dir));
  bar.querySelector('[data-furniture-rotate]').onclick=()=>current()&&orient(rotateDir(current().type,current().dir));
+ bar.querySelector('[data-furniture-save]').onclick=()=>{selected=null;selectionBefore=null;edit=false;onChange();onEditChange(false);repaint();};
+ bar.querySelector('[data-furniture-cancel]').onclick=()=>{cancelDrag();if(current()&&selectionNew)slots().splice(slots().indexOf(current()),1);else if(current()&&selectionBefore)Object.assign(current(),selectionBefore);selected=null;selectionBefore=null;selectionNew=false;onChange();repaint();};
+ bar.querySelector('[data-furniture-store]').onclick=()=>{const item=current();if(!item)return;if(item.type!=='wall'){const inv=last[0].furnitureInv??={};inv[item.type]=(inv[item.type]||0)+1;}slots().splice(slots().indexOf(item),1);selected=null;selectionBefore=null;onChange();repaint();};
  bar.querySelector('[data-furniture-done]').onclick=()=>{cancelDrag();selected=null;repaint();};
  const load=path=>{if(!images.has(path)){const im=new Image();im.onload=()=>last&&draw(...last);im.src=path;images.set(path,im);}return images.get(path);};
  MAP.zones.forEach(z=>{if(z.image)load(z.image);z.slots.forEach(s=>load(SPRITES[s.type].file));});
  function draw(state,world){
-  last=[state,world];hits=[];gridCells=0;markers=[];const W=canvas.clientWidth,H=canvas.clientHeight,dpr=devicePixelRatio||1;
+  last=[state,world];if(!edit||!selected)delete canvas.dataset.placementValid;hits=[];gridCells=0;markers=[];const W=canvas.clientWidth,H=canvas.clientHeight,dpr=devicePixelRatio||1;
   if(canvas.width!==Math.round(W*dpr)||canvas.height!==Math.round(H*dpr)){canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);}
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#202224';ctx.fillRect(0,0,W,H);
   const zones=zonesForSpace(state.space).filter(z=>z.floor===(state.cafe.floor===2&&state.space.floor2Unlocked?2:1));
@@ -129,9 +133,10 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
      stamp(MAP_MARKERS.floor2.file,p,MAP_MARKERS.floor2.anchor);markers.push({kind:'floor2',...p});}
    }
    if(edit&&selected){const item=placed.find(s=>s.id===selected);if(item){const candidate=drag?.item===item.id?{...item,origin:drag.candidate}:item;
-    ctx.strokeStyle=validPlacement(candidate,placed,z)?'#ffd36b':'#ff4545';ctx.lineWidth=2;
+    const valid=validPlacement(candidate,placed,z)&&preservesEntrance(z,placed,[...placed.filter(p=>p.id!==candidate.id),candidate]);canvas.dataset.placementValid=String(valid);ctx.fillStyle=valid?'rgba(40,190,85,.32)':'rgba(235,55,55,.32)';ctx.strokeStyle=valid?'#40b96c':'#ff4545';
+    const centre=cellToScreen(...footprintCentre(candidate),view,z);bar.style.setProperty('--select-x',centre.x+'px');bar.style.setProperty('--select-y',centre.y+'px');ctx.lineWidth=2;
     for(const [i,j] of footprintCells(candidate)){const p=cellToScreen(i,j,view,z),hw=z.cell.w*scale/2,hh=z.cell.h*scale/2;
-     ctx.beginPath();ctx.moveTo(p.x,p.y-hh);ctx.lineTo(p.x+hw,p.y);ctx.lineTo(p.x,p.y+hh);ctx.lineTo(p.x-hw,p.y);ctx.closePath();ctx.stroke();}
+     ctx.beginPath();ctx.moveTo(p.x,p.y-hh);ctx.lineTo(p.x+hw,p.y);ctx.lineTo(p.x,p.y+hh);ctx.lineTo(p.x-hw,p.y);ctx.closePath();ctx.fill();ctx.stroke();}
    }}
    y+=heights[index]+24;
   });
@@ -156,7 +161,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
   if(e.button!==0||drag)return;const p=point(e);
   const marker=markers.find(m=>m.kind==='row'&&p.x>=m.x0&&p.x<m.x0+m.w&&p.y>=m.y0&&p.y<m.y0+m.h&&opaque({im:images.get(MAP_MARKERS.expansion.file),x:m.x0,y:m.y0,w:m.w,h:m.h},p.x,p.y));
   if(marker)drag={pointerId:e.pointerId,marker:true,start:p,scrollY:e.clientY,scrollX:e.clientX};
-  if(edit&&!drag){const hit=[...hits].reverse().sort((a,b)=>Number(Boolean(b.footprint))-Number(Boolean(a.footprint))).find(h=>p.x>=h.x&&p.x<h.x+h.w&&p.y>=h.y&&p.y<h.y+h.h&&opaque(h,p.x,p.y));selected=hit?.id||null;
+  if(edit&&!drag){const hit=[...hits].reverse().sort((a,b)=>Number(Boolean(b.footprint))-Number(Boolean(a.footprint))).find(h=>p.x>=h.x&&p.x<h.x+h.w&&p.y>=h.y&&p.y<h.y+h.h&&opaque(h,p.x,p.y));const previous=selected;selected=hit?.id||null;if(selected!==previous){selectionNew=false;selectionBefore=current()?{...current(),origin:[...current().origin]}:null;}
    if(hit){const item=current();drag={pointerId:e.pointerId,item:item.id,start:cell(p,hit.view,hit.zone),origin:[...item.origin],candidate:[...item.origin],view:hit.view,zone:hit.zone};}
   }
   if(!drag)drag={pointerId:e.pointerId,scrollY:e.clientY,scrollX:e.clientX};

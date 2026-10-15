@@ -1,3 +1,4 @@
+import {q17Browser} from './tests/q17-browser.mjs';
 import {startFlow} from './tests/start-flow.mjs';
 // Main cafe capture using capture-spec-v3.mjs Chrome CDP pipe approach, portrait 390×844.
 // Usage (from the repo root or start-room-3d/): node start-room-3d/capture-main-screen.mjs [OUTDIR] [--final | --u18 | --u179 | --u12b | --u12 | --rf]
@@ -152,7 +153,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await shot('main-screen-rf-floats.png');
   await stage();await dpr();
   await ev('__game.state.shibas[0].paws=0;__game.refresh();true');
-  await click('[data-main-tab=shiba]');await click('#menuList [data-act=care]');
+  await click('[data-main-tab=shiba]');await click('#menuList [data-act=care]');await click('[data-act=careOpen]');
   if(!(await ev(`document.querySelector('#panel [data-act=levelUp]').disabled`)))throw Error('level-up not disabled');
   await shot('main-screen-rf-levelup-dim.png');
   await stage();await dpr();
@@ -163,7 +164,16 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await shot('main-screen-rf-manager.png');
  };
  // Unsaved capture fixture: legacy spec boost multiplier 1.2 exercises the timer; production multiplier stays null.
- if(process.argv.includes('--nav')){
+ if(process.argv.includes('--q17')){
+ await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+ await q17Browser({ev,c,shot,check:async(name,expr)=>{if(!await ev(expr))throw Error(name);}});
+ await c('Page.navigate',{url:'file://'+resolve(ROOT,'index.html')+'?temp=1&still=1&fresh=1&fixture=friends'});
+ for(let i=0;i<300&&!(await ev('Boolean(window.__ready)'));i++)await sleep(100);
+ await startFlow(ev);await ev("__game.ui.modals=[];__game.open('friends');true");
+ if(!await ev("document.querySelector('[data-friends]').textContent.includes('TEST FIXTURE')"))throw Error('fixture missing');
+ await shot('main-screen-q17-friends-fixture.png');
+ }
+ else if(process.argv.includes('--nav')){
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
  await stageStarter();
  await ev(`(()=>{const g=__game;g.state.cafe.level=10;g.state.coins=150000;g.refresh();return true;})()`);
@@ -224,7 +234,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await click('[data-main-tab=shiba]');await sleep(200);await shot('main-screen-shibas-grid.png');
   await click('[data-act=shibaView][data-k=breed][data-v=red]');await click('[data-act=shibaView][data-v=levelAsc]');await sleep(150);await shot('main-screen-shibas-filter.png');
   await click('[data-act=shibaView][data-k=breed][data-v=all]');await click('[data-act=shibaView][data-v=levelDesc]');
-  await click('#menuList [data-act=care]');await sleep(500);await shot('main-screen-shibas-detail.png');
+  await click('#menuList [data-act=care]');await click('[data-act=careOpen]');await sleep(500);await shot('main-screen-shibas-detail.png');
   await ev(`(()=>{const g=__game;g.ui.panel=null;g.refresh();g.state.cafe.level=g.CFG.alba.manager.unlock;g.state.coins=g.CFG.alba.manager.cost;g.S.hireAlba(g.state,'manager',[],g.clock.now());g.step(g.CFG.navigation.cellStepSec);g.refresh();return true;})()`);
   await click('[data-main-tab=manage]');
   await ev('__game.CFG.people.withMapScale=false;__game.refresh();true');await sleep(200);await shot('main-screen-people-before.png');
@@ -270,7 +280,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  else if(process.argv.includes('--u12')){await u12();if(errors.length)throw Error(errors.join('\n'));}
  else if(process.argv.includes('--u141')){
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
-  await click('[data-main-tab=shiba]');await shot('main-screen-u141-shiba.png');await click('#menuList [data-act=care]');
+  await click('[data-main-tab=shiba]');await shot('main-screen-u141-shiba.png');await click('#menuList [data-act=care]');await click('[data-act=careOpen]');
   await ev('(()=>{const g=__game,sh=g.state.shibas[0];sh.paws=g.S.pawsToNext(sh.level);g.refresh();return true;})()');
   await click('#panel [data-act=levelUp]');await shot('main-screen-u141-levelup.png');
   await ev('__game.ui.modals=[];__game.refresh();true');await click('[data-main-tab=shop]');await click('[data-act=gachaOdds]');await shot('main-screen-u141-odds.png');
@@ -314,7 +324,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
  for(const tab of ['manage','shiba','furniture','shop']){await click(`[data-main-tab=${tab}]`);await shot('main-screen-u2-'+(tab==='manage'?'menu':tab)+'.png');}
  await click('[data-main-tab=shiba]');await ev('__game.state.shibas[0].paws=__game.S.pawsToNext(__game.state.shibas[0].level);__game.refresh();true');
- await click('#menuList [data-act=care]');await click('#panel [data-act=levelUp]');await shot('main-screen-u2-levelup.png');
+ await click('#menuList [data-act=care]');await click('[data-act=careOpen]');await click('#panel [data-act=levelUp]');await shot('main-screen-u2-levelup.png');
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
  await click('[data-main-tab=bag]');await ev('document.getElementById("menuList").scrollTop=0;true');await shot('main-screen-u3-inventory.png');
  await click('[data-main-tab=manage]');

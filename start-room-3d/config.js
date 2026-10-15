@@ -18,6 +18,15 @@ const PRESSURE=[
 const CAFE_EXP=[7187,7187,11293,10853,10853,14813,14227,18480,18480,99792,77000,77000,77000,62216,62216,75768,75768,75768,91168,175824,177012,175824,175824,175824,206712,206712,239976,239976,239976,421344,421344,421344,417648,413952,413952,460152,460152,511896,511896,755656,750200,752928,752928,755656,755656,826584,826584,826584,886600];
 
 export const CFG={
+ // §17-13 starting value 2026-10-15, pending user confirm: 3 slots, 30–300 sec; energy 1/2.
+ cooking:{ingredientBuyCount:1,dishesPerCraft:1, // starting value 2026-10-15, pending user confirm: one ingredient per buy, one dish per craft
+  startUnlocked:3,craftSecRange:[30,300],recipes:['recipe-1','recipe-2','recipe-3'].map(id=>({id,
+  name:null,unlockLevel:null,ingredients:null,craftSec:null,effect:{full:null,happy:null} // UNSET recipe identity, requirements, timing, effects pending 똑또기
+ }))},
+ ingredients:{'ingredient-pending':{name:null,price:null}}, // UNSET ingredient identities and prices pending 똑또기
+ run:{playEnergy:1,skipEnergy:2,startEnergy:null,startLevel:null,energyCap:null,regenSec:null,bonusPerShiba:null,upgrades:null,scoreToReward:null}, // UNSET energy/bonus/upgrades/rewards pending 똑또기
+ profiles:Object.fromEntries(['red','white','sesame','kuro'].map(id=>[id,{intro:null,favSnack:null,favPlay:null}])), // UNSET profile copy pending 똑또기
+
  ledger:{periodMs:86400000,dayOffsetMs:32400000,historyDays:7,includeDiamonds:false,openFromPill:true,openFromStore:true}, // §15 starting value 똑또기 2026-10-14, pending user batch confirm: KST midnight day, 7 days kept, 멍코인만, opened from 멍코인 pill and 가게 tab
  saveKey:'shibaCafe.save.v3',saveVersion:3, // EXEMPT: save schema version (engine metadata)
 
@@ -204,6 +213,9 @@ export const CFG={
  priceTiers:[[10,1],[20,1.5],[35,2.5],[50,4]], // [max cafe level, ×]
  dia:{spendOrder:'freeFirst', // starting value 2026-10-15, pending user confirm: which 다이아 pool is spent first
   freeSkipGivesExp:false}, // §17-11: time-skips paid with free 다이아 give no EXP (mixed payment → EXP × paid share)
+ // §17-16 rare coats by runtime recolour of existing art (test: tools/recolor-test.py); breeding = design only, build after recolour approval
+ coats:{rare:{cream:{hue:38,satMul:0.30,valAdd:0.10},silver:{hue:210,satMul:0.06,valAdd:0.02},pink:{hue:345,satMul:0.55,valAdd:0.06}}}, // starting value 2026-10-15, pending user confirm: recolour params from the test
+ breeding:{enabled:false,minCloseness:null,inheritParentCoat:null,rareMutation:null,cooldownSec:null,cost:null}, // UNSET pending 똑또기: probabilities/conditions
  village:{background:null, // 그림이 map art pending — plain warm background until then
   places:[{id:'hospital',name:'병원',x:28,y:34,icon:null},{id:'walk',name:'산책',x:70,y:64,icon:'assets/drive/ui/card-walk.png'}]}, // starting value 2026-10-15, pending user confirm: map positions in % of the map area
  view:{zoomMin:1,zoomMax:2.5}, // starting value 2026-10-15, pending user confirm: pinch/ctrl+wheel zoom range (1 = fit width)

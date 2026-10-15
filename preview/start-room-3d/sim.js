@@ -48,7 +48,7 @@ export function recordPayment(s,pay,now,{offline=false}={}){
 // ───────────────────────── state ─────────────────────────
 export function newState(now=Date.now()){
  return {v:CFG.saveVersion,started:false,coins:CFG.start.coins,coinFrac:0,hearts:CFG.start.hearts,heartRegenAt:now,dia:CFG.start.dia,
-  firstLaunch:now,mailClaimed:[],seatRewardLevel:1,furnitureInv:{...CFG.furniture.starterExtra},ledger:{days:{},now},placement:defaultPlacement(),space:restoreSpace(null),
+  friends:[],ingredients:{},dishes:{},craft:null,run:{energy:CFG.run.startEnergy,lastScore:null,bestScore:null,level:CFG.run.startLevel,shibas:[]},firstLaunch:now,mailClaimed:[],seatRewardLevel:1,furnitureInv:{...CFG.furniture.starterExtra},ledger:{days:{},now},placement:defaultPlacement(),space:restoreSpace(null),
   items:{heartReset:0,capsule:0,potionBig:0,potionSmall:0,cooldownTicket:0,incomeBoost4h:0,expBoost4h:0},
   cafe:{level:1,exp:0,rep:CFG.rep.start,stains:0,stainAcc:0,badStainAcc:0,driftAcc:0,closed:false,closedAt:null,managerUntil:0,managerCleanAcc:0,boostUntil:0},
   upgrades:Object.fromEntries(Object.keys(CFG.upgrades).map(k=>[k,0])),shibas:[],nextId:1,dongu:{placed:true},walk:null,gachaStamps:0,walkResults:[],menus:[],menuDev:null,accInv:{},lastAbandonAt:null,
@@ -60,7 +60,7 @@ export function newState(now=Date.now()){
 export function makeShiba(s,{breed,level=CFG.gacha.startLevel,name=null,tricks={},r=Math.random,now=Date.now()}){
  const g=Object.fromEntries(CFG.gauges.map(k=>[k,CFG.gaugeStart?.[k]??null])); // §1.2-3: unknown remains null
  const tr={},te={};for(const t of CFG.tricks){tr[t.id]=clamp(tricks[t.id]||0,0,CFG.trickMaxLevel);te[t.id]=0;}
- return {id:s.nextId++,breed,name,personality:drawPersonality(r),level:isUnset(level)?null:clamp(level,1,CFG.level.max),paws:0,
+ return {id:s.nextId++,friends:[],breed,name,personality:drawPersonality(r),level:isUnset(level)?null:clamp(level,1,CFG.level.max),paws:0,
   affinity:CFG.heartUse.affinity.start,intimacy:CFG.intimacy.start,g,tricks:tr,trickExp:te,placed:false,status:'ok',injury:null,hospitalUntil:0,hospitalKind:null,
   zeroSince:null,sickSince:null,cd:{},joinedAt:now,acc:null,accUnlocked:false,likesFound:{snacks:[],toys:[]}};
 }

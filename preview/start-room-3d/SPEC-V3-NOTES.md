@@ -849,3 +849,79 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - Cause 2 (why 수인님 may see old builds): all work is committed locally only (never pushed), so GitHub Pages has no start-room-3d preview at all (…/preview/start-room-3d/ → 404; only preview/art-demo and v05 are live on origin/main). Viewing new tabs needs a push/deploy decision from the user.
 - Fix: map-like area (plain warm background, `CFG.village.background` null until 그림이 art), places positioned by `CFG.village.places` x/y % (starting values), tap → same actions. No drawn roads/rivers. Hospital has no approved icon → name label only (art request: 병원 building, 산책로 building, map background).
 - Friends: visit hearts cap `heartUse.visit` daily 20, 1 heart each (starting values, was 3).
+
+## Q17 task 5 — furniture shop / menu development (2026-10-15)
+- Read §17-4, §17-10, §17-12–14 and viewed all seven `/workspace/prompts/s/ref-*.png` references. References inform layout only; none are embedded/copied.
+- Differences vs before:
+  - 가방 furniture purchase text buttons → category tabs (전체 / existing furniture types), large approved item images, name and config-priced button on horizontally swiped, scroll-snapped cards.
+  - Existing inventory placement and wall inventory remain below/alongside this section; purchase rules still use `S.furniturePrice`, including cafe price tiers.
+  - 메뉴 개발 retains the common popup frame and vertical image/name/config-cost rows; no landscape sidebars. Existing short effect lines, locked `LvN 해금`, detail expansion, timers and development rules are preserved.
+- Tests: q17 production renderer checks plus existing menu/list tests; shared browser driver checks snapping, categories, prices and menu images.
+
+## Q17 task 6a — item-get popup
+- Shared popup frame, centred reward name, large approved image (or empty image slot), quantity and 받기. No rays are drawn.
+- `useHeartItem` reward deltas (including 행운 쿠키, talent, wish when their config permits grants) and successful `claimMail` enqueue one acknowledgement per positive currency/item/paw grant. Grants occur exactly once in existing simulation actions; 받기 only dismisses the receipt. Multiple mail rewards queue above the mailbox.
+- Cookie odds remain unset; this work does not enable an undecided reward rule.
+- Tests cover reward delta calculation, real claim hooks and browser mailbox → receipt. Existing mail idempotence tests retained.
+
+## Q17 task 6b — friends
+- Entry from 하트 쓰기 → 다른 카페 방문 and 마을 → 친구. Header count / 친구 추가 (준비 중 toast), horizontally swiped photo-slot/name/level cards; default `아직 친구가 없어요`.
+- A valid card visit is a stub (준비 중), granting `CFG.heartUse.visit.hearts` up to `daily` per day. Persisted `friendVisits` uses existing ledger KST day settings; next visit after midnight resets the count. Unknown friend IDs grant nothing.
+- `?temp=1&fixture=friends` alone enables the explicitly labelled TEST FIXTURE, using the existing configured starter level. `temp` suppresses save writes. No fake friend is installed into a normal save and no friend/network server exists.
+- Tests: unknown friend, configured cap, no extra grant, midnight reset, default empty renderer; browser empty/fixture/visit checks.
+
+## Q17 task 7 — furniture edit
+- Selected piece has round short-text 취소 / 보관 / 돌리기 / 뒤집기 / 확인 controls, placed around its map position; 저장하기 at the map top-right. No invented icon art. Existing four-direction rotate/flip functions retained.
+- Selection snapshot allows 취소 to undo movement/rotation since selection. 보관 now returns any furniture type to its inventory (walls remain in the wall-owned pool). 확인 clears selection; 저장하기 persists and exits edit mode.
+- Actual target footprint cells have translucent green/red tint, including collision, bounds and entrance validation. Invalid drops preserve the original placement. Grid is still edit-only, including expanded rows.
+- Tests execute the actual canvas renderer/handlers: valid/invalid tint status, drag rejection, rotate/cancel, generic storage, save and grid disappearance. Existing wall/edit tests remain in the suite.
+
+## Q17 task 8 — cooking
+- Portrait order: recipe chips → empty dish art slot → ingredients have/need → config-generated effect → time/제작, with ingredient purchase rows below. Entries: 가게관리 and existing 돌봄 → 밥 만들기; 재료 달리기 links to the lobby.
+- Three anonymous placeholder recipes (`요리 1 미정` etc.); ingredient registry has a structural `ingredient-pending` slot with null name/price. This ID is not a proposed ingredient. No dish name, ingredients/quantity, unlock level, exact craft duration or effect invented. Additional configured locked recipes use approved `ui-lock.png`.
+- Configured recipes support atomic ingredient spending, persisted deadline, completion once after resume, dish inventory and feeding from care. Null full/happy effects or gauges disable feeding as 미정. Feeding clamps to the existing gauge range. Null ingredient price disables purchase as 미정.
+- **starting value 2026-10-15, pending user confirm:** one active cooking timer at a time (implementation concurrency choice), one ingredient per purchase, one dish per craft (`ingredientBuyCount` / `dishesPerCraft`). Requested spec starting values: three unlocked slots and 30–300 second duration bounds; exact recipe times remain null.
+- Tests: missing values no-op, affordability, craft consumption/busy lock, deadline across JSON save, completion once, feed null gating/consumption/effects, production placeholder renderer and browser checks.
+
+## Q17 task 9 — ingredient run lobby
+- Portrait order: ingredient reward slots → empty preview → level/best score → owned-shiba selection row → config bonus line / energy → bottom 게임하기 / 스킵.
+- `run` state stores energy, best/last score, level and selected shiba IDs; unknown starting energy/level come from explicit null config. Selection records placement; bonus remains 미정. No gameplay or upgrade/reward progression is fabricated.
+- 게임하기 only toasts 준비 중, **does not spend energy** until gameplay exists. 스킵 requires an existing last score (including 0), a configured reward table and enough energy; otherwise disabled. Atomic skip spends `CFG.run.skipEnergy` and adds configured ingredient rewards.
+- `scoreToReward` eventual schema: threshold rows `{score,ingredients:{ingredientId:count}}`; highest qualifying threshold wins. The table itself remains null. Per-shiba bonus formula/upgrades are still pending; no numerical bonus is applied to the last score.
+- Requested spec starting values: play energy 1, skip energy 2. No cap, regen, start level/energy, bonus, upgrade cost/effect or score curve chosen.
+- Tests: missing score/table/energy no-op, score 0, configured skip spending/rewards/no double-spend, production renderer and browser stub-energy check.
+
+## Q17 task 10 — shiba profile
+- 시바들 card's `data-act=care` now opens profile: name header, approved shiba image, optional configured intro/favourite snack/favourite play, owned close-shiba face buttons, level and 돌봄 → existing bouncing tamagotchi/gauges/risk light.
+- `CFG.profiles[breed]` contains `{intro:null,favSnack:null,favPlay:null}`; shiba override `sh.profile` has the same shape. Favourite fields, once authored, use `{name,text}`; icon slots remain empty until approved art exists. Empty sections are hidden; no profile prose was invented.
+- Per-shiba `friends:[]` is initialized for new shibas and normalized on UI load; IDs only render if still owned, and their face buttons open that profile. This is an individual profile, not a collection book.
+- Plain card until book-frame art arrives. Existing grid→care tests/capture paths now go through 돌봄 (`careOpen`). Tests cover actual profile renderer and browser route to existing care.
+
+### Q17 Art requests
+- Item-get ray background (omitted); standalone receipt icons where not approved (e.g. heart-reset ticket / capsule).
+- Friend photo/avatar art (empty photo slots; no substitute shiba photo).
+- Furniture edit cancel/store/rotate/flip/confirm icons (short-text round UI buttons in the meantime).
+- Three dish illustrations **after names/recipes are decided**, all ingredient icons, favourite-snack/play icons after content is decided.
+- Runner shiba animations, pickup coins/ingredients, obstacles, run background/preview.
+- Portrait book-frame/name-ribbon art for individual shiba profile. Plain UI card/header used meanwhile.
+
+### Q17 Missing values for 똑또기
+- Cooking: dish identities, recipe ingredient IDs/names/required amounts, ingredient prices, individual unlock levels, exact craft seconds, full/happy effect values; confirm one concurrent craft. How many recipes beyond the initial three?
+- Run: start level/energy, energy cap and regeneration seconds, per-shiba bonus magnitude **and formula**, placement limit if any, upgrade schema/costs/effects, score→ingredient threshold table. Gameplay itself is still pending; no energy spent entering a stub.
+- Profiles: intro/favourite snack/favourite play copy per breed or shiba, approved icon references, who starts as close shibas (all arrays empty).
+- Existing cookie reward probabilities/unknown grants remain null; existing missing gameplay values are not resolved by this restyle.
+- **starting value 2026-10-15, pending user confirm:** new portrait layout card width 230px; preview/receipt image area 180px; product image height 150px; card padding 16px/radius 16px; 12px gaps; round edit buttons 48px with 68px offsets; top-right save inset 8px/padding 10px; portrait/run face images 54px. All are UI layout values, not balance choices (CSS annotated).
+
+### Q17 validation / environment limits
+- `npm test`: all existing suites plus `tests/q17.test.mjs` pass; actual edit handlers and production screen renderers are covered without Chrome.
+- Added browser checks in `tests/smoke-browser.mjs` via shared `tests/q17-browser.mjs`, and `capture-main-screen.mjs --q17` for DPR2 390×844 shots: shop, menu, itemget, friends-empty, friends-fixture, edit-selected, edit-green, edit-red, cook, run, profile.
+- **Attempted** `npm run test:browser` and `node capture-main-screen.mjs --q17`. Both are blocked before page load: Chrome exits SIGTRAP with `crashpad ... setsockopt: Operation not permitted (1)` under this environment's sandbox. Disabling crashpad still fails at `sandbox_host_linux.cc ... shutdown: Operation not permitted`. No screenshots were generated; browser pass / visual review cannot be claimed. Run both in an environment that permits Chrome. Capture default target remains `/workspace/shiba-cafe-docs/spec-v3-build/`.
+- No commit, push, staging, deployment or edits outside `start-room-3d/`.
+
+## 똑또기 answers 09:14 (starting values)
+- 다이아: spend free first (already `CFG.dia.spendOrder='freeFirst'`). Price tiers use current cafe level (as built). 2F 7,000,000멍 fixed, no tier (as built). 2F 다이아 price still pending.
+
+## §17-16 recolour test (09:25)
+- Prototype: tools/recolor-test.py (HSV remap of an orange-hue fur mask; white/cream markings, black eyes/nose/outlines, collar untouched). Screens: spec-v3-build/recolor-red.png, recolor-dongu-sheet.png (4 poses — consistent).
+- Verdict: pink good; cream and silver acceptable but the cream 우라지로 markings stay warm beige, so silver reads as "grey with beige patches" (not a true silver shiba); some pads/inner-ear shading pick up the tint. A per-coat second mask for markings (or 그림이 marking masks) would fix it. Runtime version not built yet (awaiting approval).
+- Breeding: config schema only (`CFG.breeding`, all null, disabled).

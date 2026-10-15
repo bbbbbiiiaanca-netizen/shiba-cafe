@@ -269,3 +269,4 @@ Manager v2 frames replace the v1 files at the same local paths (v1 rows above ar
 | tiles/wall-ext-left.png | interior/벽_방벽_연장_왼쪽.png | 1cDhjig76dPnO6XMsQE1DLt6NdEqRSdWK | d91c045ec8cdc66b26083a342fdd6b4240870f8514c36cb97d4e098946929698 |
 | tiles/wall-ext-right.png | interior/벽_방벽_연장_오른쪽.png | 1C-G7Az2iV1Suz8lCCC0rbYIcd6ClDx_D | a71a188ad1965405a0c23a5b7eb40847cf608f062665fc0e2180d0b21a4aecee |
 | tiles/floor-tatami-v3.png | interior/타일_바닥_다다미_v3.png | 1Qdo1zjVJlYamjgjkq77Du3sMmR_Ytszd | 5c4dbc543363c90cc040def752741129d03673a3a15304071ff5bbe21cfc3ebf |
+| `chars/dongu/dongu-front.png` | `동구_캐릭터시트_v2.png` (Drive 1UA0BgYolnvsKU-EOyFiVOnbSFxL947tD, sheet SHA-256 `c4309b2b701f224f4334a0f6d27cb5171322eeec5f721cf36ac5b16aaf74006b`, 1024×1536 RGB 2×2 poses) — pixel-exact crop of the top-left front pose (0,0)-(512,768), no other changes | `d4b4a83d1e832f1b9e8161dbad6e0c4ff7602cbe7dc239dd0a9d2726ade6b53f` |

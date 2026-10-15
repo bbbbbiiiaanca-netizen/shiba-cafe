@@ -43,3 +43,6 @@ export const ALBA_FX={
 };
 // Values still unset that appear in effect lines (for SPEC-V3-NOTES / tests).
 export function unsetEffectKeys(){const out=[];for(const it of H().items){const t=heartFx(it);if(t.includes('미정'))out.push(it.id);}return out;}
+
+export const cookingFx=r=>`포만 ${sgn(r.effect.full)} · 행복 ${sgn(r.effect.happy)}`;
+export const runFx=()=>`배치 보너스 ${sgn(CFG.run.bonusPerShiba)}`;
