@@ -27,15 +27,15 @@ export const CFG={
   rays:{src:'assets/drive/ui/ui-itemget-glow.png',size:[1024,1024],spinSec:8}}, // 빛 효과 = interior 1XGANByL… (아이템획득_빛효과.png, 확정본; 이전 198nrcFL… 대체). spinSec 8 = 한 바퀴 8초, 시작값 2026-10-15(똑또기) // 빛줄기 = interior 198nrcFL… (UI_팝업_빛줄기.png)
  // §17-13 starting value 2026-10-15, pending user confirm: 3 slots, 30–300 sec; energy 1/2.
  // ── 임시 값 (TEMP, 코코아 요청 2026-10-15 via 똑또기 검수): everything in this block is a placeholder until confirmed ──
- cooking:{ingredientBuyCount:1,dishesPerCraft:1, popupHeightPct:0.56,popupAlign:'bottom', // 수인님 10-15 시작값: 재료 한 줄·이름+효과 한 줄로 줄여 팝업 높이 56%, 아래쪽 정렬 → 위로 카페 방이 더 보임
+ cooking:{ingredientBuyCount:1,dishesPerCraft:1, popupHeightPct:0.56,popupAlign:'center', // 수인님 10-15: 높이 56% 유지, 화면 정가운데(위아래·좌우)
  lockedPreview:[{unlockLevel:3},{unlockLevel:5}], // 똑또기 10-15 시작값: 처음 3가지 뒤 잠긴 카드(빈 그림 칸) Lv3·Lv5
   // 임시
   fxIcons:{full:null,happy:null}, // 미정: 배고픔·행복 효과 아이콘(interior 그림 없음 → 글자만)
   startUnlocked:1,craftSecRange:[30,300], // 임시: 1 recipe open at start, others by unlockLevel
-  recipes:[ // 임시 recipes; dish art pending (slot stays empty)
-   {id:'recipe-1',img:'assets/drive/cooking/dish-shiba-porridge.png',name:'시바 죽',unlockLevel:1,ingredients:{rice:1,carrot:1},craftSec:30,effect:{full:20,happy:10}}, // 임시
-   {id:'recipe-2',img:'assets/drive/cooking/dish-sweet-potato.png',name:'고구마 간식',unlockLevel:1,ingredients:{sweetPotato:1},craftSec:60,effect:{full:15,happy:15}}, // 임시
-   {id:'recipe-3',img:'assets/drive/cooking/dish-chicken-cube.png',name:'닭가슴살 큐브',unlockLevel:1,ingredients:{chicken:1},craftSec:90,effect:{full:25,happy:10}}]}, // 임시
+  recipes:[ // 임시 recipes. 이름은 여기 한 곳(수인님 10-15: 단호박 시바 죽·고구마 쿠키·닭가슴살 미트볼). img = 완성 음식 그림: 쿠키·미트볼 새 그림이 오면 이 경로만 바꾼다
+   {id:'recipe-1',img:'assets/drive/cooking/dish-shiba-porridge.png',name:'단호박 시바 죽',unlockLevel:1,ingredients:{rice:1,carrot:1},craftSec:30,effect:{full:20,happy:10}}, // 임시
+   {id:'recipe-2',img:'assets/drive/cooking/dish-sweet-potato.png',name:'고구마 쿠키',unlockLevel:1,ingredients:{sweetPotato:1},craftSec:60,effect:{full:15,happy:15}}, // 임시
+   {id:'recipe-3',img:'assets/drive/cooking/dish-chicken-cube.png',name:'닭가슴살 미트볼',unlockLevel:1,ingredients:{chicken:1},craftSec:90,effect:{full:25,happy:10}}]}, // 임시
  ingredients:{rice:{name:'쌀',price:50,img:'assets/drive/cooking/ing-rice.png'},carrot:{name:'당근',price:50,img:'assets/drive/cooking/ing-carrot.png'},sweetPotato:{name:'고구마',price:80,img:'assets/drive/cooking/ing-sweet-potato.png'},chicken:{name:'닭고기',price:120,img:'assets/drive/cooking/ing-chicken.png'}}, // 임시 prices (멍); img = 256 transparent art from 그림이 (pending, slot stays empty)
  quests:{daily:{resetKST:'00:00',reward:null, // 임시 reset time; reward UNSET
    tasks:[{id:'serve',name:'손님 3명 받기',goal:3,tab:'manage',icon:'assets/drive/ui/tab-manage.png'}, // 임시
@@ -276,6 +276,10 @@ export const CFG={
   places:[{id:'ingredients',name:'재료 가게',lot:2,icon:null,art:{src:'assets/drive/village/place-ingredients.png',size:[308,298],anchor:[154,209],scale:1}}, // 3번 터 (208,747); interior 1U5COpuz…
   {id:'hospital',name:'병원',lot:1,icon:null,art:{src:'assets/drive/village/place-hospital.png',size:[308,298],anchor:[154,209],scale:1}},{id:'walk',name:'산책',lot:3,icon:null,art:{src:'assets/drive/village/place-walk.png',size:[308,255],anchor:[154,157],scale:1.15}}]}, // 병원 = interior 확정본 1QBLxb0…; 산책로 입구 = interior 1Qw9vCXR… (scale 1.15 = starting value); 3번 터 재료 가게 art pending (empty); 4번 터 (820,748)
  view:{zoomMin:1,zoomMax:2.5}, // starting value 2026-10-15, pending user confirm: pinch/ctrl+wheel zoom range (1 = fit width)
+ // 수인님·똑또기 2026-10-15 이동 규칙: 그림 한 장을 미끄러지듯 옮기지 않는다. 걷기 프레임이 있으면 프레임을 넘기며 걷고, 없으면 제자리 동작(idle)만.
+ // walkFrames: 값이 있으면 그 파일들을 쓰고, null이면 probe 경로({key}/{dir}/{n})에 첫 프레임 파일이 실제로 있는지 런타임에 확인 → 파일을 추가하면 자동으로 걷는다.
+ characters:{walkFrames:{manager:'assets/drive/chars/manager/manager-walk-{dir}-{n}.png',shiba:{red:null,white:null,sesame:null,kuro:null},guest:null,dongu:null},
+  probe:'assets/drive/chars/{key}/walk-{dir}-{n}.png',probeDir:'front-dr',frameCount:4,shibaAnchor:null,shibaScale:1}, // shibaAnchor null → 그림 아래 가운데를 발 위치로
  people:{scale:1,withMapScale:true}, // starting value 2026-10-15, pending user confirm: people (manager/guests) were drawn at fixed 150 screen px ignoring map scale; now 150 art px × map scale × scale, foot anchor kept
  shibaRisk:{orange:50,red:80,highIsBad:['dirt','fatigue','boredom']}, // starting value 2026-10-15, pending user confirm: 'badness' 0–100 per gauge (full/happy inverted); ≥50 orange, ≥80 red; sick/injured red, hospital orange
  gaugeFull:{full:100,dirt:0,fatigue:0,happy:100,boredom:0}, // 갱신 116: 모든 게이지 100%, 행복 만점

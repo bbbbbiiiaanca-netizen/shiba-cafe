@@ -1,4 +1,5 @@
 import {installCoinClean} from "./coin-clean.js";installCoinClean();
+import {installWalkProbe} from "./walk-frames.js";installWalkProbe();
 import * as Q1715 from './q1715.js';
 // Spec v3 UI: DOM screens over the pure core in sim.js. Images are the confirmed Drive files in assets/drive/ (see MAP.md), shown
 // unmodified (sub-regions via CSS only). A needed image that does not exist is a dashed placeholder slot.

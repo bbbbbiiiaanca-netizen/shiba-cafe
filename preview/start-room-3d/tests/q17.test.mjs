@@ -13,7 +13,7 @@ assert.equal(s.hearts,hearts+CFG.heartUse.visit.daily*CFG.heartUse.visit.hearts)
 assert.equal(Q.visitFriend(s,'test',0),false);assert.equal(Q.visitFriend(s,'test',CFG.ledger.periodMs),true);
 const r=CFG.cooking.recipes[0];
 // 임시 recipes (2026-10-15): names, ingredients, times and effects are set; no 미정.
-assert.deepEqual(CFG.cooking.recipes.map(r=>[r.name,r.craftSec,r.effect.full,r.effect.happy]),[['시바 죽',30,20,10],['고구마 간식',60,15,15],['닭가슴살 큐브',90,25,10]]);
+assert.deepEqual(CFG.cooking.recipes.map(r=>[r.name,r.craftSec,r.effect.full,r.effect.happy]),[['단호박 시바 죽',30,20,10],['고구마 쿠키',60,15,15],['닭가슴살 미트볼',90,25,10]]);
 assert.ok(CFG.cooking.recipes.every(r=>Number.isFinite(r.unlockLevel)&&Object.keys(r.ingredients).every(id=>Number.isFinite(CFG.ingredients[id]?.price))));
 assert.doesNotMatch(cookingFx(r),/미정/);
 s.coins=CFG.ingredients.rice.price+CFG.ingredients.carrot.price;assert.equal(Q.buyIngredient(s,'rice'),true);assert.equal(Q.buyIngredient(s,'carrot'),true);assert.equal(s.coins,0);assert.equal(Q.buyIngredient(s,'rice'),false);
@@ -34,7 +34,7 @@ const renderers=runInNewContext(renderSource+';({shop:furnitureShop})',{
 });
 const shop=renderers.shop();for(const it of CFG.furniture.items){assert.ok(shop.includes('assets/drive/ui/ui-icon-'+it.id+'.png'));assert.ok(shop.includes(String(S.furniturePrice(s,it.id))));}
 ui.furnitureCategory=CFG.furniture.items[0].id;assert.equal((renderers.shop().match(/class="q17-product"/g)||[]).length,1);
-assert.match(P.cooking().html,/시바 죽/);assert.doesNotMatch(P.cooking().html.replace(/<button class="cook2-card locked preview"[^]*?<\/button>/g,""),/미정/);assert.match(P.cooking().html,/data-act="craft" disabled/);
+assert.match(P.cooking().html,/단호박 시바 죽/);assert.doesNotMatch(P.cooking().html.replace(/<button class="cook2-card locked preview"[^]*?<\/button>/g,""),/미정/);assert.match(P.cooking().html,/data-act="craft" disabled/);
 assert.match(P.cooking().html,/data-act="ingredientBuy"[^>]+disabled/);
 assert.match(P.run().html,/data-act="runSkip" disabled/);assert.doesNotMatch(P.run().html,/Lv미정|강화|에너지/);assert.match(P.run().html,/오늘 남은 판 5/);assert.doesNotMatch(P.run().html,/runAd/);
 assert.doesNotMatch(P.profile(s.shibas[0].id).html,/undefined|null|미정/);assert.match(P.profile(s.shibas[0].id).html,new RegExp(CFG.profiles[s.shibas[0].breed].favSnack.name));assert.match(P.profile(s.shibas[0].id).html,/data-act="careOpen"/);

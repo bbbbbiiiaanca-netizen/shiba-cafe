@@ -3,6 +3,7 @@ import * as S from '../sim.js';
 import {CFG} from '../config.js';
 import {MAP,TABLE_ITEM_LAYOUT,tableItemSize,tableItemEntries,validPlacement,footprintCells,compareDepth} from '../map-data.js';
 import {linkTable,moveCell,routeTo} from '../navigation.js';
+import {_setFound} from '../walk-frames.js';for(const b of ['red','white','sesame','kuro'])_setFound('shiba',b,'test/walk-{dir}-{n}.png'); // 이 파일은 걷기 로직 테스트: 걷기 프레임이 있는 시바로 가정
 let passed=0;const test=(name,fn)=>{fn();passed++;console.log('ok',name);};
 function fixture(){const s=S.newState(0);S.chooseStart(s,'red','',()=>.99,0);s.coins=0;Object.assign(s.shibas[0].g,{full:100,dirt:0,fatigue:0,happy:100,boredom:0});const w=S.newWorld(s,S.rng(7));return {s,w};}
 function run(s,w,n){for(let i=0;i<n*10;i++)S.tick(s,w,.1,(w.t+.1)*1000);}

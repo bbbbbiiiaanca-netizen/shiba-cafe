@@ -19,7 +19,7 @@ export async function q17Browser({ev,c,check,shot=async()=>{}}){
  await ev(`__game.ui.modals=[];__game.refresh();document.querySelector('[data-main-tab=village]').click();document.querySelector('[data-act=friendsOpen]').click();true`);
  await check('q17 real friends default empty',`__game.state.friends.length===0&&document.querySelector('[data-friends]').textContent.includes('아직 친구가 없어요')`);await snap('friends-empty');
  await ev(`__game.open('cooking');true`);
- await check('q17 three 임시 recipes, no 미정',`document.querySelectorAll('[data-act=recipePick]').length===3&&document.querySelector('[data-cooking]').textContent.includes('시바 죽')&&!document.querySelector('[data-cook-detail]').textContent.includes('미정')`);await snap('cook');
+ await check('q17 three 임시 recipes, no 미정',`document.querySelectorAll('[data-act=recipePick]').length===3&&document.querySelector('[data-cooking]').textContent.includes('단호박 시바 죽')&&document.querySelector('[data-cooking]').textContent.includes('고구마 쿠키')&&document.querySelector('[data-cooking]').textContent.includes('닭가슴살 미트볼')&&!document.querySelector('[data-cook-detail]').textContent.includes('미정')`);await snap('cook');
  await ev(`(()=>{window.q17Lv=__game.state.cafe.level;__game.state.cafe.level=2;__game.ui.modals=[];document.querySelector('[data-main-tab=manage]').click();__game.refresh();return true})()`);
  await check('run locked before Lv3 with lock art',`!!document.querySelector('[data-run-locked] img[src$="ui-lock.png"]')&&document.querySelector('[data-run-locked]').textContent.includes('Lv3 해금')&&!document.querySelector('[data-open=run]')`);
  await ev(`__game.state.cafe.level=Math.max(3,window.q17Lv);__game.refresh();__game.open('run');true`);

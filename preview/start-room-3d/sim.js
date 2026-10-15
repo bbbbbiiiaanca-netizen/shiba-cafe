@@ -4,6 +4,7 @@ export {tickManager,seatSlots,syncRoutes,pathfind};
 // Times: `now` is epoch ms; `dt` is seconds. Every number comes from CFG (config.js); UNSET (null) values disable what depends on them.
 import {defaultPlacement,restorePlacement,restoreSpace,zonesForSpace,FLOOR_ART,PARTITION,footprintCells,validPlacement,SPRITES} from './map-data.js';
 import {CFG,GACHA_TABLE,pressureAt,isUnset} from './config.js';
+import {canWalk} from './walk-frames.js';
 
 export function rng(seed=1){let a=seed>>>0||1;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -371,6 +372,7 @@ export function tick(s,w,dt,now,ctx={}){s.simNow=now;ctx={...ctx,now};settleLedg
  // 139-1·139-2: 카페 근무 1시간마다 발바닥 1 (매니저가 운영하는 시간 포함, 오프라인 12시간 정산 안에서)
  for(const id of work){const o=byId(s,id);o.workAcc=(o.workAcc||0)+dt;while(o.workAcc>=3600){o.workAcc-=3600;addPaws(o,CFG.activityPaws.cafeWorkHour);}}
  for(const sh of Object.values(w.sh)){if(Number.isFinite(sh.t))sh.t-=dt;if(Number.isFinite(sh.roamT))sh.roamT-=dt;
+  sh.noWalk=!canWalk('shiba',byId(s,sh.id)?.breed); // 이동 규칙: 걷기 프레임 없는 시바는 제자리
   if(sh.phase==='approach'){const c=w.custs.find(c=>c.id===sh.cust&&c.phase==='seated');if(!c){endMeeting(w,sh);continue;}if(moveCell(sh,dt,CFG.navigation.shibaCellStepSec)){faceCell(sh,c.cell);startMeeting(s,w,sh,c,ctx);}continue;}
   if(sh.phase==='meet'&&sh.t<=0)endMeeting(w,sh);
   if(sh.phase==='meet'){sh.state='play';continue;}
@@ -381,6 +383,7 @@ export function tick(s,w,dt,now,ctx={}){s.simNow=now;ctx={...ctx,now};settleLedg
   if(sh.state==='walk'&&sh.route?.length){moveCell(sh,dt,CFG.navigation.shibaCellStepSec);continue;}
   if(sh.t>0)continue;
   sh.state=weightedState(w,B.weights);sh.route=null;sh.target=null;
+  if(sh.noWalk&&sh.state==='walk')sh.state='lookAround'; // 제자리 동작만
   if(sh.state!=='walk'){sh.t=B.durations[sh.state];continue;}
   // walk 2–4 cells: a reachable cell exactly n steps away, else any within the range; boxed in → pick again next tick
   const {zone,slots}=layout(s,w),[lo,hi]=B.walkCells,n=lo+Math.floor(w.r()*(hi-lo+1)),near=[];
