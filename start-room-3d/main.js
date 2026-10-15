@@ -50,6 +50,10 @@ const shibaImg=sh=>{const st=S.statusOf(s,sh);if(st==='sleeping'&&IMG.sleepPose[
 // ───────── formatting ─────────
 // 금액·수량 표시는 모두 fmt 하나로: 언어와 상관없이 세 자리마다 쉼표(2,400). money = 코인 금액.
 const fmt=n=>isUnset(n)?L('unset'):String(Math.floor(n)).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+// HUD-only short form so big balances fit the one-row top bar (exact value goes to the pill title/aria-label).
+// ko: 9,999 · 3만 · 12.3만 · 1,234만 · 1.2억 / en: 9,999 · 30K · 12.3M · 1.2B — one decimal (cut, not rounded) only below 100 of the unit, '.0' dropped.
+const fmtShort=n=>{if(isUnset(n))return fmt(n);const v=Math.floor(Math.abs(n)),sg=n<0?'-':'';if(v<1e4)return fmt(n);
+ const U=langNow()==='ko'?[[1e8,'억'],[1e4,'만']]:[[1e9,'B'],[1e6,'M'],[1e3,'K']],[d,u]=U.find(([d])=>v>=d),t=Math.floor(v*10/d);return sg+fmt(Math.floor(t/10))+(t%10&&t<1000?'.'+t%10:'')+u;};
 const COIN_HTML='<img class="ci" src="assets/drive/ui/res-coin.png" alt="">';const money=n=>isUnset(n)?L('unset'):COIN_HTML+fmt(n);
 const f2=n=>n==null?L('unset'):(Math.round(n*100)/100).toString();
 const tfmt=sec=>{sec=Math.max(0,Math.ceil(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),x=sec%60;return h?`${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`:`${m}:${String(x).padStart(2,'0')}`;};
@@ -66,17 +70,18 @@ const mmss=sec=>{sec=Math.max(0,Math.ceil(sec));return `${String(Math.floor(sec/
 // ───────── HUD ─────────
 // §17-1: hearts as CFG.hearts.slots slots (filled/empty icons); hearts above the slot count → all slots filled + small '+N'; mm:ss to the next heart while below the regen cap
 function renderHearts(now){const cap=CFG.hearts.slots,n=Math.max(0,Math.floor(s.hearts||0)),el=$('hearts'),sig=n+'/'+cap;
- if(el.dataset.sig!==sig){el.dataset.sig=sig;el.innerHTML=Array.from({length:cap},(_,i)=>`<img class="heart-slot" data-full="${i<n?1:0}" src="${i<n?RES.heart:RES.heartEmpty}" alt="" draggable="false">`).join('')+(n>cap?`<small class="heart-more">+${fmt(n-cap)}</small>`:'');}
+ if(el.dataset.sig!==sig){el.dataset.sig=sig;el.innerHTML=Array.from({length:cap},(_,i)=>`<img class="heart-slot" data-full="${i<n?1:0}" src="${i<n?RES.heart:RES.heartEmpty}" alt="" draggable="false">`).join('')+(n>cap?`<small class="heart-more">${n-cap>99?'99+':'+'+fmt(n-cap)}</small>`:'');}
  const nh=S.nextHeartInSec(s,now);$('heartT').hidden=nh==null;$('heartT').textContent=nh==null?'':mmss(nh);
  el.parentElement.setAttribute('aria-label',L('hud.heartsAria',{n:fmt(n)})+(nh==null?'':' · '+L('hud.nextHeart',{t:mmss(nh)})));el.parentElement.title=el.parentElement.getAttribute('aria-label');}
-function renderHUD(){const now=clock.now();$('coins').textContent=fmt(s.coins);$('dia').textContent=fmt(s.dia);renderHearts(now);
+function renderHUD(){const now=clock.now();$('coins').textContent=fmtShort(s.coins);$('dia').textContent=fmtShort(s.dia);renderHearts(now);
  const C=s.cafe,need=S.cafeNeed(C.level);$('lvl').textContent=String(C.level);$('lvl').setAttribute('aria-label',L('hud.level',{lv:C.level}));$('expBar').style.width=(C.level>=CFG.cafe.maxLevel?100:need==null?0:Math.min(100,C.exp/need*100))+'%';
  $('expBar').parentElement.title=C.level>=CFG.cafe.maxLevel?L('app.maxLevel'):need==null?L('app.unset'):`${fmt(C.exp)} / ${fmt(need)}`;
  const exp=$('cafeExp');exp.setAttribute('aria-valuemin','0');exp.setAttribute('aria-valuemax',String(need??100));exp.setAttribute('aria-valuetext',exp.title=$('expBar').parentElement.title);if(need==null)exp.removeAttribute('aria-valuenow');else exp.setAttribute('aria-valuenow',String(Math.min(C.exp,need)));
- for(const id of ['coins','dia','paws']){const el=$(id);el.parentElement.title=el.parentElement.getAttribute('aria-label')+' '+el.textContent;}
+ for(const [id,k,v] of [['coins','hud.aria.coinLedger',s.coins],['dia','hud.currency.dia',s.dia]]){const p=$(id).parentElement,t=L(k)+' '+fmt(v);p.title=t;p.setAttribute('aria-label',t);}
+ $('paws').parentElement.title=L('hud.paws')+' '+$('paws').textContent;
  $('rep').textContent=L('hud.rep',{rep:Math.round(C.rep)});$('mgr').textContent=S.managerActive(s,now)?L('hud.manager',{t:tfmt((C.managerUntil-now)/1000)}):'';
  $('questDot').hidden=!Q1715.progress(S.questTasks(s,clock.now()))?.n;$('entryMailDot').hidden=!S.mailbox(s,now).some(m=>!m.claimed);const qp=Q1715.progress(S.questTasks(s,clock.now()));$('questGuide').hidden=!qp;$('questGuide').innerHTML=qp?L('hud.mission')+' '+qp.n+'/'+qp.m+`<progress aria-label="${L('hud.mission')}" value=${qp.n} max=${qp.m||1}></progress>`:'';
- $('mailDot').hidden=!S.mailbox(s,now).some(m=>!m.claimed);$('boostChip').innerHTML=[[L('hud.boost.income'),'boostUntil'],[L('hud.boost.exp'),'expBoostUntil']].filter(([,k])=>C[k]>now).map(([n,k])=>itemIcon(k==='boostUntil'?'incomeBoost4h':'expBoost4h')+n+' '+tfmt((C[k]-now)/1000)).join(' · ');
+ $('boostChip').innerHTML=[[L('hud.boost.income'),'boostUntil'],[L('hud.boost.exp'),'expBoostUntil']].filter(([,k])=>C[k]>now).map(([n,k])=>itemIcon(k==='boostUntil'?'incomeBoost4h':'expBoost4h')+n+' '+tfmt((C[k]-now)/1000)).join(' · ');
  $('closed').hidden=!C.closed;$('closed').textContent=L('hud.closed');}
 
 let sceneSig='';
