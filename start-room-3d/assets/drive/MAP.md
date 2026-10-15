@@ -270,3 +270,8 @@ Manager v2 frames replace the v1 files at the same local paths (v1 rows above ar
 | tiles/wall-ext-right.png | interior/벽_방벽_연장_오른쪽.png | 1C-G7Az2iV1Suz8lCCC0rbYIcd6ClDx_D | a71a188ad1965405a0c23a5b7eb40847cf608f062665fc0e2180d0b21a4aecee |
 | tiles/floor-tatami-v3.png | interior/타일_바닥_다다미_v3.png | 1Qdo1zjVJlYamjgjkq77Du3sMmR_Ytszd | 5c4dbc543363c90cc040def752741129d03673a3a15304071ff5bbe21cfc3ebf |
 | `chars/dongu/dongu-front.png` | `동구_캐릭터시트_v2.png` (Drive 1UA0BgYolnvsKU-EOyFiVOnbSFxL947tD, sheet SHA-256 `c4309b2b701f224f4334a0f6d27cb5171322eeec5f721cf36ac5b16aaf74006b`, 1024×1536 RGB 2×2 poses) — pixel-exact crop of the top-left front pose (0,0)-(512,768), no other changes | `d4b4a83d1e832f1b9e8161dbad6e0c4ff7602cbe7dc239dd0a9d2726ade6b53f` |
+| `ui/tab-village.png` | `UI_탭_마을.png` (Drive 1tS_odD-1HqAR_PKo3QidqxPd8l31iYOJ, 128×128 RGBA) | `d8c57542321e258f5853debb2bebed89ea8c36a0b4c5ea56c4e530fa341a8aa3` |
+| `ui/tab-shiba.png` | `UI_탭_시바들.png` (Drive 1qhoKrm53cMIyVx2zn1QnKD7ogcjz7hhW, 128×128 RGBA) | `52a1fe4b5b8fb1de32947c0940e2b9fd56274ac3a4355f14e00f57f518edffe3` |
+| `ui/tab-manage.png` | `UI_탭_가게관리.png` (Drive 1XHUDwdfxTCugABRpD04drZss_8Ejz5L2, 128×128 RGBA) | `14e91e0873f74a07a6db8d07f4fa6416ac607d3d72b965b09e9cd739b22bbba4` |
+| `ui/tab-bag.png` | `UI_탭_가방.png` (Drive 12RiCLwooCSRUyAFTaYKp-tISrrQO6jPt, 128×128 RGBA) | `6ce8a954edc3a2207d15c4cd505a2870377363fb8c227cff3a010c5392377d24` |
+| `village/village-map.png` | `배경_마을지도_시험.png` (Drive 11jxG5-yPH8SRwXDaEw8fVNzL0pMaDhgW, 1024×1536 RGB) | `fee0187faa5fae8ec3f13228ce40274c70a9043e9a99c79bf5818a37aa9a64e7` |

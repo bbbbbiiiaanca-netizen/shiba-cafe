@@ -220,8 +220,10 @@ export const CFG={
  // §17-16 rare coats by runtime recolour of existing art (test: tools/recolor-test.py); breeding = design only, build after recolour approval
  coats:{rare:{cream:{hue:38,satMul:0.30,valAdd:0.10},silver:{hue:210,satMul:0.06,valAdd:0.02},pink:{hue:345,satMul:0.55,valAdd:0.06}}}, // starting value 2026-10-15, pending user confirm: recolour params from the test
  breeding:{enabled:false,minCloseness:null,inheritParentCoat:null,rareMutation:null,cooldownSec:null,cost:null}, // UNSET pending 똑또기: probabilities/conditions
- village:{background:null, // 그림이 map art pending — plain warm background until then
-  places:[{id:'hospital',name:'병원',x:28,y:34,icon:null},{id:'walk',name:'산책',x:70,y:64,icon:'assets/drive/ui/card-walk.png'}]}, // starting value 2026-10-15, pending user confirm: map positions in % of the map area
+ tabs:{iconScale:{shiba:1.1}}, // starting value 2026-10-15, pending user confirm: 시바들 tab art drawn 1.1×
+ village:{background:'assets/drive/village/village-map.png',size:[1024,1536], // approved 배경_마을지도_시험.png
+  lots:[{x:532,y:158,w:300,h:180},{x:475,y:521,w:300,h:180},{x:208,y:747,w:300,h:180},{x:820,y:748,w:300,h:180},{x:521,y:998,w:300,h:180},{x:513,y:1300,w:300,h:180}], // centres from 그림이 (image px); w/h = midpoint of the given 280–320 × 170–190 range (starting value)
+  places:[{id:'hospital',name:'병원',lot:1,icon:null},{id:'walk',name:'산책',lot:2,icon:null}]}, // starting value 2026-10-15, pending user confirm: which lot; building art pending (lots stay empty)
  view:{zoomMin:1,zoomMax:2.5}, // starting value 2026-10-15, pending user confirm: pinch/ctrl+wheel zoom range (1 = fit width)
  people:{scale:1,withMapScale:true}, // starting value 2026-10-15, pending user confirm: people (manager/guests) were drawn at fixed 150 screen px ignoring map scale; now 150 art px × map scale × scale, foot anchor kept
  shibaRisk:{orange:50,red:80,highIsBad:['dirt','fatigue','boredom']}, // starting value 2026-10-15, pending user confirm: 'badness' 0–100 per gauge (full/happy inverted); ≥50 orange, ≥80 red; sick/injured red, hospital orange

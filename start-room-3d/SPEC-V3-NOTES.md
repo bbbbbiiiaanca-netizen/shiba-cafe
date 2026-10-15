@@ -955,3 +955,8 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - Final validation: `npm test` passed with the full legacy suite plus `tests/q1715.test.mjs`; JavaScript syntax checks and `git diff --check` passed. Existing browser shop checks now select 캐시·골드 for retained accessory/gacha controls, and the former 미션-stub check now asserts the quest empty screen.
 
 - Validation addendum 09:4x (box, outside Codex): `npm test` passed; `npm run test:browser` 231/231, 0 page errors (fixed main.js questsHtml being passed CFG instead of CFG.quests); --q17, --q1715, --q1717, --nav captures generated and reviewed.
+
+## 09:40 시바들 tools + tab icons + village map
+- 시바들 (수인님 feedback): coat-name text under cards removed; filter/sort on ONE compact row: coat dropdown (전체/4 coats) + one 레벨 ↓/↑ toggle; 최근 획득 dropped.
+- Tab icons: approved 마을/시바들/가게관리/가방 art (MAP.md SHAs) replaces label-only / borrowed shiba portrait / americano icons; 시바들 drawn at `CFG.tabs.iconScale.shiba` 1.1 (starting value).
+- 마을: approved map background (1024×1536) fitted to panel width with vertical scroll; 6 lots from 그림이 centres in `CFG.village.lots` (w/h 300×180 = midpoint of given range, starting value). Buildings pending: lots stay empty; lot 1 = 병원, lot 2 = 산책 tappable with small name labels (starting value).

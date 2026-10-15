@@ -8,11 +8,11 @@ import * as S from './sim.js';
 // 2026-10-15 user request: 마을 / 시바들 / 가게관리 (centre) / 상점 / 가방. 알바 lives in 가게관리; 가구·아이템 inventory lives in 가방.
 // Icons: no approved 마을/가방 tab art yet (icon:null → label only; art request in SPEC-V3-NOTES.md).
 export const TABS=[
- {id:'village',label:'마을',icon:null},
- {id:'shiba',label:'시바들',icon:'shiba'}, // 'shiba' = portrait of the first owned shiba (assets/drive/shiba-<breed>.png)
- {id:'manage',label:'가게관리',icon:'assets/drive/M-01-iced-americano_512.png',main:true}, // café status + 메뉴 개발 / 업그레이드 / 손익계산서 + 알바
+ {id:'village',label:'마을',icon:'assets/drive/ui/tab-village.png'},
+ {id:'shiba',label:'시바들',icon:'assets/drive/ui/tab-shiba.png',scaleKey:'shiba'}, // approved tab art 2026-10-15; drawn at CFG.tabs.iconScale.shiba
+ {id:'manage',label:'가게관리',icon:'assets/drive/ui/tab-manage.png',main:true}, // café status + 메뉴 개발 / 업그레이드 / 손익계산서 + 알바
  {id:'shop',label:'상점',icon:'assets/drive/ui/tab-shop.png'},
- {id:'bag',label:'가방',icon:null}];
+ {id:'bag',label:'가방',icon:'assets/drive/ui/tab-bag.png'}];
 export const DEFAULT_TAB='manage';
 
 // 알바 can be hired right now (same checks as hireAlba; null cost never counts).
