@@ -4,7 +4,7 @@ export default async function({ev,check,sleep,reload}){
  await check('language screen on first run, OK disabled','!document.getElementById("modal").hidden&&document.querySelectorAll("[data-act=langPick]").length===2&&document.querySelector("[data-act=langOk]").disabled');
  await ev('document.querySelector("[data-lang=en]").click();document.querySelector("[data-act=langOk]").click();true');
  // 갱신 109 start choice
- await check('start screen: 4 breeds, English text','document.querySelectorAll("[data-act=startPick]").length===4&&/Pick your first/.test(document.getElementById("mbox").textContent)');
+ await check('start screen: 4 breeds; English chosen → untranslated text falls back to Korean, confirmed breed names in English','__game.state.settings.language==="en"&&document.documentElement.lang==="en"&&document.querySelectorAll("[data-act=startPick]").length===4&&/첫 시바를 골라 주세요/.test(document.getElementById("mbox").textContent)&&/Shiru/.test(document.getElementById("mbox").textContent)');
  await check('start requires both breed and bandana','document.querySelector("[data-act=startGo]").disabled');
  await ev('document.querySelector("[data-act=startPick][data-breed=kuro]").click();true');
  await check('breed alone does not enable start','document.querySelector("[data-act=startGo]").disabled');
@@ -28,12 +28,12 @@ export default async function({ev,check,sleep,reload}){
  // §16-1: every bottom tab fills the list panel above the single tab row
  for(const tab of ['manage','shiba','village','bag','shop']){await ev(`document.querySelector("[data-main-tab=${tab}]").click();true`);await check(`§16 tab ${tab} opens content above the tab row (마을 = 꽉 찬 팝업)`,`document.querySelector("[data-main-tab=${tab}]").classList.contains("active")&&document.querySelectorAll(".main-tabs .active").length===1&&document.getElementById("menuList").children.length>0&&(${tab==="village"}?!!document.querySelector("[data-act=villageClose]"):document.getElementById("menuList").getBoundingClientRect().bottom<=document.querySelector(".main-tabs").getBoundingClientRect().top+1)`);}
  await ev('document.querySelector("[data-main-tab=shiba]").click();document.querySelector("[data-act=care]").click();document.querySelector("[data-act=careOpen]").click();true');
- await check('care: feed/snack/bath/sleep disabled (UNSET), play enabled','[...document.querySelectorAll("#pbody button[disabled]")].filter(b=>/Feed|Snack|Bath|Put to bed/.test(b.textContent)).length===4&&!document.querySelector("[data-act=play]").disabled');
+ await check('care: feed/snack/bath/sleep disabled (UNSET), play enabled','[...document.querySelectorAll("#pbody button[disabled]")].filter(b=>/밥 주기|간식|목욕|재우기/.test(b.textContent)).length===4&&!document.querySelector("[data-act=play]").disabled');
  await ev('document.querySelector("[data-act=play]").click();true');await check('play costs 1 heart','__game.state.hearts===9');
  await ev('document.querySelector("[data-main-tab=shiba]").click();document.querySelector("[data-open=walk]").click();true');
  await check('walk buttons ♥1/♥2/♥3, stop disabled','document.querySelectorAll("[data-act=walk]").length===3');
  await ev('document.querySelector("[data-act=walk][data-sec=\'600\']").click();true');
- await check('walk started, shiba left the café','!!__game.state.walk&&!__game.world.sh[__game.state.walk.shibaId]&&[...document.querySelectorAll("#pbody button")].some(b=>/Stop/.test(b.textContent)&&b.disabled)');
+ await check('walk started, shiba left the café','!!__game.state.walk&&!__game.world.sh[__game.state.walk.shibaId]&&[...document.querySelectorAll("#pbody button")].some(b=>/멈추기/.test(b.textContent)&&b.disabled)');
  await ev('document.querySelector("[data-main-tab=shop]").click();document.querySelector("[data-act=shopTab][data-item=cash]").click();true');
  await ev('document.querySelector("[data-act=gachaOdds]").click();true');
  await check('141: odds popup reads JSON',`(async()=>{const t=await import('./gacha-table.json',{with:{type:'json'}});return t.default.pool.every(x=>document.querySelector('[data-gacha-odds]').textContent.includes(x.w/t.default.pool.reduce((n,y)=>n+y.w,0)*100+'%'));})()`);
@@ -50,7 +50,7 @@ export default async function({ev,check,sleep,reload}){
  await check('gacha unlocked from Lv1: an affordable single pull spends diamonds and adds a Lv1 shiba or paws','__game.state.dia<1000&&__game.state.items.capsule===1&&(__game.state.shibas.length===2?__game.state.shibas[1].level===1:true)');
  await ev('__game.state.shibas.length=1;__game.ui.modals=[];__game.refresh();true');
  await ev('__game.state.dia=0;__game.state.items.capsule=0;__game.open("care",__game.state.shibas[0].id);true');
- await check('red-team #1: personality shown as "Odds TBD" (not drawn)','__game.state.shibas[0].personality===null&&/Personality: Odds TBD/.test(document.getElementById("pbody").textContent)');
+ await check('red-team #1: personality shown as "확률 미정" (not drawn; English falls back to Korean)','__game.state.shibas[0].personality===null&&/성격: 확률 미정/.test(document.getElementById("pbody").textContent)');
  await ev('document.querySelector("[data-main-tab=shop]").click();document.querySelector("[data-act=shopTab][data-item=cash]").click();true');
  await check('accessory shop: 4 bandana types, 9 colour cells from the sheet (CSS area), special = UNSET slot (140)','document.querySelectorAll("[data-act=accType]").length===4&&document.querySelectorAll("[data-accitem] .band").length===9&&getComputedStyle(document.querySelector("[data-accitem] .band")).backgroundImage.includes("bandana-triangle-sheet.webp")&&[...document.querySelectorAll("[data-accshop] button")].some(b=>/^300 · /.test(b.textContent)&&b.querySelector("img.res-ico[src$=\'res-diamond.png\']"))');
  await ev('__game.state.coins=5000;__game.refresh();document.querySelector("[data-act=accType][data-type=loop]").click();document.querySelector("[data-act=buyAcc][data-item=bandana-loop-cell9]").click();true');

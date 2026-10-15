@@ -44,7 +44,7 @@ const item=id=>CFG.heartUse.items.find(x=>x.id===id);
  for(const id of ['music','blanket','recommend','brush']){const it=item(id);for(const key of id==='music'?['stay']:id==='blanket'?[]:id==='recommend'?[]:['affinity','fatigue','cleanliness'])assert.equal(it[key],null);}
  assert.ok(S.useHeartItem(s,'music',null,0));assert.equal(S.activeHeartEffects(s,0)[0].id,'music');assert.equal(item('music').extraOrders,1);assert.equal(S.activeHeartEffects(s,item('music').sec*1000).length,0);
  const source=readFileSync(new URL('../main.js',import.meta.url),'utf8'),html=readFileSync(new URL('../index.html',import.meta.url),'utf8'),capture=readFileSync(new URL('../capture-main-screen.mjs',import.meta.url),'utf8');
- assert.match(html,/data-act="hearts"/);assert.match(source,/heartStub:\(\)=>toast\('준비 중'\)/);assert.match(source,/LP.heartShiba/);assert.match(source,/v.footer/);
+ assert.match(html,/data-act="hearts"/);assert.match(source,/heartStub:\(\)=>toast\(L\('app.stub'\)\)/);assert.match(source,/LP.heartShiba/);assert.match(source,/v.footer/);
  for(const name of ['hearts','noheart','pick'])assert.ok(capture.includes('main-screen-u179-'+name+'.png'));assert.ok(capture.includes("process.argv.includes('--u179')"));
 }
 {

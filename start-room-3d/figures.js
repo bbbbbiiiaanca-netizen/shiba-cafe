@@ -2,6 +2,7 @@
 // ellipsoids/capsules) polygonized by MarchingCubes, painted with vertex colours.
 import * as T from './vendor/three.module.min.js';
 import {MarchingCubes} from './vendor/jsm/MarchingCubes.js';
+import {t} from './i18n.js';
 const clay=new T.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0});
 const E=(c,r,col,k=.06)=>({t:'e',c,r,col:new T.Color(col),k});
 const C=(a,b,r,col,k=.06)=>({t:'c',a,b,r,col:new T.Color(col),k});
@@ -68,7 +69,7 @@ export function dog(donggu=false,coat='red',expr='smile'){const K=COATS[coat],F=
  // tail as separate animated pivot = the whole figure tilts slightly; keep a dummy group for timeline
  const tail=new T.Group();g.add(tail);const head=new T.Group();g.add(head);
  if(donggu){const col=new T.Mesh(new T.TorusGeometry(.17,.028,12,32),dmat('#2f8a83'));col.rotation.x=Math.PI/2-.35;col.position.set(0,.47,.08);col.scale.set(1,1.05,1);g.add(col);
-  const c2=document.createElement('canvas');c2.width=c2.height=128;const a=c2.getContext('2d');a.fillStyle='#d9d6cf';a.beginPath();a.arc(64,64,62,0,7);a.fill();a.fillStyle='#3b2519';a.font='bold 40px sans-serif';a.textAlign='center';a.fillText('동구',64,78);const tt=new T.CanvasTexture(c2);tt.colorSpace=T.SRGBColorSpace;
+  const c2=document.createElement('canvas');c2.width=c2.height=128;const a=c2.getContext('2d');a.fillStyle='#d9d6cf';a.beginPath();a.arc(64,64,62,0,7);a.fill();a.fillStyle='#3b2519';a.font='bold 40px sans-serif';a.textAlign='center';a.fillText(t('char.dongu.name'),64,78);const tt=new T.CanvasTexture(c2);tt.colorSpace=T.SRGBColorSpace;
   const tag=new T.Mesh(new T.CylinderGeometry(.05,.05,.014,24),[new T.MeshStandardMaterial({color:'#cfcac0',roughness:.6}),new T.MeshStandardMaterial({map:tt,roughness:.7}),new T.MeshStandardMaterial({color:'#cfcac0'})]);tag.rotation.x=Math.PI/2;tag.position.set(0,.38,.27);g.add(tag);
   const b=new T.Mesh(new T.CylinderGeometry(.025,.025,.012,16),dmat('#ee9440'));b.rotation.x=Math.PI/2;b.position.set(.075,.4,.26);g.add(b);}
  else{const nb=new T.Mesh(new T.TorusGeometry(.165,.03,12,32),dmat(K.bandCol));nb.rotation.x=Math.PI/2-.35;nb.position.set(0,.48,.08);g.add(nb);

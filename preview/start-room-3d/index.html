@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover"><link rel="icon" href="data:,"><title>시바카페</title>
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover"><link rel="icon" href="data:,"><title data-i18n="app.title"></title>
 <style>
 @font-face{font-family:"Jua";src:url(assets/fonts/Jua-Regular.woff2) format("woff2");font-display:swap}
 @font-face{font-family:"Jua";src:url(assets/fonts/GowunDodum-Regular.woff2) format("woff2");unicode-range:U+002C;font-display:swap}
@@ -296,17 +296,17 @@ small.fx{display:block;font-family:'Gowun Dodum',sans-serif;font-size:11px;opaci
 .manage-tabs button.big img{width:50px;height:50px;margin:-5px 0}
 </style>
 <div id="app">
- <div id="hud" aria-label="카페 자원">
-  <div class="row resources" aria-label="재화">
-   <div class="pill"><button class="pill-open" data-act="income" aria-label="코인 · 손익계산서"><img class="resource" data-res="coin" src="assets/drive/ui/res-coin.png" alt="" draggable="false"><span id="coins"></span></button><button class="resource-add" data-act="resourceShop" aria-label="코인 상점 열기">+</button></div>
-   <div class="pill hearts-pill"><button class="pill-open" data-act="hearts" aria-label="하트 쓰기"><span id="hearts" class="heart-slots"></span><small id="heartT" hidden></small></button></div>
-   <div class="pill"><span class="pill-open" aria-label="다이아"><img class="resource" data-res="dia" src="assets/drive/ui/res-diamond.png" alt="" draggable="false"><span id="dia"></span></span><button class="resource-add" data-act="resourceShop" aria-label="다이아 상점 열기">+</button></div>
-   <div class="pill" aria-label="발바닥"><img class="resource" data-res="paw" src="assets/drive/ui/res-paw.png" alt="" draggable="false"><span id="paws"></span></div>
+ <div id="hud" data-i18n-attr="aria-label:hud.aria.resources">
+  <div class="row resources" data-i18n-attr="aria-label:hud.aria.currencies">
+   <div class="pill"><button class="pill-open" data-act="income" data-i18n-attr="aria-label:hud.aria.coinLedger"><img class="resource" data-res="coin" src="assets/drive/ui/res-coin.png" alt="" draggable="false"><span id="coins"></span></button><button class="resource-add" data-act="resourceShop" data-i18n-attr="aria-label:hud.aria.coinShop">+</button></div>
+   <div class="pill hearts-pill"><button class="pill-open" data-act="hearts" data-i18n-attr="aria-label:heart.title"><span id="hearts" class="heart-slots"></span><small id="heartT" hidden></small></button></div>
+   <div class="pill"><span class="pill-open" data-i18n-attr="aria-label:hud.currency.dia"><img class="resource" data-res="dia" src="assets/drive/ui/res-diamond.png" alt="" draggable="false"><span id="dia"></span></span><button class="resource-add" data-act="resourceShop" data-i18n-attr="aria-label:hud.aria.diaShop">+</button></div>
+   <div class="pill" data-i18n-attr="aria-label:hud.paws"><img class="resource" data-res="paw" src="assets/drive/ui/res-paw.png" alt="" draggable="false"><span id="paws"></span></div>
   </div>
-  <div class="row cafe-status"><div class="cafe-progress"><span id="lvl"></span><div class="bar" id="cafeExp" role="progressbar" aria-label="카페 경험치"><i id="expBar"></i></div></div><span id="rep"></span><span id="mgr" hidden></span><small id="boostChip"></small><button class="mission-btn" data-act="mailbox" aria-label="우편함"><img src="assets/drive/ui/ui-mailbox.png" alt=""><i id="mailDot" style="color:red">●</i></button><button class="mission-btn" data-act="mission" aria-label="미션"><img src="assets/drive/ui/ui-mission.png" alt=""></button><button class="gear" data-nav="settings" aria-label="설정"><img src="assets/drive/ui/ui-gear.png" alt="" draggable="false"></button></div>
+  <div class="row cafe-status"><div class="cafe-progress"><span id="lvl"></span><div class="bar" id="cafeExp" role="progressbar" data-i18n-attr="aria-label:hud.aria.cafeExp"><i id="expBar"></i></div></div><span id="rep"></span><span id="mgr" hidden></span><small id="boostChip"></small><button class="mission-btn" data-act="mailbox" data-i18n-attr="aria-label:mail.title"><img src="assets/drive/ui/ui-mailbox.png" alt=""><i id="mailDot" style="color:red">●</i></button><button class="mission-btn" data-act="mission" data-i18n-attr="aria-label:hud.mission"><img src="assets/drive/ui/ui-mission.png" alt=""></button><button class="gear" data-nav="settings" data-i18n-attr="aria-label:nav.settings"><img src="assets/drive/ui/ui-gear.png" alt="" draggable="false"></button></div>
  </div>
- <div id="scene"><div class="scene-entries"><button data-act="mission" aria-label="퀘스트"><img src="assets/drive/ui/ui-mission.png" alt=""><i id="questDot" hidden></i></button><button data-act="mailbox" aria-label="우편함·이벤트"><img src="assets/drive/ui/ui-mailbox.png" alt=""><i id="entryMailDot" hidden></i></button></div><div id="questGuide" hidden></div><canvas id="isomap" aria-label="다다미 카페 지도 · 드래그하여 이동"></canvas><div id="closed" hidden></div></div>
- <section id="mainMenu"><div class="menu-heading">가게 관리 <small>카페 현황 · 메뉴 개발 · 업그레이드</small></div><div id="menuList"></div><nav class="main-tabs" id="mainTabs" aria-label="메뉴"></nav></section>
+ <div id="scene"><div class="scene-entries"><button data-act="mission" data-i18n-attr="aria-label:hud.aria.quest"><img src="assets/drive/ui/ui-mission.png" alt=""><i id="questDot" hidden></i></button><button data-act="mailbox" data-i18n-attr="aria-label:hud.aria.mailEvent"><img src="assets/drive/ui/ui-mailbox.png" alt=""><i id="entryMailDot" hidden></i></button></div><div id="questGuide" hidden></div><canvas id="isomap" data-i18n-attr="aria-label:hud.aria.map"></canvas><div id="closed" hidden></div></div>
+ <section id="mainMenu"><div class="menu-heading"><span data-i18n="mm.static.title"></span> <small data-i18n="mm.static.hint"></small></div><div id="menuList"></div><nav class="main-tabs" id="mainTabs" data-i18n-attr="aria-label:mm.aria.nav"></nav></section>
  <div id="panel" hidden><div id="phead"><h2 id="ptitle"></h2><button class="sec" data-act="close" data-i18n="app.close"></button></div><div id="pbody"></div></div>
  <div id="modal" hidden><div id="mbox"></div></div>
  <div id="toast" style="opacity:0"></div>

@@ -1,5 +1,8 @@
 import GACHA_TABLE from './gacha-table.json' with {type:'json'};
 export {GACHA_TABLE}; // 갱신 141 confirmed: single source for gacha probabilities and pity.
+// i18n: Korean names/labels below (recipes, ingredients, quests, profiles, tutorial, heart items, themes, furniture, colours, village places)
+// stay as data; the screen reads the same text from i18n.js STR by key (recipe.*, ingredient.*, quest.task.*, profile.*, tutorial.N,
+// heart.item.*, theme.*, furn.*, acc.color.*, place.*). tests/i18n.test.mjs keeps both in sync.
 // 시바카페 spec v3 — every tunable lives here. Each value carries its spec source (갱신 N = "v3 갱신 N" in spec-v3.md).
 // Rule: numbers come from the spec only. Anything the spec leaves undecided is `null` with a comment "UNSET: <spec ref>";
 // code that depends on an UNSET value disables that feature (button off / "미정" label) instead of guessing.

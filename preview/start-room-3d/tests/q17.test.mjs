@@ -25,10 +25,11 @@ const main=readFileSync(new URL('../main.js',import.meta.url),'utf8');assert.mat
 console.log('q17: friends cap/reset; null gating; craft resume/idempotence; feeding; skip atomicity; grant diff; profile route passed');
 // Execute the production renderers (no copied markup, Chrome-independent).
 const {runInNewContext}=await import('node:vm');
+const {makeT}=await import('../i18n.js'),koL=makeT(()=>'ko');
 const renderSource=main.slice(main.indexOf('function furnitureShop(){'),main.indexOf('game.openExpand=openExpand;'));
 const P={},ui={};
 const renderers=runInNewContext(renderSource+';({shop:furnitureShop})',{
- temp:false,Q:new URLSearchParams(),P,ui,s,Q17:Q,CFG,S,clock:{now:()=>0},IMG:{shiba:b=>'assets/drive/shiba-'+b+'.png'},
+ L:koL,LF:(k,fb)=>{const v=koL(k);return v===k?fb:v;},temp:false,Q:new URLSearchParams(),P,ui,s,Q17:Q,CFG,S,clock:{now:()=>0},IMG:{shiba:b=>'assets/drive/shiba-'+b+'.png'},
  slot:()=>'<span class="slot"></span>',img:src=>`<img src="${src}">`,nameOf:sh=>sh.name||sh.breed,
  priceText:n=>n==null?'미정':String(n),cookingFx,fmt:String,itemIcon:()=>'',RES:{},tfmt:String,
 });
@@ -49,7 +50,7 @@ const modalSource=main.slice(main.indexOf("let modalSig='';"),main.indexOf('if(L
 const modalNodes={modal:{hidden:true},mbox:{classList:{toggle(){},remove(){}},dataset:{},innerHTML:''}};
 const modalUi={modals:[{kind:'itemget',reward:{id:'expBoost4h',n:1}}]};mailState.started=true;mailState.settings.language='ko';
 const modalRender=runInNewContext(modalSource+';renderModal',{
- ui:modalUi,s:mailState,CFG,S,$:id=>modalNodes[id],grantName:()=> '경험치 부스트',grantImage:()=>'<img src="assets/drive/ui/item-exp-boost.png">',fmt:String,
+ L:koL,ui:modalUi,s:mailState,CFG,S,$:id=>modalNodes[id],grantName:()=> '경험치 부스트',grantImage:()=>'<img src="assets/drive/ui/item-exp-boost.png">',fmt:String,
 });
 modalRender();assert.equal(modalNodes.modal.hidden,false);assert.match(modalNodes.mbox.innerHTML,/data-itemget/);assert.match(modalNodes.mbox.innerHTML,/받기/);assert.match(modalNodes.mbox.innerHTML,/경험치 부스트/);assert.match(modalNodes.mbox.innerHTML,/data-itemget-count>×1</);
 console.log('q17 receipts: actual mailbox grants/idempotence and production common popup renderer passed');
