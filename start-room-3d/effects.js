@@ -5,22 +5,24 @@ import {t,tf} from './i18n.js';
 const ok=v=>typeof v==='number'&&Number.isFinite(v);
 const U=()=>t('app.unset');
 export const pct=v=>ok(v)?Math.round(v*100)+'%':U();
+// 배수(1.5)를 증가분(+50%)으로. 수인님 2026-10-15: 하트 효과는 증가분 표기.
+export const pctUp=v=>ok(v)?(v>=1?'+':'−')+Math.round(Math.abs(v-1)*100)+'%':U();
 export const sgn=v=>ok(v)?(v>0?'+':'')+v:U();
 export const dur=sec=>!ok(sec)?U():sec%3600===0?t('fx.dur.h',{n:sec/3600}):t('fx.dur.m',{n:Math.round(sec/60)});
 export const durFor=sec=>!ok(sec)?U():sec%3600===0?t('fx.durFor.h',{n:sec/3600}):t('fx.durFor.m',{n:Math.round(sec/60)});
 const H=()=>CFG.heartUse;
 export const HEART_FX={
- call:it=>t('fx.heart.call',{dur:durFor(it.sec),p:pct(it.guests)}),
+ call:it=>t('fx.heart.call',{dur:durFor(it.sec),p:pctUp(it.guests)}),
  pet:it=>t('fx.heart.pet',{a:sgn(it.affinity),n:it.daily??U()}),
  play:it=>t('fx.heart.play',{a:sgn(it.affinity),h:sgn(it.happy)}),
  snack:it=>t('fx.heart.snack',{h:sgn(it.happy),f:sgn(it.fatigue)}),
- walk:()=>t('fx.heart.walk',{n:CFG.walk.heartsPer10Min??U(),a:sgn(H().walkAffinity)}),
- praise:it=>t('fx.heart.praise',{dur:durFor(it.sec),p:pct(it.satisfaction)}),
- brush:it=>t('fx.heart.brush',{dur:durFor(it.sec),p:pct(it.shibaMul)}),
- music:it=>t('fx.heart.music',{dur:durFor(it.sec),n:sgn(it.extraOrders),p:ok(it.stay)?pct(it.stay):U()}),
- blanket:it=>t('fx.heart.blanket',{h:sgn(it.happy),dur:durFor(it.sec),p:pct(it.recovery)}),
- recommend:it=>t('fx.heart.recommend',{dur:durFor(it.sec),s:pct(it.sales),p:pct(it.price)}),
- tasting:it=>t('fx.heart.tasting',{dur:durFor(it.sec),p:pct(it.price)}),
+ walk:()=>t(CFG.walk.heartsPer10Min===1?'fx.heart.walk.one':'fx.heart.walk',{n:CFG.walk.heartsPer10Min??U(),a:sgn(H().walkAffinity)}),
+ praise:it=>t('fx.heart.praise',{dur:durFor(it.sec),p:pctUp(it.satisfaction)}),
+ brush:it=>t('fx.heart.brush',{dur:durFor(it.sec),p:pctUp(it.shibaMul)}),
+ music:it=>t('fx.heart.music',{dur:durFor(it.sec),n:sgn(it.extraOrders),p:ok(it.stay)?pctUp(it.stay):U()}),
+ blanket:it=>t('fx.heart.blanket',{h:sgn(it.happy),dur:durFor(it.sec),p:pctUp(it.recovery)}),
+ recommend:it=>t('fx.heart.recommend',{dur:durFor(it.sec),s:pctUp(it.sales),p:pctUp(it.price)}),
+ tasting:it=>t('fx.heart.tasting',{dur:durFor(it.sec),p:pctUp(it.price)}),
  cookie:it=>t('fx.heart.cookie',{m:it.minutes}),
  special:it=>t('fx.heart.special',{n:it.guestsCount??U(),tip:ok(it.tip)?it.tip:U()}),
  talent:it=>t('fx.heart.talent',{dur:dur(it.minutes*60)}),
@@ -28,7 +30,7 @@ export const HEART_FX={
  wish:it=>t('fx.heart.wish',{n:it.choices??U()}),
 };
 export const heartFx=it=>(HEART_FX[it.id]||(()=>tf('heart.item.'+it.id+'.line',it.line)))(it);
-export const menuPickFx=it=>t('fx.heart.recommend',{dur:durFor(it.sec),s:pct(it.sales),p:pct(it.price)});
+export const menuPickFx=it=>t('fx.heart.recommend',{dur:durFor(it.sec),s:pctUp(it.sales),p:pctUp(it.price)});
 export const ITEM_FX={
  incomeBoost4h:()=>t('fx.item.incomeBoost4h',{dur:durFor(CFG.itemIncome.boostHours*3600),p:pct(CFG.itemIncome.boostMul)}),
  expBoost4h:()=>t('fx.item.expBoost4h',{dur:durFor(CFG.stub.expBoost.hours*3600),p:pct(CFG.stub.expBoost.mul)}),

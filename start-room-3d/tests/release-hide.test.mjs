@@ -14,3 +14,11 @@ for(const lang of ['ko','en']){
 }
 setRelease(false);
 console.log('release hide: 15 keys hidden, 9 keys trimmed, normal build unchanged (ko/en) passed');
+// 하트 효과 배수 → 증가분(+50%), 하트 1개는 단수형.
+{const {pctUp,HEART_FX}=await import('../effects.js');const {setLangSource}=await import('../i18n.js');const {CFG}=await import('../config.js');
+ assert.equal(pctUp(1.5),'+50%');assert.equal(pctUp(1.2),'+20%');assert.equal(pctUp(2),'+100%');
+ const it=id=>CFG.heartUse.items.find(x=>x.id===id);
+ setLangSource(()=>'en');assert.match(HEART_FX.praise(it('praise')),/^Rep from happy guests \+50% /);assert.match(HEART_FX.brush(it('brush')),/^Shiba bonus \+20% /);
+ if(CFG.walk.heartsPer10Min===1)assert.match(HEART_FX.walk(),/^1 heart\/10 min/);
+ setLangSource(()=>'ko');assert.match(HEART_FX.praise(it('praise')),/만족 평판 \+50%/);setLangSource(()=>'ko');
+ console.log('heart fx: +N% increments and singular heart passed');}
