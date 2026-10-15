@@ -81,7 +81,7 @@ export const CFG={
   unlockLevel:3, // 시작값 2026-10-15: 카페 Lv3에 열림
   upgrades:null}, // 나중에 정함: 강화는 출시 버전에서 제외
 
- ledger:{periodMs:86400000,dayOffsetMs:32400000,historyDays:7,includeDiamonds:false,openFromPill:true,openFromStore:true}, // §15 starting value 똑또기 2026-10-14, pending user batch confirm: KST midnight day, 7 days kept, 멍코인만, opened from 멍코인 pill and 가게 tab
+ ledger:{periodMs:86400000,dayOffsetMs:32400000,historyDays:7,includeDiamonds:false,openFromPill:true,openFromStore:false}, // §15 starting value 똑또기 2026-10-14, pending user batch confirm: KST midnight day, 7 days kept, 멍코인만, opened from 멍코인 pill and 가게 tab
  saveKey:'shibaCafe.save.v3',saveVersion:3, // EXEMPT: save schema version (engine metadata)
 
  // Removed unsupported build placeholders; null is preserved by the engine.
