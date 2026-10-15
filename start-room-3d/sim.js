@@ -368,7 +368,7 @@ export function tick(s,w,dt,now,ctx={}){s.simNow=now;ctx={...ctx,now};settleLedg
  // shibas: starting value 2026-10-14 (pending user confirm): 손님 곁 visit.meetSec 5초 → roamSec 3초 돌아다님 → 다시
  const work=new Set(s.shibas.filter(o=>canWork(s,o)).map(o=>o.id));
  for(const id of Object.keys(w.sh).map(Number))if(!work.has(id)){const sh=w.sh[id];if(sh.phase==='meet'||sh.phase==='approach')endMeeting(w,sh);delete w.sh[id];}
- for(const id of work)if(!w.sh[id])w.sh[id]={id,phase:'roam',state:'wander',facing:0,t:0,cust:null,cell:layout(s,w).entrance&&[...layout(s,w).entrance]};
+ for(const id of work)if(!w.sh[id])w.sh[id]={id,phase:'roam',state:'wander',facing:0,t:0,cust:null,cell:spawnCell(s,w)};
  // 139-1·139-2: 카페 근무 1시간마다 발바닥 1 (매니저가 운영하는 시간 포함, 오프라인 12시간 정산 안에서)
  for(const id of work){const o=byId(s,id);o.workAcc=(o.workAcc||0)+dt;while(o.workAcc>=3600){o.workAcc-=3600;addPaws(o,CFG.activityPaws.cafeWorkHour);}}
  for(const sh of Object.values(w.sh)){if(Number.isFinite(sh.t))sh.t-=dt;if(Number.isFinite(sh.roamT))sh.roamT-=dt;
@@ -465,6 +465,10 @@ export function consumeElapsed(s,w,elapsedSec,now,{maxSteps=240,offline=false}={
 }
 
 function behaviour(w){return w.behaviour||CFG.behaviour;}
+// 2026-10-15: 시바끼리 같은 칸에서 시작하지 않게, 입구가 차 있으면 입구에서 가장 가까운 빈 칸(갈 수 있는 칸)에서 시작
+function spawnCell(s,w){const {zone,slots,entrance}=layout(s,w);if(!entrance)return null;const used=new Set(Object.values(w.sh).map(o=>o.cell?.join(',')));if(!used.has(entrance.join(',')))return [...entrance];
+ const cand=[];for(let i=0;i<zone.cols;i++)for(let j=0;j<zone.rows;j++){const k=i+','+j;if(used.has(k))continue;const len=pathfind(zone,slots,entrance,[i,j])?.length;if(len>0)cand.push({c:[i,j],len});}
+ cand.sort((a,b)=>a.len-b.len||a.c[0]-b.c[0]||a.c[1]-b.c[1]);return cand[0]?cand[0].c:[...entrance];}
 function weightedState(w,weights){let n=w.r()*Object.values(weights).reduce((a,b)=>a+b,0);for(const [state,weight] of Object.entries(weights)){n-=weight;if(n<0)return state;}return 'lookAround';}
 // every state that can be drawn needs its duration (walk: its cell range); otherwise autonomous behaviour stays gated
 export function behaviourReady(B){const W=B?.weights,ws=W?Object.values(W):[];if(!ws.length||!ws.every(Number.isFinite)||!(ws.reduce((a,b)=>a+b,0)>0))return false;
