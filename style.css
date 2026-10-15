@@ -114,5 +114,80 @@ img.spr{display:block;width:100%;height:100%;object-fit:contain;pointer-events:n
 .bk{background:#fff;border-radius:14px;padding:6px;text-align:center;font-size:11px;box-shadow:0 2px 0 var(--line)}
 .bk img.spr{width:64px;height:70px;margin:0 auto}.bk b{display:block;font-size:12px}
 .empty{text-align:center;color:var(--ink2);font-size:13px;padding:24px 0}
-#debug{position:fixed;left:4px;top:52px;z-index:110;display:flex;flex-direction:column;gap:3px;opacity:.85}
+#debug{display:flex;flex-direction:column;gap:3px;margin-top:12px}
 #debug button{font-size:11px;padding:4px 6px;border-radius:6px;border:1px solid #333;background:#fffd}
+/* v0.5 ground map: viewport fill is independent of the HUD and sheets. */
+#app{max-width:none;width:100%;height:100dvh;display:block;background:transparent}
+#room{position:absolute;inset:0;height:auto;min-height:0;touch-action:none;background:#91a777}
+#room::after{display:none}
+#world{position:absolute;width:3600px;height:4400px;transform-origin:0 0;background-color:#8fa775;background-image:radial-gradient(ellipse at 30% 40%,#c0bd88aa 0 6px,transparent 7px),radial-gradient(ellipse at 70% 65%,#667f5544 0 3px,transparent 4px),repeating-linear-gradient(23deg,#ffffff04 0 2px,#4b633b08 2px 4px);background-size:83px 71px,39px 43px,7px 9px;will-change:transform}
+.sky{position:absolute;inset:0 0 auto;height:950px;background:linear-gradient(#9bc8d3,#d7e3ba,#8fa775);font-size:180px;padding:200px 600px;color:#fff9}
+.street{position:absolute;inset:auto 0 0;height:800px;background:linear-gradient(#8fa775,#b8aa88 30%,#938778);text-align:center;padding-top:350px;font-size:100px;color:#f8eed6}
+#z1Scene{position:absolute;left:1420px;top:2700px;width:760px;height:480px}
+.zone-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;mask-image:radial-gradient(ellipse,#000 52%,transparent 73%)}
+#floor{inset:25% 8% 12% 8%}
+#boss{left:40px;bottom:30px;width:110px;height:130px}
+#floor .pup{width:100px;height:110px;min-width:var(--hit);min-height:var(--hit)}
+#floor .cust{width:70px;height:100px}
+#topbar{position:absolute;inset:0 0 auto;z-index:85}
+#tabs{position:absolute;inset:auto 0 0;z-index:85;padding:0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);height:calc(64px + env(safe-area-inset-bottom))}
+#panel{position:absolute;left:env(safe-area-inset-left);right:env(safe-area-inset-right);bottom:calc(64px + env(safe-area-inset-bottom));height:40%;max-height:65%;background:#fdf6faf5;border-radius:20px 20px 0 0;z-index:84}
+#mapControls{position:absolute;right:calc(10px + env(safe-area-inset-right));bottom:calc(76px + env(safe-area-inset-bottom));z-index:83;display:flex;gap:6px}
+#mapControls button{background:#fdf6fae8;border:1px solid #dccbb8;border-radius:14px;padding:8px;color:var(--ink)}
+.tut{top:calc(70px + env(safe-area-inset-top));left:calc(10px + env(safe-area-inset-left));right:calc(10px + env(safe-area-inset-right))}
+#topbar{display:block;padding:env(safe-area-inset-top) calc(10px + env(safe-area-inset-right)) 6px calc(10px + env(safe-area-inset-left));background:linear-gradient(#fdf6faf5,#fdf6fad9,#fdf6fa90);border:0}
+#hudRow1,#hudRow2{display:flex;align-items:center;gap:5px;min-height:44px}
+.sign{position:static;flex:1;box-shadow:none;border:0;background:none;padding:0;color:#513f35;font-size:16px}
+#hudRow2 .res{padding:4px 5px;min-width:0;font-size:12px}.res b{font-size:13px}.ips{font-size:10px}
+#hudRow2 .boost{position:static;padding:4px;box-shadow:none;flex:none;font-size:18px}
+#hudRow2 .boost-timer{position:static;font-size:10px;padding:4px}
+#settings{border:0;background:none;font-size:20px}
+#nextGoal{width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;text-align:left;border:0;background:#fffc;border-radius:10px;padding:6px 10px;font-size:12px;color:var(--ink)}
+#zoneProgress{display:block;width:100%;height:5px;margin-top:4px;accent-color:#8aab6b}
+button{min-width:44px;min-height:44px;cursor:pointer}
+#panel:not(.open){display:none}
+#sheetClose{position:absolute;right:calc(12px + env(safe-area-inset-right));bottom:calc(40% + 64px + env(safe-area-inset-bottom));z-index:86;border:0;border-radius:15px;background:#fdf6fa}
+#app:has(#panel:not(.open)) #sheetClose{display:none}
+#decorBtn{position:absolute;left:calc(10px + env(safe-area-inset-left));bottom:calc(76px + env(safe-area-inset-bottom));z-index:83;border:0;border-radius:15px;background:#fdf6fae8;font-size:23px}
+.tut{top:calc(140px + env(safe-area-inset-top))}
+.modal{align-items:flex-end;padding:0 env(safe-area-inset-right) calc(64px + env(safe-area-inset-bottom)) env(safe-area-inset-left)}
+.modal .card{max-width:600px;max-height:65dvh;overflow:auto;border-radius:22px 22px 0 0}
+.modal .pic{width:70px;height:75px}
+/* Debug controls live inside the settings sheet, never over game controls. */
+html.bgcheck,html.bgcheck body,html.bgcheck #room{background:#ff00ff!important}
+.zone{position:absolute;text-align:center;color:#f7f1dd;font-size:26px}
+.diamond{position:absolute;inset:60px 50px;background:linear-gradient(135deg,#91b57c,#c9c193);border:12px solid #aaba86;transform:rotate(-30deg) skewX(30deg);border-radius:28px;box-shadow:18px 22px 0 #52644344}
+.diamond span{display:block;font-size:62px;transform:skewX(-30deg) rotate(30deg);padding-top:45px}
+.zone.locked .diamond{background:#6f865c;border:14px dashed #b6ba82;box-shadow:12px 20px 0 #52644344}
+.zone-label{position:absolute;left:0;right:0;bottom:20px;text-shadow:0 2px 4px #3c4c31}
+.zone:has(.zone-sign) .zone-label{right:auto;width:max-content;overflow-wrap:anywhere}
+.zone-sign{overflow-wrap:anywhere}
+.zone p{position:absolute;bottom:-15px;left:0;right:0;font-size:22px}
+.zone-sign{position:absolute;left:25%;top:40%;min-width:var(--hit);min-height:var(--hit);font-size:24px;border:4px solid #e1c192;border-radius:14px;background:#82643f;color:#fff7dd;padding:12px}
+.scaffold{position:absolute;inset:80px;background:repeating-linear-gradient(45deg,#d4b577cc 0 15px,#776747cc 15px 30px);border:10px solid #8e7651;font-size:60px}.scaffold span{display:block;font-size:30px}
+.zone .pup{width:100px;height:110px;min-width:var(--hit);min-height:var(--hit);text-align:left}
+.zone .pup .nm{color:var(--ink)}
+.decor-slot{position:absolute;z-index:70;width:100px;height:100px;font-size:62px;display:grid;place-items:center;pointer-events:none;background:none;border:0;filter:drop-shadow(0 5px 4px #34472c55)}
+.decor-slot.editing{pointer-events:auto;border:5px dashed #fff5c7;border-radius:50%;min-width:var(--hit);min-height:var(--hit);background:#ffffff33}
+.pup.tut-target{position:absolute}
+
+#boss{min-width:var(--hit);min-height:var(--hit)}
+.btn.sm{min-width:44px}
+.modal .card{min-height:40dvh}
+#hudRow2{overflow:hidden}.res b{overflow:hidden;text-overflow:ellipsis}
+
+/* v0.6 controls remain inside the portrait safe area. */
+#drawBtn,#photoBtn{position:absolute;left:calc(62px + env(safe-area-inset-left));bottom:calc(76px + env(safe-area-inset-bottom));z-index:83;border:0;border-radius:15px;background:#fdf6fae8;font-size:23px}
+#photoBtn{left:calc(114px + env(safe-area-inset-left))}
+.card .row{flex-wrap:wrap}.card .btn{white-space:normal}.card details .btn{width:100%;margin-top:6px}.card summary{min-height:44px;cursor:pointer;padding:12px}
+.card .tx{overflow-wrap:anywhere}.card #photoPreview{display:block;margin:auto;max-width:100%;height:auto}
+.ui-hidden #topbar,.ui-hidden #tabs,.ui-hidden #panel,.ui-hidden #tut,.ui-hidden #mapControls,.ui-hidden #decorBtn,.ui-hidden #drawBtn,.ui-hidden #photoBtn,.ui-hidden #sheetClose{display:none!important}
+.pup[data-rarity=R] .body{filter:drop-shadow(0 0 3px #5e9ab5)}
+.pup[data-rarity=SR] .body{filter:drop-shadow(0 0 5px silver)}
+.pup[data-rarity=SSR] .body{filter:drop-shadow(0 0 6px gold)}
+.pup[data-rarity]::before{content:'◆';position:absolute;top:48%;left:48%;font-size:14px;color:#93b392;z-index:2;pointer-events:none}
+.pup[data-rarity=R]::before{color:#5e9ab5}.pup[data-rarity=SR]::before{color:silver}.pup[data-rarity=SSR]::before{color:gold}
+
+#app:has(#panel.open) #drawBtn,#app:has(#panel.open) #photoBtn,#app:has(#panel.open) #decorBtn{bottom:calc(40% + 76px + env(safe-area-inset-bottom))}
+.ic[class*=scarf-]{position:relative}.ic[class*=scarf-] small{position:absolute;bottom:0;right:0;font-size:10px;background:#e1f0da;border-radius:5px;padding:2px}
+.ic.scarf-R small{background:#cae4ef}.ic.scarf-SR small{background:#ddd}.ic.scarf-SSR small{background:#f7df91}

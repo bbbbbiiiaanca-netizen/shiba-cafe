@@ -6,26 +6,29 @@
 <meta name="theme-color" content="#f3dcea">
 <title>시바견 카페</title>
 <link rel="icon" href="assets/red_sparkle.webp">
-<link rel="preload" as="image" href="assets/bg_cafe.webp">
+<link rel="preload" as="image" href="assets/zones/z1_open.jpg">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="app">
   <header id="topbar">
+    <div id="hudRow1"><div class="sign">🐾 시바견 카페 · 동구 <span id="signBadge"></span></div><button id="settings" aria-label="설정">⚙️</button></div><div id="hudRow2">
     <div class="res coin"><span class="ico">🪙</span><b id="coins">0</b></div>
     <div class="res"><span class="ico">⭐</span><b id="rep">0</b></div>
     <div class="res"><span class="ico">▶️</span><b id="subs">0</b></div>
     <div class="ips"><b id="ips">0</b>/초</div>
+<button id="boostBtn" class="boost hidden" aria-label="광고 수익 부스트">📺</button><div id="boostTimer" class="boost-timer hidden"></div></div>
+    <button id="nextGoal">다음: 이끼 정원 <progress id="zoneProgress" max="100" value="0"></progress></button>
   </header>
 
   <section id="room">
-    <div class="sign">🐾 동구네 시바 카페</div>
+    <div id="world"><div class="sky">☁️　　　　☁️</div><div class="street">⛩️ 동구네 골목</div><div id="zoneLayer"></div><div id="z1Scene"><img class="zone-art" src="assets/zones/z1_open.jpg" alt="시작 다다미방">
     <div class="floor" id="floor"></div>
     <div id="boss" title="사장님 동구"></div>
+    </div></div><div id="mapControls"><button id="mapHome">⌂ 홈</button><button id="mapAll">전체 보기</button></div>
     <div id="tut" class="tut hidden"></div>
     <div id="fx"></div>
-    <button id="boostBtn" class="boost hidden">📺 광고 보고 수익 2배</button>
-    <div id="boostTimer" class="boost-timer hidden"></div>
+
     <div id="toast" class="toast hidden"></div>
   </section>
 
@@ -36,13 +39,19 @@
     <button data-tab="yt">🎬<span>유튜브</span></button>
     <button data-tab="book">📖<span>도감</span></button>
   </nav>
-  <section id="panel"></section>
+  <button id="drawBtn" aria-label="소원권 뽑기">🌠</button><button id="photoBtn" aria-label="사진 저장">📷</button><button id="decorBtn" aria-label="꾸미기">🎨</button><button id="sheetClose" aria-label="시트 닫기">⌄</button><section id="panel"></section>
 </div>
 
 <div id="modal" class="modal hidden"><div class="card" id="modalCard"></div></div>
 <div id="ad" class="ad hidden"><div class="ad-box"><div class="ad-tag">광고 (테스트)</div><div class="ad-dog" id="adDog"></div><p>광고 시청 중…</p><b id="adCount">3</b></div></div>
 <div id="debug" class="hidden"></div>
+<script src="balance-config.js"></script>
+<script src="save-service.js"></script>
+<script src="core-loop.js"></script>
 <script src="balance.js"></script>
+<script src="zones.js"></script>
+<script src="decor.js"></script>
+<script src="map.js"></script>
 <script src="game.js"></script>
 </body>
 </html>
