@@ -51,7 +51,7 @@ const modalUi={modals:[{kind:'itemget',reward:{id:'expBoost4h',n:1}}]};mailState
 const modalRender=runInNewContext(modalSource+';renderModal',{
  ui:modalUi,s:mailState,CFG,S,$:id=>modalNodes[id],grantName:()=> '경험치 부스트',grantImage:()=>'<img src="assets/drive/ui/item-exp-boost.png">',fmt:String,
 });
-modalRender();assert.equal(modalNodes.modal.hidden,false);assert.match(modalNodes.mbox.innerHTML,/data-itemget/);assert.match(modalNodes.mbox.innerHTML,/받기/);assert.match(modalNodes.mbox.innerHTML,/경험치 부스트/);
+modalRender();assert.equal(modalNodes.modal.hidden,false);assert.match(modalNodes.mbox.innerHTML,/data-itemget/);assert.match(modalNodes.mbox.innerHTML,/받기/);assert.match(modalNodes.mbox.innerHTML,/경험치 부스트/);assert.match(modalNodes.mbox.innerHTML,/data-itemget-count>×1</);
 console.log('q17 receipts: actual mailbox grants/idempotence and production common popup renderer passed');
 // Cookie's item result under explicit test-only odds is visible to the same receipt adapter.
 const cookie=CFG.heartUse.items.find(it=>it.id==='cookie'),oldOdds=cookie.odds,oldRate=CFG.heartUse.incomeRatePerSec;
