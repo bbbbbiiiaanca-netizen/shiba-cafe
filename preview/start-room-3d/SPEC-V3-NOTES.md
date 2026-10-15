@@ -984,3 +984,8 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - Item-get: overlay dim 0.75 (starting value); rays were being forced to 180px by the .q17-itemget>img rule — fixed, rays at opacity 1, min(130vw,520px), behind the item; card background removed so rays sit on the overlay.
 - 시바 상세 = centered book popup with frame UI_시바상세_책틀.png; slot boxes in CFG.profileBook.boxes (그림이 coords); close outside top-right; 돌봄 button at [96,1352,330,96] (starting value).
 - 다다미 theme logo art added. Cooking screen (17-13) has config img slots for 3 recipes + 4 ingredients (null → empty slot); menu-development cards untouched.
+
+## 10:12–10:15 update
+- 요리 제작: vertical recipe list (locks + LvN), selected dish art slot, ingredients have/need with buy, effect, craft time + button at the bottom. 시바 죽 art 1N10fzpW… added; other dish/ingredient slots empty (config img:null).
+- 친구: swipe cards (photo·name·Lv) → 놀러 가기 screen (friendVisit) with 하트 받기; test label removed.
+- Book popup: 돌봄 at frame (340,1380,400,120); shiba art white background removed at runtime (edge-connected near-white → alpha 0, knockoutMin 240), original file unchanged.

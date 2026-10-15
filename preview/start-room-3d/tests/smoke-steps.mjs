@@ -111,6 +111,7 @@ await new Promise(r=>setTimeout(r,500));await ev('__game.refresh&&__game.refresh
  await check('save kept after reload (language, shiba)','__game.state.settings.language==="ko"&&__game.state.shibas.length>=1&&__game.state.shibas[0].breed==="kuro"&&__game.state.started');
 
  await ev('__game.ui.modals=[];__game.refresh();document.querySelector("[data-act=mailbox]").click();true');
+ for(let i=0;i<20&&!(await ev('!!document.querySelector("#mbox img[src=\'assets/drive/ui/item-exp-boost.png\']")?.complete'));i++)await new Promise(r=>setTimeout(r,100));
  await check('Task A mailbox boost icon', 'document.querySelector("#mbox img[src=\'assets/drive/ui/item-exp-boost.png\']").complete');
  await check('final mailbox reachable with unclaimed mail','document.getElementById("mbox").textContent.includes("우편함")&&!!document.querySelector("[data-act=claimMail]:not(:disabled)")');
  await ev('document.querySelector("[data-act=claimMail]:not(:disabled)").click();true');

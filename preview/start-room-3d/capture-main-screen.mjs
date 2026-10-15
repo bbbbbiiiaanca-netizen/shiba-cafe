@@ -174,8 +174,8 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await c('Page.navigate',{url:'file://'+resolve(ROOT,'index.html')+'?temp=1&still=1&fresh=1&fixture=friends'});
  for(let i=0;i<300&&!(await ev('Boolean(window.__ready)'));i++)await sleep(100);
  await startFlow(ev);await ev("__game.ui.modals=[];__game.open('friends');true");
- if(!await ev("document.querySelector('[data-friends]').textContent.includes('TEST FIXTURE')"))throw Error('fixture missing');
- await shot('main-screen-q17-friends-fixture.png');
+ if(!await ev("!!document.querySelector('[data-friends] .friend-card')"))throw Error('fixture missing');
+ await shot('main-screen-q17-friends-fixture.png');await ev("document.querySelector('[data-act=friendGo]').click();true");await sleep(200);await shot('main-screen-q17-friend-visit.png');
  }
  else if(process.argv.includes('--nav')){
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});

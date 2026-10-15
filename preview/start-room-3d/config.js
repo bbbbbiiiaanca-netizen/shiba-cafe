@@ -21,8 +21,8 @@ export const CFG={
  // §17-14 시바 상세 = 펼친 책 팝업. Frame art pending (empty popup of the same ratio). Boxes are [x,y,w,h] in frame px; starting values until 그림이 gives coordinates.
  profileBook:{frame:'assets/drive/ui/ui-shiba-book-frame.png',size:[1080,1600], // interior UI_시바상세_책틀.png 1VZRsBZT…; paper (lower page) = [88,804,900,532]
   boxes:{art:[88,153,900,561],paper:[88,804,900,532],intro:[112,828,852,202],favs:[112,1042,852,138],friends:[112,1192,852,120], // 그림이 coordinates (frame px)
-   care:[96,1352,330,96]}, // starting value: 돌봄 button in the empty frame area below the paper, left of the ribbon
-  close:{right:-14,top:-14}}, // starting value: close button outside the frame, top-right (CSS px)
+   care:[340,1380,400,120]}, // 똑또기 starting value 2026-10-15: 돌봄 button (frame px)
+  close:{right:-14,top:-14},knockoutMin:240}, // starting value: close button outside the frame, top-right (CSS px)
  itemGet:{dim:0.75, // starting value 2026-10-15 (똑또기 10:05: 0.6→0.75), pending user confirm: black overlay opacity behind the item-get popup
   rays:{src:'assets/drive/ui/ui-popup-rays.png',size:[1024,1024]}}, // 빛줄기 = interior 198nrcFL… (UI_팝업_빛줄기.png)
  // §17-13 starting value 2026-10-15, pending user confirm: 3 slots, 30–300 sec; energy 1/2.
@@ -30,7 +30,7 @@ export const CFG={
  cooking:{ingredientBuyCount:1,dishesPerCraft:1, // 임시
   startUnlocked:1,craftSecRange:[30,300], // 임시: 1 recipe open at start, others by unlockLevel
   recipes:[ // 임시 recipes; dish art pending (slot stays empty)
-   {id:'recipe-1',img:null,name:'시바 죽',unlockLevel:1,ingredients:{rice:1,carrot:1},craftSec:30,effect:{full:20,happy:10}}, // 임시
+   {id:'recipe-1',img:'assets/drive/cooking/dish-shiba-porridge.png',name:'시바 죽',unlockLevel:1,ingredients:{rice:1,carrot:1},craftSec:30,effect:{full:20,happy:10}}, // 임시
    {id:'recipe-2',img:null,name:'고구마 간식',unlockLevel:3,ingredients:{sweetPotato:1},craftSec:60,effect:{full:15,happy:15}}, // 임시
    {id:'recipe-3',img:null,name:'닭가슴살 큐브',unlockLevel:5,ingredients:{chicken:1},craftSec:90,effect:{full:25,happy:10}}]}, // 임시
  ingredients:{rice:{name:'쌀',price:50,img:null},carrot:{name:'당근',price:50,img:null},sweetPotato:{name:'고구마',price:80,img:null},chicken:{name:'닭고기',price:120,img:null}}, // 임시 prices (멍); img = 256 transparent art from 그림이 (pending, slot stays empty)
