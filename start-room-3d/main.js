@@ -50,7 +50,7 @@ const shibaImg=sh=>{const st=S.statusOf(s,sh);if(st==='sleeping'&&IMG.sleepPose[
 // ───────── formatting ─────────
 // 금액·수량 표시는 모두 fmt 하나로: 언어와 상관없이 세 자리마다 쉼표(2,400). money = 코인 금액.
 const fmt=n=>isUnset(n)?L('unset'):String(Math.floor(n)).replace(/\B(?=(\d{3})+(?!\d))/g,',');
-const fmtHud=n=>{if(isUnset(n)||n<1e4)return fmt(n);const [d,u]=n<1e6?[1e3,'K']:n<1e9?[1e6,'M']:[1e9,'B'];return String(Math.floor(n/d*10)/10)+u;}; // 상단 바 전용: 1만 이상 K/M/B(내림)
+const fmtHud=n=>{if(isUnset(n)||n<1e4)return fmt(n);if(langNow()==='ko')return n<1e8?fmt(Math.floor(n/1e4))+'만':String(Math.floor(n/1e8*10)/10)+'억';const [d,u]=n<1e6?[1e3,'K']:n<1e9?[1e6,'M']:[1e9,'B'];return String(Math.floor(n/d*10)/10)+u;}; // 상단 바 전용: 1만 이상 K/M/B(내림)
 const COIN_HTML='<img class="ci" src="assets/drive/ui/res-coin.png" alt="">';const money=n=>isUnset(n)?L('unset'):COIN_HTML+fmt(n);
 const f2=n=>n==null?L('unset'):(Math.round(n*100)/100).toString();
 const tfmt=sec=>{sec=Math.max(0,Math.ceil(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),x=sec%60;return h?`${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`:`${m}:${String(x).padStart(2,'0')}`;};
