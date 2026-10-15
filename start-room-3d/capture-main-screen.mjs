@@ -175,7 +175,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  for(let i=0;i<300&&!(await ev('Boolean(window.__ready)'));i++)await sleep(100);
  await startFlow(ev);await ev("__game.ui.modals=[];__game.open('friends');true");
  if(!await ev("!!document.querySelector('[data-friends] .friend-card')"))throw Error('fixture missing');
- await shot('main-screen-q17-friends-fixture.png');await ev("document.querySelector('[data-act=friendGo]').click();true");await sleep(200);await shot('main-screen-q17-friend-visit.png');
+ await shot('main-screen-q17-friends-fixture.png');await ev("document.querySelector('[data-act=friendGo]').click();true");await sleep(200);await shot('main-screen-q17-friend-visit.png');await ev('__game.ui.modals=[];__game.close();__game.startTutorial();true');await sleep(300);await shot('main-screen-tutorial-1.png');await ev('document.querySelector("[data-act=confirmYes]").click();document.querySelector("[data-act=confirmYes]").click();true');await sleep(300);await shot('main-screen-tutorial-3.png');
  }
  else if(process.argv.includes('--nav')){
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});

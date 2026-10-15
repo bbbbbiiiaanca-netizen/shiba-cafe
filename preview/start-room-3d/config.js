@@ -33,7 +33,7 @@ export const CFG={
    {id:'recipe-1',img:'assets/drive/cooking/dish-shiba-porridge.png',name:'시바 죽',unlockLevel:1,ingredients:{rice:1,carrot:1},craftSec:30,effect:{full:20,happy:10}}, // 임시
    {id:'recipe-2',img:'assets/drive/cooking/dish-sweet-potato.png',name:'고구마 간식',unlockLevel:3,ingredients:{sweetPotato:1},craftSec:60,effect:{full:15,happy:15}}, // 임시
    {id:'recipe-3',img:'assets/drive/cooking/dish-chicken-cube.png',name:'닭가슴살 큐브',unlockLevel:5,ingredients:{chicken:1},craftSec:90,effect:{full:25,happy:10}}]}, // 임시
- ingredients:{rice:{name:'쌀',price:50,img:null},carrot:{name:'당근',price:50,img:null},sweetPotato:{name:'고구마',price:80,img:null},chicken:{name:'닭고기',price:120,img:null}}, // 임시 prices (멍); img = 256 transparent art from 그림이 (pending, slot stays empty)
+ ingredients:{rice:{name:'쌀',price:50,img:'assets/drive/cooking/ing-rice.png'},carrot:{name:'당근',price:50,img:'assets/drive/cooking/ing-carrot.png'},sweetPotato:{name:'고구마',price:80,img:'assets/drive/cooking/ing-sweet-potato.png'},chicken:{name:'닭고기',price:120,img:'assets/drive/cooking/ing-chicken.png'}}, // 임시 prices (멍); img = 256 transparent art from 그림이 (pending, slot stays empty)
  quests:{daily:{resetKST:'00:00',reward:null, // 임시 reset time; reward UNSET
    tasks:[{id:'serve',name:'손님 3명 받기',goal:3,tab:'manage',icon:'assets/drive/ui/tab-manage.png'}, // 임시
     {id:'pet',name:'시바 1마리 쓰다듬기',goal:1,tab:'shiba',icon:'assets/drive/ui/tab-shiba.png'}, // 임시
@@ -43,6 +43,15 @@ export const CFG={
   white:{intro:'조용하고 다정해요',favSnack:{name:'우유 과자'},favPlay:{name:'햇살 낮잠'}}, // 임시
   sesame:{intro:'호기심이 많아요',favSnack:{name:'고구마칩'},favPlay:{name:'짧은 산책'}}, // 임시
   kuro:{intro:'쿨해 보이지만 잘 챙겨요',favSnack:{name:'연어 스틱'},favPlay:{name:'줄다리기'}}}, // 임시
+ friendCafe:{room:'assets/drive/room-tatami-noline.png',roomSize:[861,615], // 임시: friend café = our approved room art, view-only
+  furniture:[{src:'assets/drive/furn-counter-v4.png',x:30,y:30,w:24},{src:'assets/drive/furn-tea-table-v4.png',x:52,y:56,w:20},{src:'assets/drive/furn-cushion-v4.png',x:40,y:64,w:11},{src:'assets/drive/furn-cushion-v4.png',x:64,y:66,w:11}], // 임시 배치 (% of room, x/y = sprite centre)
+  shiba:{x:60,y:48,w:16}}, // 임시: friend's shiba position
+ tutorial:{steps:[ // 임시 문구 (첫 실행 동구 안내, v3 흐름 순서); tab = 안내와 함께 열 탭
+  {text:'어서 와요! 저는 이 카페의 간판견 동구예요.',tab:null},
+  {text:'손님이 오면 시바를 데려다 주세요. 시바를 만나면 손님이 기뻐해요.',tab:null},
+  {text:'가게관리에서 메뉴를 개발하고 카페를 키울 수 있어요.',tab:'manage'},
+  {text:'시바들 탭에서 시바를 눌러 소개를 보고 돌봐 주세요.',tab:'shiba'},
+  {text:'오른쪽 위 미션을 하면 보상을 받아요. 그럼 잘 부탁해요!',tab:'manage'}]},
  // ── end 임시 block ──
  shop:{itemCategories:{'tea-table':'interior',zabuton:'interior',stairs:'interior',counter:'kitchen'}, // starting value 2026-10-15, pending user confirm
   newItems:['tea-table','zabuton','stairs','counter'], // starting value 2026-10-15, pending user confirm: existing catalog launch badges

@@ -7,5 +7,6 @@ export async function startFlow(ev,{language='ko',breed='red',bandana='bandana-t
  await click(`[data-act=startBandana][data-item=${bandana}]`);
  if(beforeGo)await beforeGo();
  await click('[data-act=startGo]');
+ await ev(`(()=>{const g=__game;if(g.ui.modals.some(m=>m.tutorial)){g.ui.modals=g.ui.modals.filter(m=>!m.tutorial);g.refresh();}return true;})()`);
  if(!await ev(`(()=>{const g=__game,sh=g.state.shibas[0];return g.state.started&&sh?.breed===${JSON.stringify(breed)}&&sh.level===g.CFG.startShiba.level&&sh.acc===${JSON.stringify(bandana)}&&sh.accUnlocked&&document.getElementById('modal').hidden;})()`))throw Error('Onboarding did not finish with the chosen starter and bandana');
 }

@@ -286,3 +286,7 @@ Manager v2 frames replace the v1 files at the same local paths (v1 rows above ar
 | cooking/dish-shiba-porridge.png | Drive 1N10fzpWDK1DZoTcCPc6Ya0JIG8oFfTeD (요리_시바죽.png, 256×256, unmodified) | sha256 aca9547bd07b73891e5b1cf60d1810ae4eb603df444fb099833e9eb754c19f66 | 요리 제작: 시바 죽 (ingredients stay 쌀·당근) |
 | cooking/dish-sweet-potato.png | Drive 1wAzl7OjHCtSyDQredBtzCq3lnF1OxEpz (요리_고구마간식.png, 256×256, unmodified) | sha256 2ae23d660cad3c768531051e1d8f4d0e01f899f63921020af98a63f6c6a4111c | 요리 제작 |
 | cooking/dish-chicken-cube.png | Drive 1Rhywg-x-JCWoPCSZ-DoxnEt_HUASX9Qb (요리_닭가슴살큐브.png, 256×256, unmodified) | sha256 04b47b3880ff15fe417ee453789d2abe130046daff260a396b3b22b950ecb9cf | 요리 제작 |
+| cooking/ing-rice.png | Drive 1voFaqT2ETRD5Kq1RiCpu8FX1qI1BHKcG (재료_쌀.png, unmodified) | sha256 7aaf99d5dc2f4c4011089561ed62494152528665a7061fbd15c89ceba432eaca | 요리 제작 재료 |
+| cooking/ing-carrot.png | Drive 1Kenc5iyhR_j_t1AxjePZhngSNSrwVc4T (재료_당근.png, unmodified) | sha256 20508aeec25788b35a5331debbe465e112a015c8b56892bf4898a6193309d0ba | 요리 제작 재료 |
+| cooking/ing-sweet-potato.png | Drive 1DQIArEVeZ83itFZtOqxhQYWv5DLpOHi_ (재료_고구마.png (interior), unmodified) | sha256 a1c1373cf1028784778eed1e445dffd1c014c183d6cb0b7b33d7f8aea87ba07f | 요리 제작 재료 |
+| cooking/ing-chicken.png | Drive 1wu9GPccCnujyU5dOjq4yS3h9nBLYOX6x (재료_닭고기.png, unmodified) | sha256 868ae8a8d78290ba716f039a6eaf6c8c40d9207e6735ce6ef68b86b7738598a3 | 요리 제작 재료 |

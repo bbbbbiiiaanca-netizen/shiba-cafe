@@ -307,7 +307,7 @@ await new Promise(r=>setTimeout(r,600));
  await go(true,'&temp=1&fixture=friends');await (await import('./start-flow.mjs')).startFlow(ev);
  await ev("__game.ui.modals=[];__game.open('friends');true");
  await check('q17 friends: swipe cards with photo/name/Lv, no test label',"(()=>{const c=[...document.querySelectorAll('[data-friends] .friend-swipe .friend-card')];const sw=document.querySelector('.friend-swipe');return c.length>0&&!document.querySelector('[data-friends]').textContent.includes('TEST FIXTURE')&&getComputedStyle(sw).overflowX==='auto'&&c.every(x=>x.querySelector('img')&&/Lv\\d+/.test(x.textContent));})()");
- await ev("document.querySelector('[data-act=friendGo]').click();true");await check('q17 friend card opens 놀러 가기 screen','!!document.querySelector("[data-friend-visit]")');
+ await ev("document.querySelector('[data-act=friendGo]').click();true");await check('q17 friend card opens view-only friend café room with name, 하트 받기, 돌아가기','(()=>{const c=document.querySelector("#mbox [data-friend-cafe]");return !!c&&!!c.querySelector(".fc-room .fc-bg")&&c.querySelectorAll(".fc-item").length>0&&!!c.querySelector("[data-act=friendVisit]")&&!!c.querySelector("[data-act=modalOk]")&&c.textContent.includes("의 카페")&&c.textContent.includes("/"+__game.CFG.heartUse.visit.daily);})()');
  await ev("window.q17Before=__game.state.hearts;document.querySelector('[data-act=friendVisit]').click();true");
  await check('q17 fixture visit grants configured hearts',"__game.state.hearts===window.q17Before+__game.CFG.heartUse.visit.hearts&&__game.state.friendVisits.count===1");
 
