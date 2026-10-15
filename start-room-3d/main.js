@@ -11,7 +11,7 @@ import {cookingFx,heartFx,menuPickFx,ITEM_FX,ALBA_FX} from './effects.js';
 import {createIsoMap} from './isomap.js';
 import {CFG,GACHA_TABLE,pressureAt,isUnset} from './config.js';
 import * as S from './sim.js';
-import {makeT,LANGS,resolveLang,setLangSource,RELEASE} from './i18n.js';
+import {makeT,LANGS,resolveLang,setLangSource,RELEASE,donguArt} from './i18n.js';
 import {TABS,DEFAULT_TAB,tabBadges} from './tabs.js';
 import {PARTITION,FLOAT_LAYOUT,zonesForSpace} from './map-data.js';
 
@@ -33,7 +33,7 @@ const LF=(k,fb)=>{const v=L(k);return v===k?fb:v;}; // config data names: STR te
 const ui={seen:{menuDone:false},knownMenus:null,nav:'cafe',panel:null,arg:null,sel:null,modals:[],toastT:0,walkPick:null,walkAlba:new Set(),trainPick:{},lpOpen:{}};
 
 // ───────── images (assets/drive, MAP.md) ─────────
-const IMG={shiba:b=>`assets/drive/shiba-${b}.png`,dongu:'assets/drive/dongu.webp',four:'assets/drive/shiba-four.webp',
+const IMG={shiba:b=>`assets/drive/shiba-${b}.png`,get dongu(){return donguArt('sprite',langNow());},four:'assets/drive/shiba-four.webp',
  guest:k=>`assets/drive/guest-sitting-${k}-final.png`,
  walkPose:{sesame:'assets/drive/pose-sesame-walk.png',kuro:'assets/drive/pose-kuro-walk.png'},sleepPose:{sesame:'assets/drive/pose-sesame-sleep.png',kuro:'assets/drive/pose-kuro-sleep.png'},
  reqShiba:'assets/drive/request-icon-shiba_256.png',reqTrick:'assets/drive/request-icon-trick_256.png',snack:'assets/drive/T-01-basic-snack_256.png',toy:'assets/drive/T-03-rope-toy_256.png',

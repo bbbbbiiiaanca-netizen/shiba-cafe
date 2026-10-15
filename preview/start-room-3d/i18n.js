@@ -780,3 +780,6 @@ export function kstToLocal(hhmm,locale){if(typeof hhmm!=='string')return hhmm;co
 export const tf=(key,fallback)=>{const v=t(key);return v===key?fallback:v;};
 // Price display only (not wired to any price yet): Intl currency format, device locale by default.
 export function formatPrice(amount,currency,locale){return new Intl.NumberFormat(locale??(typeof navigator!=='undefined'?navigator.language:undefined),{style:'currency',currency}).format(amount);}
+// 동구 그림: 영어판(en)만 목걸이 'DG' 판(_en), 그 외는 원본.
+export const DONGU_ART={front:{ko:'assets/drive/chars/dongu/dongu-front.png',en:'assets/drive/chars/dongu/dongu-front_en.png'},sprite:{ko:'assets/drive/dongu.webp',en:'assets/drive/dongu_en.webp'}};
+export function donguArt(kind,lang=curLang()){const a=DONGU_ART[kind];return lang==='en'?a.en:a.ko;}
