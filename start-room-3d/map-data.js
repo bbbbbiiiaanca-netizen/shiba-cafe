@@ -21,7 +21,7 @@ export const MAP_MARKERS={
 };
 export const CHAR_SPRITES={shiba:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null],
  // 2026-10-15: 종류별 지도 그림. 시루(red)는 걷기 첫 프레임을 서 있는 그림으로 쓴다. 없는 종류는 null → 그리지 않음(도형 대체 없음)
- byBreed:{red:{file:'assets/drive/chars/shiba-red/walk-front-dr-1.png',anchor:[64,167]},white:null,sesame:{file:'assets/drive/chars/shiba-sesame/walk-front-dr-1.png',anchor:[64,167]},kuro:null}},guest:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]},manager:{file:'assets/drive/chars/manager/manager-stand-dr.png',anchor:[64,166],footShadow:null,directions:['front-dr','front-dl','back-ul','back-ur']},dongu:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]}}; // foot-shadow anchors await supplied art
+ byBreed:{red:{file:'assets/drive/chars/shiba-red/walk-front-dr-1.png',anchor:[64,167]},white:null,sesame:{file:'assets/drive/chars/shiba-sesame/walk-front-dr-1.png',anchor:[64,167]},kuro:{file:'assets/drive/chars/shiba-kuro/walk-front-dr-1.png',anchor:[64,167]}}},guest:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]},manager:{file:'assets/drive/chars/manager/manager-stand-dr.png',anchor:[64,166],footShadow:null,directions:['front-dr','front-dl','back-ul','back-ur']},dongu:{file:null,anchor:null,footShadow:null,directions:[null,null,null,null]}}; // foot-shadow anchors await supplied art
 export function characterDepthEntries(world){return [...(world?.custs||[]),...(world?.queue||[]),...(world?.manager?[world.manager]:[]),...Object.values(world?.sh||{})].filter(c=>c.cell).map(c=>({character:c,origin:c.cell,cells:[c.cell]}));}
 export const ROOM_BG='assets/drive/room-tatami-noline.png';
 export const MAP={zones:[{
