@@ -41,4 +41,9 @@ for(const k of ['skipEnergy','startEnergy','energyCap','regenSec','scoreToReward
  Q.skipRun(B,now);Q.skipRun(B,now);assert.equal(Q.runPlaysLeft(B,now),0);assert.equal(Q.skipCheck(B,now),'plays');assert.equal(Q.skipRun(B,now),false);
  assert.equal(Q.skipCheck(B,now+86400e3),'run');
  const D=Q.runDay(B,now);D.bestReward={mung:10,got:{rice:1,chicken:0}};assert.deepEqual(Q.skipReward(B,now),{mung:10,got:{rice:1}});D.bestReward={mung:12,got:{}};assert.equal(Q.skipReward(B,now).mung,10);D.bestReward={mung:20,got:{}};assert.equal(Q.skipReward(B,now).mung,14);D.bestReward={mung:0,got:{}};assert.deepEqual(Q.skipReward(B,now),{mung:0,got:{}});}
-console.log('run: Lv3 unlock, shiba bonus 1%/Lv max 50%, skip 70% after real run, old energy keys removed; speed/spawn ramps, 2-hit hearts, daily 5 + 3 ads, 10멍 coins + ingredients, today best, ads off by default, adLog per day; 3 lanes, swipe/keys lane change, obstacles end run, pickups, null art skipped, time limit passed');
+// red back-run sheet: 4 frames looped at config fps; others keep multiply
+{const sh=c.runSheets.red;assert.deepEqual([sh.frameW,sh.frameH,sh.frames,sh.fps],[360,480,4,10]);assert.equal(c.runSheets.sesame,undefined);assert.equal(c.shibaBlend,'multiply');
+ assert.match(readFileSync(new URL('../assets/drive/MAP.md',import.meta.url),'utf8'),/run\/run-red-back-sheet\.png/);
+ const {runFrame}=await import('../run.js');assert.deepEqual([0,0.1,0.2,0.3,0.4,0.55].map(t=>runFrame(sh,t)),[0,1,2,3,0,1]);
+ const main=readFileSync(new URL('../main.js',import.meta.url),'utf8');assert.match(main,/sheet:CFG\.run\.runSheets\[sh\?\.breed\]/);}
+console.log('run: red 4-frame sheet; Lv3 unlock, shiba bonus 1%/Lv max 50%, skip 70% after real run, old energy keys removed; speed/spawn ramps, 2-hit hearts, daily 5 + 3 ads, 10멍 coins + ingredients, today best, ads off by default, adLog per day; 3 lanes, swipe/keys lane change, obstacles end run, pickups, null art skipped, time limit passed');

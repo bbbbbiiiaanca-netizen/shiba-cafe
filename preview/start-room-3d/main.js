@@ -346,7 +346,7 @@ const act={
  ingredientBuy:d=>Q17.buyIngredient(s,d.item),feedDish:d=>Q17.feedDish(s,S.byId(s,+d.id),d.item),
  runPlay:()=>{const now=clock.now();if(!Q17.startRunPlay(s,now)){toast('오늘 판을 다 썼어요');return;}
  const sh=s.shibas.find(x=>s.run.shibas.includes(x.id))||s.shibas[0];ui.modals=[];refresh();
- game.run=startRunScreen({cfg:CFG.run,ingredients:CFG.ingredients,shibaSrc:IMG.walkPose[sh?.breed]||IMG.shiba(sh?.breed||'red'),coinSrc:RES.coin,playsLeft:Q17.runPlaysLeft(s,now),
+ game.run=startRunScreen({cfg:CFG.run,ingredients:CFG.ingredients,shibaSrc:IMG.walkPose[sh?.breed]||IMG.shiba(sh?.breed||'red'),sheet:CFG.run.runSheets[sh?.breed]||null,coinSrc:RES.coin,playsLeft:Q17.runPlaysLeft(s,now),
   onEnd:r=>{Q17.finishRun(s,r,clock.now());game.run=null;refresh();},resultExtra:()=>`<p>오늘 최고 점수 ${Q17.runDay(s,clock.now()).best??0}</p>`});},
  runAd:()=>{if(Q17.claimRunAd(s,clock.now()))toast('1판 더 할 수 있어요');},runSkip:()=>{const r=Q17.skipRun(s,clock.now());if(r)toast(`건너뛰기 · ${fmt(r.mung)}멍`+Object.entries(r.got).map(([k,n])=>` · ${CFG.ingredients[k].name} ${n}`).join(''));},runShiba:d=>{const id=+d.id;s.run.shibas=s.run.shibas[0]===id?[]:[id];},
 

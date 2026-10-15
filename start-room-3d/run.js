@@ -17,9 +17,10 @@ export function stepRun(r,dt){if(r.over)return r;const c=r.cfg,sp=speedAt(c,r.t)
  if(!r.over&&r.t>=c.lengthSec){r.over=true;r.reason='time';}return r;}
 
 // Browser screen: full-screen canvas 1080×1920 (contain-fit), swipe / arrow keys.
-export function startRunScreen({cfg,ingredients,shibaSrc,coinSrc,onEnd,rng,playsLeft=null,resultExtra=()=>''}){
+export const runFrame=(sheet,t)=>Math.floor(t*sheet.fps+1e-9)%sheet.frames;
+export function startRunScreen({cfg,ingredients,shibaSrc,sheet=null,coinSrc,onEnd,rng,playsLeft=null,resultExtra=()=>''}){
  const ids=Object.keys(ingredients),r=createRun(cfg,ids,rng),[W,H]=cfg.screen,load=src=>{const i=new Image();i.src=src;return i;};
- const img={bg:load(cfg.bg),shiba:load(shibaSrc),coin:load(coinSrc),heart:load(cfg.heartImg.full),heartEmpty:load(cfg.heartImg.empty),obs:Object.fromEntries(obstacleKinds(cfg).map(k=>[k,load(cfg.obstacles[k])])),ing:Object.fromEntries(ids.map(k=>[k,load(ingredients[k].img)]))};
+ const img={bg:load(cfg.bg),shiba:load(sheet?sheet.src:shibaSrc),coin:load(coinSrc),heart:load(cfg.heartImg.full),heartEmpty:load(cfg.heartImg.empty),obs:Object.fromEntries(obstacleKinds(cfg).map(k=>[k,load(cfg.obstacles[k])])),ing:Object.fromEntries(ids.map(k=>[k,load(ingredients[k].img)]))};
  const root=document.createElement('div');root.id='runScreen';root.setAttribute('data-run-screen','');
  root.innerHTML=`<canvas width="${W}" height="${H}"></canvas><div class="run-end" hidden></div>`;document.body.appendChild(root);
  const cv=root.querySelector('canvas'),g=cv.getContext('2d');let last=null,raf=0,paused=false,sx=null;
@@ -32,7 +33,7 @@ export function startRunScreen({cfg,ingredients,shibaSrc,coinSrc,onEnd,rng,plays
  const render=()=>{const y0=r.scroll%H;if(img.bg.complete&&img.bg.naturalWidth){g.drawImage(img.bg,0,y0,W,H);g.drawImage(img.bg,0,y0-H,W,H);}
   for(const o of r.objs){if(o.done&&o.type!=='obstacle')continue;const x=cfg.laneX[o.lane];
    if(o.type==='obstacle')draw(img.obs[o.kind],x,o.y,cfg.obstacleW);else if(o.type==='coin')draw(img.coin,x,o.y,cfg.itemW);else draw(img.ing[o.kind],x,o.y,cfg.itemW);}
-  if(cfg.shibaBlend){g.globalCompositeOperation=cfg.shibaBlend;draw(img.shiba,r.x,cfg.shibaY,cfg.shibaW);g.globalCompositeOperation='source-over';}else draw(img.shiba,r.x,cfg.shibaY,cfg.shibaW);
+  if(sheet){const i=img.shiba;if(i.complete&&i.naturalWidth){const f=runFrame(sheet,r.t),w=cfg.shibaW,h=w*sheet.frameH/sheet.frameW;g.drawImage(i,f*sheet.frameW,0,sheet.frameW,sheet.frameH,r.x-w/2,cfg.shibaY-h/2,w,h);}}else if(cfg.shibaBlend){g.globalCompositeOperation=cfg.shibaBlend;draw(img.shiba,r.x,cfg.shibaY,cfg.shibaW);g.globalCompositeOperation='source-over';}else draw(img.shiba,r.x,cfg.shibaY,cfg.shibaW);
   const ing=Object.values(r.got).reduce((a,b)=>a+b,0);pill(`멍코인 ${r.coins} · 재료 ${ing} · ${Math.max(0,Math.ceil(cfg.lengthSec-r.t))}초`,W/2,110);
   for(let i=0;i<cfg.hits;i++)draw(i<cfg.hits-r.hitsTaken?img.heart:img.heartEmpty,W/2+(i-(cfg.hits-1)/2)*110,230,90);
   if(playsLeft!=null)pill(`오늘 남은 판 ${playsLeft}`,W/2,340);};
