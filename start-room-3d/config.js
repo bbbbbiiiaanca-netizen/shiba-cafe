@@ -27,7 +27,7 @@ export const CFG={
   rays:{src:'assets/drive/ui/ui-itemget-glow.png',size:[1024,1024],spinSec:8}}, // 빛 효과 = interior 1XGANByL… (아이템획득_빛효과.png, 확정본; 이전 198nrcFL… 대체). spinSec 8 = 한 바퀴 8초, 시작값 2026-10-15(똑또기) // 빛줄기 = interior 198nrcFL… (UI_팝업_빛줄기.png)
  // §17-13 starting value 2026-10-15, pending user confirm: 3 slots, 30–300 sec; energy 1/2.
  // ── 임시 값 (TEMP, 코코아 요청 2026-10-15 via 똑또기 검수): everything in this block is a placeholder until confirmed ──
- cooking:{ingredientBuyCount:1,dishesPerCraft:1, popupHeightPct:0.75, // 수인님 10-15 시작값: 요리 제작 팝업 높이 = 화면의 75%
+ cooking:{ingredientBuyCount:1,dishesPerCraft:1, popupHeightPct:0.68,popupAlign:'bottom', // 수인님·똑또기 10-15 시작값: 요리 팝업 높이 68%, 아래쪽 정렬 → 위로 카페 방(가구·시바)이 보임
  lockedPreview:[{unlockLevel:3},{unlockLevel:5}], // 똑또기 10-15 시작값: 처음 3가지 뒤 잠긴 카드(빈 그림 칸) Lv3·Lv5
   // 임시
   fxIcons:{full:null,happy:null}, // 미정: 배고픔·행복 효과 아이콘(interior 그림 없음 → 글자만)
