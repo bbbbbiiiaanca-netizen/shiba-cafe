@@ -766,7 +766,14 @@ export const STR={
 export let RELEASE=typeof location!=='undefined'&&new URLSearchParams(location.search).get('release')==='1'||globalThis.SHIBA_RELEASE===true;
 export function setRelease(v){RELEASE=!!v;}
 export const DEV_ONLY_KEYS=['unset','app.unset'];
-export function makeT(getLang){return (key,vars={})=>{if(RELEASE&&DEV_ONLY_KEYS.includes(key))return '—';const l=getLang()||'ko';let t=STR[l]?.[key]??STR.ko[key]??key;for(const [k,v] of Object.entries(vars))t=t.split('{'+k+'}').join(v);return t;};}
+// 출시 빌드에서 통째로 비우는 '미정/준비 중' 문구(줄·버튼은 main.js/q1715.js에서 RELEASE로 숨김).
+export const RELEASE_HIDE_KEYS=['app.oddsUnset','app.stub','care.unsetNote','walk.stop','shop.gachaNoteUnset','inc.pending','app.artUnset','quest.tasksUnset','quest.resetUnset','shop.itemsUnset','mm.payUnset','gacha.startUnset','toast.shopStub','cook.ingUnset','bag.mulUnset'];
+// 출시 빌드에서 '· 미정' 부분만 뺀 문구. 남는 한국어 문장은 원문 그대로.
+export const RELEASE_STR={
+ ko:{'care.abandonQ':'정말 {name}을(를) 파양할까요? 남은 시바 모두 친밀도가 {d} 떨어져요.','shop.diaRate':'다이아 1개 = {won}원','shop.accSpecialNote':'1개 {dia}다이아','fx.heart.brush':'{dur} 시바 효과 {p}','fx.heart.cookie':'선물 1개({m}분 수익 등)','fx.heart.wish':'{n}개 중 1개 선물','recipe.unnamed':'요리 {n}','heart.item.cookie.line':'행운의 선물','friend.visitOk':'하트를 받았어요'},
+ en:{'care.abandonQ':'Rehome {name}? All other shibas lose {d} Bond.','shop.diaRate':'1 Gem = ₩{won}','shop.accSpecialNote':'{dia} gems each','fx.heart.brush':'Shiba bonus {p} {dur}','fx.heart.cookie':'1 gift ({m} min earnings, etc.)','fx.heart.wish':'1 of {n} gifts','recipe.unnamed':'Recipe {n}','heart.item.cookie.line':'Lucky gift','friend.visitOk':'Got hearts'},
+};
+export function makeT(getLang){return (key,vars={})=>{if(RELEASE&&DEV_ONLY_KEYS.includes(key))return '—';if(RELEASE&&RELEASE_HIDE_KEYS.includes(key))return '';const l=getLang()||'ko';let t=(RELEASE&&RELEASE_STR[l]?.[key])||(STR[l]?.[key]??STR.ko[key]??key);for(const [k,v] of Object.entries(vars))t=t.split('{'+k+'}').join(v);return t;};}
 // Saved choice wins; otherwise the device language (navigator.language): 'ko…' → Korean, anything else → English.
 export function resolveLang(saved,deviceLang){if(saved==='ko'||saved==='en')return saved;return String(deviceLang||'').toLowerCase().startsWith('ko')?'ko':'en';}
 // Shared translator for modules outside main.js (config/effects/q1715/run/isomap…). main.js points it at the player's language;

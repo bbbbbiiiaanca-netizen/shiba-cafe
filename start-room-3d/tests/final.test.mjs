@@ -30,7 +30,7 @@ const mainSource=readFileSync(new URL('../main.js',import.meta.url),'utf8');
 const modalSource=mainSource.slice(mainSource.indexOf("let modalSig='';"),mainSource.indexOf('if(L0.offline'));
 const nodes={modal:{hidden:true},mbox:{classList:{toggle(){},remove(){}},dataset:{},innerHTML:''}};
 const ui={modals:[],startPick:null,startBandana:null},state=S.newState(0);state.settings.language='en';
-const render=runInNewContext(modalSource+';renderModal',{
+const render=runInNewContext(modalSource+';renderModal',{RELEASE:false,
  ui,s:state,S,CFG,$:id=>nodes[id],L:key=>key,img:()=>'',IMG:{four:'',shiba:()=>''},bandHtml:()=>'',accName:x=>x,
 });
 const startDisabled=()=>/data-act="startGo" disabled/.test(nodes.mbox.innerHTML);
@@ -49,7 +49,7 @@ console.log('Starter modal: breed + bandana gating, selection refresh, chosen Lv
 const menuNodes={paws:{parentElement:{}},menuList:{classList:{add(){}},innerHTML:'',querySelector(){return null;}},heading:{innerHTML:''}};
 const menuState=S.newState(0);menuState.items.expBoost4h=1;menuState.items.incomeBoost4h=1;
 const {makeT}=await import('../i18n.js'),koL=makeT(()=>'ko');
-const menuContext={L:koL,LF:(k,fb)=>{const v=koL(k);return v===k?fb:v;},s:menuState,w:{custs:[],queue:[],recent:[]},ui:{seen:{}},CFG,S,iso:{edit:false},clock:{now:()=>0},renderTabs(){},fmt:String,$:id=>menuNodes[id],itemIcon:()=>'',ITEM_FX:(await import('../effects.js')).ITEM_FX,document:{querySelector:()=>menuNodes.heading}};
+const menuContext={RELEASE:false,L:koL,LF:(k,fb)=>{const v=koL(k);return v===k?fb:v;},s:menuState,w:{custs:[],queue:[],recent:[]},ui:{seen:{}},CFG,S,iso:{edit:false},clock:{now:()=>0},renderTabs(){},fmt:String,$:id=>menuNodes[id],itemIcon:()=>'',ITEM_FX:(await import('../effects.js')).ITEM_FX,document:{querySelector:()=>menuNodes.heading}};
 const consumablesSource=mainSource.slice(mainSource.indexOf('function consumables()'),mainSource.indexOf('\n',mainSource.indexOf('function consumables()')));
 const menuSource=mainSource.slice(mainSource.indexOf('function renderMainMenu()'),mainSource.indexOf("document.querySelectorAll('[data-main-tab]').forEach(b=>b.addEventListener"));
 const renderMenu=runInNewContext("let menuSig='',mainTab='shop';"+consumablesSource+";const P={shop:()=>({html:consumables()})};"+menuSource+';renderMainMenu',menuContext);
@@ -67,7 +67,7 @@ console.log('Consumables renderer: same-second CFG activation, consumption and n
 // Task A: actual heart row/HTML rendering, approved assets and cooldown priority.
 const taskState=S.newState(0);taskState.cafe.level=40;taskState.hearts=0;
 const heartSource=mainSource.slice(mainSource.indexOf('const heartRow='),mainSource.indexOf('// Reuse the daycare'));
-const heartRowRender=runInNewContext('const LP={};'+heartSource+';heartRow', {L:koL,LF:(k,fb)=>{const v=koL(k);return v===k?fb:v;},s:taskState,S,CFG,clock:{now:()=>0},IMG:{shiba:()=>null},lockedLine:lv=>'Lv'+lv+' 해금',nameOf:sh=>sh.name,heartFx:(await import('../effects.js')).heartFx});
+const heartRowRender=runInNewContext('const LP={};'+heartSource+';heartRow', {RELEASE:false,L:koL,LF:(k,fb)=>{const v=koL(k);return v===k?fb:v;},s:taskState,S,CFG,clock:{now:()=>0},IMG:{shiba:()=>null},lockedLine:lv=>'Lv'+lv+' 해금',nameOf:sh=>sh.name,heartFx:(await import('../effects.js')).heartFx});
 const walkRow=heartRowRender(CFG.heartUse.items.find(it=>it.id==='walk'));
 assert.equal(walkRow.disabled,true);assert.equal(walkRow.price,CFG.walk.heartsPer10Min);assert.equal(walkRow.unit,'heart');assert.equal(walkRow.label,null);
 taskState.hearts=CFG.walk.heartsPer10Min;assert.equal(heartRowRender(CFG.heartUse.items.find(it=>it.id==='walk')).disabled,false);

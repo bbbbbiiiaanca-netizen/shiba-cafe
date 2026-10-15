@@ -102,6 +102,7 @@ button[data-act=levelUp]{background:url(assets/drive/ui/ui-btn-levelup-yellow.pn
 #hud #heartT{position:absolute;left:50%;top:calc(100% + 1px);transform:translateX(-50%);padding:0 5px;border-radius:999px;background:rgba(37,32,30,.76);color:#fff;font-size:9px;line-height:13px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
 .res-ico{width:1.25em;height:1.25em;object-fit:contain;vertical-align:-.25em;margin-right:1px;flex:none}
 #hud .pill-open{display:flex;flex:1;align-items:center;gap:3px;min-width:0;height:100%;padding:0;margin:0;border-radius:999px;background:transparent;color:inherit;box-shadow:none;font:inherit;line-height:1}
+.shiba-release #hud .resource-add{display:none!important}
 #hud .resource-add{flex:none;width:18px;height:18px;margin-right:-2px;padding:0;border-radius:50%;background:#f0a64a;color:#fff;box-shadow:none;font-size:14px;line-height:18px}
 #hud .cafe-status{gap:6px;min-height:24px;height:auto;flex-wrap:wrap;justify-content:flex-end}
 #boostChip{font-size:10px;white-space:nowrap;opacity:.9}
@@ -145,7 +146,7 @@ button[data-act=levelUp]{background:url(assets/drive/ui/ui-btn-levelup-yellow.pn
 .lp-price{flex:none;width:92px;min-height:38px;padding:4px;background:#7bc043;border:2px solid #4f8f24;box-shadow:0 3px 0 #3f7a1b;border-radius:10px;font-size:11px;line-height:1.15;word-break:keep-all}
 .lp-price:disabled{background:#cfc4b2;border-color:#b3a28c;box-shadow:0 3px 0 #a99883}
 /* §17-4: one short effect line; details only after tapping the card body; locked cards dimmed with 'Lv{N} 해금' and no price button */
-.lp-text,.lp-face{cursor:pointer}.lp-text small.lp-effect{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lp-text,.lp-face{cursor:pointer}.lp-text small.lp-effect{white-space:normal;overflow-wrap:break-word;line-height:1.25}
 .lp-text .lp-detail{color:#6b4426;background:#fff8ea;border-radius:6px;padding:3px 5px;margin-top:2px}
 .lp-card.disabled{opacity:.72}.lp-card.locked{opacity:.72}.lp-card.locked .lp-effect{color:#9c4136;font-weight:800}
 .lp-price-slot{flex:none;width:92px}
