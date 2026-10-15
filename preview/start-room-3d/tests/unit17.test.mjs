@@ -61,7 +61,7 @@ test('icons: no CSS-drawn resource shapes left; top bar, gear and price buttons 
  const html=readFileSync(root+'index.html','utf8'),main=readFileSync(root+'main.js','utf8');
  assert.ok(!/\.resource\.(coin|heart|diamond|paw)/.test(html),'old CSS shapes removed');assert.ok(!/clip-path:polygon\(25% 0/.test(html));
  for(const f of ['res-coin','res-diamond','res-paw'])assert.ok(html.includes(`assets/drive/ui/${f}.png`),f);
- assert.ok(/<button class="gear" data-nav="settings" aria-label="설정"><img src="assets\/drive\/ui\/ui-gear.png" alt=""/.test(html),'gear image, no text');
+ assert.ok(/<button class="gear" data-nav="settings" data-i18n-attr="aria-label:nav.settings"><img src="assets\/drive\/ui\/ui-gear.png" alt=""/.test(html),'gear image, no text');
  for(const f of ['res-heart','res-heart-empty'])assert.ok(main.includes(`assets/drive/ui/${f}.png`),f);
  assert.ok(!/💎|🐾/.test(main+readFileSync(root+'i18n.js','utf8')),'no emoji stand-ins for diamond/paw');});
 

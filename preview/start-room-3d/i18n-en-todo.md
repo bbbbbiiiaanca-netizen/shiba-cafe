@@ -1,0 +1,636 @@
+# i18n: English to do
+
+영어 칸이 비어 한국어로 대체되는 키: **628개** (전체 634개 중 영어 확정 6개).
+
+`node tools/i18n-todo.mjs` 로 다시 만든다. 번역은 i18n.js 의 STR.en 에 같은 키로 넣는다. {이름} 은 자리표시자라 그대로 둔다.
+
+| 키 | 한국어 |
+| --- | --- |
+| unset | 미정 |
+| lang.select.title | 언어를 골라 주세요 |
+| lang.select.hint | 설정에서 언제든 바꿀 수 있어요 |
+| lang.select.confirm | 확인 |
+| settings.language | 언어 |
+| settings.language.current | 지금 언어: {language} |
+| hud.currency.coin | 코인 |
+| hud.currency.heart | 하트 |
+| hud.currency.dia | 다이아 |
+| char.dongu.name | 동구 |
+| app.title | 시바카페 |
+| app.close | 닫기 |
+| app.ok | 확인 |
+| app.unset | 미정 |
+| app.oddsUnset | 확률 미정 |
+| app.locked | Lv{lv} 해금 |
+| app.cooldown | 쿨타임 {t} |
+| app.stub | 준비 중 |
+| app.payment | 결제 미연결 |
+| app.coins | &lt;img class="ci" src="assets/drive/ui/res-coin.png" alt="">{n} |
+| app.cancel | 취소 |
+| app.lv | Lv{lv} |
+| app.missingImg | 이미지 없음 |
+| nav.cafe | 카페 |
+| nav.shibas | 시바 |
+| nav.walk | 산책 |
+| nav.shop | 상점 |
+| nav.settings | 설정 |
+| hud.level | 카페 Lv{lv} |
+| hud.rep | 평판 {rep} |
+| hud.manager | 매니저 {t} |
+| hud.closed | 임시휴무 |
+| cafe.queue | 줄 {n}/{max} |
+| cafe.seats | 손님 {n}/{max} |
+| cafe.pick | 시바를 골랐어요 — 손님을 누르면 데려다줘요 |
+| cafe.stainHint | 얼룩을 눌러 치워요 |
+| req.meetShiba | {name} 만나고 싶어요 |
+| req.seeTrick | "{trick}" 보고 싶어요 |
+| req.none | 요구 없음 |
+| out.satisfied | 만족 |
+| out.normal | 보통 |
+| out.disappointed | 실망 |
+| out.angry | 화나서 떠남 |
+| start.title | 첫 시바를 골라 주세요 |
+| start.hint | 고르지 않은 시바도 나중에 만날 수 있어요 |
+| start.name | 이름 (비워 두면 견종 이름) |
+| start.go | 카페 열기 |
+| shibas.title | 시바 |
+| shibas.slots | 배치 {n}/{max}칸 · 보유 {own}/{ownMax} |
+| shibas.placed | 카페 |
+| shibas.home | 집 |
+| shibas.dongu | 동구는 칸을 차지하지 않고 수익에 관여하지 않아요 |
+| st.ok | 카페에서 일해요 |
+| st.home | 집에서 쉬어요 |
+| st.walking | 산책 중 |
+| st.injured | 다쳤어요 |
+| st.sick | 앓아누웠어요 |
+| st.hospital | 입원 중 {t} |
+| st.sleeping | 잠만 자요 (피로 100%) |
+| inj.light | 가벼운 부상 |
+| inj.snake | 뱀 물림 |
+| inj.sick | 앓아누움 |
+| care.title | 돌봄 |
+| care.personality | 성격 |
+| care.level | 레벨 |
+| care.paws | 발바닥 {n}/{need} |
+| care.pawsMax | 최고 레벨 · 발바닥 {n} |
+| care.intimacy | 친밀도 |
+| care.intel | 지능 |
+| care.cond | 손님 만남 컨디션 ×{m} |
+| care.levelEff | 수익 레벨 효과 ×{m} |
+| g.full | 배고픔(포만) |
+| g.dirt | 더러움 |
+| g.fatigue | 피로도 |
+| g.happy | 행복 |
+| g.boredom | 지루함 |
+| care.play | 놀아주기 ♥{n} |
+| care.feed | 밥 주기 |
+| care.snack | 간식 |
+| care.bath | 목욕 |
+| care.sleep | 재우기 |
+| care.walk | 산책 보내기 |
+| care.hospital | 병원 보내기 &lt;img class="ci" src="assets/drive/ui/res-coin.png" alt="">{cost} |
+| care.hospitalNo | 코인이 모자라요 (&lt;img class="ci" src="assets/drive/ui/res-coin.png" alt="">{cost}) |
+| care.unsetNote | 회복량·비용 미정 |
+| care.tricks | 재주 |
+| care.train | 훈련 ♥1 ({p}%) |
+| care.trainMax | 최고 단계 |
+| care.trainer | 훈련사 |
+| care.daycare | 데이케어 알바 |
+| care.acc | 액세서리 칸 |
+| care.accEmpty | 비어 있음 |
+| care.likes | 좋아하는 간식·장난감 |
+| care.locked | 잠김 |
+| care.abandon | 파양 |
+| care.abandonQ | 정말 {name}을(를) 파양할까요? 남은 시바 모두 친밀도가 {d} 떨어져요. 이 시바를 최애로 둔 단골: 미정(단골 기능 미정) |
+| care.place | 카페에 배치 |
+| care.unplace | 집으로 |
+| care.potion | 멍포션 {n}개 · 작은 멍포션 {m}개 |
+| walk.title | 산책 |
+| walk.now | {name} 산책 중 · {t} 남음 |
+| walk.stop | 멈추기 (규칙 미정) |
+| walk.pick | 산책할 시바 |
+| walk.min | {m}분 ♥{h} |
+| walk.fx | 지루함 {b} · 더러움 +{d} · 피로 +{f} · 행복 +{h} · 친밀도 +{i} |
+| walk.none | 산책할 수 있는 시바가 없어요 |
+| walk.results | 최근 산책 |
+| walk.ev.snake | 뱀에게 물렸어요 |
+| walk.ev.light | 가볍게 다쳤어요 |
+| walk.ev.extraHeart | 하트 1개 주웠어요 |
+| walk.ev.extraCoins | 코인을 주웠어요 |
+| walk.ev.capsule | 시바 뽑기권! |
+| walk.back | {name}이(가) 산책에서 돌아왔어요 |
+| walk.alba | 산책 알바 |
+| walk.albaNote | 최대 {n}마리 · 지루함 −50 즉시 · 시바별 쿨타임 4시간 · 하트·경험치 없음 |
+| walk.albaGo | 맡기기 &lt;img class="ci" src="assets/drive/ui/res-coin.png" alt="">{cost} |
+| shop.title | 상점 |
+| shop.menu | 메뉴 개발 |
+| shop.coffee | 기본 커피 · &lt;img class="ci" src="assets/drive/ui/res-coin.png" alt="">{p} · 처음부터 있음 |
+| shop.sell | 판매 &lt;img class="ci" src="assets/drive/ui/res-coin.png" alt="">{p} |
+| shop.menuRule | 개발한 일반 메뉴 {n}개 → 고급 메뉴 확률 {p}% (일반 메뉴 1개당 +1%p, 최대 40%). 고급 음료는 일반 음료, 고급 디저트는 일반 디저트를 개발해야 주문돼요. 프리미엄을 개발하면 고급 디저트의 30%가 프리미엄(&lt;img class="ci" src="assets/drive/ui/res-coin.png" alt="">8)으로. |
+| menu.kind.drink | 일반 음료 |
+| menu.kind.dessert | 일반 디저트 |
+| menu.kind.premium | 프리미엄 |
+| menu.M-01 | 아이스 아메리카노 |
+| menu.M-02 | 따뜻한 라테 |
+| menu.M-03 | 딸기 라테 |
+| menu.M-04 | 유자 에이드 |
+| menu.M-05 | 치즈케이크 |
+| menu.M-06 | 초코칩 쿠키 |
+| menu.M-07 | 크루아상 |
+| menu.M-08 | 딸기 파르페 |
+| menu.P-01 | 골드 티라미수 |
+| menu.P-02 | 딸기 홀케이크 |
+| menu.P-03 | 몽블랑 |
+| menu.P-04 | 초코 퐁당 |
+| menu.P-05 | 마카롱 3종 |
+| menu.P-06 | 파블로바 |
+| shop.manager | 매니저 알바 |
+| shop.managerNote | 12시간 · 얼룩 10분마다 1개 · 요구 30% 대신 · 평판 절반 · 경험치 없음 |
+| shop.hire | 고용 &lt;img class="ci" src="assets/drive/ui/res-coin.png" alt="">{cost} |
+| shop.gacha | 시바뽑기 |
+| shop.gachaNote | 시바 4종 · 새 시바는 Lv{lv} · 이미 가진 견종이면 발바닥 {p}개 |
+| shop.gachaNoteUnset | 시바 4종 · 이미 가진 견종이면 발바닥 {p}개 · 확률표·시작 레벨 미정이라 아직 뽑을 수 없어요 |
+| toast.odds | 확률이 아직 정해지지 않았어요 |
+| shop.bag | 가방 |
+| shop.heartReset | 하트 리셋권 {n}장 |
+| shop.use | 사용 |
+| shop.capsule | 시바 뽑기권 {n}개 (1장 = 뽑기 1회) |
+| shop.dia | 다이아 상점 (유료 전용) |
+| shop.diaRate | 다이아 1개 = {won}원 · 묶음 미정 |
+| dia.cooldown1 | 쿨타임권 1장 |
+| dia.cooldown5 | 쿨타임권 5장 |
+| dia.potionBig | 멍포션 |
+| dia.potionSmall | 작은 멍포션 |
+| dia.boost | 수익 1.2배 4시간 |
+| dia.expBoost | 경험치 1.2배 4시간 |
+| dia.slot | 시바 칸 미리 해제 |
+| set.title | 설정 |
+| set.sound | 효과음 |
+| set.music | 배경음 |
+| set.income | 수익 계산식 보기 |
+| set.reset | 처음부터 다시 |
+| set.resetQ | 저장을 지우고 처음부터 시작할까요? |
+| set.stubs | 준비 중인 기능 |
+| stub.list | 랭킹(카페 레벨, 주간) · GM 카페 · 일일·주간 미션 · 동구 부탁 · 진상손님 · 단골·최애 · 시바 궁합·싸움 · 시바끼리 놀기 · 인테리어 점수 · 2층 확장 · 머지 요리 · 입양(복제본) · 카메라 모드 · 마을 지도 |
+| inc.title | 수익 계산식 |
+| inc.formula | 기본 수익 × 시바 레벨 효과 × 아이템 효과 = 최종 수익 |
+| inc.base | 기본 수익: 커피 &lt;img class="ci" src="assets/drive/ui/res-coin.png" alt="">{p} |
+| inc.premium | 고급 메뉴 확률 {p}% (일반 메뉴 개발 1개당 +1%p, 요구 충족 시 +15%p, 최대 40%) |
+| inc.noPremium | 개발한 메뉴 없음 (기본 커피만) |
+| inc.item | 아이템 효과 ×{m} |
+| inc.row | {name} Lv{lv}: {base} × {lv2} × {item} = &lt;img class="ci" src="assets/drive/ui/res-coin.png" alt="">{total} |
+| inc.cond | 컨디션 배율 ×{m} (만남 점수에 적용) |
+| inc.last | 마지막 손님 ({out}): {base} × {lv} × {item} = &lt;img class="ci" src="assets/drive/ui/res-coin.png" alt="">{total} |
+| inc.pending | (수익 합산 규칙 미정 · 지급 대기) |
+| off.title | 자리를 비운 동안 |
+| off.body | {h}시간 {m}분 · 손님 {n}명 · +&lt;img class="ci" src="assets/drive/ui/res-coin.png" alt="">{coins} · 평판 {r0}→{r1} |
+| off.cap | 오프라인 수익은 최대 12시간분이에요 |
+| off.closed | 평판이 30까지 떨어져 카페가 임시휴무했어요. 시바들은 집에서 잤어요. 다시 문을 열었어요 (평판 30). |
+| toast.levelUp | 카페 Lv{lv}! |
+| toast.coins | 코인이 모자라요 |
+| toast.hearts | 하트가 모자라요 |
+| toast.slots | 배치 칸이 꽉 찼어요 |
+| toast.unset | 아직 정해지지 않은 기능이에요 |
+| toast.last | 마지막 시바는 파양할 수 없어요 |
+| toast.trainOk | 훈련 성공! |
+| toast.trainFail | 훈련 실패… |
+| toast.cleaned | 얼룩을 치웠어요 (+1 경험치) |
+| per.prankster | 장난꾸러기 |
+| per.shy | 얌전·내성적 |
+| per.tomboy | 왈가닥 |
+| per.sweet | 순둥이·긍정 |
+| per.mopey | 시무룩 |
+| per.lazy | 귀차니즘·잠꾸러기 |
+| per.curious | 호기심쟁이 |
+| per.boss | 골목대장 |
+| per.peopleLover | 사람 바라기 |
+| per.dogLover | 댕댕이 바라기 |
+| per.tomgirl | 말괄량이 |
+| per.zoomies | 우다다 폭주견 |
+| per.fighter | 싸움꾼 |
+| per.foodie | 먹보 |
+| per.walkLover | 산책광 |
+| trick.sit | 앉아 |
+| trick.paw | 손 |
+| trick.wait | 기다려 |
+| trick.down | 엎드려 |
+| trick.bow | 인사 |
+| npc.commuter | 출근길 손님 |
+| npc.mom | 엄마 |
+| npc.dad | 아빠 |
+| npc.girl | 여자아이 |
+| npc.boykid | 남자아이 |
+| npc.grandma | 할머니 |
+| npc.grandpa | 할아버지 |
+| npc.coupleman | 연인 남 |
+| npc.couplewoman | 연인 여 |
+| npc.friend | 친구 |
+| skip.btn | 바로 완료 {n} |
+| toast.dia | 다이아가 모자라요 |
+| skip.note | 남은 시간 1분당 1다이아(1분 단위 올림) |
+| app.hm | {h}시간 {m}분 |
+| app.h | {h}시간 |
+| app.m | {m}분 |
+| shop.devTime | 개발 {t} |
+| shop.developing | {name} 개발 중 |
+| shop.developingShort | 개발 중 |
+| shop.devLeft | {t} 남음 |
+| shop.devIdle | 메뉴는 한 번에 1개만 개발해요. 코인을 내면 개발 시간이 지나야 완성돼요. |
+| toast.menuDone | {name} 개발 완료! |
+| toast.devBusy | 지금 개발 중인 메뉴가 있어요 (한 번에 1개) |
+| care.levelUp | 레벨업 {n} |
+| toast.levelUpShiba | Lv{lv}이 됐어요! |
+| toast.paws | 발바닥이 모자라요 |
+| shop.gacha1 | 1회 {dia} |
+| shop.gacha10 | {n}연차 {dia} |
+| shop.gachaTicket | 뽑기권 사용 ({n}장) |
+| gacha.title | 시바뽑기 결과 |
+| gacha.new | 새 친구! {breed} Lv{lv} |
+| gacha.dup | 중복 → {name} 발바닥 +{p} |
+| toast.ticket | 뽑기권이 없어요 |
+| walk.paws | 발바닥 +{n} |
+| care.pawsSrc | 발바닥 얻는 법: 산책 2 · 놀아주기 1 · 카페 근무 1시간 1 · 재주 1단계 3 · 중복 시바 10 (알바도 같음, 하루 최대 없음) |
+| care.accLockedNote | 시바마다 1칸. 해금해야 액세서리를 찰 수 있어요. |
+| care.accUnlockPaws | 해금 {n} (보유 {have}) |
+| care.accUnlockDia | 해금 {n} |
+| care.accOpen | 칸이 열려 있어요. 상점에서 산 액세서리를 채울 수 있어요. |
+| acc.type.triangle | 클래식 삼각형 |
+| acc.type.loop | 루프 스누드형 |
+| acc.type.knotTail | 매듭 테일형 |
+| acc.type.frontKnot | 앞 매듭형 |
+| acc.color.cell1 | 빨강 |
+| acc.color.cell2 | 파랑 |
+| acc.color.cell3 | 초록 |
+| acc.color.cell4 | 노랑 |
+| acc.color.cell5 | 분홍 |
+| acc.color.cell6 | 남색 |
+| acc.color.cell7 | 주황 |
+| acc.color.cell8 | 보라 |
+| acc.color.cell9 | 청록 |
+| acc.name | {c} {t} 반다나 |
+| shop.acc | 액세서리 |
+| shop.accRule | 반다나 1개 &lt;img class="ci" src="assets/drive/ui/res-coin.png" alt="">5,000. 1개는 한 번에 시바 1마리만 찰 수 있어요(시바마다 따로 사요). 칸을 해금한 시바만 찰 수 있어요. |
+| shop.accOwned | 보유 {n} · 착용 {w} |
+| shop.accSpecial | 특별 액세서리 |
+| shop.accSpecialNote | 1개 {dia}다이아 · 종류·디자인 미정 (그림 없음) |
+| care.accWorn | 착용 중 |
+| care.accOff | 벗기기 |
+| care.accOn | 채우기 |
+| care.accBag | 가방에 있는 액세서리 |
+| care.accNone | 가방에 액세서리가 없어요. 상점에서 사요. |
+| toast.accBought | {name}을(를) 샀어요 |
+| toast.owned | 보유 한도가 꽉 찼어요 |
+| toast.fatigue | 피로 100이면 산책할 수 없어요 |
+| toast.slot | 액세서리 칸을 먼저 해금해요 |
+| toast.none | 가방에 없어요 |
+| fx.dur.h | {n}시간 |
+| fx.dur.m | {n}분 |
+| fx.durFor.h | {n}시간 동안 |
+| fx.durFor.m | {n}분간 |
+| fx.heart.call | {dur} 손님 방문 {p} |
+| fx.heart.pet | 친밀도 {a} · 하루 {n}회 |
+| fx.heart.play | 친밀도 {a} · 행복 {h} |
+| fx.heart.snack | 행복 {h} · 피로 {f} |
+| fx.heart.walk | 10분당 하트 {n} · 친밀도 {a} |
+| fx.heart.praise | {dur} 만족 평판 {p} |
+| fx.heart.brush | {dur} 시바 효과 {p} · 친밀도 미정 |
+| fx.heart.music | {dur} 추가 주문 {n} · 머무름 {p} |
+| fx.heart.blanket | 모두 행복 {h} · {dur} 회복 {p} |
+| fx.heart.recommend | {dur} 판매 {s} · 가격 {p} |
+| fx.heart.tasting | {dur} 판매가 {p} |
+| fx.heart.cookie | 선물 1개({m}분 수익 등) · 확률 미정 |
+| fx.heart.special | 특별 손님 {n}명 · 팁 {tip} |
+| fx.heart.talent | {dur} 수익 바로 받기 |
+| fx.heart.treat | 앉은 손님 모두 완전 만족 |
+| fx.heart.wish | {n}개 중 1개 선물 · 목록 미정 |
+| fx.item.incomeBoost4h | {dur} 수익 {p} |
+| fx.item.expBoost4h | {dur} 경험치 {p} |
+| fx.item.cooldownTicket | 기다리는 시간 바로 끝 |
+| fx.item.heartReset | 하트 {n}개까지 채우기 |
+| fx.item.potionBig | 모든 게이지 가득 |
+| fx.item.potionSmall | 게이지 1개 가득 |
+| fx.alba.daycare | 친밀도 {p} 놀이 |
+| fx.alba.walk | {n}마리 산책·지루함{b} |
+| fx.alba.trainer | 훈련 1회 성공 |
+| fx.alba.manager | {dur} 대신 운영 |
+| fx.cooking | 포만 {f} · 행복 {h} |
+| tab.village | 마을 |
+| tab.shiba | 시바들 |
+| tab.manage | 가게관리 |
+| tab.shop | 상점 |
+| tab.bag | 가방 |
+| recipe.unnamed | 요리 {n} 미정 |
+| recipe.recipe-1 | 단호박 시바 죽 |
+| recipe.recipe-2 | 고구마 쿠키 |
+| recipe.recipe-3 | 닭가슴살 미트볼 |
+| ingredient.rice | 쌀 |
+| ingredient.carrot | 당근 |
+| ingredient.sweetPotato | 고구마 |
+| ingredient.chicken | 닭고기 |
+| run.playsLeft | 오늘 남은 판 {n} |
+| run.hud | 재료 {n} · {sec}초 |
+| run.hit | 앗, 부딪혔어요 |
+| run.arrived | 도착했어요 |
+| run.score | 점수 {n} |
+| app.back | 돌아가기 |
+| edit.aria | 가구 편집 |
+| edit.store | 보관 |
+| edit.save | 저장하기 |
+| edit.flip | 뒤집기 |
+| edit.rotate | 돌리기 |
+| edit.wallAdd | 가벽 배치 |
+| edit.wallRemove | 가벽 제거 |
+| edit.entranceBlocked | 입구가 막혔어요! |
+| ledger.sales | 메뉴 판매 |
+| ledger.meeting | 시바 만남 추가 수입 |
+| ledger.offline | 오프라인 수입 |
+| ledger.other | 기타 수입 |
+| ledger.alba | 알바비 |
+| ledger.hospital | 병원비 |
+| ledger.menu | 메뉴 개발비 |
+| ledger.accessory | 액세서리 구입 |
+| ledger.furniture | 가구 구입 |
+| ledger.land | 땅 넓히기 |
+| app.artUnset | 그림 미정 |
+| dlg.check | 확인해 주세요 |
+| dlg.guest | 손님 |
+| dlg.skip | 건너뛰기 |
+| dlg.next | 다음 |
+| quest.tasksUnset | 할 일 미정 |
+| quest.tab.daily | 일일 |
+| quest.tab.dongu | 동구 이야기 |
+| quest.done | 완료 |
+| quest.go | 바로가기 |
+| quest.instant | 즉시완료 |
+| quest.donguTalk | 동구와 대화 |
+| quest.resetUnset | 초기화 시간 미정 |
+| quest.reset | {time} KST 초기화 |
+| quest.task.serve | 손님 3명 받기 |
+| quest.task.pet | 시바 1마리 쓰다듬기 |
+| quest.task.sell | 메뉴 1잔 판매 |
+| shop.tab.kitchen | 주방 |
+| shop.tab.interior | 인테리어 |
+| shop.tab.exterior | 익스테리어 |
+| shop.tab.theme | 테마 |
+| shop.tab.cash | 캐시·골드 |
+| shop.storage | 보관함 |
+| shop.themeAria | 테마 {name} |
+| shop.locked | 잠김 |
+| shop.coupon | 쿠폰 코드 |
+| shop.couponPh | 쿠폰 번호 |
+| shop.couponOk | 입력완료 |
+| shop.special | 특별상점 |
+| shop.luckyBox | 행운 상자 |
+| shop.themePick | 테마 선택 |
+| shop.decor | 장식 점수 {n} |
+| shop.itemsUnset | 상품 미정 |
+| theme.tatami | 다다미 |
+| theme.fuji | 후지산 벽화 카페 |
+| theme.bamboo | 대나무 회랑 |
+| furn.tea-table | 찻상 |
+| furn.zabuton | 방석 |
+| furn.counter | 카운터 |
+| furn.stairs | 계단 |
+| hud.heartsAria | 하트 {n} |
+| hud.nextHeart | 다음 하트 {t} |
+| app.maxLevel | 최고 레벨 |
+| app.max | 최고 |
+| app.all | 전체 |
+| hud.mission | 미션 |
+| hud.boost.income | 수익 |
+| hud.boost.exp | 경험치 |
+| edit.blocked | 다른 가구와 겹치거나 방 밖으로 나갈 수 없어요. |
+| tab.alert | 알림 |
+| hud.paws | 발바닥 |
+| mm.hint.manage | 카페 현황 · 메뉴 개발 · 알바 |
+| mm.hint.shiba | 돌봄 · 레벨업 |
+| mm.hint.village | 병원 · 산책 |
+| mm.hint.bag | 가구 · 아이템 · 액세서리 |
+| mm.hint.shop | 반다나 · 다이아 · 해금 |
+| mm.custStatus | 착석 {seated} · 대기 {queue} |
+| mm.payUnset | 결제 미정 |
+| run.title | 재료 달리기 |
+| mm.guestRequest | 손님 요청 |
+| bag.editEnd | 편집 끝 |
+| bag.editStart | 배치 편집 |
+| bag.furnSeats | 가구 · 좌석 {n} |
+| bag.place | 배치 |
+| bag.wall | 가벽 |
+| bag.buy | 구입 |
+| mm.cafeLv | 카페 Lv {lv} |
+| mm.menuDev | 메뉴 개발 |
+| mm.upgrade | 업그레이드 |
+| mm.hire | 알바채용 |
+| toast.order | {name} 주문 |
+| toast.coinsPlus | +{n} 코인 |
+| shibas.breedAria | 종류 |
+| shibas.level | 레벨 |
+| risk.green | 좋음 |
+| risk.orange | 주의 |
+| risk.red | 위험 |
+| shibas.putIn | 넣기 |
+| shibas.takeOut | 꺼내기 |
+| shibas.none | 시바가 없어요 |
+| cook.make | 밥 만들기 |
+| cook.feed | 먹이기 |
+| care.affinity | 친밀도 |
+| alba.pick | 알바 고르기 |
+| alba.idle | 대기 |
+| alba.title | 알바 |
+| alba.cooldown | 쿨타임 |
+| alba.noCooldown | 쿨타임 중인 시바가 없어요. |
+| gacha.oddsBtn | 확률 보기 |
+| gacha.startUnset | 시작 레벨 미정 |
+| gacha.stamp | 도장 |
+| gacha.capsule | 캡슐 {n} |
+| gacha.pityNote | 도장 {n}개로 원하는 시바 선택 |
+| cafe.summary | 평판 {rep} · 시바 {slots}칸 · 최대 손님 {cap}명 |
+| acc.slotsTitle | 시바 액세서리 칸 |
+| acc.slotOpen | 칸 열림 |
+| acc.slotEmpty | 빈 칸 |
+| acc.slotLocked | 칸 잠김 |
+| acc.careBtn | 돌봄 · 액세서리 |
+| acc.bagTitle | 액세서리 가방 |
+| acc.counts | 보유 {own} · 착용 {worn} · 가방 {bag} |
+| acc.unequip | 벗기기 |
+| acc.equip | 착용 |
+| acc.none | 보유한 액세서리가 없어요. |
+| space.unlock | 공간 해금 |
+| heart.usedToday | 오늘 사용 완료 |
+| heart.ad | 광고 보고 하트 {n} |
+| heart.adDone | 오늘 완료 |
+| heart.title | 하트 쓰기 |
+| shiba.generic | 시바 |
+| heart.n | {n}하트 |
+| heart.visit | 다른 카페 방문 · 하루 {n}회 · {h}하트 |
+| heart.invite | 초대 메시지 · 하루 {n}회 · {h}하트 |
+| heart.pickShiba | 시바 고르기 |
+| heart.pickMenu | 추천 메뉴 고르기 |
+| alba.detail.daycare | 놀아주기와 같음 · 친밀도 ×{m} · 쿨타임 {t} |
+| alba.detail.trainer | 하트 없이 훈련 1회 · 항상 성공 · 쿨타임 {t} |
+| alba.running | 운영 중 {t} |
+| menu.price | 판매가 |
+| menu.dev | 개발 |
+| skip.instant | 즉시 완료 |
+| menu.devDone | 개발 완료 |
+| menu.devCost | 개발비 |
+| upgrade.name.interval | 손님 간격 단축 |
+| upgrade.name.price | 판매가 인상 |
+| upgrade.name.queue | 대기 줄 연장 |
+| upgrade.short.interval | 간격 |
+| upgrade.short.price | 판매가 |
+| upgrade.short.queue | 대기 줄 |
+| upgrade.fx.interval | 손님 오는 간격 단축 |
+| upgrade.fx.price | 메뉴 판매가 인상 |
+| upgrade.fx.queue | 대기 줄 +{n}칸 |
+| upgrade.title | 가게 관리 업그레이드 |
+| upgrade.effect | 효과 |
+| upgrade.perLevel | (레벨마다) |
+| upgrade.price | 가격 |
+| heart.item.call | 손님 부르기 |
+| heart.item.pet | 쓰다듬기 |
+| heart.item.play | 놀아 주기 |
+| heart.item.snack | 간식 |
+| heart.item.walk | 산책 |
+| heart.item.praise | 칭찬해 주기 |
+| heart.item.brush | 빗질·마사지 |
+| heart.item.music | 가게 음악 |
+| heart.item.blanket | 낮잠 이불 |
+| heart.item.recommend | 오늘의 추천 메뉴 |
+| heart.item.tasting | 메뉴 시식회 |
+| heart.item.cookie | 행운 쿠키 |
+| heart.item.special | 특별 손님 초대 |
+| heart.item.talent | 시바 장기자랑 |
+| heart.item.treat | 간식 손님 대접 |
+| heart.item.wish | 소원상자 |
+| heart.item.call.line | 손님 더 많이 |
+| heart.item.pet.line | 친밀도 올리기 |
+| heart.item.play.line | 친밀도 · 행복 |
+| heart.item.snack.line | 행복 · 피로 회복 |
+| heart.item.walk.line | 산책 · 친밀도 |
+| heart.item.praise.line | 손님 만족 증가 |
+| heart.item.brush.line | 시바 효과 증가 |
+| heart.item.music.line | 머무르며 추가 주문 |
+| heart.item.blanket.line | 행복 · 피로 회복 |
+| heart.item.recommend.line | 추천 메뉴 고르기 |
+| heart.item.tasting.line | 메뉴 판매가 증가 |
+| heart.item.cookie.line | 행운의 선물 미정 |
+| heart.item.special.line | 특별 손님 초대 |
+| heart.item.talent.line | 관람 손님 팁 |
+| heart.item.treat.line | 모두 완전 만족 |
+| heart.item.wish.line | 다음 접속 선물 |
+| toast.diaShort | 다이아가 부족해요 |
+| toast.coinsShort | 코인이 부족해요 |
+| ledger.title | 손익계산서 |
+| ledger.closeAria | 손익계산서 닫기 |
+| ledger.yesterday | 어제 |
+| ledger.today | 오늘 |
+| ledger.unit | 단위: 코인 |
+| ledger.income | 수입 |
+| ledger.expense | 지출 |
+| ledger.net | 순이익 |
+| ledger.coins | {n} 코인 |
+| mail.claim | 받기 |
+| mail.title | 우편함 |
+| mail.day | {n}일차 |
+| mail.dia | {n}다이아 |
+| mail.claimed | 수령 완료 |
+| grant.coins | 코인 |
+| grant.dia | 다이아 |
+| grant.hearts | 하트 |
+| grant.paws | 발바닥 |
+| grant.expBoost4h | 경험치 부스트 |
+| grant.incomeBoost4h | 수익 부스트 |
+| grant.cooldownTicket | 쿨타임권 |
+| grant.heartReset | 하트 리셋권 |
+| grant.capsule | 시바뽑기 캡슐 |
+| grant.potionBig | 큰 물약 |
+| grant.potionSmall | 작은 물약 |
+| gacha.oddsTitle | 뽑기 확률 |
+| gacha.oddsNote | 버전 {v} · 도장 {n}개 → 시바 선택 · 중복 → 개인 발바닥 {p}개 |
+| levelUp.done | 레벨업 완료! |
+| dlg.dongu.speech | 부탁이 있어요 |
+| dlg.guest.speech | 부탁해요 |
+| dlg.meet | {name} 만나기 |
+| dlg.trick | {trick} 보여 주세요 |
+| toast.coupon | 쿠폰을 확인할 수 없어요 |
+| friend.visitOk | 준비 중 · 하트를 받았어요 |
+| friend.visitDone | 오늘 방문 완료 |
+| run.noPlays | 오늘 판을 다 썼어요 |
+| run.best | 오늘 최고 점수 {n} |
+| run.adOk | 1판 더 할 수 있어요 |
+| toast.used | 사용했어요 |
+| toast.shopStub | 상점 준비 중이에요 |
+| levelUp.confirm | {name} Lv {lv} → {next} · 발바닥 {n}개를 사용할까요? |
+| toast.unlocked | {name} 해금 |
+| land.title | {n}번째 땅 넓히기 |
+| land.max | (최대 {n}단계) |
+| bag.put | 놓기 |
+| friend.title | 친구 |
+| friend.count | 친구 {n} |
+| friend.add | 친구 추가 |
+| friend.go | 놀러 가기 |
+| friend.none | 아직 친구가 없어요 |
+| friend.cafe | {name}의 카페 |
+| friend.getHearts | 하트 {n}개 받기 |
+| friend.today | 오늘 {left}/{n} |
+| friend.visitNote | 놀러 오면 하트 {n}개 · 하루 {d}번 |
+| friend.getHeart | 하트 받기 |
+| friend.list | 친구 목록 |
+| book.favSnack | 좋아하는 간식 |
+| book.favPlay | 좋아하는 놀이 |
+| book.friends | 친한 시바 |
+| book.none | 아직 없어요 |
+| book.care | 돌봄 |
+| hosp.treat | 치료 {t} · {cost} |
+| hosp.none | 아픈 시바가 없어요 |
+| cook.title | 요리 제작 |
+| cook.full | 배고픔 |
+| cook.happy | 행복 |
+| cook.ingUnset | 재료 미정 |
+| cook.crafting | 제작 중 |
+| cook.time | 제작 시간 |
+| cook.short | 재료 부족 |
+| run.rewards | 이번 판 보상 재료 |
+| run.pickShiba | 함께 달릴 시바를 골라요 |
+| run.bonus | 코인 보너스 +{n}% |
+| run.start | 달리기 시작 |
+| run.ad | 광고 보고 1판 더 |
+| run.skipNote | 오늘 한 번 달리면 건너뛰기가 켜져요 |
+| bag.mulUnset | 배율 미정 |
+| space.floor2 | 2층 |
+| village.hurt | 치료 필요 {n} |
+| village.walkDone | 결과 도착 |
+| bag.items | 아이템 |
+| place.hospital | 병원 |
+| place.ingredients | 재료 가게 |
+| place.walk | 산책 |
+| profile.red.intro | 활발하고 사람을 좋아해요 |
+| profile.red.favSnack | 육포 |
+| profile.red.favPlay | 공 굴리기 |
+| profile.white.intro | 조용하고 다정해요 |
+| profile.white.favSnack | 우유 과자 |
+| profile.white.favPlay | 햇살 낮잠 |
+| profile.sesame.intro | 호기심이 많아요 |
+| profile.sesame.favSnack | 고구마칩 |
+| profile.sesame.favPlay | 짧은 산책 |
+| profile.kuro.intro | 쿨해 보이지만 잘 챙겨요 |
+| profile.kuro.favSnack | 연어 스틱 |
+| profile.kuro.favPlay | 줄다리기 |
+| tutorial.1 | 어서 와요! 저는 이 카페의 간판견 동구예요. |
+| tutorial.2 | 손님이 오면 시바를 데려다 주세요. 시바를 만나면 손님이 기뻐해요. |
+| tutorial.3 | 가게관리에서 메뉴를 개발하고 카페를 키울 수 있어요. |
+| tutorial.4 | 시바들 탭에서 시바를 눌러 소개를 보고 돌봐 주세요. |
+| tutorial.5 | 오른쪽 위 미션을 하면 보상을 받아요. 그럼 잘 부탁해요! |
+| hud.aria.resources | 카페 자원 |
+| hud.aria.currencies | 재화 |
+| hud.aria.coinLedger | 코인 · 손익계산서 |
+| hud.aria.coinShop | 코인 상점 열기 |
+| hud.aria.diaShop | 다이아 상점 열기 |
+| hud.aria.cafeExp | 카페 경험치 |
+| hud.aria.quest | 퀘스트 |
+| hud.aria.mailEvent | 우편함·이벤트 |
+| hud.aria.map | 다다미 카페 지도 · 드래그하여 이동 |
+| mm.static.title | 가게 관리 |
+| mm.static.hint | 카페 현황 · 메뉴 개발 · 업그레이드 |
+| mm.aria.nav | 메뉴 |

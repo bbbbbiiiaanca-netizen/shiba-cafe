@@ -1,4 +1,5 @@
 import {loadHd} from './hd-assets.js';
+import {t} from './i18n.js';
 import {CFG} from './config.js';
 import {preservesEntrance} from './navigation.js';
 import {canWalk,walkFrame} from './walk-frames.js';
@@ -7,8 +8,8 @@ export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
  let dragSprite=null;let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,panX=0,panBounds={minX:0,maxX:0},drag=null,last,selected=null,selectionBefore=null,selectionNew=false,hits=[],gridCells=0,maxScroll=0,markers=[],markerPhase=null,zoom=1;
- const bar=document.createElement('div');bar.hidden=true;bar.className='furniture-actions';bar.setAttribute('aria-label','가구 편집');
- bar.innerHTML='<button data-furniture-cancel>취소</button><button data-furniture-store>보관</button><button data-furniture-save>저장하기</button><button data-furniture-flip>뒤집기</button><button data-furniture-rotate>돌리기</button><button data-wall-add hidden>가벽 배치</button><button data-wall-remove>가벽 제거</button><button data-furniture-done>확인</button>';
+ const bar=document.createElement('div');bar.hidden=true;bar.className='furniture-actions';bar.setAttribute('aria-label',t('edit.aria'));bar.setAttribute('data-i18n-attr','aria-label:edit.aria');
+ bar.innerHTML=`<button data-furniture-cancel data-i18n="app.cancel">${t('app.cancel')}</button><button data-furniture-store data-i18n="edit.store">${t('edit.store')}</button><button data-furniture-save data-i18n="edit.save">${t('edit.save')}</button><button data-furniture-flip data-i18n="edit.flip">${t('edit.flip')}</button><button data-furniture-rotate data-i18n="edit.rotate">${t('edit.rotate')}</button><button data-wall-add hidden data-i18n="edit.wallAdd">${t('edit.wallAdd')}</button><button data-wall-remove data-i18n="edit.wallRemove">${t('edit.wallRemove')}</button><button data-furniture-done data-i18n="app.ok">${t('app.ok')}</button>`;
 
  function syncBar(){bar.hidden=!edit;bar.classList.toggle('has-selection',!!selected);for(const button of bar.querySelectorAll('button'))button.disabled=button.hasAttribute('data-furniture-save')||button.hasAttribute('data-wall-add')?false:button.hasAttribute('data-wall-remove')?current()?.type!=='wall':!selected;}
  const slots=()=>last?.[0].placement.slots||MAP.zones[0].slots;
@@ -17,7 +18,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
  const repaint=()=>{syncBar();last&&draw(...last);};
  function accept(candidate,zone){
   const before=slots(),after=[...before.filter(s=>s.id!==candidate.id),candidate];
-  if(!preservesEntrance(zone,before,after)){onBlocked('입구가 막혔어요!');return false;}
+  if(!preservesEntrance(zone,before,after)){onBlocked(t('edit.entranceBlocked'));return false;}
   if(!validPlacement(candidate,before,zone)){onBlocked();return false;}return true;
  }
  function placeWall(origin){if(!edit||!last)return false;if((last[0].wallOwned??PARTITION.count)<=slots().filter(x=>x.type==='wall').length)return false;const zone=zonesForSpace(last[0].space)[0];
@@ -26,7 +27,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
  }
  bar.querySelector('[data-wall-add]').onclick=()=>{const zone=zonesForSpace(last[0].space)[0];for(let j=0;j<zone.rows;j++)for(let i=0;i<zone.cols;i++){
   const c={id:'wall-preview',type:'wall',origin:[i,j],dir:0};if(validPlacement(c,slots(),zone)&&preservesEntrance(zone,slots(),[...slots(),c])){placeWall(c.origin);return;}
- }onBlocked('입구가 막혔어요!');};
+ }onBlocked(t('edit.entranceBlocked'));};
  bar.querySelector('[data-wall-remove]').onclick=()=>{const item=current();if(item?.type!=='wall')return;slots().splice(slots().indexOf(item),1);selected=null;onChange();repaint();};
  function orient(dir){const item=current();if(!item||drag?.item)return;const candidate={...item,dir};if(!accept(candidate,zonesForSpace(last[0].space)[0]))return;item.dir=dir;onChange();repaint();}
  bar.querySelector('[data-furniture-flip]').onclick=()=>current()&&orient(flipDir(current().dir));

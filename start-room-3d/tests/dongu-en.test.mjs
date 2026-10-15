@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';
+import {donguArt,setLangSource} from '../i18n.js';import * as Q from '../q1715.js';
+assert.equal(donguArt('front','en'),'assets/drive/chars/dongu/dongu-front_en.png');
+assert.equal(donguArt('sprite','en'),'assets/drive/dongu_en.webp');
+assert.equal(donguArt('front','ko'),'assets/drive/chars/dongu/dongu-front.png');
+assert.equal(donguArt('sprite','ko'),'assets/drive/dongu.webp');
+for(const k of ['front','sprite'])for(const l of ['ko','en'])assert.ok(fs.existsSync(new URL('../'+donguArt(k,l),import.meta.url)));
+setLangSource(()=>'en');assert.match(Q.dialogueHtml({variant:'warning',actor:'dongu',text:'x'}),/dongu-front_en\.png/);
+setLangSource(()=>'ko');const h=Q.dialogueHtml({variant:'warning',actor:'dongu',text:'x'});assert.match(h,/dongu-front\.png/);assert.ok(!h.includes('_en.'));
+console.log('dongu-en ok');

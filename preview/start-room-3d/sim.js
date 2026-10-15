@@ -5,6 +5,7 @@ export {tickManager,seatSlots,syncRoutes,pathfind};
 import {defaultPlacement,restorePlacement,restoreSpace,zonesForSpace,FLOOR_ART,PARTITION,footprintCells,validPlacement,SPRITES} from './map-data.js';
 import {CFG,GACHA_TABLE,pressureAt,isUnset} from './config.js';
 import {canWalk} from './walk-frames.js';
+import {t} from './i18n.js';
 
 export function rng(seed=1){let a=seed>>>0||1;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -20,8 +21,9 @@ const H=3600e3;
 // §17-2 order: income 메뉴 판매 · 시바 만남 추가 수입 · 오프라인 수입 (café payments settled while the game was closed/hidden) · 기타 수입 (walk rewards, any other non-sales coins);
 // expense 알바비 · 병원비 · 메뉴 개발비 · 액세서리 구입 (all accessories) · 가구 구입 (always shown, no purchase exists yet).
 // 가게 업그레이드 is not a ledger line (user 2026-10-15): upgrade purchases spend coins without a statement row.
-export const ledgerCategories={sales:['메뉴 판매','income'],meeting:['시바 만남 추가 수입','income'],offline:['오프라인 수입','income'],other:['기타 수입','income'],
- alba:['알바비','expense'],hospital:['병원비','expense'],menu:['메뉴 개발비','expense'],accessory:['액세서리 구입','expense'],furniture:['가구 구입','expense'],land:['땅 넓히기','expense']};
+// [i18n key of the line label, kind]; ledgerStatement resolves the label text.
+export const ledgerCategories={sales:['ledger.sales','income'],meeting:['ledger.meeting','income'],offline:['ledger.offline','income'],other:['ledger.other','income'],
+ alba:['ledger.alba','expense'],hospital:['ledger.hospital','expense'],menu:['ledger.menu','expense'],accessory:['ledger.accessory','expense'],furniture:['ledger.furniture','expense'],land:['ledger.land','expense']};
 export const ledgerDay=now=>Math.floor((now+CFG.ledger.dayOffsetMs)/CFG.ledger.periodMs);
 export function settleLedger(s,now){
  const today=ledgerDay(now);s.ledger??={days:{},now};s.ledger.now=Math.max(now,s.ledger.now??now);const latest=ledgerDay(s.ledger.now);
@@ -34,7 +36,7 @@ export function recordLedger(s,category,amount,now=s.ledger?.now??s.lastSeen){
 }
 export function ledgerStatement(s,now,offset=0){
  const day=settleLedger(s,now)+(offset===-1?-1:0),row=s.ledger.days[day]||{};
- const lines=Object.entries(ledgerCategories).map(([id,[label,kind]])=>({id,label,kind,amount:row[id]||0})).filter(x=>x.id!=='land'||x.amount!==0);
+ const lines=Object.entries(ledgerCategories).map(([id,[key,kind]])=>({id,label:t(key),kind,amount:row[id]||0})).filter(x=>x.id!=='land'||x.amount!==0);
  return {day,lines,net:lines.reduce((n,x)=>n+(x.kind==='expense'?-x.amount:x.amount),0)};
 }
 export function recordPayment(s,pay,now,{offline=false}={}){

@@ -1,9 +1,10 @@
 // Pure, save-compatible §17 rules. No fixture data enters production state.
 import {CFG} from './config.js';
+import {t,tf} from './i18n.js';
 const finite=x=>typeof x==='number'&&Number.isFinite(x);
 export function initQ17(s){s.friends??=[];s.ingredients??={};s.dishes??={};s.run??={lastScore:null,bestScore:null,shibas:[]};for(const sh of s.shibas)sh.friends??=[];return s;}
 export function visitFriend(s,id,now){initQ17(s);if(!s.friends.some(f=>String(f.id)===String(id)))return false;const day=Math.floor((now+CFG.ledger.dayOffsetMs)/CFG.ledger.periodMs);if(s.friendVisits?.day!==day)s.friendVisits={day,count:0};const v=CFG.heartUse.visit;if(!finite(v.daily)||!finite(v.hearts)||s.friendVisits.count>=v.daily)return false;s.friendVisits.count++;s.hearts+=v.hearts;return true;}
-export const recipeName=(r,i)=>r.name??`요리 ${i+1} 미정`;
+export const recipeName=(r,i)=>(r.name==null?null:tf('recipe.'+r.id,r.name))??t('recipe.unnamed',{n:i+1});
 export function recipeUnlocked(s,r){const i=CFG.cooking.recipes.indexOf(r);return i>=0&&(i<CFG.cooking.startUnlocked||(finite(r.unlockLevel)&&s.cafe.level>=r.unlockLevel));}
 export function craftCheck(s,r){initQ17(s);return !r||!Number.isSafeInteger(CFG.cooking.dishesPerCraft)||CFG.cooking.dishesPerCraft<=0||!recipeUnlocked(s,r)||s.craft||!finite(r.craftSec)||r.craftSec<CFG.cooking.craftSecRange[0]||r.craftSec>CFG.cooking.craftSecRange[1]||!r.ingredients||!Object.keys(r.ingredients).length||Object.entries(r.ingredients).some(([id,n])=>!CFG.ingredients[id]||!finite(n)||n<=0||(s.ingredients[id]||0)<n);}
 // starting value 2026-10-15, pending user confirm: a single active craft timer.
