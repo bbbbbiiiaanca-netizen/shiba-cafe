@@ -843,3 +843,9 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - 다이아 pools: `s.dia` = total, `s.diaPaid` = paid part (grants are free; no paid purchase flow exists yet). All 다이아 spends go through `spendDia` (order `CFG.dia.spendOrder`='freeFirst' — **question**: free or paid first?). Time-skips paid with free 다이아 give no EXP (`CFG.dia.freeSkipGivesExp=false`; mixed → EXP × paid share). Note: no current skip target grants EXP directly, so this is a guard for future.
 - `CFG.priceTiers` by **current cafe level**: Lv1–10 ×1, 11–20 ×1.5, 21–35 ×2.5, 36–50 ×4 on coin prices of furniture, walls, themes (coins), land rows (before tier rounding) and shop upgrades. Not menus, 알바, or 2F. **Question:** the review doc says "해금 레벨 구간" (item unlock level) — current cafe level used as instructed; switch if unlock level was meant. Should 2F (7,000,000) be tiered too?
 - Not done (per instruction): late decor score, weekly season shop, furniture recolour.
+
+## 마을 map interim (2026-10-15 09:06)
+- Cause 1: 마을 rendered as a 2-card grid (병원/산책 cards), not a map.
+- Cause 2 (why 수인님 may see old builds): all work is committed locally only (never pushed), so GitHub Pages has no start-room-3d preview at all (…/preview/start-room-3d/ → 404; only preview/art-demo and v05 are live on origin/main). Viewing new tabs needs a push/deploy decision from the user.
+- Fix: map-like area (plain warm background, `CFG.village.background` null until 그림이 art), places positioned by `CFG.village.places` x/y % (starting values), tap → same actions. No drawn roads/rivers. Hospital has no approved icon → name label only (art request: 병원 building, 산책로 building, map background).
+- Friends: visit hearts cap `heartUse.visit` daily 20, 1 heart each (starting values, was 3).

@@ -47,7 +47,7 @@ export const CFG={
   regenEverySec:1800}, // 1.4 / 갱신 28·31: 30분당 1개; 보상 하트는 상한을 넘어 무제한 적립
  // §17-9: all numeric values below are starting value 2026-10-15, pending user confirm.
  heartUse:{incomeRatePerSec:null,affinity:{min:0,max:100,start:0,guestMul:null},walkAffinity:1,
-  ads:{grant:1,burst:3,cooldownSec:1800,daily:10},buy:{hearts:5,dia:50},visit:{daily:3,hearts:1},invite:{daily:1,hearts:2},
+  ads:{grant:1,burst:3,cooldownSec:1800,daily:10},buy:{hearts:5,dia:50},visit:{daily:20,hearts:1},invite:{daily:1,hearts:2},
   items:[
    {id:'call',name:'손님 부르기',level:0,cost:1,sec:600,guests:1.5,line:'손님 더 많이'},
    {id:'pet',name:'쓰다듬기',level:0,cost:1,shiba:true,affinity:3,daily:3,line:'친밀도 올리기'},
@@ -204,6 +204,8 @@ export const CFG={
  priceTiers:[[10,1],[20,1.5],[35,2.5],[50,4]], // [max cafe level, ×]
  dia:{spendOrder:'freeFirst', // starting value 2026-10-15, pending user confirm: which 다이아 pool is spent first
   freeSkipGivesExp:false}, // §17-11: time-skips paid with free 다이아 give no EXP (mixed payment → EXP × paid share)
+ village:{background:null, // 그림이 map art pending — plain warm background until then
+  places:[{id:'hospital',name:'병원',x:28,y:34,icon:null},{id:'walk',name:'산책',x:70,y:64,icon:'assets/drive/ui/card-walk.png'}]}, // starting value 2026-10-15, pending user confirm: map positions in % of the map area
  view:{zoomMin:1,zoomMax:2.5}, // starting value 2026-10-15, pending user confirm: pinch/ctrl+wheel zoom range (1 = fit width)
  people:{scale:1,withMapScale:true}, // starting value 2026-10-15, pending user confirm: people (manager/guests) were drawn at fixed 150 screen px ignoring map scale; now 150 art px × map scale × scale, foot anchor kept
  shibaRisk:{orange:50,red:80,highIsBad:['dirt','fatigue','boredom']}, // starting value 2026-10-15, pending user confirm: 'badness' 0–100 per gauge (full/happy inverted); ≥50 orange, ≥80 red; sick/injured red, hospital orange
