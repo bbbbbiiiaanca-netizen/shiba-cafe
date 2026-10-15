@@ -290,4 +290,5 @@ Manager v2 frames replace the v1 files at the same local paths (v1 rows above ar
 | cooking/ing-carrot.png | Drive 1Kenc5iyhR_j_t1AxjePZhngSNSrwVc4T (재료_당근.png, unmodified) | sha256 20508aeec25788b35a5331debbe465e112a015c8b56892bf4898a6193309d0ba | 요리 제작 재료 |
 | cooking/ing-sweet-potato.png | Drive 1DQIArEVeZ83itFZtOqxhQYWv5DLpOHi_ (재료_고구마.png (interior), unmodified) | sha256 a1c1373cf1028784778eed1e445dffd1c014c183d6cb0b7b33d7f8aea87ba07f | 요리 제작 재료 |
 | cooking/ing-chicken.png | Drive 1wu9GPccCnujyU5dOjq4yS3h9nBLYOX6x (재료_닭고기.png, unmodified) | sha256 868ae8a8d78290ba716f039a6eaf6c8c40d9207e6735ce6ef68b86b7738598a3 | 요리 제작 재료 |
-| bg-hospital-clinic.png | Drive 10OB6TzgCt79ClTFmrV769zimnUc5IjQ8 (배경_병원진료실.png, 1080×1920, unmodified) | sha256 c93572464743aa4e4eee8c46c0763f696ef959f32db24b4cf673417b1a478b7c | 병원 진료실 배경 (asset only, 아직 화면 미연결) |
+| bg-hospital-clinic.png | Drive 10OB6TzgCt79ClTFmrV769zimnUc5IjQ8 (배경_병원진료실.png, 1080×1920, unmodified) | sha256 c93572464743aa4e4eee8c46c0763f696ef959f32db24b4cf673417b1a478b7c | 병원 진료실 배경 (병원 화면에 연결) |
+| hospital/sick-red-bandage.png | Drive 19xLjdPp_98d5sqpPGgCB3NWfDiy7iqdE (interior 시바_적시바_아픔_붕대.png, 1024×1536, unmodified) | sha256 ae37e5635911a909df7309fec1d92da93d81e291951985387ce468905484354f | 병원: 적시바 아픔·붕대 포즈 |

@@ -208,6 +208,13 @@ small.fx{display:block;font-family:'Gowun Dodum',sans-serif;font-size:11px;opaci
 .cook-detail{display:flex;flex-direction:column;align-items:center;gap:8px}.cook-detail h3{margin:0}.q17-preview>.slot,.q17-preview>img{width:128px;height:128px}.cook-ings{display:flex;flex-direction:column;gap:6px;width:100%}.cook-ing{display:flex;align-items:center;gap:8px;justify-content:center}.cook-ing>.slot,.cook-ing>img{width:32px;height:32px}.cook-ing b{min-width:36px}.cook-ing.ok b{color:#3a9a4a}.cook-fx{margin:0;font-weight:700}.cook-foot{display:flex;flex-direction:column;align-items:center;gap:6px;border-top:1px solid #ead3a8;padding-top:8px}.cook-foot button[data-act=craft]{width:100%}
 .friend-swipe{scroll-snap-type:x mandatory}.friend-card{width:150px!important}.friend-visit{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}.friend-photo.big img{width:140px;height:140px}
 #panel[data-panel=cooking],#panel[data-panel=friends]{top:auto;max-height:84%}
+#panel[data-panel=hospital] #pbody{padding:0}
+#panel[data-panel=hospital]{top:0}
+.hospital-room{min-height:100%;background-size:cover;background-position:center;display:flex;align-items:flex-end;justify-content:center;padding:12px;box-sizing:border-box}
+.hosp-list{width:100%;display:flex;flex-direction:column;gap:10px}
+.hosp-row{display:flex;align-items:center;gap:10px;background:rgba(255,253,247,.94);border-radius:16px;padding:10px;text-align:center}
+.hosp-art{flex:none;width:140px;height:96px}.hosp-art img{width:100%;height:100%;object-fit:cover;object-position:50% 58%}
+.hosp-info{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}.hosp-empty{margin:0 auto;background:rgba(255,253,247,.94);border-radius:16px;padding:12px 18px;text-align:center}
 #app:has(#panel[data-panel=cooking]:not([hidden])) #mainMenu>:not(#mainTabs),#app:has(#panel[data-panel=friends]:not([hidden])) #mainMenu>:not(#mainTabs){visibility:hidden}
 .dialogue-text,.dialogue-bubble,[data-dialogue] p{word-break:keep-all}
 .q17-cooking{gap:6px!important;padding:8px!important}.cook-list{gap:4px!important}.cook-row{padding:4px 10px!important;min-height:0!important;height:40px}.cook-row>img:first-child{width:28px!important;height:28px!important;object-fit:contain}.cook-row.locked img:not(:first-child){width:18px;height:18px}

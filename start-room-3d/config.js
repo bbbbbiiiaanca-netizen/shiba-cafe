@@ -296,6 +296,9 @@ export const CFG={
   costs:[[1,400,1200,2400],[10,500,1500,3000],[20,800,2400,4700],[30,1000,3000,6100],[40,1100,3400,6800]], // 갱신 131 hospital cost table
   }, // 치료 앞당기기 = timeSkip (갱신 135-2)
 
+ hospitalArt:{background:'assets/drive/bg-hospital-clinic.png', // 배경_병원진료실.png
+  sick:{red:'assets/drive/hospital/sick-red-bandage.png'}}, // 시바_적시바_아픔_붕대.png · sesame/kuro/white 그림 미도착 → 비워 둠
+
  // ── 알바 (갱신 99·99-2·118·118-1·123-x·124-1·125-1) ──
  alba:{
   // cost: starting value 2026-10-15 (밸런스_2년.md §3 수인님 확정), pending user confirm: 15× the 갱신 125-1 price

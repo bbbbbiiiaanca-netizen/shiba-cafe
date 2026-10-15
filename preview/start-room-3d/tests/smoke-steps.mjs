@@ -15,6 +15,7 @@ export default async function({ev,check,sleep,reload}){
  await check('first-run 동구 tutorial: dongu dialogue 1/N with 다음 and 건너뛰기','(i=>!!i&&/dongu-front\\.png$/.test(i.dataset.src||i.getAttribute("src")))(document.querySelector("[data-dialogue=tutorial] .dialogue-character img"))&&document.querySelector("[data-act=confirmYes]").textContent==="다음"&&!!document.querySelector("[data-act=tutorialSkip]")');
  await ev('document.querySelector("[data-act=confirmYes]").click();true');await check('tutorial 다음 advances to step 2','/^2\\//.test(document.querySelector("[data-dialogue=tutorial] .speech").textContent)');
  await ev('document.querySelector("[data-act=tutorialSkip]").click();true');
+ await check('village 병원 opens the clinic panel with interior background','(()=>{__game.open("hospital");const h=document.querySelector("[data-hospital]");const ok=!!h&&h.style.backgroundImage.includes("bg-hospital-clinic.png")&&!/debug|undefined|NaN/.test(h.textContent);__game.close();return ok})()');
  await check('start modal closes','__game.state.started&&document.getElementById("modal").hidden');
  await check('start shiba is Lv21 kuro with Sit/Wait 3','(s=>s.shibas.length===1&&s.shibas[0].breed==="kuro"&&s.shibas[0].level===21&&s.shibas[0].tricks.sit===3&&s.shibas[0].tricks.wait===3)(__game.state)');
  await check('starter chosen approved bandana equipped','__game.state.shibas[0].accUnlocked&&__game.state.shibas[0].acc==="bandana-triangle-cell1"&&Object.keys(__game.state.accInv).length===0');
