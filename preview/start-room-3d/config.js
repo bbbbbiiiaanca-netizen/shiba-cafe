@@ -58,7 +58,7 @@ export const CFG={
   decorScores:{'tea-table':null,zabuton:null,stairs:null,counter:null},themeLogos:{tatami:'assets/drive/ui/ui-theme-logo-tatami.png',fuji:null,bamboo:null},themeLogoSize:[256,128],luckyBoxArt:'assets/drive/ui/ui-lucky-box.png',luckyBoxArtSize:[512,512], // 행운 상자 = interior 1Fgl1U8v… ; 다다미 logo (256×128) pending
    // logo/lucky box art pending (empty frames)
   luckyBoxPrices:{dia:null,coin:null,heart:null}}, // UNSET decor/logo art/lucky box prices pending 똑또기
- run:{playEnergy:1,skipEnergy:2,startEnergy:null,startLevel:null,energyCap:null,regenSec:null,bonusPerShiba:null,upgrades:null,scoreToReward:null}, // UNSET energy/bonus/upgrades/rewards pending 똑또기
+ run:{bg:'assets/drive/run/bg-ingredient-run-v2.png', /* 재료달리기_배경_v2.png 1080×1920 위아래 반복, 화면 미구현 */ playEnergy:1,skipEnergy:2,startEnergy:null,startLevel:null,energyCap:null,regenSec:null,bonusPerShiba:null,upgrades:null,scoreToReward:null}, // UNSET energy/bonus/upgrades/rewards pending 똑또기
 
  ledger:{periodMs:86400000,dayOffsetMs:32400000,historyDays:7,includeDiamonds:false,openFromPill:true,openFromStore:true}, // §15 starting value 똑또기 2026-10-14, pending user batch confirm: KST midnight day, 7 days kept, 멍코인만, opened from 멍코인 pill and 가게 tab
  saveKey:'shibaCafe.save.v3',saveVersion:3, // EXEMPT: save schema version (engine metadata)
