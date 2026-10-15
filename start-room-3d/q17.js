@@ -16,7 +16,8 @@ export const runUnlocked=s=>(s.cafe?.level??0)>=CFG.run.unlockLevel;
 export function runBonusPct(s){const id=s.run?.shibas?.[0],sh=s.shibas.find(x=>x.id===id);if(!sh)return 0;const b=CFG.run.shibaBonus;return Math.min(b.maxPct,(sh.level||0)*b.perLevel);}
 export function skipCheck(s,now=Date.now()){if(!runUnlocked(s))return 'locked';const d=runDay(s,now);if(CFG.run.skip.needRunToday&&!d.ran)return 'run';if(!d.bestReward)return 'run';if(runPlaysLeft(s,now)<CFG.run.skip.cost)return 'plays';return null;}
 export function skipReward(s,now=Date.now()){const b=runDay(s,now).bestReward,k=CFG.run.skip.rate;if(!b)return null;const f=n=>n>0?Math.max(1,Math.floor(n*k)):0; // 버림, 최고 판에서 1개 이상 모은 항목은 최소 1개
- return {mung:f(b.mung),got:Object.fromEntries(Object.entries(b.got).map(([i,n])=>[i,f(n)]).filter(([,n])=>n>0))};}
+ return {mung:b.mung>0?Math.max(CFG.run.coinValue,Math.floor(b.mung*k)):0, // 멍코인 최소 1개 = coinValue 멍
+ got:Object.fromEntries(Object.entries(b.got).map(([i,n])=>[i,f(n)]).filter(([,n])=>n>0))};}
 export function skipRun(s,now=Date.now()){if(skipCheck(s,now))return false;const d=runDay(s,now),r=skipReward(s,now);d.played+=CFG.run.skip.cost;s.coins=(s.coins||0)+r.mung;for(const [i,n] of Object.entries(r.got))s.ingredients[i]=(s.ingredients[i]||0)+n;return r;}
 export function rewardSnapshot(s){return {coins:s.coins,dia:s.dia,hearts:s.hearts,items:{...s.items},paws:Object.fromEntries(s.shibas.map(sh=>[sh.id,sh.paws]))};}
 export function rewardDiff(before,s){const out=[];for(const k of ['coins','dia','hearts'])if(finite(before[k])&&s[k]>before[k])out.push({id:k,n:s[k]-before[k]});for(const [id,n] of Object.entries(s.items))if(n>(before.items[id]||0))out.push({id,n:n-(before.items[id]||0)});for(const sh of s.shibas)if(sh.paws>(before.paws[sh.id]||0))out.push({id:'paws',n:sh.paws-(before.paws[sh.id]||0)});return out;}

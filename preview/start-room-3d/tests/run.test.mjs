@@ -40,5 +40,5 @@ for(const k of ['skipEnergy','startEnergy','energyCap','regenSec','scoreToReward
  assert.equal(B.coins,216);assert.equal(B.ingredients.rice,5);assert.equal(Q.runPlaysLeft(B,now),left-1);
  Q.skipRun(B,now);Q.skipRun(B,now);assert.equal(Q.runPlaysLeft(B,now),0);assert.equal(Q.skipCheck(B,now),'plays');assert.equal(Q.skipRun(B,now),false);
  assert.equal(Q.skipCheck(B,now+86400e3),'run');
- const D=Q.runDay(B,now);D.bestReward={mung:1,got:{rice:1,chicken:0}};assert.deepEqual(Q.skipReward(B,now),{mung:1,got:{rice:1}});D.bestReward={mung:0,got:{}};assert.deepEqual(Q.skipReward(B,now),{mung:0,got:{}});}
+ const D=Q.runDay(B,now);D.bestReward={mung:10,got:{rice:1,chicken:0}};assert.deepEqual(Q.skipReward(B,now),{mung:10,got:{rice:1}});D.bestReward={mung:12,got:{}};assert.equal(Q.skipReward(B,now).mung,10);D.bestReward={mung:20,got:{}};assert.equal(Q.skipReward(B,now).mung,14);D.bestReward={mung:0,got:{}};assert.deepEqual(Q.skipReward(B,now),{mung:0,got:{}});}
 console.log('run: Lv3 unlock, shiba bonus 1%/Lv max 50%, skip 70% after real run, old energy keys removed; speed/spawn ramps, 2-hit hearts, daily 5 + 3 ads, 10멍 coins + ingredients, today best, ads off by default, adLog per day; 3 lanes, swipe/keys lane change, obstacles end run, pickups, null art skipped, time limit passed');

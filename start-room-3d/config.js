@@ -73,7 +73,7 @@ export const CFG={
   scorePer:{coin:1,ingredient:1}, // 시작값 2026-10-15: 점수
   coinValue:10,grantIngredients:true, // 시작값 2026-10-15: 코인 1개 = 10멍, 재료는 1개씩 요리 재료 창고(s.ingredients)로
   daily:{free:5,adExtra:1,adMax:3},adsEnabled:false, // adsEnabled: 광고 승인 전 false → 광고 버튼 숨김, 무료 5판만(머니 2026-10-15). 시작값 2026-10-15: 하루 무료 5판, 광고 1번 = 1판 추가(하루 최대 3번). 광고 SDK는 스텁. 하루 = 기존 KST ledger day
-  skip:{needRunToday:true,cost:1,rate:0.7}, // 시작값 2026-10-15: 오늘 직접 1판 이상 달린 뒤에만, 무료 판 1개 사용, 오늘 최고 판 보상(멍·재료)의 70% 즉시 지급(버림, 1개 이상 모은 항목은 최소 1개)
+  skip:{needRunToday:true,cost:1,rate:0.7}, // 시작값 2026-10-15: 오늘 직접 1판 이상 달린 뒤에만, 무료 판 1개 사용, 오늘 최고 판 보상(멍·재료)의 70% 즉시 지급(버림, 1개 이상 모은 항목은 최소 1개, 멍코인 1개 = coinValue 멍)
   shibaBonus:{perLevel:1,maxPct:50}, // 시작값 2026-10-15: 함께 달리는 시바 레벨 1당 코인 +1%, 최대 50%
   unlockLevel:3, // 시작값 2026-10-15: 카페 Lv3에 열림
   upgrades:null}, // 나중에 정함: 강화는 출시 버전에서 제외
