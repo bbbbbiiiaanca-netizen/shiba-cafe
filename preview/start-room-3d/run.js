@@ -22,21 +22,18 @@ export function startRunScreen({cfg,ingredients,shibaSrc,sheet=null,coinSrc,onEn
  const ids=Object.keys(ingredients),r=createRun(cfg,ids,rng),[W,H]=cfg.screen,load=src=>{const i=new Image();i.src=src;return i;};
  const img={bg:load(cfg.bg),shiba:load(sheet?sheet.src:shibaSrc),coin:load(coinSrc),heart:load(cfg.heartImg.full),heartEmpty:load(cfg.heartImg.empty),obs:Object.fromEntries(obstacleKinds(cfg).map(k=>[k,load(cfg.obstacles[k])])),ing:Object.fromEntries(ids.map(k=>[k,load(ingredients[k].img)]))};
  const root=document.createElement('div');root.id='runScreen';root.setAttribute('data-run-screen','');
- root.innerHTML=`<canvas width="${W}" height="${H}"></canvas><div class="run-end" hidden></div>`;document.body.appendChild(root);
- const cv=root.querySelector('canvas'),g=cv.getContext('2d');let last=null,raf=0,paused=false,sx=null;
+ root.innerHTML=`<div class="run-hud" data-run-hud><div class="run-hud-line" data-run-stats></div><div class="run-hearts">${Array.from({length:cfg.hits},()=>`<img src="${cfg.heartImg.full}" alt="">`).join('')}</div>${playsLeft!=null?`<div class="run-hud-line">오늘 남은 판 ${playsLeft}</div>`:''}</div><div class="run-stage"><canvas width="${W}" height="${H}"></canvas></div><div class="run-end" hidden></div>`;document.body.appendChild(root);
+ const stats=root.querySelector('[data-run-stats]'),hearts=[...root.querySelectorAll('.run-hearts img')],cv=root.querySelector('canvas'),g=cv.getContext('2d');let last=null,raf=0,paused=false,sx=null;
  const key=e=>{if(e.key==='ArrowLeft'){moveLane(r,-1);e.preventDefault();}if(e.key==='ArrowRight'){moveLane(r,1);e.preventDefault();}};
  addEventListener('keydown',key);
  cv.addEventListener('pointerdown',e=>{sx=e.clientX;});cv.addEventListener('pointerup',e=>{if(sx==null)return;const d=e.clientX-sx;sx=null;if(Math.abs(d)>30)moveLane(r,d>0?1:-1);});
  const draw=(i,x,y,w)=>{if(!i.complete||!i.naturalWidth)return;const h=w*i.naturalHeight/i.naturalWidth;g.drawImage(i,x-w/2,y-h/2,w,h);};
- const pill=(text,x,y)=>{g.font='54px Jua, "Gowun Dodum", sans-serif';g.textAlign='center';g.textBaseline='middle';const w=g.measureText(text).width+70;
-  g.fillStyle='rgba(255,248,232,.92)';g.beginPath();g.roundRect(x-w/2,y-45,w,90,45);g.fill();g.fillStyle='#5a3a22';g.fillText(text,x,y+3);};
  const render=()=>{const y0=r.scroll%H;if(img.bg.complete&&img.bg.naturalWidth){g.drawImage(img.bg,0,y0,W,H);g.drawImage(img.bg,0,y0-H,W,H);}
   for(const o of r.objs){if(o.done&&o.type!=='obstacle')continue;const x=cfg.laneX[o.lane];
    if(o.type==='obstacle')draw(img.obs[o.kind],x,o.y,cfg.obstacleW);else if(o.type==='coin')draw(img.coin,x,o.y,cfg.itemW);else draw(img.ing[o.kind],x,o.y,cfg.itemW);}
   if(sheet){const i=img.shiba;if(i.complete&&i.naturalWidth){const f=runFrame(sheet,r.t),w=cfg.shibaW,h=w*sheet.frameH/sheet.frameW;g.drawImage(i,f*sheet.frameW,0,sheet.frameW,sheet.frameH,r.x-w/2,cfg.shibaY-h/2,w,h);}}else if(cfg.shibaBlend){g.globalCompositeOperation=cfg.shibaBlend;draw(img.shiba,r.x,cfg.shibaY,cfg.shibaW);g.globalCompositeOperation='source-over';}else draw(img.shiba,r.x,cfg.shibaY,cfg.shibaW);
-  const ing=Object.values(r.got).reduce((a,b)=>a+b,0);pill(`멍코인 ${r.coins} · 재료 ${ing} · ${Math.max(0,Math.ceil(cfg.lengthSec-r.t))}초`,W/2,110);
-  for(let i=0;i<cfg.hits;i++)draw(i<cfg.hits-r.hitsTaken?img.heart:img.heartEmpty,W/2+(i-(cfg.hits-1)/2)*110,230,90);
-  if(playsLeft!=null)pill(`오늘 남은 판 ${playsLeft}`,W/2,340);};
+  const ing=Object.values(r.got).reduce((a,b)=>a+b,0),txt=`멍코인 ${r.coins} · 재료 ${ing} · ${Math.max(0,Math.ceil(cfg.lengthSec-r.t))}초`;if(stats.textContent!==txt)stats.textContent=txt;
+  hearts.forEach((h,i)=>{const s=i<cfg.hits-r.hitsTaken?cfg.heartImg.full:cfg.heartImg.empty;if(!h.src.endsWith(s))h.src=s;});};
  const end=()=>{removeEventListener('keydown',key);onEnd?.(r);const box=root.querySelector('.run-end');
   box.innerHTML=`<div class="run-card"><h2>${r.reason==='hit'?'앗, 부딪혔어요':'도착했어요'}</h2><p>점수 ${r.score}</p>${resultExtra(r)}<p>멍코인 ${r.coins}</p>${ids.filter(k=>r.got[k]).map(k=>`<p>${ingredients[k].name} ${r.got[k]}</p>`).join('')}<button data-act="runClose">돌아가기</button></div>`;
   box.hidden=false;box.querySelector('button').onclick=()=>root.remove();};

@@ -20,9 +20,11 @@ export async function q17Browser({ev,c,check,shot=async()=>{}}){
  await ev(`(()=>{window.q17Lv=__game.state.cafe.level;__game.state.cafe.level=2;__game.ui.modals=[];document.querySelector('[data-main-tab=manage]').click();__game.refresh();return true})()`);
  await check('run locked before Lv3 with lock art',`!!document.querySelector('[data-run-locked] img[src$="ui-lock.png"]')&&document.querySelector('[data-run-locked]').textContent.includes('Lv3 해금')&&!document.querySelector('[data-open=run]')`);
  await ev(`__game.state.cafe.level=Math.max(3,window.q17Lv);__game.refresh();__game.open('run');true`);
+ await check('run start: 4 reward icons, full-width start',`document.querySelectorAll('[data-run-rewards] img').length===4&&Math.abs(document.querySelector('.run-go').getBoundingClientRect().width-document.querySelector('[data-run]').getBoundingClientRect().width)<40`);
  await check('run start screen fits without scroll',`(()=>{const p=document.getElementById('pbody'),b=document.querySelector('[data-act=runSkip]').getBoundingClientRect(),q=document.querySelector('[data-act=runShiba]').getBoundingClientRect(),r=document.getElementById('panel').getBoundingClientRect();return p.scrollHeight<=p.clientHeight+1&&q.top>=r.top&&b.bottom<=r.bottom})()`);await click('[data-act=runPlay]');
   await check('q17 run opens full-screen run; uses a daily play',`!!document.querySelector('#runScreen canvas')&&__game.state.run.day.played===1`);
   await ev(`(()=>{const k=e=>dispatchEvent(new KeyboardEvent('keydown',{key:e}));const l=__game.run.state.lane;k('ArrowLeft');window.q17Lane=[l,__game.run.state.lane];return true})()`);
+  await check('run HUD above road (not over canvas)',`document.querySelector('[data-run-hud]').getBoundingClientRect().bottom<=document.querySelector('#runScreen canvas').getBoundingClientRect().top+1`);
   await check('run arrow key changes lane',`window.q17Lane[0]===1&&window.q17Lane[1]===0`);
   await ev(`(()=>{const r=__game.run.state;r.objs.push({type:'coin',lane:r.lane,y:__game.CFG.run.shibaY},{type:'obstacle',kind:'bicycle',lane:r.lane,y:__game.CFG.run.shibaY});window.q17Coins=__game.state.coins;return true})()`);await new Promise(r=>setTimeout(r,200));
   await check('run survives first hit',`!document.querySelector('#runScreen .run-card')&&__game.run.state.hitsTaken===1`);
