@@ -1,3 +1,4 @@
+import {q1715Browser} from './tests/q1715-browser.mjs';
 import {q17Browser} from './tests/q17-browser.mjs';
 import {startFlow} from './tests/start-flow.mjs';
 // Main cafe capture using capture-spec-v3.mjs Chrome CDP pipe approach, portrait 390×844.
@@ -164,7 +165,10 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await shot('main-screen-rf-manager.png');
  };
  // Unsaved capture fixture: legacy spec boost multiplier 1.2 exercises the timer; production multiplier stays null.
- if(process.argv.includes('--q17')){
+ if(process.argv.includes('--q1715')||process.argv.includes('--q1717')){
+ await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+ await q1715Browser({ev,shot,mode:process.argv.includes('--q1715')?'q1715':'q1717',check:async(name,expr)=>{if(!await ev(expr))throw Error(name);}});
+ }else if(process.argv.includes('--q17')){
  await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
  await q17Browser({ev,c,shot,check:async(name,expr)=>{if(!await ev(expr))throw Error(name);}});
  await c('Page.navigate',{url:'file://'+resolve(ROOT,'index.html')+'?temp=1&still=1&fresh=1&fixture=friends'});

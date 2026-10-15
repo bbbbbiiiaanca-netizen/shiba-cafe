@@ -24,6 +24,10 @@ export const CFG={
   name:null,unlockLevel:null,ingredients:null,craftSec:null,effect:{full:null,happy:null} // UNSET recipe identity, requirements, timing, effects pending 똑또기
  }))},
  ingredients:{'ingredient-pending':{name:null,price:null}}, // UNSET ingredient identities and prices pending 똑또기
+ quests:{daily:{resetKST:null,tasks:null,reward:null},dongu:{chapters:null},instantDia:null}, // UNSET quests/reset/reward/cost pending 똑또기
+ shop:{itemCategories:{'tea-table':'interior',zabuton:'interior',stairs:'interior',counter:'kitchen'}, // starting value 2026-10-15, pending user confirm
+  newItems:['tea-table','zabuton','stairs','counter'], // starting value 2026-10-15, pending user confirm: existing catalog launch badges
+  decorScores:{'tea-table':null,zabuton:null,stairs:null,counter:null},themeLogos:null,luckyBoxPrices:{dia:null,coin:null,heart:null}}, // UNSET decor/logo art/lucky box prices pending 똑또기
  run:{playEnergy:1,skipEnergy:2,startEnergy:null,startLevel:null,energyCap:null,regenSec:null,bonusPerShiba:null,upgrades:null,scoreToReward:null}, // UNSET energy/bonus/upgrades/rewards pending 똑또기
  profiles:Object.fromEntries(['red','white','sesame','kuro'].map(id=>[id,{intro:null,favSnack:null,favPlay:null}])), // UNSET profile copy pending 똑또기
 

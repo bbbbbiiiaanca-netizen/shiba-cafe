@@ -1,3 +1,4 @@
+import {q1715Browser} from './q1715-browser.mjs';
 import {q17Browser} from './q17-browser.mjs';
 // Headless Chrome smoke test of index.html (CDP pipe, no network). Run from start-room-3d/: node tests/smoke-browser.mjs
 // Opens the game fresh, drives the UI through the spec-v3 screens and fails on any page exception.
@@ -65,7 +66,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await check('cancel spends nothing','__game.state.shibas[0].paws===420');
  await ev('document.querySelector("#panel [data-act=levelUp]").click();document.querySelector("[data-act=confirmYes]").click();true');
  await check('confirmed level-up consumes personal paws and shows result','__game.state.shibas[0].level===22&&__game.state.shibas[0].paws===0&&/레벨업 완료/.test(document.getElementById("mbox").textContent)');
- await ev('document.querySelector("[data-act=modalOk]").click();document.querySelector("[data-main-tab=shop]").click();__game.state.coins=5000;__game.refresh();document.querySelector("[data-act=buyAcc][data-item=bandana-triangle-cell2]").click();true');
+ await ev('document.querySelector("[data-act=modalOk]").click();document.querySelector("[data-main-tab=shop]").click();document.querySelector("[data-act=shopTab][data-item=cash]").click();__game.state.coins=5000;__game.refresh();document.querySelector("[data-act=buyAcc][data-item=bandana-triangle-cell2]").click();true');
  await ev('document.querySelector("[data-main-tab=bag]").click();true');
  await check('shop primary action buys into inventory','__game.state.coins===0&&__game.state.accInv["bandana-triangle-cell2"]===1&&/가방 1/.test(document.querySelector("[data-inventory]").textContent)');
  await ev('document.querySelector("[data-inventory] [data-act=equip][data-item=bandana-triangle-cell2]").click();true');
@@ -93,7 +94,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  for(const type of ['mousePressed','mouseReleased'])await c('Input.dispatchMouseEvent',{type,...expansionPoint,button:'left',buttons:type==='mousePressed'?1:0,clickCount:1});
  await ev('document.querySelector("#mbox [data-act=confirmYes]").click();true');
  await check('Task B confirmed purchase merges row and records only land expense',`__game.state.space.unlockedRows===1&&__game.state.coins===0&&__game.S.ledgerStatement(__game.state,__game.clock.now()).lines.find(x=>x.id==='land').amount===__game.CFG.expansion.rowCost&&__game.iso.markers.find(m=>m.kind==='row').axis==='i'`);
- await ev('document.querySelector("[data-main-tab=shop]").click();document.querySelector("[data-act=unlockPopup]").click();true');
+ await ev('document.querySelector("[data-main-tab=shop]").click();document.querySelector("[data-act=shopTab][data-item=cash]").click();document.querySelector("[data-act=unlockPopup]").click();true');
  await check('Task B unlock popup offers coin and diamond choices, unknown 2F diamonds disabled',`!document.getElementById('modal').hidden&&!!document.querySelector('#mbox [data-kind=theme][data-via=coins]')&&!!document.querySelector('#mbox [data-kind=theme][data-via=dia]')&&document.querySelector('#mbox [data-kind=floor2][data-via=dia]').disabled&&document.querySelector('#mbox [data-kind=floor2][data-via=dia]').textContent.includes('미정')`);
  await go(false);
  await ev('document.querySelector("[data-main-tab=bag]").click();document.querySelector("[data-edit-toggle]").click();true');
@@ -226,7 +227,8 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev('__game.state.shibas[0].paws=__game.S.pawsToNext(__game.state.shibas[0].level);__game.state.cafe.level=10;__game.state.coins=__game.CFG.alba.daycare.cost;__game.refresh();true');
  await check('§16-1: red dots for shiba level-up and an available 알바 come from state',`(${dots}).shiba&&(${dots}).manage&&!(${dots}).shop&&!(${dots}).bag`);
  await ev('window.u17Before=JSON.stringify(__game.state);document.querySelector("#hud [data-act=mission]").click();true');
- await check('§17: top-right 미션 button is a 준비 중 stub (toast only)',`document.getElementById('toast').textContent==='준비 중'&&document.getElementById('modal').hidden&&JSON.stringify(__game.state)===window.u17Before`);
+ await check('§17-15: top-right 미션 opens empty quests without changing state',`!!document.querySelector('[data-quests-empty]')&&JSON.stringify(__game.state)===window.u17Before`);
+ await ev('__game.close();__game.refresh();true');
  await ev('__game.state.shibas[0].paws=0;__game.state.coins=0;__game.ui.modals=[];__game.refresh();true');
  await check('§17: no 시바 dot before a walk returns',`!(${dots}).shiba`);
  await ev('__game.ui.modals=[{kind:"confirm",text:"hold",yes:()=>{}}];__game.state.walkResults.push({shibaId:__game.state.shibas[0].id,sec:600,at:__game.clock.now(),events:[]});__game.refresh();true');
@@ -299,6 +301,7 @@ await new Promise(r=>setTimeout(r,600));
  await check('§17: 가게 관리 shows café status (level, max guests, upgrade levels, development) and no menu card grid',`!document.querySelector('[data-main-menu],.menu-card')&&/최대 손님/.test(document.querySelector('#menuList [data-cafe-level]').textContent)&&!!document.querySelector('#menuList [data-upgrade-levels]')&&!!document.querySelector('#menuList [data-manage-dev]')`);
  await go(true,'&temp=1');await (await import('./start-flow.mjs')).startFlow(ev);
  await q17Browser({ev,c,check});
+ await go(true,'&temp=1');await (await import('./start-flow.mjs')).startFlow(ev);await q1715Browser({ev,check});
  await go(true,'&temp=1&fixture=friends');await (await import('./start-flow.mjs')).startFlow(ev);
  await ev("__game.ui.modals=[];__game.open('friends');true");
  await check('q17 TEMP fixture labelled and swiped',"document.querySelector('[data-friends]').textContent.includes('TEST FIXTURE')&&!!document.querySelector('[data-act=friendVisit]')");

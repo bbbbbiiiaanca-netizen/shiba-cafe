@@ -925,3 +925,31 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - Prototype: tools/recolor-test.py (HSV remap of an orange-hue fur mask; white/cream markings, black eyes/nose/outlines, collar untouched). Screens: spec-v3-build/recolor-red.png, recolor-dongu-sheet.png (4 poses — consistent).
 - Verdict: pink good; cream and silver acceptable but the cream 우라지로 markings stay warm beige, so silver reads as "grey with beige patches" (not a true silver shiba); some pads/inner-ear shading pick up the tint. A per-coat second mask for markings (or 그림이 marking masks) would fix it. Runtime version not built yet (awaiting approval).
 - Breeding: config schema only (`CFG.breeding`, all null, disabled).
+
+## Q1715 — shared dialogue, quests and main entries (2026-10-15)
+- Viewed all ref-1715 / ref-1717 PNGs; used layout only, adapted to 390×844 portrait. Jua / Gowun Dodum retained. No art generated, traced, recoloured or drawn.
+- `modal kind: dialogue` has a standing side character, short speech above the head, brown text panel, 취소/확인; quest offer has icon slots/name/×goal and 확인. 파양 and save reset confirmations use it; existing transactional confirmations (land/level etc.) retain their tested price markup.
+- Dongu uses `assets/drive/chars/dongu/dongu-front.png` exactly as supplied, including RGB white background. Guest requests use the expressly approved `assets/cust_girl.png` / `cust_man.png`; unknown actors have empty art slots. 가게관리 shows request entry buttons for current unfulfilled guests. Shared normal/rude variants support existing guest request shape and optional `rude` flag; rude generation remains the existing simulation stub, with no new probability or gameplay invented.
+- Top-right 미션 and top-left quest icon open the same portrait quest panel: top tabs/progress, title/reward, rows with have/goal and shortcuts, bottom reset/time status. Null tasks show 할 일 미정, null rewards/cost/reset show 미정; instant completion disabled (no unapproved reward transactions). 동구와 대화 opens the shared quest offer.
+- Top-left vertical quest / mailbox·event entries use approved mission/mailbox PNGs. Mail dot reflects actual waiting mail; quest dot reflects configured completed tasks. Top guide uses config-derived completion progress; null hides it. No additional HUD row; bottom tabs unchanged.
+- `__game.debugQuestFixture(true)` works only under `?temp=1` (save suppressed); invoked only by smoke/capture drivers. Three explicitly labelled TEST FIXTURE rows, with illustrative progress/goal values 1/3, 0/2, 0/1, are test data, never live quest config or a normal save. Disable restores null empty state. No query parameter silently installs quests.
+- Capture mode `--q1715` writes DPR2 `main-screen-q1715-main.png`, `-dialogue-warning.png`, `-dialogue-quest.png`, `-quests-empty.png`, `-quests-fixture.png` into the existing default `/workspace/shiba-cafe-docs/spec-v3-build/` when run by the user.
+
+## Q1717 — portrait shop restyle
+- Main 상점 now has 주방/인테리어/익스테리어/테마/캐시·골드 tabs, horizontal theme logo slots, inventory entry and the existing scroll-snap furniture cards. Approved item images, category/name/New badge, config decor score and `S.furniturePrice` purchase action. 가방 retains the Q17 furniture swipe shop and placement inventory; 보관함 opens that furniture section.
+- Starting assignments, pending user confirm: 찻상/방석/계단 → 인테리어; 카운터 → 주방. Unknown future assignments must stay null and must not be silently assigned to 인테리어. Empty 익스테리어 shows 상품 미정. Existing theme names are labels, never substitute logo art; theme selection exposes the existing theme unlock controls.
+- `shop.newItems` launch badges on the four existing catalog entries are a starting display choice (2026-10-15, pending user confirm). No additional prices or scores chosen. Existing furniture/theme/accessory prices and paid-shop stubs retained.
+- Cash tab coupon field always toasts `쿠폰을 확인할 수 없어요`, never accepts or grants. 특별상점 has three empty lucky-box art slots for 다이아/멍/하트; prices null → 미정/disabled. No box contents, odds or rewards invented.
+- `--q1717` writes DPR2 `main-screen-q1717-shop-tabs.png`, `-theme-logos.png`, `-cash-coupon.png`, `-special.png` to the same default capture folder.
+
+### Art requests — Q1715 / Q1717
+- Quest task icons, reward art, any additional event entry icons (no speculative entries drawn).
+- Theme logos for existing themes; lucky box illustrations for each configured currency offering.
+- Dialogue frame/bubble decoration if desired; current brown panel and plain speech card are UI only. Dongu/guest assets are supplied; no replacement character art requested.
+
+### Missing values for 똑또기 — Q1715 / Q1717
+- `quests.daily.resetKST`, daily tasks/names/goals/progress sources/navigation destinations/rewards; `quests.dongu.chapters` and chapter task/reward definitions; `quests.instantDia` cost and completion/reward rules. All remain null with UNSET comments; no reset schedule or countdown duration invented.
+- `shop.decorScores` per item, `shop.themeLogos`, `shop.luckyBoxPrices.{dia,coin,heart}`; box content/odds require a future approved configuration before any purchase can be enabled.
+- Confirm initial item-category mapping and `shop.newItems` display list. These are starting display choices, not new economy numbers.
+- Validation: new unit tests and shared real-DOM smoke/capture driver added. Browser smoke and captures intentionally NOT run, per final user instruction that Chrome cannot run in this sandbox; capture output is therefore not claimed. Run `npm run test:browser`, then `node capture-main-screen.mjs --q1715` and `node capture-main-screen.mjs --q1717` outside this sandbox.
+- Final validation: `npm test` passed with the full legacy suite plus `tests/q1715.test.mjs`; JavaScript syntax checks and `git diff --check` passed. Existing browser shop checks now select 캐시·골드 for retained accessory/gacha controls, and the former 미션-stub check now asserts the quest empty screen.

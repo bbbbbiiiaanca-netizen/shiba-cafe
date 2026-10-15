@@ -20,7 +20,7 @@ export default async function({ev,check,sleep,reload}){
  await check('answered entrance enables guests; coins start at 30,000 (밸런스_2년.md §5) and only grow from payments; gauges remain null','__game.state.stats.served>0&&__game.state.coins>=__game.CFG.start.coins&&Object.values(__game.state.shibas[0].g).every(v=>v===null)&&document.getElementById("isomap").width===390');
  await check('no 도감 / dex button anywhere','!/도감|Collection|dex/i.test(document.querySelector(".main-tabs").textContent)');
  // screens
- for(const n of ['shibas','walk','shop','settings']){await ev(n==='shibas'?'document.querySelector("[data-main-tab=shiba]").click();true':n==='shop'?'document.querySelector("[data-main-tab=shop]").click();true':n==='walk'?'document.querySelector("[data-main-tab=shiba]").click();document.querySelector("[data-open=walk]").click();true':`document.querySelector("[data-nav=${n}]").click();true`);await check(`${n} screen opens`,'document.getElementById("panel").hidden?document.getElementById("menuList").children.length>0:document.getElementById("pbody").children.length>0');}
+ for(const n of ['shibas','walk','shop','settings']){await ev(n==='shibas'?'document.querySelector("[data-main-tab=shiba]").click();true':n==='shop'?'document.querySelector("[data-main-tab=shop]").click();document.querySelector("[data-act=shopTab][data-item=cash]").click();true':n==='walk'?'document.querySelector("[data-main-tab=shiba]").click();document.querySelector("[data-open=walk]").click();true':`document.querySelector("[data-nav=${n}]").click();true`);await check(`${n} screen opens`,'document.getElementById("panel").hidden?document.getElementById("menuList").children.length>0:document.getElementById("pbody").children.length>0');}
  // §16-1: every bottom tab fills the list panel above the single tab row
  for(const tab of ['manage','shiba','village','bag','shop']){await ev(`document.querySelector("[data-main-tab=${tab}]").click();true`);await check(`§16 tab ${tab} opens content above the tab row`,`document.querySelector("[data-main-tab=${tab}]").classList.contains("active")&&document.querySelectorAll(".main-tabs .active").length===1&&document.getElementById("menuList").children.length>0&&document.getElementById("menuList").getBoundingClientRect().bottom<=document.querySelector(".main-tabs").getBoundingClientRect().top+1`);}
  await ev('document.querySelector("[data-main-tab=shiba]").click();document.querySelector("[data-act=care]").click();document.querySelector("[data-act=careOpen]").click();true');
@@ -30,7 +30,7 @@ export default async function({ev,check,sleep,reload}){
  await check('walk buttons ♥1/♥2/♥3, stop disabled','document.querySelectorAll("[data-act=walk]").length===3');
  await ev('document.querySelector("[data-act=walk][data-sec=\'600\']").click();true');
  await check('walk started, shiba left the café','!!__game.state.walk&&!__game.world.sh[__game.state.walk.shibaId]&&[...document.querySelectorAll("#pbody button")].some(b=>/Stop/.test(b.textContent)&&b.disabled)');
- await ev('document.querySelector("[data-main-tab=shop]").click();true');
+ await ev('document.querySelector("[data-main-tab=shop]").click();document.querySelector("[data-act=shopTab][data-item=cash]").click();true');
  await ev('document.querySelector("[data-act=gachaOdds]").click();true');
  await check('141: odds popup reads JSON',`(async()=>{const t=await import('./gacha-table.json',{with:{type:'json'}});return t.default.pool.every(x=>document.querySelector('[data-gacha-odds]').textContent.includes(x.w/t.default.pool.reduce((n,y)=>n+y.w,0)*100+'%'));})()`);
  await ev('document.querySelector("[data-act=modalOk]").click();true');
@@ -41,19 +41,19 @@ export default async function({ev,check,sleep,reload}){
  await ev('document.querySelector("[data-act=modalOk]").click();const old=JSON.parse(window.u141Before);Object.assign(__game.state,old);__game.CFG.gacha.startLevel=window.u141Start;__game.refresh();true');
  await ev('__game.state.dia=0;__game.state.items.capsule=0;__game.refresh();true');
  await check('shop inventory; gacha (unlocked Lv1) disabled only when unaffordable','__game.CFG.gacha.startLevel===1&&[...document.querySelectorAll("[data-act=gacha]")].every(b=>b.disabled)');
- await ev('document.querySelector("[data-main-tab=bag]").click();true');await check('가방 holds inventory + consumables','!!document.querySelector("[data-inventory]")&&!!document.querySelector("[data-consumables]")');await ev('document.querySelector("[data-main-tab=shop]").click();true');
+ await ev('document.querySelector("[data-main-tab=bag]").click();true');await check('가방 holds inventory + consumables','!!document.querySelector("[data-inventory]")&&!!document.querySelector("[data-consumables]")');await ev('document.querySelector("[data-main-tab=shop]").click();document.querySelector("[data-act=shopTab][data-item=cash]").click();true');
  await ev('__game.state.dia=1000;__game.state.items.capsule=1;__game.refresh();document.querySelector("[data-act=gacha][data-n=\'1\']:not([data-ticket])").click();true');
  await check('gacha unlocked from Lv1: an affordable single pull spends diamonds and adds a Lv1 shiba or paws','__game.state.dia<1000&&__game.state.items.capsule===1&&(__game.state.shibas.length===2?__game.state.shibas[1].level===1:true)');
  await ev('__game.state.shibas.length=1;__game.ui.modals=[];__game.refresh();true');
  await ev('__game.state.dia=0;__game.state.items.capsule=0;__game.open("care",__game.state.shibas[0].id);true');
  await check('red-team #1: personality shown as "Odds TBD" (not drawn)','__game.state.shibas[0].personality===null&&/Personality: Odds TBD/.test(document.getElementById("pbody").textContent)');
- await ev('document.querySelector("[data-main-tab=shop]").click();true');
+ await ev('document.querySelector("[data-main-tab=shop]").click();document.querySelector("[data-act=shopTab][data-item=cash]").click();true');
  await check('accessory shop: 4 bandana types, 9 colour cells from the sheet (CSS area), special = UNSET slot (140)','document.querySelectorAll("[data-act=accType]").length===4&&document.querySelectorAll("[data-accitem] .band").length===9&&getComputedStyle(document.querySelector("[data-accitem] .band")).backgroundImage.includes("bandana-triangle-sheet.webp")&&[...document.querySelectorAll("[data-accshop] button")].some(b=>/^300 · /.test(b.textContent)&&b.querySelector("img.res-ico[src$=\'res-diamond.png\']"))');
  await ev('__game.state.coins=5000;__game.refresh();document.querySelector("[data-act=accType][data-type=loop]").click();document.querySelector("[data-act=buyAcc][data-item=bandana-loop-cell9]").click();true');
  await check('buy a loop bandana for 5,000 멍코인 → bag 1','__game.state.accInv["bandana-loop-cell9"]===1&&__game.state.coins===0&&/1/.test(document.querySelector("[data-accitem=bandana-loop-cell9]").textContent)');
  await ev('__game.open("care",__game.state.shibas[0].id);document.querySelector("[data-act=equip][data-item=bandana-loop-cell9]").click();true');
  await check('starter wears purchased bandana; chosen starter accessory returns to bag (139-6·140-1)','__game.state.shibas[0].acc==="bandana-loop-cell9"&&__game.state.accInv["bandana-loop-cell9"]===0&&Object.keys(__game.state.accInv).length===2&&__game.S.accOwned(__game.state,"bandana-triangle-cell1")===1&&!!document.querySelector("[data-acc] [data-band=bandana-loop-cell9]")');
- await ev('document.querySelector("[data-main-tab=shop]").click();true');
+ await ev('document.querySelector("[data-main-tab=shop]").click();document.querySelector("[data-act=shopTab][data-item=cash]").click();true');
  await ev('document.querySelector("[data-main-tab=manage]").click();__game.state.cafe.level=2;__game.state.coins=15000;__game.refresh();document.querySelector("[data-act=listOpen][data-list=menu]").click();document.querySelector("[data-lp-row=M-02] .lp-price").click();true');
  await check('developing M-02 at Lv2 costs 15,000 멍코인 and shows 30 min in progress (136)','__game.state.menuDev?.id==="M-02"&&!__game.state.menus.includes("M-02")&&__game.state.coins===0&&/즉시 완료 30/.test(document.querySelector("[data-lp-row=M-02] .lp-price").textContent)&&!document.querySelector("[data-lp-row=M-05] .lp-price")&&/Lv3/.test(document.querySelector("[data-lp-row=M-05] .lp-effect").textContent)&&!!document.querySelector("#menuList [data-manage-dev] [data-dev=M-02]")');
  await ev('__game.state.dia=30;__game.refresh();document.querySelector("[data-lp-row=M-02] .lp-price").click();document.querySelector("#mbox .lp-close").click();true');
@@ -124,7 +124,7 @@ await new Promise(r=>setTimeout(r,500));await ev('__game.refresh&&__game.refresh
  await ev('document.querySelector("[data-item=expBoost4h][data-act=useItem]").click();true');
  await check('Task A boost chip approved image', 'document.querySelector("#boostChip img").getAttribute("src")=="assets/drive/ui/item-exp-boost.png"');
  await check('final boost use shows remaining time', '__game.state.items.expBoost4h===0&&document.getElementById("boostChip").textContent.includes("경험치")');
-await ev('document.querySelector("[data-main-tab=shop]").click();true');
+await ev('document.querySelector("[data-main-tab=shop]").click();document.querySelector("[data-act=shopTab][data-item=cash]").click();true');
  await check('final 2F diamond price stays disabled', 'document.querySelector("[data-kind=floor2][data-via=dia]").disabled&&document.querySelector("[data-kind=floor2][data-via=dia]").textContent.includes("미정")');
  await ev('document.querySelector("[data-main-tab=bag]").click();true');
  await check('final furniture inventory preserves wall controls', '!!document.querySelector("[data-wall-inventory-place]")&&!!document.querySelector("[data-act=placeFurniture]")');
