@@ -284,3 +284,5 @@ Manager v2 frames replace the v1 files at the same local paths (v1 rows above ar
 | ui/ui-theme-logo-tatami.png | Drive 16L1JQBRZFPlqcfhQdMylyYw15EwGSFbb (interior UI_테마로고_다다미.png, 256×128, unmodified) | sha256 68c3741d9761d361ffbf6801ec21cbe324fb09923c92b780e6bb4adc94adb351 | 상점 테마 로고 줄 다다미 칸 |
 | ui/ui-shiba-book-frame.png | Drive 1VZRsBZTODZCwqO1yPmQjn2wK-qQC8CwB (interior UI_시바상세_책틀.png, 1080×1600, unmodified) | sha256 fc693d9e908be9e1a4effc469c8fb8b9486cdeb5f4098c66c24e2011e09d01c9 | 시바 상세 book popup frame; slots in CFG.profileBook.boxes |
 | cooking/dish-shiba-porridge.png | Drive 1N10fzpWDK1DZoTcCPc6Ya0JIG8oFfTeD (요리_시바죽.png, 256×256, unmodified) | sha256 aca9547bd07b73891e5b1cf60d1810ae4eb603df444fb099833e9eb754c19f66 | 요리 제작: 시바 죽 (ingredients stay 쌀·당근) |
+| cooking/dish-sweet-potato.png | Drive 1wAzl7OjHCtSyDQredBtzCq3lnF1OxEpz (요리_고구마간식.png, 256×256, unmodified) | sha256 2ae23d660cad3c768531051e1d8f4d0e01f899f63921020af98a63f6c6a4111c | 요리 제작 |
+| cooking/dish-chicken-cube.png | Drive 1Rhywg-x-JCWoPCSZ-DoxnEt_HUASX9Qb (요리_닭가슴살큐브.png, 256×256, unmodified) | sha256 04b47b3880ff15fe417ee453789d2abe130046daff260a396b3b22b950ecb9cf | 요리 제작 |

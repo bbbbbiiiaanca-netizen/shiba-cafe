@@ -989,3 +989,8 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - 요리 제작: vertical recipe list (locks + LvN), selected dish art slot, ingredients have/need with buy, effect, craft time + button at the bottom. 시바 죽 art 1N10fzpW… added; other dish/ingredient slots empty (config img:null).
 - 친구: swipe cards (photo·name·Lv) → 놀러 가기 screen (friendVisit) with 하트 받기; test label removed.
 - Book popup: 돌봄 at frame (340,1380,400,120); shiba art white background removed at runtime (edge-connected near-white → alpha 0, knockoutMin 240), original file unchanged.
+
+## 10:18–10:22 update
+- 요리 제작 fits one screen (taller panel for cooking/friends, compact rows, picture+ingredients side by side, 재료 달리기 in the footer). 고구마 간식/닭가슴살 큐브 art added; ingredient slots still empty.
+- Friend cards: name/Lv/놀러 가기 readable (dark text).
+- Book popup: 돌봄 outside the frame, centred 16px below (profileBook.careGap).
