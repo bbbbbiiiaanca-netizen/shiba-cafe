@@ -82,6 +82,8 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
       ctx.drawImage(im,top.x-WALL_EXT.anchor[0]*scale,top.y-WALL_EXT.anchor[1]*scale,im.naturalWidth*scale,im.naturalHeight*scale);
      }
     }
+    // 똑또기 10-15 결정: 땅 넓히기 '+' 표시는 가구 편집 모드에서 숨김
+    if(!edit){
     const strip=nextExpansion(z,state.space.unlockedRows),centre=strip.cells.reduce((p,c)=>p.map((v,k)=>v+c[k]/strip.cells.length),[0,0]);
     const p=cellToScreen(...centre,view,z),meta=MAP_MARKERS.expansion,im=load(meta.file);
     const bp=CFG.expansion.markerBounce,ph=markerPhase??((performance.now()/1000)%bp.periodSec)/bp.periodSec; // gentle bounce (starting values)
@@ -89,6 +91,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
     if(im.complete&&im.naturalWidth)ctx.drawImage(im,p.x-meta.anchor[0]*ms,p.y-meta.anchor[1]*ms,im.naturalWidth*ms,im.naturalHeight*ms);
     markers.push({kind:'row',axis:strip.axis,cells:strip.cells,...p,buttonX:p.x,buttonY:p.y-32*ms,
      x0:p.x-meta.anchor[0]*ms,y0:p.y-meta.anchor[1]*ms,w:im.naturalWidth*ms,h:im.naturalHeight*ms});
+    }
    }
    if(edit&&z.image){const occupied=new Set(placed.flatMap(s=>footprintCells(s).map(c=>c.join(','))));
     for(let r=0;r<z.rows;r++)for(let c=0;c<z.cols;c++){

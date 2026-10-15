@@ -72,7 +72,7 @@ const expandIso=createIsoMap(canvas);
 state.space.unlockedRows=3;draws.length=0;expandIso.setEdit(true);expandIso.draw(state,{});
 assert.equal(expandIso.gridCells,7*8);
 assert.equal(draws.filter(d=>d.file==='assets/drive/tiles/floor-tatami-v3.png').length,7*8-36);assert.equal(draws.filter(d=>/wall-ext-(left|right)\.png$/.test(d.file)).length,(7-6)+(8-6));
-assert.equal(expandIso.markers.find(m=>m.kind==='row').axis,'i');
+assert.ok(!expandIso.markers.some(m=>m.kind==='row'),'edit mode hides + marker');expandIso.setEdit(false);expandIso.draw(state,{});assert.equal(expandIso.markers.find(m=>m.kind==='row').axis,'i');expandIso.setEdit(true);expandIso.draw(state,{});
 expandIso.panTo(Infinity,Infinity);assert.equal(expandIso.panX,expandIso.panBounds.maxX);assert.equal(expandIso.scroll,expandIso.maxScroll);
 expandIso.panTo(-Infinity,-Infinity);assert.equal(expandIso.panX,expandIso.panBounds.minX);assert.equal(expandIso.scroll,0);
 expandIso.setEdit(false);expandIso.panTo(0,0);

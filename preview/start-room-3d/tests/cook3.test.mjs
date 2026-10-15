@@ -6,5 +6,5 @@ assert.deepEqual(CFG.cooking.recipes.map(r=>[r.name,r.unlockLevel]),[['시바 �
  d.set([230,80,200,150],0);d.set([230,80,200,40],4);const mid=Array.from(d.slice(12*4,12*4+4));cleanEdges(d,w,h);
  assert.equal(d[7],0);assert.ok(Math.abs(d[0]-200)<2&&Math.abs(d[2]-20)<2);assert.deepEqual(Array.from(d.slice(48,52)),mid);}
 assert.ok(fs.readFileSync(new URL('../main.js',import.meta.url),'utf8').includes('installCoinClean'));
-assert.ok(CFG.cooking.lockedPreview.length>=1&&CFG.cooking.lockedPreview.length<=2&&CFG.cooking.lockedPreview.every(x=>x.unlockLevel===null||Number.isFinite(x.unlockLevel)));
+assert.ok(CFG.cooking.lockedPreview.length>=1&&CFG.cooking.lockedPreview.length<=2&&CFG.cooking.lockedPreview.every(x=>Number.isFinite(x.unlockLevel))&&CFG.cooking.lockedPreview.map(x=>x.unlockLevel).join()==='3,5');
 console.log('cook3 ok');

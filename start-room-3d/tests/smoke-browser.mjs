@@ -158,7 +158,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await check('§12 query unlocks N alternating strips with configured price',`__game.state.space.unlockedRows===3&&__game.CFG.expansion.rowCost===170000&&__game.iso.markers.find(m=>m.kind==='row').axis==='i'`);
  for(const [n,grid,axis] of [[0,36,'j'],[1,42,'i'],[2,49,'j'],[3,56,'i']]){
   await ev(`__game.debugExpand(${n});__game.iso.setEdit(true);true`);
-  await check('§12 full expanded grid '+n,`__game.iso.gridCells===${grid}&&__game.iso.markers.find(m=>m.kind==='row').axis==='${axis}'`);
+  await check('§12 full expanded grid '+n+' (edit hides + marker; normal view keeps it)',`__game.iso.gridCells===${grid}&&!__game.iso.markers.some(m=>m.kind==='row')&&(()=>{__game.iso.setEdit(false);__game.refresh();const ok=__game.iso.markers.find(m=>m.kind==='row')?.axis==='${axis}';__game.iso.setEdit(true);__game.refresh();return ok;})()`);
  }
  await ev('__game.debugExpand(18);__game.iso.setEdit(false);__game.iso.panTo(__game.iso.panBounds.minX,0);true');
  const pan=await ev(`(()=>{const r=document.getElementById('isomap').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,dx:Math.ceil(__game.iso.panBounds.maxX-__game.iso.panBounds.minX)+r.width,dy:Math.ceil(__game.iso.maxScroll)+r.height};})()`);
@@ -316,8 +316,8 @@ await new Promise(r=>setTimeout(r,600));
  await ev("window.q17Before=__game.state.hearts;document.querySelector('[data-act=friendVisit]').click();true");
  await check('q17 fixture visit grants configured hearts',"__game.state.hearts===window.q17Before+__game.CFG.heartUse.visit.hearts&&__game.state.friendVisits.count===1");
 
- await check('똑또기 10-15: 2층 자물쇠는 1층 화면 + 2층 잠김 + 계단이 놓여 있을 때만 (일반/편집/확장 모두 같음); 땅 넓히기 + 표시는 일반/편집 모두 보임',`(()=>{const g=__game,sp=g.state.space,sl=g.state.placement.slots,r0=sp.unlockedRows,res=[];const lock=()=>g.iso.markers.some(m=>m.kind==='floor2'),plus=()=>g.iso.markers.some(m=>m.kind==='row');
- for(const ed of [false,true])for(const n of [0,2]){g.debugExpand(n);g.iso.setEdit(ed);g.refresh();res.push(lock()===(sl.some(s=>s.type==='stairs')&&!sp.floor2Unlocked)&&plus());}
+ await check('똑또기 10-15: 2층 자물쇠는 1층 화면 + 2층 잠김 + 계단이 놓여 있을 때만 (일반/편집/확장 모두 같음); 편집 모드에서는 땅 넓히기 + 표시 숨김',`(()=>{const g=__game,sp=g.state.space,sl=g.state.placement.slots,r0=sp.unlockedRows,res=[];const lock=()=>g.iso.markers.some(m=>m.kind==='floor2'),plus=()=>g.iso.markers.some(m=>m.kind==='row');
+ for(const ed of [false,true])for(const n of [0,2]){g.debugExpand(n);g.iso.setEdit(ed);g.refresh();res.push(lock()===(sl.some(s=>s.type==='stairs')&&!sp.floor2Unlocked)&&plus()===!ed);}
  const i=sl.findIndex(s=>s.type==='stairs'),st=i>=0?sl.splice(i,1)[0]:null;g.refresh();res.push(!lock());if(st)sl.splice(i,0,st);g.iso.setEdit(false);g.debugExpand(r0);g.refresh();res.push(lock()===!sp.floor2Unlocked);return res.every(Boolean);})()`);
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}
 for(const [k,n] of checks)console.log(k==='ok'?'  ok  ':'  FAIL',n);for(const e of errors)console.log('  ERROR',e);
