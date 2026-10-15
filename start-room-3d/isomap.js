@@ -4,7 +4,7 @@ import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compare
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
- let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,panX=0,panBounds={minX:0,maxX:0},drag=null,last,selected=null,selectionBefore=null,selectionNew=false,hits=[],gridCells=0,maxScroll=0,markers=[],markerPhase=null,zoom=1;
+ let dragSprite=null;let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,panX=0,panBounds={minX:0,maxX:0},drag=null,last,selected=null,selectionBefore=null,selectionNew=false,hits=[],gridCells=0,maxScroll=0,markers=[],markerPhase=null,zoom=1;
  const bar=document.createElement('div');bar.hidden=true;bar.className='furniture-actions';bar.setAttribute('aria-label','가구 편집');
  bar.innerHTML='<button data-furniture-cancel>취소</button><button data-furniture-store>보관</button><button data-furniture-save>저장하기</button><button data-furniture-flip>뒤집기</button><button data-furniture-rotate>돌리기</button><button data-wall-add hidden>가벽 배치</button><button data-wall-remove>가벽 제거</button><button data-furniture-done>확인</button>';
 
@@ -36,7 +36,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
  const load=path=>{if(!images.has(path)){const im=new Image();im.onload=()=>last&&draw(...last);im.src=path;images.set(path,im);}return images.get(path);};
  MAP.zones.forEach(z=>{if(z.image)load(z.image);z.slots.forEach(s=>load(SPRITES[s.type].file));});
  function draw(state,world){
-  last=[state,world];if(!edit||!selected){delete canvas.dataset.placementValid;if(bar.dataset)delete bar.dataset.valid;}hits=[];gridCells=0;markers=[];const W=canvas.clientWidth,H=canvas.clientHeight,dpr=devicePixelRatio||1;
+  last=[state,world];if(!edit||!selected){delete canvas.dataset.placementValid;if(bar.dataset)delete bar.dataset.valid;}hits=[];gridCells=0;markers=[];dragSprite=null;delete canvas.dataset.dragSprite;const W=canvas.clientWidth,H=canvas.clientHeight,dpr=devicePixelRatio||1;
   if(canvas.width!==Math.round(W*dpr)||canvas.height!==Math.round(H*dpr)){canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);}
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#202224';ctx.fillRect(0,0,W,H);
   const zones=zonesForSpace(state.space).filter(z=>z.floor===(state.cafe.floor===2&&state.space.floor2Unlocked?2:1));
@@ -105,6 +105,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
     const base=SPRITES[s.type];if(!base)return;
     if(!base.file){if(edit){const p=cellToScreen(...s.origin,view,z);hits.push({id:s.id,x:p.x-z.cell.w*scale/2,y:p.y-z.cell.h*scale/2,w:z.cell.w*scale,h:z.cell.h*scale,footprint:true,view,zone:z});}return;}const sprite=s.type==='wall'&&s.dir%2?base.flip:s.dir>=2?base.back:base;if(!sprite)return;
     const im=load(sprite.file),p=cellToScreen(...footprintCentre(s),view,z),spriteScale=scale*sprite.scale;
+    if(drag?.item===s.id)dragSprite={s,sprite,view,z};
     if(im.complete&&im.naturalWidth){
      // starting value 2026-10-15, pending user confirm: contact midpoint on the matching rear cell edge.
      if(s.type==='wall'){p.x+=(s.dir%2?-1:1)*z.cell.w*scale/4;p.y-=z.cell.h*scale/4;}
@@ -137,6 +138,11 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
     const centre=cellToScreen(...footprintCentre(candidate),view,z);bar.style.setProperty('--select-x',centre.x+'px');bar.style.setProperty('--select-y',centre.y+'px');ctx.lineWidth=2;
     for(const [i,j] of footprintCells(candidate)){const p=cellToScreen(i,j,view,z),hw=z.cell.w*scale/2,hh=z.cell.h*scale/2;
      ctx.beginPath();ctx.moveTo(p.x,p.y-hh);ctx.lineTo(p.x+hw,p.y);ctx.lineTo(p.x,p.y+hh);ctx.lineTo(p.x-hw,p.y);ctx.closePath();ctx.fill();ctx.stroke();}
+
+    // 똑또기 10-15: 끄는 중에는 가구 그림을 칸 위에 다시 그려 그림이 칸을 따라 보이게 한다
+    if(dragSprite&&dragSprite.s.id===item.id){const {sprite,view:v,z:zz}=dragSprite,im=load(sprite.file),p=cellToScreen(...footprintCentre(candidate),v,zz),ss=scale*sprite.scale;
+     if(im.complete&&im.naturalWidth){const m=Boolean(candidate.dir%2),ax=m?im.naturalWidth-sprite.anchor[0]:sprite.anchor[0],x=p.x-ax*ss,y=p.y-sprite.anchor[1]*ss,w=im.naturalWidth*ss,h=im.naturalHeight*ss;
+      ctx.save();ctx.globalAlpha=.92;if(m){ctx.translate(x+w,y);ctx.scale(-1,1);ctx.drawImage(im,0,0,w,h);}else ctx.drawImage(im,x,y,w,h);ctx.restore();canvas.dataset.dragSprite=item.id;}}
    }}
    y+=heights[index]+24;
   });

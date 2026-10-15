@@ -316,6 +316,9 @@ await new Promise(r=>setTimeout(r,600));
  await ev("window.q17Before=__game.state.hearts;document.querySelector('[data-act=friendVisit]').click();true");
  await check('q17 fixture visit grants configured hearts',"__game.state.hearts===window.q17Before+__game.CFG.heartUse.visit.hearts&&__game.state.friendVisits.count===1");
 
+ await check('똑또기 10-15: 2층 자물쇠는 1층 화면 + 2층 잠김 + 계단이 놓여 있을 때만 (일반/편집/확장 모두 같음); 땅 넓히기 + 표시는 일반/편집 모두 보임',`(()=>{const g=__game,sp=g.state.space,sl=g.state.placement.slots,r0=sp.unlockedRows,res=[];const lock=()=>g.iso.markers.some(m=>m.kind==='floor2'),plus=()=>g.iso.markers.some(m=>m.kind==='row');
+ for(const ed of [false,true])for(const n of [0,2]){g.debugExpand(n);g.iso.setEdit(ed);g.refresh();res.push(lock()===(sl.some(s=>s.type==='stairs')&&!sp.floor2Unlocked)&&plus());}
+ const i=sl.findIndex(s=>s.type==='stairs'),st=i>=0?sl.splice(i,1)[0]:null;g.refresh();res.push(!lock());if(st)sl.splice(i,0,st);g.iso.setEdit(false);g.debugExpand(r0);g.refresh();res.push(lock()===!sp.floor2Unlocked);return res.every(Boolean);})()`);
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}
 for(const [k,n] of checks)console.log(k==='ok'?'  ok  ':'  FAIL',n);for(const e of errors)console.log('  ERROR',e);
 checks.push([debugHits.length?'FAIL':'ok','no unset/null/undefined/NaN text visible on any checked screen']);if(debugHits.length)console.log('  DEBUG TEXT\n   '+[...new Set(debugHits)].slice(0,30).join('\n   '));
