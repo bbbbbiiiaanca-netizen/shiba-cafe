@@ -28,6 +28,7 @@ export const CFG={
  // §17-13 starting value 2026-10-15, pending user confirm: 3 slots, 30–300 sec; energy 1/2.
  // ── 임시 값 (TEMP, 코코아 요청 2026-10-15 via 똑또기 검수): everything in this block is a placeholder until confirmed ──
  cooking:{ingredientBuyCount:1,dishesPerCraft:1, // 임시
+  fxIcons:{full:null,happy:null}, // 미정: 배고픔·행복 효과 아이콘(interior 그림 없음 → 글자만)
   startUnlocked:1,craftSecRange:[30,300], // 임시: 1 recipe open at start, others by unlockLevel
   recipes:[ // 임시 recipes; dish art pending (slot stays empty)
    {id:'recipe-1',img:'assets/drive/cooking/dish-shiba-porridge.png',name:'시바 죽',unlockLevel:1,ingredients:{rice:1,carrot:1},craftSec:30,effect:{full:20,happy:10}}, // 임시

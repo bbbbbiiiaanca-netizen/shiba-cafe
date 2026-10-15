@@ -51,4 +51,15 @@ export async function q17Browser({ev,c,check,shot=async()=>{}}){
  await check('q17 overlapping target red',`document.querySelector('#isomap').dataset.placementValid==='false'`);await snap('edit-red');
  await c('Input.dispatchMouseEvent',{type:'mouseReleased',x:p.x+d.x,y:p.y+d.y,button:'left',clickCount:1});await click('[data-furniture-save]');
  await check('q17 save hides edit grid',`!__game.iso.edit&&__game.iso.gridCells===0`);
+
+ // 수인님 2026-10-15: no '멍' text anywhere (coin icon + number); cooking is a full-screen window
+ const noMung=async(where)=>check('no 멍 text: '+where,`!/멍(?!포션)/.test(document.body.innerText)`);
+ await ev(`__game.ui.modals=[];__game.close?.();document.querySelector('[data-main-tab=manage]').click();__game.refresh();true`);await noMung('top bar + 가게관리');
+ await ev(`document.querySelector('[data-main-tab=shop]').click();__game.refresh();true`);await noMung('상점');
+ await ev(`document.querySelector('[data-main-tab=bag]').click();__game.refresh();true`);await noMung('가방');
+ await ev(`__game.open('hospital');true`);await noMung('병원');
+ await ev(`__game.state.cafe.level=Math.max(3,__game.state.cafe.level);__game.open('run');true`);await noMung('재료 달리기 시작');
+ await ev(`__game.open('cooking');true`);await noMung('요리 제작');
+ await check('cooking full-screen: strip cards with art+name, Lv lock, big dish, ingredient icon/have/coin buy, fx, big craft',`(()=>{const p=document.getElementById('panel').getBoundingClientRect(),cards=[...document.querySelectorAll('[data-cook-strip] .cook2-card')],locked=cards.filter(c=>c.classList.contains('locked'));const R=__game.CFG.cooking.recipes;return p.top<=1&&p.height>=innerHeight-80&&cards.length===R.length&&cards.every(c=>c.querySelector('img')&&c.textContent.trim())&&locked.every(c=>/Lv\\d+ 해금/.test(c.textContent))&&document.querySelector('.cook2-dish img').getBoundingClientRect().width>=140&&[...document.querySelectorAll('.cook2-ing')].every(i=>i.querySelector('img')&&/\\d+\\/\\d+/.test(i.querySelector('b').textContent)&&i.querySelector('button img[src$="res-coin.png"]'))&&/배고픔 \\+\\d+/.test(document.querySelector('[data-cook-fx]').textContent)&&/행복 \\+\\d+/.test(document.querySelector('[data-cook-fx]').textContent)&&document.querySelector('.cook2-go').getBoundingClientRect().width>=document.querySelector('[data-cooking]').getBoundingClientRect().width-40})()`);
+ await ev(`__game.close?.();__game.ui.modals=[];true`);
 }

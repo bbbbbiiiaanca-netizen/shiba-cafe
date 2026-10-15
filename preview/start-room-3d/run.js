@@ -32,10 +32,10 @@ export function startRunScreen({cfg,ingredients,shibaSrc,sheet=null,coinSrc,onEn
   for(const o of r.objs){if(o.done&&o.type!=='obstacle')continue;const x=cfg.laneX[o.lane];
    if(o.type==='obstacle')draw(img.obs[o.kind],x,o.y,cfg.obstacleW);else if(o.type==='coin')draw(img.coin,x,o.y,cfg.itemW);else draw(img.ing[o.kind],x,o.y,cfg.itemW);}
   if(sheet){const i=img.shiba;if(i.complete&&i.naturalWidth){const f=runFrame(sheet,r.t),w=cfg.shibaW,h=w*sheet.frameH/sheet.frameW;g.drawImage(i,f*sheet.frameW,0,sheet.frameW,sheet.frameH,r.x-w/2,cfg.shibaY-h/2,w,h);}}else if(cfg.shibaBlend){g.globalCompositeOperation=cfg.shibaBlend;draw(img.shiba,r.x,cfg.shibaY,cfg.shibaW);g.globalCompositeOperation='source-over';}else draw(img.shiba,r.x,cfg.shibaY,cfg.shibaW);
-  const ing=Object.values(r.got).reduce((a,b)=>a+b,0),txt=`멍코인 ${r.coins} · 재료 ${ing} · ${Math.max(0,Math.ceil(cfg.lengthSec-r.t))}초`;if(stats.textContent!==txt)stats.textContent=txt;
+  const ing=Object.values(r.got).reduce((a,b)=>a+b,0),txt=`<img class="ci" src="${coinSrc}" alt="">${r.coins} · 재료 ${ing} · ${Math.max(0,Math.ceil(cfg.lengthSec-r.t))}초`;if(stats.innerHTML!==txt)stats.innerHTML=txt;
   hearts.forEach((h,i)=>{const s=i<cfg.hits-r.hitsTaken?cfg.heartImg.full:cfg.heartImg.empty;if(!h.src.endsWith(s))h.src=s;});};
  const end=()=>{removeEventListener('keydown',key);onEnd?.(r);const box=root.querySelector('.run-end');
-  box.innerHTML=`<div class="run-card"><h2>${r.reason==='hit'?'앗, 부딪혔어요':'도착했어요'}</h2><p>점수 ${r.score}</p>${resultExtra(r)}<p>멍코인 ${r.coins}</p>${ids.filter(k=>r.got[k]).map(k=>`<p>${ingredients[k].name} ${r.got[k]}</p>`).join('')}<button data-act="runClose">돌아가기</button></div>`;
+  box.innerHTML=`<div class="run-card"><h2>${r.reason==='hit'?'앗, 부딪혔어요':'도착했어요'}</h2><p>점수 ${r.score}</p>${resultExtra(r)}<p><img class="ci" src="${coinSrc}" alt="">${r.coins}</p>${ids.filter(k=>r.got[k]).map(k=>`<p>${ingredients[k].name} ${r.got[k]}</p>`).join('')}<button data-act="runClose">돌아가기</button></div>`;
   box.hidden=false;box.querySelector('button').onclick=()=>root.remove();};
  const tick=ts=>{if(last==null)last=ts;const dt=Math.min(0.05,(ts-last)/1000);last=ts;if(!paused)stepRun(r,dt);render();if(r.over){end();return;}raf=requestAnimationFrame(tick);};
  raf=requestAnimationFrame(tick);

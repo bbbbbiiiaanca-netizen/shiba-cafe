@@ -77,8 +77,8 @@ export default async function({ev,check,sleep,reload}){
  await check('edit starts disabled','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="false"&&document.querySelector("[data-edit-toggle]").textContent==="배치 편집"');
  await ev('document.querySelector("[data-edit-toggle]").click();true');
  await check('edit bar is in furniture panel','document.getElementById("scene").contains(document.querySelector(".furniture-actions"))');
- await check('edit toggle enables outlines','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="true"&&document.querySelector("[data-edit-toggle]").textContent==="편집 끝"');
- await ev('document.querySelector("[data-edit-toggle]").click();true');
+ await check('edit mode: panel folds to one storage strip, top shows only 저장하기','__game.iso.edit===true&&document.getElementById("app").classList.contains("editing")&&!!document.querySelector("[data-edit-storage] .edit-strip")&&getComputedStyle(document.getElementById("hud")).display==="none"&&getComputedStyle(document.getElementById("mainTabs")).display==="none"&&getComputedStyle(document.getElementById("questGuide")).display==="none"&&getComputedStyle(document.querySelector("[data-furniture-save]")).display!=="none"&&document.getElementById("scene").getBoundingClientRect().height>innerHeight*0.6');
+ await ev('document.querySelector("[data-furniture-save]").click();true');
  await check('edit toggle returns to normal and keeps furniture tab','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="false"&&document.querySelector("[data-main-tab=bag]").classList.contains("active")');
 
  await ev('document.querySelector("[data-main-tab=manage]").click();true');

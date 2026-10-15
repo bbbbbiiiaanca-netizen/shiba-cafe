@@ -36,7 +36,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
  const load=path=>{if(!images.has(path)){const im=new Image();im.onload=()=>last&&draw(...last);im.src=path;images.set(path,im);}return images.get(path);};
  MAP.zones.forEach(z=>{if(z.image)load(z.image);z.slots.forEach(s=>load(SPRITES[s.type].file));});
  function draw(state,world){
-  last=[state,world];if(!edit||!selected)delete canvas.dataset.placementValid;hits=[];gridCells=0;markers=[];const W=canvas.clientWidth,H=canvas.clientHeight,dpr=devicePixelRatio||1;
+  last=[state,world];if(!edit||!selected){delete canvas.dataset.placementValid;if(bar.dataset)delete bar.dataset.valid;}hits=[];gridCells=0;markers=[];const W=canvas.clientWidth,H=canvas.clientHeight,dpr=devicePixelRatio||1;
   if(canvas.width!==Math.round(W*dpr)||canvas.height!==Math.round(H*dpr)){canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);}
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#202224';ctx.fillRect(0,0,W,H);
   const zones=zonesForSpace(state.space).filter(z=>z.floor===(state.cafe.floor===2&&state.space.floor2Unlocked?2:1));
@@ -133,7 +133,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
      stamp(MAP_MARKERS.floor2.file,p,MAP_MARKERS.floor2.anchor);markers.push({kind:'floor2',...p});}
    }
    if(edit&&selected){const item=placed.find(s=>s.id===selected);if(item){const candidate=drag?.item===item.id?{...item,origin:drag.candidate}:item;
-    const valid=validPlacement(candidate,placed,z)&&preservesEntrance(z,placed,[...placed.filter(p=>p.id!==candidate.id),candidate]);canvas.dataset.placementValid=String(valid);ctx.fillStyle=valid?'rgba(30,215,80,.55)':'rgba(235,55,55,.32)';ctx.strokeStyle=valid?'#16e05a':'#ff4545';
+    const valid=validPlacement(candidate,placed,z)&&preservesEntrance(z,placed,[...placed.filter(p=>p.id!==candidate.id),candidate]);canvas.dataset.placementValid=String(valid);if(bar.dataset)bar.dataset.valid=String(valid);ctx.fillStyle=valid?'rgba(30,215,80,.55)':'rgba(235,55,55,.32)';ctx.strokeStyle=valid?'#16e05a':'#ff4545';
     const centre=cellToScreen(...footprintCentre(candidate),view,z);bar.style.setProperty('--select-x',centre.x+'px');bar.style.setProperty('--select-y',centre.y+'px');ctx.lineWidth=2;
     for(const [i,j] of footprintCells(candidate)){const p=cellToScreen(i,j,view,z),hw=z.cell.w*scale/2,hh=z.cell.h*scale/2;
      ctx.beginPath();ctx.moveTo(p.x,p.y-hh);ctx.lineTo(p.x+hw,p.y);ctx.lineTo(p.x,p.y+hh);ctx.lineTo(p.x-hw,p.y);ctx.closePath();ctx.fill();ctx.stroke();}

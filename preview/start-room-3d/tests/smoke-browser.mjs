@@ -91,7 +91,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev("__game.state.space.unlockedRows=0;__game.iso.scrollTo(0);__game.refresh();true");await sleep(200);
  const expansionPoint=await ev('(()=>{const m=__game.iso.markers.find(m=>m.kind==="row"),r=document.getElementById("isomap").getBoundingClientRect();return {x:r.left+m.buttonX,y:r.top+m.buttonY};})()');
  for(const type of ['mousePressed','mouseReleased'])await c('Input.dispatchMouseEvent',{type,...expansionPoint,button:'left',buttons:type==='mousePressed'?1:0,clickCount:1});
- await check('Task B plus opens price confirmation before spending',`!document.getElementById('modal').hidden&&document.getElementById('mbox').textContent.includes('170,000 멍코인')&&__game.state.space.unlockedRows===0`);
+ await check('Task B plus opens price confirmation before spending',`!document.getElementById('modal').hidden&&document.getElementById('mbox').textContent.includes('170,000 코인')&&__game.state.space.unlockedRows===0`);
  await ev('document.querySelector("#mbox [data-act=modalOk]").click();__game.state.coins=__game.CFG.expansion.rowCost;__game.refresh();true');
  for(const type of ['mousePressed','mouseReleased'])await c('Input.dispatchMouseEvent',{type,...expansionPoint,button:'left',buttons:type==='mousePressed'?1:0,clickCount:1});
  await ev('document.querySelector("#mbox [data-act=confirmYes]").click();true');
@@ -110,6 +110,10 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  const mouse=(type,p)=>c('Input.dispatchMouseEvent',{type,x:p.x,y:p.y,button:'left',buttons:type==='mouseReleased'?0:1,clickCount:1});
  let p=await spritePoint('counter');await mouse('mousePressed',p);await mouse('mouseReleased',p);
  await check('sprite selects counter','__game.iso.selected==="counter"&&!document.querySelector(".furniture-actions").hidden');
+ await check('selected furniture: 4 round buttons (취소·보관·돌리기·확인) around it, green when placeable',`(()=>{const bar=document.querySelector('.furniture-actions'),vis=[...bar.querySelectorAll('button')].filter(b=>getComputedStyle(b).display!=='none'&&!b.hasAttribute('data-furniture-save'));const names=vis.map(b=>b.textContent).sort().join();const round=vis.every(b=>getComputedStyle(b).borderRadius==='50%');return names==='돌리기,보관,취소,확인'&&round&&bar.dataset.valid==='true'&&getComputedStyle(bar.querySelector('[data-furniture-done]')).backgroundColor==='rgb(47, 184, 85)'})()`);
+ await ev(`(()=>{const b=__game.iso.actions;b.dataset.valid='false';return true})()`);
+ await check('blocked placement shows red buttons',`getComputedStyle(document.querySelector('[data-furniture-done]')).backgroundColor==='rgb(224, 72, 72)'`);
+ await ev(`__game.refresh();true`);
  p=await spritePoint('counter');await mouse('mousePressed',p);await mouse('mouseMoved',{x:p.x+p.dx*1.2,y:p.y+p.dy*1.2});await mouse('mouseReleased',{x:p.x+p.dx*1.2,y:p.y+p.dy*1.2});
  await check('drag snaps to whole cell','JSON.stringify(__game.state.placement.slots[0].origin)==="[0,1]"');
  p=await spritePoint('counter');await mouse('mousePressed',p);await mouse('mouseMoved',{x:p.x-p.dx*2,y:p.y-p.dy*2});
@@ -122,14 +126,15 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await check('rotation cycles front views','__game.state.placement.slots[0].dir===0');
  await ev('document.querySelector("[data-furniture-flip]").click();document.querySelector("[data-furniture-done]").click();true');
  await check('done deselects','__game.iso.selected===null');
- await ev('document.querySelector("[data-edit-toggle]").click();true');
+ await ev('document.querySelector("[data-furniture-save]").click();true');
  await check('normal mode has no grid','!__game.iso.edit&&__game.iso.gridCells===0&&document.querySelector("[data-main-tab=bag]").classList.contains("active")&&(!document.querySelector(".furniture-actions")||document.querySelector(".furniture-actions").hidden)');
  await go(false);
  await check('placement survives reload','__game.state.placement.slots[0].dir===1&&JSON.stringify(__game.state.placement.slots[0].origin)==="[0,1]"');
  for(const param of ['edit','grid']){
   await go(false,'&'+param+'=1');
-  await check(param+'=1 opens edit view','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="true"&&__game.iso.gridCells===36&&document.querySelector("[data-main-tab=bag]").classList.contains("active")&&document.getElementById("scene").contains(document.querySelector(".furniture-actions"))');
+  await check(param+'=1 opens edit view','__game.iso.edit===true&&__game.iso.gridCells===36&&document.querySelector("[data-main-tab=bag]").classList.contains("active")&&document.getElementById("scene").contains(document.querySelector(".furniture-actions"))');
  }
+ await ev('document.querySelector("[data-furniture-save]").click();true');
 
  // Review fixes: normal TEMP is debug-free; insufficient paws use the standard disabled palette.
  await ev('__game.state.shibas[0].paws=0;__game.refresh();document.querySelector("[data-main-tab=shiba]").click();document.querySelector("#menuList [data-act=care]").click();document.querySelector("[data-act=careOpen]").click();true');
@@ -267,7 +272,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await check('§16-2: clicking a null-price button does nothing',`__game.state.coins===1e9&&!__game.S.managerActive(__game.state,__game.clock.now())`);
  await ev('document.querySelector("#mbox .lp-close").click();document.querySelector("[data-main-tab=manage]").click();document.querySelector("[data-act=listOpen][data-list=menu]").click();true');
  await check('§16-2: 메뉴 개발 popup has 13 menus with confirmed images and config prices',`(()=>{const rows=[...document.querySelectorAll('#mbox .lp-card')];return rows.length===13&&rows.every(r=>r.querySelector('.lp-face img'))&&document.querySelector('[data-lp-row=M-04] .lp-price').textContent.replace(/,/g,'').includes(String(__game.S.menuItem('M-04').devCost))&&document.querySelector('[data-lp-row=M-02] .lp-price').textContent==='개발 완료';})()`);
- await check('§17-4: 메뉴 개발 cards are name + "판매가 N멍" only (dev time/cost in the tap detail)',`[...document.querySelectorAll('#mbox .lp-card')].every(r=>r.querySelector('.lp-effect').textContent==='판매가 '+__game.S.menuItem(r.dataset.lpRow).price+'멍'&&!r.querySelector('.lp-detail'))`);
+ await check('§17-4: 메뉴 개발 cards are name + "판매가 N멍" only (dev time/cost in the tap detail)',`[...document.querySelectorAll('#mbox .lp-card')].every(r=>r.querySelector('.lp-effect').textContent==='판매가 '+__game.S.menuItem(r.dataset.lpRow).price&&!r.querySelector('.lp-detail'))`);
  await ev('(()=>{const l=document.querySelector("#mbox [data-menu-cards]");l.scrollLeft=300;__game.refresh();return true;})()');
  await check('§16-2: menu cards swipe horizontally and keep position on refresh; no vertical list',`(()=>{const l=document.querySelector('#mbox [data-menu-cards]'),b=document.getElementById('mbox').getBoundingClientRect();return !document.querySelector('#mbox .lp-list')&&l.scrollWidth>l.clientWidth&&l.scrollLeft>0&&b.bottom<=innerHeight&&b.top>=0;})()`);
  await ev('document.querySelector("[data-lp-row=M-05] .lp-price").click();true');
