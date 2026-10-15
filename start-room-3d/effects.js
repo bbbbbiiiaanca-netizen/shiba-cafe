@@ -29,8 +29,8 @@ export const HEART_FX={
  treat:()=>t('fx.heart.treat'),
  wish:it=>t('fx.heart.wish',{n:it.choices??U()}),
 };
-// 출시 빌드: 효과 설명 안의 빈 값 조각(' · 머무름 —', ' · Stay —')만 뺀다. 'special'(팁 —)은 수인님 지시로 그대로.
-export const RELEASE_FX_KEEP_DASH=['special'];
+// 출시 빌드: 효과 설명 안의 빈 값 조각(' · 머무름 —', ' · Stay —')만 뺀다. 특별 손님 '팁 —'도 제거(똑또기 2026-10-15).
+export const RELEASE_FX_KEEP_DASH=[];
 export const dropUnsetFrag=x=>String(x).replace(/ · [^·]*?—/g,'');
 export const heartFx=it=>{const x=(HEART_FX[it.id]||(()=>tf('heart.item.'+it.id+'.line',it.line)))(it);return RELEASE&&!RELEASE_FX_KEEP_DASH.includes(it.id)?dropUnsetFrag(x):x;};
 export const menuPickFx=it=>t('fx.heart.recommend',{dur:durFor(it.sec),s:pctUp(it.sales),p:pctUp(it.price)});
