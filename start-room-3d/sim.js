@@ -146,7 +146,7 @@ export function careCheck(s,id,kind){const sh=byId(s,id);if(!sh)return 'pick';co
  if(kind==='play'){if(st!=='ok')return st;if(s.hearts<CFG.care.play.hearts)return 'hearts';return null;}
  const c=CFG.care[kind];if(!c)return 'pick';if(Object.values(c).some(isUnset))return 'unset';return null;} // feed / snack / bath / sleep: amounts UNSET
 export function playWith(s,id,now=Date.now()){if(careCheck(s,id,'play'))return null;const P=CFG.care.play;spendHearts(s,P.hearts,now);const sh=byId(s,id);
- changeGauges(s,sh,P,now);addCafeExp(s,CFG.cafeExp.play);addPaws(sh,CFG.activityPaws.play);return sh;} // 갱신 84·88·90: 하트 1, 사고·랜덤 보상 없음
+ changeGauges(s,sh,P,now);questBump(s,'pet',now);addCafeExp(s,CFG.cafeExp.play);addPaws(sh,CFG.activityPaws.play);return sh;} // 갱신 84·88·90: 하트 1, 사고·랜덤 보상 없음
 
 // 갱신 100·133 training
 export function trainChance(sh){const T=CFG.training;if(T.bonuses.some(b=>isUnset(b.stat==='intimacy'?sh.intimacy:sh.g[b.stat])))return null;let p=T.successBase;for(const b of T.bonuses){const v=b.stat==='intimacy'?sh.intimacy:sh.g[b.stat];if(!isUnset(v)&&v>=b.atLeast)p+=b.add;}return clamp(p,T.min,T.max);}
@@ -334,7 +334,7 @@ function leave(s,w,c,ctx){const V=CFG.visit,E=CFG.cafeExp;let outcome,repD=0,exp
  else if(!isUnset(c.score)&&c.score<V.scoreDisappointedBelow){outcome='disappointed';repD=!c.met.length&&s.cafe.level<CFG.rep.unmetFreeBelowLevel?0:CFG.rep.disappointed;exp=E.custDisappointed;} // starting value 2026-10-14: unmet guests cost no reputation below café Lv5
  else{outcome='normal';repD=CFG.rep.normal;exp=E.custNormal;}
  const order=c.order||chooseOrder(s,outcome==='satisfied',w.r,ctx.now);const pay=payFor(s,c.met,order,ctx.now);recordPayment(s,pay,ctx.now,ctx);for(const effect of activeHeartEffects(s,ctx.now)){const extra=CFG.heartUse.items.find(x=>x.id===effect.id)?.extraOrders??0;for(let i=0;i<extra;i++){const extraOrder=chooseOrder(s,outcome==='satisfied',w.r,ctx.now),extraPay=payFor(s,c.met,extraOrder,ctx.now);recordPayment(s,extraPay,ctx.now,ctx);if(Number.isFinite(pay.total)&&Number.isFinite(extraPay.total)){pay.total+=extraPay.total;pay.base+=extraPay.base;}else{pay.pending=true;pay.total=null;}w.events.push({type:'order',id:c.id,order:extraOrder.id,orderImg:extraOrder.img,cell:c.cell&&[...c.cell]},{type:'serve',id:c.id,order:extraOrder.id});}}
- s.stats.served++;s.stats[outcome]++;addCafeExp(s,exp);w.lastPay={...pay,order:order.id,orderImg:order.img,outcome,met:[...c.met]};
+ s.stats.served++;s.stats[outcome]++;questBump(s,'serve',ctx.now);questBump(s,'sell',ctx.now);addCafeExp(s,exp);w.lastPay={...pay,order:order.id,orderImg:order.img,outcome,met:[...c.met]};
  w.events.push({type:'leave',id:c.id,outcome,coins:pay.total,order:order.id,orderImg:order.img,byManager,requestMet:outcome==='satisfied',metShiba:c.met.length>0,seat:c.seat,cell:c.cell&&[...c.cell]});
  w.recent.push({id:c.id,order:order.id,coins:pay.total,pending:pay.pending});w.recent=w.recent.slice(-3);c.phase='exiting';routeTo(s,w,c,layout(s,w).entrance);if(repD)addRep(s,repD,{...ctx,world:w});}
 // one step of everything that runs with time (online, or fast-forwarded while the app was closed)
@@ -521,3 +521,11 @@ export function mailbox(s,now=Date.now()){const day=ledgerDay(now)-ledgerDay(s.f
 export function claimMail(s,day,now=Date.now()){const m=mailbox(s,now).find(x=>x.day===day&&!x.claimed);if(!m)return false;s.coins+=m.coins;s.dia+=m.dia;recordLedger(s,'other',m.coins,now);for(const [k,v] of Object.entries(m.items))if(Number.isFinite(v))s.items[k]=(s.items[k]||0)+v;(s.mailClaimed??=[]).push(day);return true;}
 export function cooldownTarget(s,now){if(s.menuDev?.until>now)return {kind:'menu'};for(const sh of s.shibas)if(sh.status==='hospital'&&sh.hospitalUntil>now)return {sh,kind:'hospital'};for(const sh of s.shibas)if(sh.cd.walk>now)return {sh,kind:'walk'};return null;}
 export function useItem(s,kind,now=Date.now()){if(!(s.items[kind]>0))return false;if(kind==='cooldownTicket'){const t=cooldownTarget(s,now);if(!t)return false;if(t.kind==='menu'){s.menuDev.until=now;settleMenuDev(s,now);}else if(t.kind==='hospital'){t.sh.hospitalUntil=now;releaseHospital(s,now);}else t.sh.cd.walk=now;}else {const c=kind==='incomeBoost4h'?CFG.itemIncome:kind==='expBoost4h'?CFG.stub.expBoost:null;if(!c||!Number.isFinite(c.boostHours??c.hours)||!Number.isFinite(c.boostMul??c.mul))return false;const key=kind==='incomeBoost4h'?'boostUntil':'expBoostUntil';s.cafe[key]=Math.min(Math.max(s.cafe[key]||now,now)+(c.boostHours??c.hours)*H,now+(c.boostMaxHours??c.maxHours)*H);}s.items[kind]--;return true;}
+
+// 일일 퀘스트 (임시 config 2026-10-15): progress per KST day, reset at quests.daily.resetKST (HH:MM).
+const questDayKey=now=>{const r=CFG.quests.daily.resetKST;if(r==null)return null;const [h,m]=r.split(':').map(Number);return Math.floor((now+9*3600e3-(h*60+m)*60e3)/86400e3);};
+export function questState(s,now=Date.now()){const d=questDayKey(now);if(!s.quests||s.quests.day!==d)s.quests={day:d,prog:{},done:{}};return s.quests;}
+export function questBump(s,id,now=Date.now()){const t=CFG.quests.daily.tasks?.find(t=>t.id===id);if(!t)return;const q=questState(s,now);q.prog[id]=Math.min(t.goal,(q.prog[id]||0)+1);}
+export function questTasks(s,now=Date.now()){const q=s.quests?.day===questDayKey(now)?s.quests:{prog:{},done:{}};return CFG.quests.daily.tasks?.map(t=>({...t,progress:q.done[t.id]?t.goal:Math.min(t.goal,q.prog[t.id]||0)}))??null;}
+export function questInstantCheck(s,id,now=Date.now()){const t=questTasks(s,now)?.find(t=>t.id===id),c=CFG.quests.instantDia;return !t||t.progress>=t.goal||!Number.isFinite(c)||(s.dia??0)<c;}
+export function questInstant(s,id,now=Date.now()){if(questInstantCheck(s,id,now))return false;if(!spendDia(s,CFG.quests.instantDia))return false;questState(s,now).done[id]=true;return true;}

@@ -19,17 +19,28 @@ const CAFE_EXP=[7187,7187,11293,10853,10853,14813,14227,18480,18480,99792,77000,
 
 export const CFG={
  // §17-13 starting value 2026-10-15, pending user confirm: 3 slots, 30–300 sec; energy 1/2.
- cooking:{ingredientBuyCount:1,dishesPerCraft:1, // starting value 2026-10-15, pending user confirm: one ingredient per buy, one dish per craft
-  startUnlocked:3,craftSecRange:[30,300],recipes:['recipe-1','recipe-2','recipe-3'].map(id=>({id,
-  name:null,unlockLevel:null,ingredients:null,craftSec:null,effect:{full:null,happy:null} // UNSET recipe identity, requirements, timing, effects pending 똑또기
- }))},
- ingredients:{'ingredient-pending':{name:null,price:null}}, // UNSET ingredient identities and prices pending 똑또기
- quests:{daily:{resetKST:null,tasks:null,reward:null},dongu:{chapters:null},instantDia:null}, // UNSET quests/reset/reward/cost pending 똑또기
+ // ── 임시 값 (TEMP, 코코아 요청 2026-10-15 via 똑또기 검수): everything in this block is a placeholder until confirmed ──
+ cooking:{ingredientBuyCount:1,dishesPerCraft:1, // 임시
+  startUnlocked:1,craftSecRange:[30,300], // 임시: 1 recipe open at start, others by unlockLevel
+  recipes:[ // 임시 recipes; dish art pending (slot stays empty)
+   {id:'recipe-1',name:'시바 죽',unlockLevel:1,ingredients:{rice:1,carrot:1},craftSec:30,effect:{full:20,happy:10}}, // 임시
+   {id:'recipe-2',name:'고구마 간식',unlockLevel:3,ingredients:{sweetPotato:1},craftSec:60,effect:{full:15,happy:15}}, // 임시
+   {id:'recipe-3',name:'닭가슴살 큐브',unlockLevel:5,ingredients:{chicken:1},craftSec:90,effect:{full:25,happy:10}}]}, // 임시
+ ingredients:{rice:{name:'쌀',price:50},carrot:{name:'당근',price:50},sweetPotato:{name:'고구마',price:80},chicken:{name:'닭고기',price:120}}, // 임시 prices (멍)
+ quests:{daily:{resetKST:'00:00',reward:null, // 임시 reset time; reward UNSET
+   tasks:[{id:'serve',name:'손님 3명 받기',goal:3,tab:'manage',icon:'assets/drive/ui/tab-manage.png'}, // 임시
+    {id:'pet',name:'시바 1마리 쓰다듬기',goal:1,tab:'shiba',icon:'assets/drive/ui/tab-shiba.png'}, // 임시
+    {id:'sell',name:'메뉴 1잔 판매',goal:1,tab:'manage',icon:'assets/drive/ui/tab-manage.png'}]}, // 임시
+  dongu:{chapters:null},instantDia:10}, // 임시: 즉시완료 10다이아
+ profiles:{red:{intro:'활발하고 사람을 좋아해요',favSnack:{name:'육포'},favPlay:{name:'공 굴리기'}}, // 임시
+  white:{intro:'조용하고 다정해요',favSnack:{name:'우유 과자'},favPlay:{name:'햇살 낮잠'}}, // 임시
+  sesame:{intro:'호기심이 많아요',favSnack:{name:'고구마칩'},favPlay:{name:'짧은 산책'}}, // 임시
+  kuro:{intro:'쿨해 보이지만 잘 챙겨요',favSnack:{name:'연어 스틱'},favPlay:{name:'줄다리기'}}}, // 임시
+ // ── end 임시 block ──
  shop:{itemCategories:{'tea-table':'interior',zabuton:'interior',stairs:'interior',counter:'kitchen'}, // starting value 2026-10-15, pending user confirm
   newItems:['tea-table','zabuton','stairs','counter'], // starting value 2026-10-15, pending user confirm: existing catalog launch badges
   decorScores:{'tea-table':null,zabuton:null,stairs:null,counter:null},themeLogos:null,luckyBoxPrices:{dia:null,coin:null,heart:null}}, // UNSET decor/logo art/lucky box prices pending 똑또기
  run:{playEnergy:1,skipEnergy:2,startEnergy:null,startLevel:null,energyCap:null,regenSec:null,bonusPerShiba:null,upgrades:null,scoreToReward:null}, // UNSET energy/bonus/upgrades/rewards pending 똑또기
- profiles:Object.fromEntries(['red','white','sesame','kuro'].map(id=>[id,{intro:null,favSnack:null,favPlay:null}])), // UNSET profile copy pending 똑또기
 
  ledger:{periodMs:86400000,dayOffsetMs:32400000,historyDays:7,includeDiamonds:false,openFromPill:true,openFromStore:true}, // §15 starting value 똑또기 2026-10-14, pending user batch confirm: KST midnight day, 7 days kept, 멍코인만, opened from 멍코인 pill and 가게 tab
  saveKey:'shibaCafe.save.v3',saveVersion:3, // EXEMPT: save schema version (engine metadata)
@@ -223,7 +234,7 @@ export const CFG={
  tabs:{iconScale:{shiba:1.1}}, // starting value 2026-10-15, pending user confirm: 시바들 tab art drawn 1.1×
  village:{background:'assets/drive/village/village-map.png',size:[1024,1536], // approved 배경_마을지도_시험.png
   lots:[{x:532,y:158,w:300,h:180},{x:475,y:521,w:300,h:180},{x:208,y:747,w:300,h:180},{x:820,y:748,w:300,h:180},{x:521,y:998,w:300,h:180},{x:513,y:1300,w:300,h:180}], // centres from 그림이 (image px); w/h = midpoint of the given 280–320 × 170–190 range (starting value)
-  places:[{id:'hospital',name:'병원',lot:1,icon:null,art:{src:'assets/drive/village/place-hospital.png',size:[308,298],anchor:[154,209]}},{id:'walk',name:'산책',lot:2,icon:null}]}, // starting value 2026-10-15, pending user confirm: which lot; building art pending (lots stay empty)
+  places:[{id:'hospital',name:'병원',lot:1,icon:null,art:{src:'assets/drive/village/place-hospital.png',size:[308,298],anchor:[154,209],scale:1}},{id:'walk',name:'산책',lot:3,icon:null,art:{src:'assets/drive/village/place-walk.png',size:[308,255],anchor:[154,157],scale:1.15}}]}, // 병원 = interior 확정본 1QBLxb0…; 산책로 입구 = interior 1Qw9vCXR… (scale 1.15 = starting value); 3번 터 재료 가게 art pending (empty); 4번 터 (820,748)
  view:{zoomMin:1,zoomMax:2.5}, // starting value 2026-10-15, pending user confirm: pinch/ctrl+wheel zoom range (1 = fit width)
  people:{scale:1,withMapScale:true}, // starting value 2026-10-15, pending user confirm: people (manager/guests) were drawn at fixed 150 screen px ignoring map scale; now 150 art px × map scale × scale, foot anchor kept
  shibaRisk:{orange:50,red:80,highIsBad:['dirt','fatigue','boredom']}, // starting value 2026-10-15, pending user confirm: 'badness' 0–100 per gauge (full/happy inverted); ≥50 orange, ≥80 red; sick/injured red, hospital orange

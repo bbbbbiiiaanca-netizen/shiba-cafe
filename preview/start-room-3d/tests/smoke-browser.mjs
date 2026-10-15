@@ -227,7 +227,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev('__game.state.shibas[0].paws=__game.S.pawsToNext(__game.state.shibas[0].level);__game.state.cafe.level=10;__game.state.coins=__game.CFG.alba.daycare.cost;__game.refresh();true');
  await check('§16-1: red dots for shiba level-up and an available 알바 come from state',`(${dots}).shiba&&(${dots}).manage&&!(${dots}).shop&&!(${dots}).bag`);
  await ev('window.u17Before=JSON.stringify(__game.state);document.querySelector("#hud [data-act=mission]").click();true');
- await check('§17-15: top-right 미션 opens empty quests without changing state',`!!document.querySelector('[data-quests-empty]')&&JSON.stringify(__game.state)===window.u17Before`);
+ await check('§17-15: top-right 미션 opens daily quests without changing state',`document.querySelectorAll('[data-quests] .quest-row').length===3&&JSON.stringify(__game.state)===window.u17Before`);
  await ev('__game.close();__game.refresh();true');
  await ev('__game.state.shibas[0].paws=0;__game.state.coins=0;__game.ui.modals=[];__game.refresh();true');
  await check('§17: no 시바 dot before a walk returns',`!(${dots}).shiba`);

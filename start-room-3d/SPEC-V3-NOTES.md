@@ -964,3 +964,10 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 ## 09:44 update
 - 메뉴 개발 popup: vertical list removed; horizontal swipe cards (image, name, 개발비 button); locked cards show only "LvN 해금".
 - 마을: approved 병원 art placed on lot index 1 (475,521), anchor (154,209) = base diamond centre on lot centre (top-left ≈ 321,312). 산책 lot stays empty with name only until art arrives.
+
+## 09:48 검수 반영 (임시 값, 코코아 요청)
+- All placeholder values are in the single 임시 block at the top of config.js: 3 recipes (시바 죽/고구마 간식/닭가슴살 큐브, 30/60/90s, unlock Lv1/3/5), ingredient prices 쌀50·당근50·고구마80·닭고기120멍, 4 shiba profiles, daily quests (손님 3명/쓰다듬기 1/메뉴 1잔), resetKST 00:00, instant 10다이아.
+- Quests: tabs on top, rows = icon·name·진행/목표·바로가기·다이아 즉시완료; progress counted per KST day (serve/sell on customer payment, pet on play). Test text removed.
+- Friends: horizontal cards with photo·name·Lv·놀러 가기 (friend photo = their shiba art; fixture only via ?temp&fixture=friends).
+- 마을: 병원 = interior 1QBLxb0… (same bytes as review copy), 산책로 입구 = 1Qw9vCXR… scale 1.15 on 4번 터; 3번 터 재료 가게 empty.
+- Still waiting for art (left empty): 빛줄기, 책 틀, 요리 그림, 알바 얼굴, 외벽 이음. Daily reward is still null.

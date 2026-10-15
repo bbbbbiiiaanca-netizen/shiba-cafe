@@ -276,4 +276,5 @@ Manager v2 frames replace the v1 files at the same local paths (v1 rows above ar
 | `ui/tab-bag.png` | `UI_탭_가방.png` (Drive 12RiCLwooCSRUyAFTaYKp-tISrrQO6jPt, 128×128 RGBA) | `6ce8a954edc3a2207d15c4cd505a2870377363fb8c227cff3a010c5392377d24` |
 | `village/village-map.png` | `배경_마을지도_시험.png` (Drive 11jxG5-yPH8SRwXDaEw8fVNzL0pMaDhgW, 1024×1536 RGB) | `fee0187faa5fae8ec3f13228ce40274c70a9043e9a99c79bf5818a37aa9a64e7` |
 
-| village/place-hospital.png | Drive 1QXTglUNlJiHdXoM_8yVaUhQwIBKdCARu (장소_병원.png, 308×298 RGBA, unmodified) | sha256 59e51c1f6522c2cf4dd4174c878c48778b9517a6989cfdff28cc3d33c7cfa370 | 마을 lot index 1 (475,521); anchor (154,209) on lot centre |
+| village/place-hospital.png | Drive 1QBLxb0QjVY2lkv23x29Aozl6Cvla5ZRR (interior 확정본 장소_병원.png, 308×298, unmodified; replaces review copy 1QXT…) | sha256 59e51c1f6522c2cf4dd4174c878c48778b9517a6989cfdff28cc3d33c7cfa370 | 마을 lot index 1 (475,521); anchor (154,209) on lot centre |
+| village/place-walk.png | Drive 1Qw9vCXRXh8AoCkFekIW9F6rx7Lf3tc5a (interior 장소_산책로입구.png, 308×255, unmodified) | sha256 61b132809b17eb258be311abcd46825939ab0eeabecda29f4c68c64234dcde81 | 4번 터 (820,748); scale 1.15, scaled anchor ≈(177,181) on lot centre |

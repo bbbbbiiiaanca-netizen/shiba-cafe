@@ -11,17 +11,16 @@ s.friends=[{id:'test'}];const hearts=s.hearts;
 for(let i=0;i<CFG.heartUse.visit.daily;i++)assert.equal(Q.visitFriend(s,'test',0),true);
 assert.equal(s.hearts,hearts+CFG.heartUse.visit.daily*CFG.heartUse.visit.hearts);
 assert.equal(Q.visitFriend(s,'test',0),false);assert.equal(Q.visitFriend(s,'test',CFG.ledger.periodMs),true);
-const r=CFG.cooking.recipes[0],old=structuredClone(r),ingredient=CFG.ingredients['ingredient-pending'];
-assert.equal(CFG.cooking.recipes.length,3);assert.ok(CFG.cooking.recipes.every(r=>r.name===null&&r.ingredients===null&&r.craftSec===null));
-assert.equal(Q.craft(s,r.id,0),false);assert.equal(Q.buyIngredient(s,'ingredient-pending'),false);assert.match(cookingFx(r),/미정/);assert.match(runFx(),/미정/);
-// Explicit mechanics fixtures, restored below; no production dish names or values.
-try{Object.assign(r,{ingredients:{'ingredient-pending':2},craftSec:30,effect:{full:20,happy:10}});ingredient.price=5;s.coins=5;
-assert.equal(Q.buyIngredient(s,'ingredient-pending'),true);assert.equal(s.coins,0);assert.equal(Q.craft(s,r.id,0),false);
-s.ingredients['ingredient-pending']=2;assert.equal(Q.craft(s,r.id,1000),true);assert.equal(Q.craft(s,r.id,1000),false);assert.equal(s.ingredients['ingredient-pending'],0);
-const resumed=JSON.parse(JSON.stringify(s));assert.equal(Q.settleCraft(resumed,30999),false);assert.equal(Q.settleCraft(resumed,31000),true);assert.equal(Q.settleCraft(resumed,31000),false);assert.equal(resumed.dishes[r.id],1);
-const sh=resumed.shibas[0];assert.equal(Q.feedDish(resumed,sh,r.id),false);sh.g.full=95;sh.g.happy=30;assert.equal(Q.feedDish(resumed,sh,r.id),true);assert.equal(sh.g.full,100);assert.equal(sh.g.happy,40);assert.equal(Q.feedDish(resumed,sh,r.id),false);
-}finally{Object.assign(r,old);ingredient.price=null;}
-const oldRewards=CFG.run.scoreToReward;try{s.run.energy=2;assert.equal(Q.skipRun(s),false);s.run.lastScore=0;assert.equal(Q.skipRun(s),false);CFG.run.scoreToReward=[{score:0,ingredients:{'ingredient-pending':3}}];assert.equal(Q.skipRun(s),true);assert.equal(s.run.energy,0);assert.equal(s.ingredients['ingredient-pending'],3);assert.equal(Q.skipRun(s),false);}finally{CFG.run.scoreToReward=oldRewards;}
+const r=CFG.cooking.recipes[0];
+// 임시 recipes (2026-10-15): names, ingredients, times and effects are set; no 미정.
+assert.deepEqual(CFG.cooking.recipes.map(r=>[r.name,r.craftSec,r.effect.full,r.effect.happy]),[['시바 죽',30,20,10],['고구마 간식',60,15,15],['닭가슴살 큐브',90,25,10]]);
+assert.ok(CFG.cooking.recipes.every(r=>Number.isFinite(r.unlockLevel)&&Object.keys(r.ingredients).every(id=>Number.isFinite(CFG.ingredients[id]?.price))));
+assert.doesNotMatch(cookingFx(r),/미정/);
+s.coins=CFG.ingredients.rice.price+CFG.ingredients.carrot.price;assert.equal(Q.buyIngredient(s,'rice'),true);assert.equal(Q.buyIngredient(s,'carrot'),true);assert.equal(s.coins,0);assert.equal(Q.buyIngredient(s,'rice'),false);
+assert.equal(Q.craft(s,r.id,1000),true);assert.equal(Q.craft(s,r.id,1000),false);assert.equal(s.ingredients.rice,0);
+{const resumed=JSON.parse(JSON.stringify(s));assert.equal(Q.settleCraft(resumed,30999),false);assert.equal(Q.settleCraft(resumed,31000),true);assert.equal(resumed.dishes[r.id],1);
+const sh=resumed.shibas[0];sh.g.full=95;sh.g.happy=30;assert.equal(Q.feedDish(resumed,sh,r.id),true);assert.equal(sh.g.full,100);assert.equal(sh.g.happy,40);assert.equal(Q.feedDish(resumed,sh,r.id),false);}
+const oldRewards=CFG.run.scoreToReward;try{s.run.energy=2;assert.equal(Q.skipRun(s),false);s.run.lastScore=0;assert.equal(Q.skipRun(s),false);CFG.run.scoreToReward=[{score:0,ingredients:{rice:3}}];s.ingredients.rice=0;assert.equal(Q.skipRun(s),true);assert.equal(s.run.energy,0);assert.equal(s.ingredients.rice,3);assert.equal(Q.skipRun(s),false);}finally{CFG.run.scoreToReward=oldRewards;}
 const before=Q.rewardSnapshot(s);s.items.expBoost4h++;assert.deepEqual(Q.rewardDiff(before,s),[{id:'expBoost4h',n:1}]);
 const main=readFileSync(new URL('../main.js',import.meta.url),'utf8');assert.match(main,/temp&&Q.get\('fixture'\)==='friends'/);assert.match(main,/care:d=>open\('profile'/);assert.match(main,/careOpen:d=>open\('care'/);assert.match(main,/claimMail:d=>\{const before=Q17.rewardSnapshot/);assert.match(main,/heartUse:d=>\{const before=Q17.rewardSnapshot/);
 console.log('q17: friends cap/reset; null gating; craft resume/idempotence; feeding; skip atomicity; grant diff; profile route passed');
@@ -37,10 +36,10 @@ const renderers=runInNewContext(renderSource+';({shop:furnitureShop})',{
 });
 const shop=renderers.shop();for(const it of CFG.furniture.items){assert.ok(shop.includes('assets/drive/ui/ui-icon-'+it.id+'.png'));assert.ok(shop.includes(String(S.furniturePrice(s,it.id))));}
 ui.furnitureCategory=CFG.furniture.items[0].id;assert.equal((renderers.shop().match(/class="q17-product"/g)||[]).length,1);
-assert.match(P.cooking().html,/요리 1 미정/);assert.match(P.cooking().html,/data-act="craft" disabled/);
+assert.match(P.cooking().html,/시바 죽/);assert.doesNotMatch(P.cooking().html,/미정/);assert.match(P.cooking().html,/data-act="craft" disabled/);
 assert.match(P.cooking().html,/data-act="ingredientBuy"[^>]+disabled/);
 assert.match(P.run().html,/data-act="runSkip" disabled/);assert.match(P.run().html,/에너지 미정/);
-assert.doesNotMatch(P.profile(s.shibas[0].id).html,/undefined|null/);assert.match(P.profile(s.shibas[0].id).html,/data-act="careOpen"/);
+assert.doesNotMatch(P.profile(s.shibas[0].id).html,/undefined|null|미정/);assert.match(P.profile(s.shibas[0].id).html,new RegExp(CFG.profiles[s.shibas[0].breed].favSnack.name));assert.match(P.profile(s.shibas[0].id).html,/data-act="careOpen"/);
 s.friends=[];assert.match(P.friends().html,/아직 친구가 없어요/);
 console.log('q17 production renderers: placeholder cooking/run, null disabled buttons, empty friends, profile care link passed');
 // Mail receipts represent successful grants only; duplicate claims have no delta.

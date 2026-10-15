@@ -4,7 +4,7 @@ export async function q1715Browser({ev,check,shot=async()=>{},mode='all'}){
  const snap=(mode,name)=>shot(`main-screen-${mode}-${name}.png`);
  await ev('__game.ui.modals=[];__game.close();__game.refresh();true');
  if(mode!=='q1717'){
- await check('q1715 compact HUD and approved scene entry icons',`document.getElementById('hud').getBoundingClientRect().height<=72&&document.querySelectorAll('.scene-entries img').length===2&&document.getElementById('questGuide').hidden`);
+ await check('q1715 compact HUD and approved scene entry icons',`document.getElementById('hud').getBoundingClientRect().height<=72&&document.querySelectorAll('.scene-entries img').length===2`);
  await snap('q1715','main');
  await ev(`(()=>{const g=__game;window.q1715Guests=g.world.custs;g.world.custs=[{id:'test-guest',kind:'girl',rude:false,request:{type:'meetShiba',shibaId:g.state.shibas[0].id}}];document.querySelector('[data-main-tab=manage]').click();document.querySelector('[data-act=guestRequest]').click();return true;})()`);
  await check('q1715 normal guest request uses approved guest art',`document.querySelector('[data-dialogue=normal] img').getAttribute('src')==='assets/cust_girl.png'`);await click('[data-act=modalOk]');
@@ -15,11 +15,11 @@ export async function q1715Browser({ev,check,shot=async()=>{},mode='all'}){
  await ev(`__game.ui.modals=[{kind:'dialogue',variant:'warning',actor:'dongu',text:'확인해 주세요'}];__game.refresh();true`);
  await check('q1715 shared warning displays exact approved full-body sprite',`document.querySelector('[data-dialogue=warning] img').getAttribute('src')==='assets/drive/chars/dongu/dongu-front.png'&&document.querySelector('[data-act=confirmYes]').textContent==='확인'`);await snap('q1715','dialogue-warning');
  await click('[data-act=modalOk]');await click('#hud [data-act=mission]');
- await check('q1715 production quests remain empty and progress unset',`!!document.querySelector('[data-quests-empty]')&&document.querySelector('[data-quests]').textContent.includes('보상 미정')&&!document.querySelector('[data-quests]').textContent.includes('TEST FIXTURE')`);await snap('q1715','quests-empty');
- await ev(`__game.debugQuestFixture(true);__game.refresh();true`);
- await check('q1715 TEMP fixture has real navigation and disabled instant completion',`document.querySelectorAll('.quest-row').length===3&&document.querySelector('[data-quests]').textContent.includes('TEST FIXTURE')&&document.querySelector('[data-act=questInstant]').disabled`);await snap('q1715','quests-fixture');
- await click('[data-act=donguOffer]');await check('q1715 quest offer uses shared dialogue and three task slots',`document.querySelector('[data-dialogue=quest] .offer-tasks').children.length===3&&document.querySelector('[data-dialogue=quest]').textContent.includes('TEST FIXTURE')`);await snap('q1715','dialogue-quest');await click('[data-act=confirmYes]');
- await click('[data-act=questGo]');await check('q1715 shortcut opens furniture bag',`document.querySelector('[data-main-tab=bag]').classList.contains('active')&&document.getElementById('panel').hidden`);
+ await check('q1715 daily quests: tabs on top, 3 task rows with icon/progress/shortcut/10-dia instant, no test text',`(()=>{const q=document.querySelector('[data-quests]'),rows=q.querySelectorAll('.quest-row');return rows.length===3&&!q.textContent.includes('TEST FIXTURE')&&q.querySelector('.quest-tabs').getBoundingClientRect().bottom<=rows[0].getBoundingClientRect().top&&[...rows].every(r=>r.querySelector('img.quest-icon')&&r.querySelector('.quest-name small').textContent.includes('/')&&r.querySelector('[data-act=questGo]')&&/10 즉시완료/.test(r.querySelector('[data-act=questInstant]').textContent))&&q.textContent.includes('손님 3명 받기')})()`);await snap('q1715','quests-daily');
+ await ev(`__game.state.dia=10;__game.refresh();document.querySelector('[data-quest=pet] [data-act=questInstant]').click();true`);await check('q1715 instant complete spends 10 dia',`__game.state.dia===0&&!!document.querySelector('[data-quest=pet] .quest-done')`);
+ await ev(`__game.debugQuestFixture(true);__game.refresh();true`);await click('[data-act=questTab][data-item=dongu]');
+ await click('[data-act=donguOffer]');await check('q1715 quest offer uses shared dialogue and three task slots',`document.querySelector('[data-dialogue=quest] .offer-tasks').children.length===3`);await snap('q1715','dialogue-quest');await click('[data-act=confirmYes]');
+ await click('[data-act=questTab][data-item=daily]');await click("[data-quest=serve] [data-act=questGo]");await check('q1715 shortcut opens 가게관리',`document.querySelector('[data-main-tab=manage]').classList.contains('active')`);
  await ev('__game.debugQuestFixture(false);__game.close();__game.refresh();true');
  }
  if(mode!=='q1715'){

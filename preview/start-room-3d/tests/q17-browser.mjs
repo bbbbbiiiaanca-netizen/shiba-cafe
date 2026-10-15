@@ -16,7 +16,7 @@ export async function q17Browser({ev,c,check,shot=async()=>{}}){
  await ev(`__game.ui.modals=[];__game.refresh();document.querySelector('[data-main-tab=village]').click();document.querySelector('[data-act=friendsOpen]').click();true`);
  await check('q17 real friends default empty',`__game.state.friends.length===0&&document.querySelector('[data-friends]').textContent.includes('아직 친구가 없어요')`);await snap('friends-empty');
  await ev(`__game.open('cooking');true`);
- await check('q17 three placeholder recipes and disabled craft/purchase',`document.querySelectorAll('[data-act=recipePick]').length===3&&document.querySelector('[data-act=craft]').disabled&&document.querySelector('[data-act=ingredientBuy]').disabled&&document.querySelector('[data-cooking]').textContent.includes('포만 미정')`);await snap('cook');
+ await check('q17 three 임시 recipes, no 미정',`document.querySelectorAll('[data-act=recipePick]').length===3&&document.querySelector('[data-cooking]').textContent.includes('시바 죽')&&!document.querySelector('[data-cooking]').textContent.includes('미정')`);await snap('cook');
  await ev(`__game.open('run');window.q17Energy=__game.state.run.energy;true`);await click('[data-act=runPlay]');
  await check('q17 run stub keeps energy; unknown skip disabled',`__game.state.run.energy===window.q17Energy&&document.querySelector('[data-act=runSkip]').disabled&&document.querySelector('#toast').textContent==='준비 중'`);await snap('run');
  await ev(`__game.close();document.querySelector('[data-main-tab=shiba]').click();document.querySelector('#menuList [data-act=care]').click();true`);
