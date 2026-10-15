@@ -1,6 +1,7 @@
 <!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover"><link rel="icon" href="data:,"><title>시바카페</title>
 <style>
 @font-face{font-family:"Jua";src:url(assets/fonts/Jua-Regular.woff2) format("woff2");font-display:swap}
+@font-face{font-family:"Jua";src:url(assets/fonts/GowunDodum-Regular.woff2) format("woff2");unicode-range:U+002C;font-display:swap}
 @font-face{font-family:"Gowun Dodum";src:url(assets/fonts/GowunDodum-Regular.woff2) format("woff2");font-display:swap}
 
 [hidden]{display:none!important}
@@ -209,6 +210,12 @@ small.fx{display:block;font-family:'Gowun Dodum',sans-serif;font-size:11px;opaci
 .friend-swipe{scroll-snap-type:x mandatory}.friend-card{width:150px!important}.friend-visit{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}.friend-photo.big img{width:140px;height:140px}
 #panel[data-panel=cooking],#panel[data-panel=friends]{top:auto;max-height:84%}
 #panel[data-panel=hospital] #pbody{padding:0}
+[data-dialogue=tutorial]{align-items:center}[data-dialogue=tutorial] .dialogue-character>img{height:auto;max-height:190px;clip-path:inset(0 5% 0 0)}
+[data-dialogue=tutorial] .dialogue-box{position:relative;padding-top:22px}.tut-step{position:absolute;top:6px;right:10px;font-size:11px;opacity:.85}
+.tut-ring{position:absolute;pointer-events:none;border-radius:14px;box-shadow:0 0 0 3px #ffd36b,0 0 18px 6px rgba(255,211,107,.9);background:rgba(255,236,170,.25);animation:tutPulse 1.2s ease-in-out infinite}
+.tut-ring::after{content:"";position:absolute;left:50%;top:-26px;transform:translateX(-50%);border:10px solid transparent;border-top:16px solid #ffd36b;animation:tutBob 1.2s ease-in-out infinite}
+.hosp-art img.hosp-normal{object-fit:contain}
+@keyframes tutPulse{50%{box-shadow:0 0 0 3px #ffd36b,0 0 24px 10px rgba(255,211,107,.6)}}@keyframes tutBob{50%{transform:translate(-50%,-5px)}}
 #panel[data-panel=hospital]{top:0}
 .hospital-room{min-height:100%;background-size:cover;background-position:center;display:flex;align-items:flex-end;justify-content:center;padding:12px;box-sizing:border-box}
 .hosp-list{width:100%;display:flex;flex-direction:column;gap:10px}

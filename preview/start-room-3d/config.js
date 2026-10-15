@@ -297,7 +297,7 @@ export const CFG={
   }, // 치료 앞당기기 = timeSkip (갱신 135-2)
 
  hospitalArt:{background:'assets/drive/bg-hospital-clinic.png', // 배경_병원진료실.png
-  sick:{red:'assets/drive/hospital/sick-red-bandage.png'}}, // 시바_적시바_아픔_붕대.png · sesame/kuro/white 그림 미도착 → 비워 둠
+  sick:{red:'assets/drive/hospital/sick-red-bandage.png',sesame:'assets/drive/hospital/sick-sesame-bandage.png'}}, // 시바_적시바_아픔_붕대.png · 시바_참깨_아픔_붕대.png · kuro/white 아픈 그림 미도착 → 기존 시바 그림(IMG.shiba) 사용
 
  // ── 알바 (갱신 99·99-2·118·118-1·123-x·124-1·125-1) ──
  alba:{

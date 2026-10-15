@@ -292,3 +292,4 @@ Manager v2 frames replace the v1 files at the same local paths (v1 rows above ar
 | cooking/ing-chicken.png | Drive 1wu9GPccCnujyU5dOjq4yS3h9nBLYOX6x (재료_닭고기.png, unmodified) | sha256 868ae8a8d78290ba716f039a6eaf6c8c40d9207e6735ce6ef68b86b7738598a3 | 요리 제작 재료 |
 | bg-hospital-clinic.png | Drive 10OB6TzgCt79ClTFmrV769zimnUc5IjQ8 (배경_병원진료실.png, 1080×1920, unmodified) | sha256 c93572464743aa4e4eee8c46c0763f696ef959f32db24b4cf673417b1a478b7c | 병원 진료실 배경 (병원 화면에 연결) |
 | hospital/sick-red-bandage.png | Drive 19xLjdPp_98d5sqpPGgCB3NWfDiy7iqdE (interior 시바_적시바_아픔_붕대.png, 1024×1536, unmodified) | sha256 ae37e5635911a909df7309fec1d92da93d81e291951985387ce468905484354f | 병원: 적시바 아픔·붕대 포즈 |
+| hospital/sick-sesame-bandage.png | Drive 1iCx3q540uXjuLJW4pGKIOx1T6DR9Z4ZU (interior 시바_참깨_아픔_붕대.png, 1024×1536, unmodified) | sha256 340228e929bf19589c6005069d2ddd1cea5949e2f4be51a9c03b2717f92056ab | 병원: 참깨 아픔·붕대 포즈 |
