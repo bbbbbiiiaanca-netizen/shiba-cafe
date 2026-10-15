@@ -38,7 +38,7 @@ const shop=renderers.shop();for(const it of CFG.furniture.items){assert.ok(shop.
 ui.furnitureCategory=CFG.furniture.items[0].id;assert.equal((renderers.shop().match(/class="q17-product"/g)||[]).length,1);
 assert.match(P.cooking().html,/시바 죽/);assert.doesNotMatch(P.cooking().html,/미정/);assert.match(P.cooking().html,/data-act="craft" disabled/);
 assert.match(P.cooking().html,/data-act="ingredientBuy"[^>]+disabled/);
-assert.match(P.run().html,/data-act="runSkip" disabled/);assert.match(P.run().html,/에너지 미정/);
+assert.match(P.run().html,/data-act="runSkip" disabled/);assert.match(P.run().html,/오늘 남은 판 5/);assert.doesNotMatch(P.run().html,/runAd/);
 assert.doesNotMatch(P.profile(s.shibas[0].id).html,/undefined|null|미정/);assert.match(P.profile(s.shibas[0].id).html,new RegExp(CFG.profiles[s.shibas[0].breed].favSnack.name));assert.match(P.profile(s.shibas[0].id).html,/data-act="careOpen"/);
 s.friends=[];assert.match(P.friends().html,/아직 친구가 없어요/);
 console.log('q17 production renderers: placeholder cooking/run, null disabled buttons, empty friends, profile care link passed');

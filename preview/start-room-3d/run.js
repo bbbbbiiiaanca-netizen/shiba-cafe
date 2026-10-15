@@ -1,23 +1,25 @@
 // §17-13 재료 달리기 (시작값, 수인님 확인 전). Values come from CFG.run; 미정 values are marked there.
 export function obstacleKinds(cfg){return Object.entries(cfg.obstacles||{}).filter(([,src])=>src).map(([id])=>id);} // null art (cat) never spawns
-export function createRun(cfg,ingredientIds,rng=Math.random){return {cfg,ingredientIds,rng,t:0,scroll:0,lane:Math.floor(cfg.lanes/2),x:cfg.laneX[Math.floor(cfg.lanes/2)],objs:[],nextSpawn:cfg.spawnSec,score:0,coins:0,got:{},over:false,reason:null};}
+export const lerpAt=(v,t,len)=>typeof v==='number'?v:v.start+(v.end-v.start)*Math.max(0,Math.min(1,t/len));
+export const speedAt=(cfg,t)=>lerpAt(cfg.speed,t,cfg.lengthSec),spawnAt=(cfg,t)=>lerpAt(cfg.spawnSec,t,cfg.lengthSec);
+export function createRun(cfg,ingredientIds,rng=Math.random){return {cfg,ingredientIds,rng,hitsTaken:0,t:0,scroll:0,lane:Math.floor(cfg.lanes/2),x:cfg.laneX[Math.floor(cfg.lanes/2)],objs:[],nextSpawn:spawnAt(cfg,0),score:0,coins:0,got:{},over:false,reason:null};}
 export function moveLane(r,d){if(r.over)return r.lane;r.lane=Math.max(0,Math.min(r.cfg.lanes-1,r.lane+d));return r.lane;}
 function pick(r){const m=r.cfg.spawnMix,kinds=obstacleKinds(r.cfg);let v=r.rng()*(m.obstacle+m.coin+m.ingredient);
  if(v<m.obstacle&&kinds.length)return {type:'obstacle',kind:kinds[Math.floor(r.rng()*kinds.length)]};v-=m.obstacle;
  if(v<m.coin||!r.ingredientIds.length)return {type:'coin'};return {type:'ingredient',kind:r.ingredientIds[Math.floor(r.rng()*r.ingredientIds.length)]};}
-export function stepRun(r,dt){if(r.over)return r;const c=r.cfg,dy=c.speed*dt;r.t+=dt;r.scroll+=dy;
- const tx=c.laneX[r.lane];r.x+=Math.sign(tx-r.x)*Math.min(Math.abs(tx-r.x),c.speed*3*dt);
- while(r.t>=r.nextSpawn){r.objs.push({...pick(r),lane:Math.floor(r.rng()*c.lanes),y:-c.obstacleW});r.nextSpawn+=c.spawnSec;}
+export function stepRun(r,dt){if(r.over)return r;const c=r.cfg,sp=speedAt(c,r.t),dy=sp*dt;r.t+=dt;r.scroll+=dy;
+ const tx=c.laneX[r.lane];r.x+=Math.sign(tx-r.x)*Math.min(Math.abs(tx-r.x),sp*3*dt);
+ while(r.t>=r.nextSpawn){r.objs.push({...pick(r),lane:Math.floor(r.rng()*c.lanes),y:-c.obstacleW});r.nextSpawn+=spawnAt(c,r.nextSpawn);}
  for(const o of r.objs){o.y+=dy;if(o.done||o.lane!==r.lane||Math.abs(o.y-c.shibaY)>(o.type==='obstacle'?c.obstacleW:c.itemW)*0.45)continue;
-  o.done=true;if(o.type==='obstacle'){if(c.hit==='end'){r.over=true;r.reason='hit';}}
+  o.done=true;if(o.type==='obstacle'){r.hitsTaken++;if(r.hitsTaken>=c.hits){r.over=true;r.reason='hit';}}
   else if(o.type==='coin'){r.coins++;r.score+=c.scorePer.coin;}else{r.got[o.kind]=(r.got[o.kind]||0)+1;r.score+=c.scorePer.ingredient;}}
  r.objs=r.objs.filter(o=>!(o.done&&o.type!=='obstacle')&&o.y<c.screen[1]+c.obstacleW);
  if(!r.over&&r.t>=c.lengthSec){r.over=true;r.reason='time';}return r;}
 
 // Browser screen: full-screen canvas 1080×1920 (contain-fit), swipe / arrow keys.
-export function startRunScreen({cfg,ingredients,shibaSrc,coinSrc,onEnd,rng}){
+export function startRunScreen({cfg,ingredients,shibaSrc,coinSrc,onEnd,rng,playsLeft=null,resultExtra=()=>''}){
  const ids=Object.keys(ingredients),r=createRun(cfg,ids,rng),[W,H]=cfg.screen,load=src=>{const i=new Image();i.src=src;return i;};
- const img={bg:load(cfg.bg),shiba:load(shibaSrc),coin:load(coinSrc),obs:Object.fromEntries(obstacleKinds(cfg).map(k=>[k,load(cfg.obstacles[k])])),ing:Object.fromEntries(ids.map(k=>[k,load(ingredients[k].img)]))};
+ const img={bg:load(cfg.bg),shiba:load(shibaSrc),coin:load(coinSrc),heart:load(cfg.heartImg.full),heartEmpty:load(cfg.heartImg.empty),obs:Object.fromEntries(obstacleKinds(cfg).map(k=>[k,load(cfg.obstacles[k])])),ing:Object.fromEntries(ids.map(k=>[k,load(ingredients[k].img)]))};
  const root=document.createElement('div');root.id='runScreen';root.setAttribute('data-run-screen','');
  root.innerHTML=`<canvas width="${W}" height="${H}"></canvas><div class="run-end" hidden></div>`;document.body.appendChild(root);
  const cv=root.querySelector('canvas'),g=cv.getContext('2d');let last=null,raf=0,paused=false,sx=null;
@@ -31,10 +33,12 @@ export function startRunScreen({cfg,ingredients,shibaSrc,coinSrc,onEnd,rng}){
   for(const o of r.objs){if(o.done&&o.type!=='obstacle')continue;const x=cfg.laneX[o.lane];
    if(o.type==='obstacle')draw(img.obs[o.kind],x,o.y,cfg.obstacleW);else if(o.type==='coin')draw(img.coin,x,o.y,cfg.itemW);else draw(img.ing[o.kind],x,o.y,cfg.itemW);}
   if(cfg.shibaBlend){g.globalCompositeOperation=cfg.shibaBlend;draw(img.shiba,r.x,cfg.shibaY,cfg.shibaW);g.globalCompositeOperation='source-over';}else draw(img.shiba,r.x,cfg.shibaY,cfg.shibaW);
-  const ing=Object.values(r.got).reduce((a,b)=>a+b,0);pill(`멍코인 ${r.coins} · 재료 ${ing} · ${Math.max(0,Math.ceil(cfg.lengthSec-r.t))}초`,W/2,110);};
- const end=()=>{removeEventListener('keydown',key);const box=root.querySelector('.run-end');
-  box.innerHTML=`<div class="run-card"><h2>${r.reason==='hit'?'앗, 부딪혔어요':'도착했어요'}</h2><p>점수 ${r.score}</p><p>멍코인 ${r.coins}</p>${ids.filter(k=>r.got[k]).map(k=>`<p>${ingredients[k].name} ${r.got[k]}</p>`).join('')}<button data-act="runClose">돌아가기</button></div>`;
-  box.hidden=false;box.querySelector('button').onclick=()=>{root.remove();onEnd?.(r);};};
+  const ing=Object.values(r.got).reduce((a,b)=>a+b,0);pill(`멍코인 ${r.coins} · 재료 ${ing} · ${Math.max(0,Math.ceil(cfg.lengthSec-r.t))}초`,W/2,110);
+  for(let i=0;i<cfg.hits;i++)draw(i<cfg.hits-r.hitsTaken?img.heart:img.heartEmpty,W/2+(i-(cfg.hits-1)/2)*110,230,90);
+  if(playsLeft!=null)pill(`오늘 남은 판 ${playsLeft}`,W/2,340);};
+ const end=()=>{removeEventListener('keydown',key);onEnd?.(r);const box=root.querySelector('.run-end');
+  box.innerHTML=`<div class="run-card"><h2>${r.reason==='hit'?'앗, 부딪혔어요':'도착했어요'}</h2><p>점수 ${r.score}</p>${resultExtra(r)}<p>멍코인 ${r.coins}</p>${ids.filter(k=>r.got[k]).map(k=>`<p>${ingredients[k].name} ${r.got[k]}</p>`).join('')}<button data-act="runClose">돌아가기</button></div>`;
+  box.hidden=false;box.querySelector('button').onclick=()=>root.remove();};
  const tick=ts=>{if(last==null)last=ts;const dt=Math.min(0.05,(ts-last)/1000);last=ts;if(!paused)stepRun(r,dt);render();if(r.over){end();return;}raf=requestAnimationFrame(tick);};
  raf=requestAnimationFrame(tick);
  return {state:r,root,pause:v=>{paused=v;},render,step:dt=>{stepRun(r,dt);render();},stop:()=>{cancelAnimationFrame(raf);removeEventListener('keydown',key);root.remove();}};}
