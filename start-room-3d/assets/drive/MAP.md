@@ -192,6 +192,22 @@ Shown as: top-bar resource pills (coin, heart slots full/empty, diamond, paw), p
 | tiles/plate-edge-left.png | interior/타일_바닥판테두리_왼쪽.png | 1JC-e16DoIZsjbMfKY4ELyPSvSKJwzfgj | 57997f9397935d138de504cbf1b8c14ce6f3f05c2f3fb70f7955b6b8330d5286 |
 | tiles/plate-edge-right.png | interior/타일_바닥판테두리_오른쪽.png | 1GcKTIUKFLCljwj4A0xjUbCCqvF3V1eIv | 8cdcb907051dd2d1d39d6b9a851f9edd76691eab2f4c0056fe1aa66b393a36fe |
 | tiles/plate-edge-corner.png | interior/타일_바닥판테두리_모서리.png | 1doZEYoxTVUvHWfvoimOXEl7Q2cxgVjbr | f10f040db912a23aaae6176e7cf68c9da58ff44faaaa737befb346ecb752907c |
+| chars/shiba-red/walk-back-ul-1.png | handoff /workspace/handoff/assets/drive/chars/shiba-red (128×176, 발 y=167, unmodified; 시루 걷기) | sha256 9deb202f90b6c0500deb4f9d34d736b41b7f84d232ccc4e90ec2a527344c0abd |
+| chars/shiba-red/walk-back-ul-2.png | handoff /workspace/handoff/assets/drive/chars/shiba-red (128×176, 발 y=167, unmodified; 시루 걷기) | sha256 84a83d12b0bbf462b75b4c009588220afe622e91501b1c9cf203d856f39d228c |
+| chars/shiba-red/walk-back-ul-3.png | handoff /workspace/handoff/assets/drive/chars/shiba-red (128×176, 발 y=167, unmodified; 시루 걷기) | sha256 4a8e135a5f7bb07238eae86c212cfa711364ecb0417fe41d4fc74703f7e61e76 |
+| chars/shiba-red/walk-back-ul-4.png | handoff /workspace/handoff/assets/drive/chars/shiba-red (128×176, 발 y=167, unmodified; 시루 걷기) | sha256 9044cc86e90c1e0b8222ddab59dcc7825c8182ca76f83835af4510603507c449 |
+| chars/shiba-red/walk-back-ur-1.png | handoff /workspace/handoff/assets/drive/chars/shiba-red (128×176, 발 y=167, unmodified; 시루 걷기) | sha256 77164b58dfa137f1b59567169de47bc7f4ce649c85126247762dadb32284fe80 |
+| chars/shiba-red/walk-back-ur-2.png | handoff /workspace/handoff/assets/drive/chars/shiba-red (128×176, 발 y=167, unmodified; 시루 걷기) | sha256 2bf03ba9b99e22c8f790f73731ac5fc83be1f3ee5912a207143c19706d960fbc |
+| chars/shiba-red/walk-back-ur-3.png | handoff /workspace/handoff/assets/drive/chars/shiba-red (128×176, 발 y=167, unmodified; 시루 걷기) | sha256 bb231da975c539aa9928be9c3eed520d279e3e9cfdd23ca1ddbf867aa89a5ca3 |
+| chars/shiba-red/walk-back-ur-4.png | handoff /workspace/handoff/assets/drive/chars/shiba-red (128×176, 발 y=167, unmodified; 시루 걷기) | sha256 0c71f6731dedeae693fcbe2811e022e7faaf3e4f8fa561bfc0d7f080331241cd |
+| chars/shiba-red/walk-front-dl-1.png | handoff /workspace/handoff/assets/drive/chars/shiba-red (128×176, 발 y=167, unmodified; 시루 걷기) | sha256 f530650cfd98d6312d61ff34d9c8d7ffde8c502a93c7b0e1f2a93848f0124402 |
+| chars/shiba-red/walk-front-dl-2.png | handoff /workspace/handoff/assets/drive/chars/shiba-red (128×176, 발 y=167, unmodified; 시루 걷기) | sha256 bb906c96c9cf4c89fce28cea30cf4a995cc90f912d972fc1e40e06cbd9039915 |
+| chars/shiba-red/walk-front-dl-3.png | handoff /workspace/handoff/assets/drive/chars/shiba-red (128×176, 발 y=167, unmodified; 시루 걷기) | sha256 42da69f12a53401a53765bf9c0440bb9f72d2239dd36fee7a8b113d3e5f48d8f |
+| chars/shiba-red/walk-front-dl-4.png | handoff /workspace/handoff/assets/drive/chars/shiba-red (128×176, 발 y=167, unmodified; 시루 걷기) | sha256 6baea6f9efbc1421b7911878d2bff563de1d36cf81202c1ca6c75f15e40396fa |
+| chars/shiba-red/walk-front-dr-1.png | handoff /workspace/handoff/assets/drive/chars/shiba-red (128×176, 발 y=167, unmodified; 시루 걷기) | sha256 a6baba418aade5e3843b5b5b7a3e866e8ca59b3001dcbf1e72f648b7957d8af8 |
+| chars/shiba-red/walk-front-dr-2.png | handoff /workspace/handoff/assets/drive/chars/shiba-red (128×176, 발 y=167, unmodified; 시루 걷기) | sha256 ba537e66927cee91810cbc6bc507abb3b0c63a9d9e9b5287d1c2fc3bbf433586 |
+| chars/shiba-red/walk-front-dr-3.png | handoff /workspace/handoff/assets/drive/chars/shiba-red (128×176, 발 y=167, unmodified; 시루 걷기) | sha256 037eb6d596641b7f5f33928e2804a73a70934c526a40160363d47d12e36f2e54 |
+| chars/shiba-red/walk-front-dr-4.png | handoff /workspace/handoff/assets/drive/chars/shiba-red (128×176, 발 y=167, unmodified; 시루 걷기) | sha256 9b092c87c80fad03c3fe28f9da34a4a3460dfe0377e549437cf1a36a31976c24 |
 | chars/manager/manager-sheet.png | interior/알바_매니저_시트.png | 1gyYwc_1w7CeVY24zNyzC8OVMP1-JxMmP | 73812a953f3a5581760d51e2a1d8f7ab2f1ad74d5532d077f50946d05649ff4a |
 | chars/manager/manager-stand-dl.png | interior/알바_매니저_서기_왼쪽아래.png | 1Qdvkaqdt66oHscCuY2IblYwW_xCLtiC0 | 9e6f15f6ab934bd8db3048b16f672b860dea3fb22dd4d39501b1e014e69eb64c |
 | chars/manager/manager-stand-dr.png | interior/알바_매니저_서기_오른쪽아래.png | 1saOKO3eYthJRubJjzF3Q8ZWstfkUvaJ0 | 6741737dea86c814baf21b388a98b813e36aac547d6b4b458272f3430868ba61 |

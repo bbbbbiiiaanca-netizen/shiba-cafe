@@ -279,7 +279,7 @@ export const CFG={
  // 수인님·똑또기 2026-10-15 이동 규칙: 그림 한 장을 미끄러지듯 옮기지 않는다. 걷기 프레임이 있으면 프레임을 넘기며 걷고, 없으면 제자리 동작(idle)만.
  // walkFrames: 값이 있으면 그 파일들을 쓰고, null이면 probe 경로({key}/{dir}/{n})에 첫 프레임 파일이 실제로 있는지 런타임에 확인 → 파일을 추가하면 자동으로 걷는다.
  characters:{walkFrames:{manager:'assets/drive/chars/manager/manager-walk-{dir}-{n}.png',shiba:{red:null,white:null,sesame:null,kuro:null},guest:null,dongu:null},
-  probe:'assets/drive/chars/{key}/walk-{dir}-{n}.png',probeDir:'front-dr',frameCount:4,shibaAnchor:null,shibaScale:1}, // shibaAnchor null → 그림 아래 가운데를 발 위치로
+  probe:'assets/drive/chars/{key}/walk-{dir}-{n}.png',probeDir:'front-dr',frameCount:4,shibaAnchor:null,shibaScale:1}, // shibaAnchor null → CHAR_SPRITES 종류별 발 위치(시루 [64,167]). shibaScale 1: 시루 불투명 키 ≈113px = 알바 150px의 3/4 (2026-10-15 시작값)
  people:{scale:1,withMapScale:true}, // starting value 2026-10-15, pending user confirm: people (manager/guests) were drawn at fixed 150 screen px ignoring map scale; now 150 art px × map scale × scale, foot anchor kept
  shibaRisk:{orange:50,red:80,highIsBad:['dirt','fatigue','boredom']}, // starting value 2026-10-15, pending user confirm: 'badness' 0–100 per gauge (full/happy inverted); ≥50 orange, ≥80 red; sick/injured red, hospital orange
  gaugeFull:{full:100,dirt:0,fatigue:0,happy:100,boredom:0}, // 갱신 116: 모든 게이지 100%, 행복 만점
