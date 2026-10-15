@@ -271,6 +271,11 @@ small.fx{display:block;font-family:'Gowun Dodum',sans-serif;font-size:11px;opaci
 .furniture-actions[data-valid=false] button:not([data-furniture-save]){background:#e04848}
 .furniture-actions[data-valid=false] [data-furniture-done]{opacity:.6}
 #app.editing .furniture-actions [data-furniture-save]{left:50%!important;right:auto!important;top:10px!important;transform:translateX(-50%)!important;padding:10px 28px;font-family:Jua,"Gowun Dodum",sans-serif;font-size:16px;background:#f0a040;color:#fff;border:0;border-radius:999px}
+/* 수인님 10-15 요리 팝업 v7: 재료 가로 한 줄, 이름+효과 한 줄, 카드 줄은 제작 버튼 바로 위 */
+.cook2-main{order:1;flex:1;gap:6px}.cook2-foot{display:contents}.cook2-foot>[data-craft-time]{order:2;font-size:14px}.cook2-strip{order:3;padding:2px 2px 4px}.cook2-go{order:4;padding:9px 0}
+.cook2-title{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap;white-space:nowrap}.cook2-title h3{font-size:16px}.cook2-title .cook2-fx{background:#fff3dc;border-radius:10px;padding:2px 10px;font-size:14px;gap:4px}.cook2-dot{color:#b08a5a}
+.cook2-ings{flex-wrap:nowrap;gap:8px}.cook2-ing{flex-direction:row;gap:6px;padding:4px 8px;min-width:0;border-radius:12px}.cook2-ing>img:first-child{width:34px!important;height:34px!important}.cook2-ing b{font-size:15px}.cook2-ing button{font-size:16px;padding:3px 9px}
+.cook2-card{flex:0 0 70px;padding:4px 2px;font-size:12px}.cook2-card img{width:34px;height:34px}.cook2-card.preview .slot{width:34px!important;height:34px!important}.cook2-card .cook2-lock img{width:12px;height:12px}.cook2-lock{white-space:nowrap}
 </style>
 <div id="app">
  <div id="hud" aria-label="카페 자원">
