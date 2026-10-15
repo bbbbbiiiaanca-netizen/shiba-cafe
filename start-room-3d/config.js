@@ -34,8 +34,8 @@ export const CFG={
   startUnlocked:1,craftSecRange:[30,300], // 임시: 1 recipe open at start, others by unlockLevel
   recipes:[ // 임시 recipes. 이름은 여기 한 곳(수인님 10-15: 단호박 시바 죽·고구마 쿠키·닭가슴살 미트볼). img = 완성 음식 그림: 쿠키·미트볼 새 그림이 오면 이 경로만 바꾼다
    {id:'recipe-1',img:'assets/drive/cooking/dish-shiba-porridge.png',name:'단호박 시바 죽',unlockLevel:1,ingredients:{rice:1,carrot:1},craftSec:30,effect:{full:20,happy:10}}, // 임시
-   {id:'recipe-2',img:'assets/drive/cooking/dish-sweet-potato.png',name:'고구마 쿠키',unlockLevel:1,ingredients:{sweetPotato:1},craftSec:60,effect:{full:15,happy:15}}, // 임시
-   {id:'recipe-3',img:'assets/drive/cooking/dish-chicken-cube.png',name:'닭가슴살 미트볼',unlockLevel:1,ingredients:{chicken:1},craftSec:90,effect:{full:25,happy:10}}]}, // 임시
+   {id:'recipe-2',img:'assets/drive/cooking/dish-sweet-potato-cookie.png',name:'고구마 쿠키',unlockLevel:1,ingredients:{sweetPotato:1},craftSec:60,effect:{full:15,happy:15}}, // 임시
+   {id:'recipe-3',img:'assets/drive/cooking/dish-chicken-meatball.png',name:'닭가슴살 미트볼',unlockLevel:1,ingredients:{chicken:1},craftSec:90,effect:{full:25,happy:10}}]}, // 임시
  ingredients:{rice:{name:'쌀',price:50,img:'assets/drive/cooking/ing-rice.png'},carrot:{name:'당근',price:50,img:'assets/drive/cooking/ing-carrot.png'},sweetPotato:{name:'고구마',price:80,img:'assets/drive/cooking/ing-sweet-potato.png'},chicken:{name:'닭고기',price:120,img:'assets/drive/cooking/ing-chicken.png'}}, // 임시 prices (멍); img = 256 transparent art from 그림이 (pending, slot stays empty)
  quests:{daily:{resetKST:'00:00',reward:null, // 임시 reset time; reward UNSET
    tasks:[{id:'serve',name:'손님 3명 받기',goal:3,tab:'manage',icon:'assets/drive/ui/tab-manage.png'}, // 임시
