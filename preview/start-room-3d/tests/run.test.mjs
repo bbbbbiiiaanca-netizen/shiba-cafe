@@ -49,4 +49,8 @@ const main=readFileSync(new URL('../main.js',import.meta.url),'utf8');
  assert.match(main,/data-run-rewards/);assert.match(main,/class="run-go" data-act="runPlay"/);
  const {runFrame}=await import('../run.js');assert.deepEqual([0,0.1,0.2,0.3,0.4,0.55].map(t=>runFrame(sh,t)),[0,1,2,3,0,1]);
  assert.match(main,/sheet:CFG\.run\.runSheets\[sh\?\.breed\]/);}
-console.log('run: red 4-frame sheet; Lv3 unlock, shiba bonus 1%/Lv max 50%, skip 70% after real run, old energy keys removed; speed/spawn ramps, 2-hit hearts, daily 5 + 3 ads, 10멍 coins + ingredients, today best, ads off by default, adLog per day; 3 lanes, swipe/keys lane change, obstacles end run, pickups, null art skipped, time limit passed');
+// §17-12 item-get glow: confirmed art, 8 s per turn
+{const G=CFG.itemGet.rays;assert.equal(G.src,'assets/drive/ui/ui-itemget-glow.png');assert.equal(G.spinSec,8);
+ assert.match(readFileSync(new URL('../assets/drive/MAP.md',import.meta.url),'utf8'),/ui\/ui-itemget-glow\.png[^\n]*def14716/);
+ assert.match(main,/animation-duration:\$\{CFG\.itemGet\.rays\.spinSec\}s/);assert.match(readFileSync(new URL('../index.html',import.meta.url),'utf8'),/@keyframes itemgetSpin/);}
+console.log('itemget glow 8s; run: red 4-frame sheet; Lv3 unlock, shiba bonus 1%/Lv max 50%, skip 70% after real run, old energy keys removed; speed/spawn ramps, 2-hit hearts, daily 5 + 3 ads, 10멍 coins + ingredients, today best, ads off by default, adLog per day; 3 lanes, swipe/keys lane change, obstacles end run, pickups, null art skipped, time limit passed');

@@ -24,7 +24,7 @@ export const CFG={
   careGap:16, // 똑또기 starting value 2026-10-15: 돌봄 button outside the frame, centred just below it, 16px gap
   close:{right:-14,top:-14},knockoutMin:240}, // starting value: close button outside the frame, top-right (CSS px)
  itemGet:{dim:0.75, // starting value 2026-10-15 (똑또기 10:05: 0.6→0.75), pending user confirm: black overlay opacity behind the item-get popup
-  rays:{src:'assets/drive/ui/ui-popup-rays.png',size:[1024,1024]}}, // 빛줄기 = interior 198nrcFL… (UI_팝업_빛줄기.png)
+  rays:{src:'assets/drive/ui/ui-itemget-glow.png',size:[1024,1024],spinSec:8}}, // 빛 효과 = interior 1XGANByL… (아이템획득_빛효과.png, 확정본; 이전 198nrcFL… 대체). spinSec 8 = 한 바퀴 8초, 시작값 2026-10-15(똑또기) // 빛줄기 = interior 198nrcFL… (UI_팝업_빛줄기.png)
  // §17-13 starting value 2026-10-15, pending user confirm: 3 slots, 30–300 sec; energy 1/2.
  // ── 임시 값 (TEMP, 코코아 요청 2026-10-15 via 똑또기 검수): everything in this block is a placeholder until confirmed ──
  cooking:{ingredientBuyCount:1,dishesPerCraft:1, // 임시
