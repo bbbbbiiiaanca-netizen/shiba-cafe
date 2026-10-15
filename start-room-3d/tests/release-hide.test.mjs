@@ -22,3 +22,12 @@ console.log('release hide: 15 keys hidden, 9 keys trimmed, normal build unchange
  if(CFG.walk.heartsPer10Min===1)assert.match(HEART_FX.walk(),/^1 heart\/10 min/);
  setLangSource(()=>'ko');assert.match(HEART_FX.praise(it('praise')),/만족 평판 \+50%/);setLangSource(()=>'ko');
  console.log('heart fx: +N% increments and singular heart passed');}
+// 출시 빌드: 효과 설명 안의 '—' 조각 제거(가게 음악), 특별 손님 '팁 —'은 그대로. 일반 빌드는 원문.
+{const E=await import('../effects.js');const {setLangSource}=await import('../i18n.js');const {CFG}=await import('../config.js');
+ const music=CFG.heartUse.items.find(x=>x.id==='music');
+ for(const [l,re] of [['ko',/^30분간 추가 주문 \+1$/],['en',/^Extra orders \+1 for 30m$/]]){setLangSource(()=>l);
+  setRelease(false);const norm=E.heartFx(music);assert.ok(norm.includes(l==='ko'?'머무름':'Stay'),norm);
+  setRelease(true);if(music.stay==null)assert.match(E.heartFx(music),re);
+  for(const it of CFG.heartUse.items)if(it.id!=='special')assert.ok(!E.heartFx(it).includes('—'),l+' '+it.id+': '+E.heartFx(it));
+  for(const f of Object.values(E.ITEM_FX))assert.ok(!f().includes('—'));}
+ setRelease(false);setLangSource(()=>'ko');console.log('release fx: empty "—" fragments dropped (special tip kept) passed');}

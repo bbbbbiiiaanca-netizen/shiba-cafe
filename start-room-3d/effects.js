@@ -1,7 +1,7 @@
 // Standing rule (수인님 2026-10-15 08:49): every effect line shows exact numbers + duration generated from CFG.
 // A null/unset value renders as 미정 (never a guessed number) and is listed by unsetEffectKeys().
 import {CFG} from './config.js';
-import {t,tf} from './i18n.js';
+import {t,tf,RELEASE} from './i18n.js';
 const ok=v=>typeof v==='number'&&Number.isFinite(v);
 const U=()=>t('app.unset');
 export const pct=v=>ok(v)?Math.round(v*100)+'%':U();
@@ -29,7 +29,10 @@ export const HEART_FX={
  treat:()=>t('fx.heart.treat'),
  wish:it=>t('fx.heart.wish',{n:it.choices??U()}),
 };
-export const heartFx=it=>(HEART_FX[it.id]||(()=>tf('heart.item.'+it.id+'.line',it.line)))(it);
+// 출시 빌드: 효과 설명 안의 빈 값 조각(' · 머무름 —', ' · Stay —')만 뺀다. 'special'(팁 —)은 수인님 지시로 그대로.
+export const RELEASE_FX_KEEP_DASH=['special'];
+export const dropUnsetFrag=x=>String(x).replace(/ · [^·]*?—/g,'');
+export const heartFx=it=>{const x=(HEART_FX[it.id]||(()=>tf('heart.item.'+it.id+'.line',it.line)))(it);return RELEASE&&!RELEASE_FX_KEEP_DASH.includes(it.id)?dropUnsetFrag(x):x;};
 export const menuPickFx=it=>t('fx.heart.recommend',{dur:durFor(it.sec),s:pctUp(it.sales),p:pctUp(it.price)});
 export const ITEM_FX={
  incomeBoost4h:()=>t('fx.item.incomeBoost4h',{dur:durFor(CFG.itemIncome.boostHours*3600),p:pct(CFG.itemIncome.boostMul)}),
