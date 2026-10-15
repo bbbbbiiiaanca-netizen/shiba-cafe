@@ -3,6 +3,7 @@ import * as Q1715 from './q1715.js';
 // unmodified (sub-regions via CSS only). A needed image that does not exist is a dashed placeholder slot.
 // 갱신 50: no "sticker" sliding — without walk frames (frame data UNSET) characters change place as a cut, never by gliding.
 import * as Q17 from './q17.js';
+import {startRunScreen} from './run.js';
 import {cookingFx,runFx,heartFx,menuPickFx,ITEM_FX,ALBA_FX} from './effects.js';
 import {createIsoMap} from './isomap.js';
 import {CFG,GACHA_TABLE,pressureAt,isUnset} from './config.js';
@@ -343,7 +344,10 @@ const act={
  friendGo:d=>{ui.modals=[{kind:'friendCafe',id:d.id}];},friendVisit:d=>toast(Q17.visitFriend(s,d.id,clock.now())?'준비 중 · 하트를 받았어요':'오늘 방문 완료'),
  recipePick:d=>{ui.recipe=d.item;},craft:()=>Q17.craft(s,ui.recipe||CFG.cooking.recipes[0].id,clock.now()),
  ingredientBuy:d=>Q17.buyIngredient(s,d.item),feedDish:d=>Q17.feedDish(s,S.byId(s,+d.id),d.item),
- runPlay:()=>toast('준비 중'),runSkip:()=>Q17.skipRun(s),runShiba:d=>{const ids=s.run.shibas,id=+d.id;s.run.shibas=ids.includes(id)?ids.filter(x=>x!==id):[...ids,id];},
+ runPlay:()=>{const e=s.run.energy;if(Number.isFinite(e)&&e<CFG.run.playEnergy){toast('에너지가 부족해요');return;}if(Number.isFinite(e))s.run.energy-=CFG.run.playEnergy; // energy 미정(null) → 차감 없이 시작
+ const sh=s.shibas.find(x=>s.run.shibas.includes(x.id))||s.shibas[0];ui.modals=[];refresh();
+ game.run=startRunScreen({cfg:CFG.run,ingredients:CFG.ingredients,shibaSrc:IMG.walkPose[sh?.breed]||IMG.shiba(sh?.breed||'red'),coinSrc:RES.coin,onEnd:r=>{s.run.lastScore=r.score;s.run.bestScore=Math.max(s.run.bestScore??0,r.score);
+  if(Number.isFinite(CFG.run.coinValue))s.coins+=r.coins*CFG.run.coinValue;if(CFG.run.grantIngredients)for(const [k,n] of Object.entries(r.got))s.ingredients[k]=(s.ingredients[k]||0)+n;game.run=null;refresh();}});},runSkip:()=>Q17.skipRun(s),runShiba:d=>{const ids=s.run.shibas,id=+d.id;s.run.shibas=ids.includes(id)?ids.filter(x=>x!==id):[...ids,id];},
 
  hearts:()=>{S.heartState(s);ui.modals.unshift({kind:'list',list:'hearts'});},
  heartPick:d=>ui.modals.unshift({kind:'list',list:'heartShiba',arg:d.item}),

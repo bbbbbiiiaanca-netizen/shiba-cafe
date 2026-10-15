@@ -58,7 +58,20 @@ export const CFG={
   decorScores:{'tea-table':null,zabuton:null,stairs:null,counter:null},themeLogos:{tatami:'assets/drive/ui/ui-theme-logo-tatami.png',fuji:null,bamboo:null},themeLogoSize:[256,128],luckyBoxArt:'assets/drive/ui/ui-lucky-box.png',luckyBoxArtSize:[512,512], // 행운 상자 = interior 1Fgl1U8v… ; 다다미 logo (256×128) pending
    // logo/lucky box art pending (empty frames)
   luckyBoxPrices:{dia:null,coin:null,heart:null}}, // UNSET decor/logo art/lucky box prices pending 똑또기
- run:{bg:'assets/drive/run/bg-ingredient-run-v2.png', /* 재료달리기_배경_v2.png 1080×1920 위아래 반복, 화면 미구현 */ playEnergy:1,skipEnergy:2,startEnergy:null,startLevel:null,energyCap:null,regenSec:null,bonusPerShiba:null,upgrades:null,scoreToReward:null}, // UNSET energy/bonus/upgrades/rewards pending 똑또기
+ run:{bg:'assets/drive/run/bg-ingredient-run-v2.png', /* 재료달리기_배경_v2.png 1080×1920 위아래 반복 */
+  // §17-13 재료 달리기 시작값(똑또기 2026-10-15, 수인님 확인 전): 1080×1920 세로, 위로 달림, 3레인, 좌우 스와이프·방향키, 점프 없음
+  screen:[1080,1920],lanes:3,
+  obstacles:{puddle:'assets/drive/run/obs-puddle.png',flowerpot:'assets/drive/run/obs-flowerpot.png',bicycle:'assets/drive/run/obs-bicycle.png',cat:'assets/drive/run/obs-cat.png'}, // 장애물 4종(웅덩이·화분·자전거·고양이) interior; null이면 나오지 않음
+  // ── 미정(임시값, 명세에 없음 · 똑또기/수인님 확정 전) ──
+  laneX:[330,540,750],shibaY:1480,shibaW:300,shibaBlend:'multiply', /* 기존 시바 그림은 흰 배경(투명 아님) → 파일은 그대로 두고 화면에서만 곱하기 합성. 투명 달리기 포즈가 오면 null */ obstacleW:230,itemW:150, // 미정: 화면 배치(1080 기준 px)
+  speed:700, // 미정: 달리기 속도(px/초, 1080 기준)
+  lengthSec:45, // 미정: 한 판 길이(초)
+  spawnSec:0.8, // 미정: 물건 나오는 간격(초)
+  spawnMix:{obstacle:0.4,coin:0.35,ingredient:0.25}, // 미정: 장애물·코인·재료 비율
+  hit:'end', // 미정: 부딪혔을 때 결과('end' = 그 자리에서 끝)
+  scorePer:{coin:1,ingredient:1}, // 미정: 점수
+  coinValue:null,grantIngredients:false, // 미정: 보상(멍코인 지급량·재료 지급) → 확정 전엔 지급 안 함
+  playEnergy:1,skipEnergy:2,startEnergy:null,startLevel:null,energyCap:null,regenSec:null,bonusPerShiba:null,upgrades:null,scoreToReward:null}, // UNSET energy/bonus/upgrades/rewards pending 똑또기
 
  ledger:{periodMs:86400000,dayOffsetMs:32400000,historyDays:7,includeDiamonds:false,openFromPill:true,openFromStore:true}, // §15 starting value 똑또기 2026-10-14, pending user batch confirm: KST midnight day, 7 days kept, 멍코인만, opened from 멍코인 pill and 가게 tab
  saveKey:'shibaCafe.save.v3',saveVersion:3, // EXEMPT: save schema version (engine metadata)
