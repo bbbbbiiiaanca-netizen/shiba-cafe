@@ -439,6 +439,7 @@ export function usePotion(s,id,kind,gauge,now=Date.now()){const sh=byId(s,id),k=
 export function spaceUnlockCheck(s,kind,id,via="coins"){
  const space=s.space,theme=CFG.themes.find(t=>t.id===id);
  if(!['row','floor2','theme'].includes(kind)||kind==='theme'&&!theme)return 'invalid';
+ if(kind==='row'&&Number.isFinite(CFG.expansion.maxSteps)&&space.unlockedRows>=CFG.expansion.maxSteps)return 'max';
  if(kind==='floor2'&&space.floor2Unlocked||kind==='theme'&&(!theme.locked||space.themes.includes(id)))return 'owned';
  const cost=spacePrice(kind,id,via,s);
  if(!Number.isFinite(cost)||cost<=0)return 'unset';

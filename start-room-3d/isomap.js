@@ -84,7 +84,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
      }
     }
     // 똑또기 10-15 결정: 땅 넓히기 '+' 표시는 가구 편집 모드에서 숨김
-    if(!edit){
+    if(!edit&&!(Number.isFinite(CFG.expansion.maxSteps)&&state.space.unlockedRows>=CFG.expansion.maxSteps)){
     const strip=nextExpansion(z,state.space.unlockedRows),centre=strip.cells.reduce((p,c)=>p.map((v,k)=>v+c[k]/strip.cells.length),[0,0]);
     const p=cellToScreen(...centre,view,z),meta=MAP_MARKERS.expansion,im=load(meta.file);
     const bp=CFG.expansion.markerBounce,ph=markerPhase??((performance.now()/1000)%bp.periodSec)/bp.periodSec; // gentle bounce (starting values)
