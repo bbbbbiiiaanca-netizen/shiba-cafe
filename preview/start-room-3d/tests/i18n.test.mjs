@@ -14,8 +14,8 @@ for(const dev of ['ko','ko-KR','KO-kr'])assert.equal(resolveLang(null,dev),'ko')
 for(const dev of ['en-US','ja-JP','fr','',undefined,null])assert.equal(resolveLang(null,dev),'en');
 assert.deepEqual(LANGS,['ko','en']);
 
-// English holds only confirmed strings: language names + breed names
-assert.deepEqual(Object.keys(STR.en).sort(),['lang.name.en','lang.name.ko','shiba.breed.kuro','shiba.breed.red','shiba.breed.sesame','shiba.breed.white']);
+// English: 똑또기 초안 전체(634키, 누락 0은 i18n-en.test.mjs)
+assert.equal(Object.keys(STR.en).length,Object.keys(STR.ko).length);
 assert.equal(STR.en['shiba.breed.red'],'Shiru');assert.equal(STR.en['shiba.breed.sesame'],'Chamkkae');
 assert.equal(STR.en['shiba.breed.kuro'],'Kuro');assert.equal(STR.en['shiba.breed.white'],'Yuki');
 for(const k of Object.keys(STR.en))assert.ok(k in STR.ko,'en key also in ko: '+k);
@@ -23,14 +23,14 @@ for(const k of Object.keys(STR.en))assert.ok(k in STR.ko,'en key also in ko: '+k
 // fallback: STR[lang][key] → STR.ko[key] → key; {vars} filled in either language
 const en=makeT(()=>'en'),ko=makeT(()=>'ko');
 assert.equal(en('shiba.breed.red'),'Shiru');assert.equal(ko('shiba.breed.red'),STR.ko['shiba.breed.red']);
-assert.equal(en('app.close'),STR.ko['app.close'],'untranslated key falls back to Korean');
-assert.equal(en('app.locked',{lv:15}),'Lv15 해금');
+assert.equal(en('app.close'),'Close');assert.equal(makeT(()=>'fr')('app.close'),STR.ko['app.close'],'unknown lang falls back to Korean');
+assert.equal(en('app.locked',{lv:15}),'Unlocks at Lv15');
 assert.equal(en('no.such.key'),'no.such.key');assert.equal(ko('no.such.key'),'no.such.key');
 assert.equal(makeT(()=>null)('app.close'),STR.ko['app.close'],'no language → Korean');
 assert.equal(makeT(()=>'fr')('app.close'),STR.ko['app.close'],'unknown language → Korean');
 // shared translator: Korean until main.js points it at the player's language
 assert.equal(t('app.close'),STR.ko['app.close']);
-setLangSource(()=>'en');assert.equal(t('shiba.breed.kuro'),'Kuro');assert.equal(t('app.ok'),STR.ko['app.ok']);setLangSource(()=>'ko');
+setLangSource(()=>'en');assert.equal(t('shiba.breed.kuro'),'Kuro');assert.equal(t('app.ok'),STR.en['app.ok']);setLangSource(()=>'ko');
 assert.equal(tf('no.such.key','fallback'),'fallback');assert.equal(tf('app.ok','x'),STR.ko['app.ok']);
 
 // config.js keeps its Korean names as data; the screen text by key must be identical

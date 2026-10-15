@@ -11,7 +11,7 @@ import {cookingFx,heartFx,menuPickFx,ITEM_FX,ALBA_FX} from './effects.js';
 import {createIsoMap} from './isomap.js';
 import {CFG,GACHA_TABLE,pressureAt,isUnset} from './config.js';
 import * as S from './sim.js';
-import {makeT,LANGS,resolveLang,setLangSource} from './i18n.js';
+import {makeT,LANGS,resolveLang,setLangSource,RELEASE} from './i18n.js';
 import {TABS,DEFAULT_TAB,tabBadges} from './tabs.js';
 import {PARTITION,FLOAT_LAYOUT,zonesForSpace} from './map-data.js';
 
@@ -84,7 +84,7 @@ function renderScene(){iso.draw(s,w);renderMainMenu();}
 $('scene').append(iso.actions);
 let menuSig='',mainTab=iso.edit?'bag':DEFAULT_TAB;
 // §16-1 tab row: built once from TABS; icons only from existing images, red dots from tabBadges (real state).
-$('mainTabs').innerHTML=TABS.map(t=>`<button data-main-tab="${t.id}" class="${t.main?'main':''}" aria-label="${t.label}"><i class="tab-dot" aria-hidden="true" hidden></i><span class="tab-ico" style="${t.scaleKey?`transform:scale(${CFG.tabs.iconScale[t.scaleKey]})`:''}">${t.icon?img(t.icon):''}</span><span class="tab-label">${t.label}</span></button>`).join('');
+$('mainTabs').innerHTML=TABS.map(t=>`<button data-main-tab="${t.id}" class="${t.main?'main':''}" aria-label="${t.label}" data-i18n-attr="aria-label:tab.${t.id}"><i class="tab-dot" aria-hidden="true" hidden></i><span class="tab-ico" style="${t.scaleKey?`transform:scale(${CFG.tabs.iconScale[t.scaleKey]})`:''}">${t.icon?img(t.icon):''}</span><span class="tab-label" data-i18n="tab.${t.id}">${t.label}</span></button>`).join('');
 function renderTabs(now){
  // a development finished (any path: tick, fast-forward, instant finish) while 가게 관리 was not open → dot until it is opened
  if(ui.knownMenus!=null&&s.menus.length>ui.knownMenus&&mainTab!=='manage')ui.seen.menuDone=true;ui.knownMenus=s.menus.length;
@@ -115,7 +115,7 @@ function handleEvents(){for(const e of w.events.splice(0)){
  if(e.type==='order')toast(L('toast.order',{name:L('menu.'+e.order)}));
  if(e.type==='leave')floatsFor(e);
  if(e.type==='angry')addFloat('angry',e.cell,0,e.id);
- if(e.type==='leave')toast(e.coins==null?`${L('menu.'+e.order)} · ${L('mm.payUnset')}`:L('toast.coinsPlus',{n:f2(e.coins)}));
+ if(e.type==='leave')toast(e.coins==null?`${L('menu.'+e.order)} · ${L('mm.payUnset')}`:L('toast.coinsPlus',{n:(langNow()==='ko'?'':ico('coin'))+f2(e.coins)}));
 }} // walk results stay in s.walkResults until acknowledged (§17 red dot); renderModal shows them
 // §17-5·17-6 floats: w.floats [{kind,cell,age,dur,dx}] drawn by isomap from the guest's head; aged in step(), gone after CFG.feedback.floatSec.
 // Paying guest → coin; request met (완전 만족; meeting a shiba alone does not count) → heart beside it; angry (queue timeout) → 빠직.
@@ -133,7 +133,7 @@ P.shibas=()=>{const n=S.placedShibas(s).length,f=ui.shibaView||(ui.shibaView={br
  let h=`<button data-open="walk">${L('nav.walk')}</button><div class="card" data-shiba-grid-card><div class="note">${L('shibas.slots',{n,max:S.slotsOf(s),own:s.shibas.length,ownMax:CFG.cafe.maxOwned})}</div>
   <div class="shiba-tools" data-shiba-filter data-shiba-sort><select data-shiba-breed aria-label="${L('shibas.breedAria')}">${['all',...CFG.breeds].map(b=>`<option value="${b}" ${f.breed===b?'selected':''}>${b==='all'?L('app.all'):L('shiba.breed.'+b)}</option>`).join('')}</select><button class="chip" data-act="shibaView" data-k="sort" data-v="${f.sort==='levelAsc'?'levelDesc':'levelAsc'}" data-sort-toggle="${f.sort}">${L('shibas.level')} ${f.sort==='levelAsc'?'↑':'↓'}</button></div>
   <div class="shiba-grid" data-shiba-grid>${list.map(sh=>{const st=S.statusOf(s,sh),r=shibaRisk(sh,st);return `<div class="sq" data-shiba-cell="${sh.id}"><button class="sq-pic" data-act="care" data-id="${sh.id}">${img(shibaImg(sh),nameOf(sh))}<i class="risk ${r}" data-risk="${r}" title="${L('risk.'+r)}"></i><span class="sq-where">${sh.placed?L('shibas.placed'):L('shibas.home')}</span><span class="sq-lv">Lv${sh.level}</span></button><button class="sq-btn${sh.placed?' sec':''}" data-act="place" data-id="${sh.id}" data-on="${sh.placed?0:1}" ${!sh.placed&&S.placeCheck(s,sh.id)?'disabled':''}>${sh.placed?L('shibas.putIn'):L('shibas.takeOut')}</button></div>`;}).join('')||`<div class="note">${L('shibas.none')}</div>`}</div>`;
- h+=`</div><div class="card"><div class="li"><div class="pt">${img(IMG.dongu)}</div><div class="grow"><div class="nm">${L('char.dongu.name')}</div><div class="sub">${L('shibas.dongu')}</div></div>
+ h+=`</div><div class="card"><div class="li"><div class="pt">${img(IMG.dongu)}</div><div class="grow"><div class="nm">${L('char.dongu.name')}</div><div class="sub sub-wrap">${L('shibas.dongu')}</div></div>
   <button class="${s.dongu.placed?'sec':''}" data-act="dongu">${s.dongu.placed?L('care.unplace'):L('care.place')}</button></div></div>`;return {title:L('shibas.title'),html:h};};
 // Tiny status light (UI dot, not art): red = sick/injured or any gauge past red line; orange = hospital/walking-home or past orange line. Thresholds CFG.shibaRisk (starting values).
 function shibaRisk(sh,st=S.statusOf(s,sh)){const R=CFG.shibaRisk;if(st==='sick'||st==='injured')return 'red';let worst='green';
@@ -229,7 +229,7 @@ P.shopLegacy=()=>{let h=`<button data-act="unlockPopup">${L('space.unlock')}</bu
    <div class="li">${slot(L('app.missingImg'),34,34)}<div class="grow nm">${L('shop.capsule',{n:s.items.capsule})}</div></div>
    <div class="li">${img(IMG.potion)}<div class="grow nm">${L('dia.potionBig')} ×${s.items.potionBig} · ${L('dia.potionSmall')} ×${s.items.potionSmall}</div></div></div>
   ${gachaCard()}
-  <div class="card"><h3>${L('shop.dia')}</h3><div class="note">${L('shop.diaRate',{won:CFG.stub.diaPriceWon})} · ${L('app.payment')}</div>
+  <div class="card"><h3>${L('shop.dia')}</h3><div class="note">${langNow()==='ko'?L('shop.diaRate',{won:CFG.stub.diaPriceWon})+' · ':''}${L('app.payment')}</div>
    ${[['cooldown1',CFG.cooldownTicketDia.one],['cooldown5',CFG.cooldownTicketDia.five],['potionBig',CFG.potion.bigDia],['potionSmall',CFG.potion.smallDia],['boost',CFG.itemIncome.priceDia],['expBoost',CFG.stub.expBoost.priceDia],['slot',CFG.cafe.paidSlotUnlockDia]]
     .map(([k,p])=>`<div class="li">${ico('dia')}<div class="grow">${L('dia.'+k)}</div><button disabled>${priceText(p,'dia')}</button></div>`).join('')}</div>`;
  return {title:L('shop.title'),html:h};};
@@ -238,7 +238,7 @@ P.quests=()=>({title:L('hud.mission'),html:Q1715.questsHtml(CFG.quests,ui.questT
 P.settings=()=>{const h=`<div class="card"><h3>${L('settings.language')}</h3><div class="btns">${LANGS.map(c=>`<button class="${s.settings.language===c?'':'sec'}" data-act="setLang" data-lang="${c}">${makeT(()=>c)('lang.name.'+c)}</button>`).join('')}</div></div>
  <div class="card"><div class="btns"><button class="sec" data-act="toggle" data-k="sound">${L('set.sound')}: ${s.settings.sound?'ON':'OFF'}</button><button class="sec" data-act="toggle" data-k="music">${L('set.music')}: ${s.settings.music?'ON':'OFF'}</button></div></div>
  <div class="card"><button data-act="income">${L('set.income')}</button></div>
- <div class="card"><h3>${L('set.stubs')}</h3><div class="note">${L('stub.list')}</div></div>
+ ${RELEASE?'':`<div class="card"><h3>${L('set.stubs')}</h3><div class="note">${L('stub.list')}</div></div>`}
  <div class="card"><button class="warn" data-act="reset">${L('set.reset')}</button></div>`;return {title:L('set.title'),html:h};};
 P.income=()=>{const now=clock.now(),item=S.itemIncomeMul(s,now),base=CFG.menu.coffee.price;
  let h=`<div class="card"><h3>${L('inc.formula')}</h3><div class="note">${L('inc.base',{p:base})}</div>
@@ -317,7 +317,7 @@ function renderModal(){const m=ui.modals[0]||(!s.settings.language?{kind:'lang'}
  const report=S.ledgerStatement(s,clock.now(),m.day),amount=n=>{const [i,d]=String(Math.round(n*100)/100).split('.');return fmt(+i)+(d?'.'+d:'');};
  h=`<div class="ledger-title"><h2>${L('ledger.title')}</h2><button data-act="modalOk" aria-label="${L('ledger.closeAria')}">×</button></div><div class="ledger-days">${[-1,0].map(day=>`<button data-act="ledgerDay" data-day="${day}" aria-pressed="${m.day===day}">${day===-1?L('ledger.yesterday'):L('ledger.today')}</button>`).join('')}</div><small class="ledger-unit">${L('ledger.unit')}</small>`;
  for(const kind of ['income','expense'])h+=`<section class="ledger-section"><h3>${kind==='income'?L('ledger.income'):L('ledger.expense')}</h3>${report.lines.filter(x=>x.kind===kind).map(x=>`<div class="ledger-row ${kind}" data-ledger-category="${x.id}"><span>${x.label}</span><span>${kind==='expense'?'('+amount(x.amount)+')':amount(x.amount)}</span></div>`).join('')}</section>`;
- h+=`<div class="ledger-row ledger-net"><strong>${L('ledger.net')}</strong><strong>${L('ledger.coins',{n:amount(report.net)})}</strong></div>`;
+ h+=`<div class="ledger-row ledger-net"><strong>${L('ledger.net')}</strong><strong>${L('ledger.coins',{n:(langNow()==='ko'?'':ico('coin'))+amount(report.net)})}</strong></div>`;
  }
  if(m.kind==='book')h=bookHtml(m.id);
  if(m.kind==='friendCafe')h=friendCafeHtml(m.id);
@@ -464,7 +464,7 @@ P.cooking=()=>{const recipes=CFG.cooking.recipes,r=recipes.find(r=>r.id===ui.rec
  <div class="cook2-foot"><span data-craft-time>${s.craft?L('cook.crafting')+' '+tfmt((s.craft.until-clock.now())/1000):L('cook.time')+' '+(r.craftSec!=null?tfmt(r.craftSec):L('app.unset'))}</span><button class="cook2-go" data-act="craft" ${c?'disabled':''}>${c?(!open?L('app.locked',{lv:r.unlockLevel??L('app.unset')}):s.craft?L('cook.crafting'):L('cook.short')):L('cook.make')}</button></div></section>`};};
 P.run=()=>{const now=clock.now(),left=Q17.runPlaysLeft(s,now),sk=Q17.skipCheck(s,now),sr=Q17.skipReward(s,now),best=Q17.runDay(s,now).best;return {title:L('run.title'),html:`<section class="card run-start" data-run><p>${L('run.rewards')}</p><div class="run-rewards" data-run-rewards>${Object.entries(CFG.ingredients).filter(([,it])=>it.img).map(([id,it])=>`<span data-ing="${id}"><img src="${it.img}" alt="">${LF('ingredient.'+id,it.name)}</span>`).join('')}</div><p>${L('run.pickShiba')}</p><div class="q17-swipe">${s.shibas.map(sh=>`<button data-act="runShiba" data-id="${sh.id}" aria-pressed="${s.run.shibas[0]===sh.id}">${img(IMG.shiba(sh.breed))}${nameOf(sh)} Lv${sh.level}</button>`).join('')}</div><p data-run-bonus>${L('run.bonus',{n:Q17.runBonusPct(s)})}</p><p>${L('run.playsLeft',{n:left})} · ${L('run.best',{n:best??0})}</p><button class="run-go" data-act="runPlay" ${left&&Q17.runUnlocked(s)?'':'disabled'}>${L('run.start')}</button><div class="btns">${CFG.run.adsEnabled?`<button data-act="runAd" ${Q17.runAdsLeft(s,now)?'':'disabled'}>${L('run.ad')} · ${Q17.runAdsLeft(s,now)}/${CFG.run.daily.adMax}</button>`:''}<button data-act="runSkip" ${sk?'disabled':''}>${L('dlg.skip')}${sr?` · ${COIN_HTML}${fmt(sr.mung)}`:''}</button></div>${sk==='run'?`<p>${L('run.skipNote')}</p>`:''}</section>`};};
 game.openExpand=openExpand;document.addEventListener('change',e=>{const el=e.target.closest('[data-shiba-breed]');if(el)act.shibaView({k:'breed',v:el.value});});
-game.startTutorial=()=>{s.tutorialDone=false;startTutorial();refresh();};window.__game=game;applyStatic();refresh();requestAnimationFrame(frame);window.__ready=true;
+game.applyLang=()=>{applyStatic();refresh();};game.startTutorial=()=>{s.tutorialDone=false;startTutorial();refresh();};window.__game=game;applyStatic();refresh();requestAnimationFrame(frame);window.__ready=true;
 
 function consumables(){return `<div class=card data-consumables>${[['incomeBoost4h',L('grant.incomeBoost4h')],['expBoost4h',L('grant.expBoost4h')],['cooldownTicket',L('grant.cooldownTicket')]].map(([k,n])=>`<button data-act=useItem data-item=${k} ${s.items[k]>0&&(k==='cooldownTicket'?S.cooldownTarget(s,clock.now()):Number.isFinite(k==='incomeBoost4h'?CFG.itemIncome.boostMul:CFG.stub.expBoost.mul))?'':'disabled'}>${itemIcon(k)}${n} ×${s.items[k]||0}<small class=fx>${ITEM_FX[k]()}</small> · ${k!=='cooldownTicket'&&!Number.isFinite(k==='incomeBoost4h'?CFG.itemIncome.boostMul:CFG.stub.expBoost.mul)?L('bag.mulUnset'):L('shop.use')}</button>`).join('')}</div>`;}
 function unlocks(){return `<div class=card data-unlocks>${[['floor2','', L('space.floor2')],...CFG.themes.filter(t=>t.locked).map(t=>['theme',t.id,LF('theme.'+t.id,t.name)])].map(([kind,id,name])=>`<div>${name} · ${L('app.locked',{lv:kind==='floor2'?CFG.cafe.expansion2FLevel:CFG.themes.find(t=>t.id===id).unlockLevel})}${['coins','dia'].map(via=>`<button data-act=spaceBuy data-kind=${kind} data-id="${id}" data-via=${via} ${S.spaceUnlockCheck(s,kind,id,via)?'disabled':''}>${S.spacePrice(kind,id,via)??L('app.unset')} ${via==='dia'?L('hud.currency.dia'):L('hud.currency.coin')}</button>`).join('')}</div>`).join('')}</div>`;}

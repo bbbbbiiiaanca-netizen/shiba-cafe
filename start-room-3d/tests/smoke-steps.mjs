@@ -4,7 +4,9 @@ export default async function({ev,check,sleep,reload}){
  await check('language screen on first run, OK disabled','!document.getElementById("modal").hidden&&document.querySelectorAll("[data-act=langPick]").length===2&&document.querySelector("[data-act=langOk]").disabled');
  await ev('document.querySelector("[data-lang=en]").click();document.querySelector("[data-act=langOk]").click();true');
  // 갱신 109 start choice
- await check('start screen: 4 breeds; English chosen → untranslated text falls back to Korean, confirmed breed names in English','__game.state.settings.language==="en"&&document.documentElement.lang==="en"&&document.querySelectorAll("[data-act=startPick]").length===4&&/첫 시바를 골라 주세요/.test(document.getElementById("mbox").textContent)&&/Shiru/.test(document.getElementById("mbox").textContent)');
+ await check('start screen: 4 breeds; English chosen → English text (똑또기 초안), breed names in English','__game.state.settings.language==="en"&&document.documentElement.lang==="en"&&document.querySelectorAll("[data-act=startPick]").length===4&&/Pick your first shiba/.test(document.getElementById("mbox").textContent)&&/Shiru/.test(document.getElementById("mbox").textContent)');
+ await ev('__game.state.settings.language="ko";__game.applyLang();true'); // rest of the smoke run checks the Korean screens
+ await check('switch to Korean on start screen: Korean title, Korean breed names, no reload','document.documentElement.lang==="ko"&&/첫 시바를 골라 주세요/.test(document.getElementById("mbox").textContent)&&!/Shiru/.test(document.getElementById("mbox").textContent)');
  await check('start requires both breed and bandana','document.querySelector("[data-act=startGo]").disabled');
  await ev('document.querySelector("[data-act=startPick][data-breed=kuro]").click();true');
  await check('breed alone does not enable start','document.querySelector("[data-act=startGo]").disabled');
