@@ -953,3 +953,5 @@ User-run: `node start-room-3d/capture-main-screen.mjs --u18` writes DPR2 `main-s
 - Confirm initial item-category mapping and `shop.newItems` display list. These are starting display choices, not new economy numbers.
 - Validation: new unit tests and shared real-DOM smoke/capture driver added. Browser smoke and captures intentionally NOT run, per final user instruction that Chrome cannot run in this sandbox; capture output is therefore not claimed. Run `npm run test:browser`, then `node capture-main-screen.mjs --q1715` and `node capture-main-screen.mjs --q1717` outside this sandbox.
 - Final validation: `npm test` passed with the full legacy suite plus `tests/q1715.test.mjs`; JavaScript syntax checks and `git diff --check` passed. Existing browser shop checks now select 캐시·골드 for retained accessory/gacha controls, and the former 미션-stub check now asserts the quest empty screen.
+
+- Validation addendum 09:4x (box, outside Codex): `npm test` passed; `npm run test:browser` 231/231, 0 page errors (fixed main.js questsHtml being passed CFG instead of CFG.quests); --q17, --q1715, --q1717, --nav captures generated and reviewed.
