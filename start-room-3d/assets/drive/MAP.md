@@ -371,3 +371,16 @@ Manager v2 frames replace the v1 files at the same local paths (v1 rows above ar
 | hospital/sick-sesame-bandage.png | Drive 1iCx3q540uXjuLJW4pGKIOx1T6DR9Z4ZU (interior 시바_참깨_아픔_붕대.png, 1024×1536, unmodified) | sha256 340228e929bf19589c6005069d2ddd1cea5949e2f4be51a9c03b2717f92056ab | 병원: 참깨 아픔·붕대 포즈 |
 | hospital/sick-kuro-bandage.png | Drive 1MJxTVuC86P_hQRb6cW4WSqSIeZpCI2N3 (interior 시바_쿠로_아픔_붕대.png, 1024×1536, unmodified) | sha256 3dd6b4a96ecbc10d8524b0f2f07deec05570cb711712f813f766d4545d9b429f | 병원: 쿠로 아픔·붕대 포즈 |
 | hospital/sick-white-bandage.png | Drive 11spBvfH_HM3lZHdT-T18TiqF94p3sOSK (interior 시바_백시바_아픔_붕대.png, 1024×1536, unmodified) | sha256 f606325df71edcd0342b4d798bb30513e2d664e8a66a5d6828dc612f76b01735 | 병원: 백시바 아픔·붕대 포즈 |
+
+## UI 아이콘 v2 (그림이 검수 통과 2026-10-15, 512×512) → assets/drive/ui/v2/
+| file | sha256 |
+|---|---|
+| ui/v2/btn-close.png | d858ccdcf007dd984340f11a3deae2739aad8ff053eb11726d8a47fc2add41c7 |
+| ui/v2/mg-menu-dev.png | 2ba5de93820b67e0a850d7670cc3dc7cee688beb2dd2ec1425213525f2bc1c52 |
+| ui/v2/mg-pnl.png | fe5160872cc9a75168a5f61693e5b84bf4780e060874f7fb741812d05c6a8dfc |
+| ui/v2/mg-upgrade.png | abf7e7a9eab276e192b426e4eb985ec574af4cefbd00dcda899efbcaf7540efa |
+| ui/v2/tab-bag.png | 13871081ab4185227ab232567162c8ff9cd74a9be03a59e36a09c1421a323f66 |
+| ui/v2/tab-shibas.png | 34948013e02f89a271a69611375c66f4a0f3e04540b96c432573425b63f569bb |
+| ui/v2/tab-shop-manage.png | 952cadf3301a650edc7a1d2e826db9ee1994608bc87e3a05fa55c5a1b542085b |
+| ui/v2/tab-store.png | ab5e657ddaba685238f88772d376c423e99e57be28166a4b1346545d5c2d2db3 |
+| ui/v2/tab-village.png | f7ea45aae8de98e04cd9b0a64df91f9f48f37d7a883a4e15817382af4f2920c7 |

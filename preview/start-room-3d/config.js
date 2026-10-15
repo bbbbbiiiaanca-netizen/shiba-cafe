@@ -276,11 +276,11 @@ export const CFG={
   lots:[{x:532,y:158,w:300,h:180},{x:475,y:521,w:300,h:180},{x:208,y:747,w:300,h:180},{x:820,y:748,w:300,h:180},{x:521,y:998,w:300,h:180},{x:513,y:1300,w:300,h:180}], // centres from 그림이 (image px); w/h = midpoint of the given 280–320 × 170–190 range (starting value)
   places:[{id:'ingredients',name:'재료 가게',lot:2,icon:null,art:{src:'assets/drive/village/place-ingredients.png',size:[308,298],anchor:[154,209],scale:1}}, // 3번 터 (208,747); interior 1U5COpuz…
   {id:'hospital',name:'병원',lot:1,icon:null,art:{src:'assets/drive/village/place-hospital.png',size:[308,298],anchor:[154,209],scale:1}},{id:'walk',name:'산책',lot:3,icon:null,art:{src:'assets/drive/village/place-walk.png',size:[308,255],anchor:[154,157],scale:1.15}}]}, // 병원 = interior 확정본 1QBLxb0…; 산책로 입구 = interior 1Qw9vCXR… (scale 1.15 = starting value); 3번 터 재료 가게 art pending (empty); 4번 터 (820,748)
- view:{zoomMin:1,zoomMax:2.5}, // starting value 2026-10-15, pending user confirm: pinch/ctrl+wheel zoom range (1 = fit width)
+ view:{zoomMin:1,zoomMax:2}, // 수인님 확정 2026-10-15: 최대 2배: pinch/ctrl+wheel zoom range (1 = fit width)
  // 수인님·똑또기 2026-10-15 이동 규칙: 그림 한 장을 미끄러지듯 옮기지 않는다. 걷기 프레임이 있으면 프레임을 넘기며 걷고, 없으면 제자리 동작(idle)만.
  // walkFrames: 값이 있으면 그 파일들을 쓰고, null이면 probe 경로({key}/{dir}/{n})에 첫 프레임 파일이 실제로 있는지 런타임에 확인 → 파일을 추가하면 자동으로 걷는다.
  characters:{walkFrames:{manager:'assets/drive/chars/manager/manager-walk-{dir}-{n}.png',shiba:{red:null,white:null,sesame:null,kuro:null},guest:null,dongu:null},
-  probe:'assets/drive/chars/{key}/walk-{dir}-{n}.png',probeDir:'front-dr',frameCount:4,shibaAnchor:null,shibaScale:1}, // shibaAnchor null → CHAR_SPRITES 종류별 발 위치(시루 [64,167]). shibaScale 1: 시루 불투명 키 ≈113px = 알바 150px의 3/4 (2026-10-15 시작값)
+  probe:'assets/drive/chars/{key}/walk-{dir}-{n}.png',probeDir:'front-dr',frameCount:4,shibaAnchor:null,shibaScale:0.52}, // shibaAnchor null → CHAR_SPRITES 종류별 발 위치(시루 [64,167]). shibaScale 1: 시루 불투명 키 ≈113px = 알바 150px의 3/4 (2026-10-15 시작값)
  people:{scale:1,withMapScale:true}, // starting value 2026-10-15, pending user confirm: people (manager/guests) were drawn at fixed 150 screen px ignoring map scale; now 150 art px × map scale × scale, foot anchor kept
  shibaRisk:{orange:50,red:80,highIsBad:['dirt','fatigue','boredom']}, // starting value 2026-10-15, pending user confirm: 'badness' 0–100 per gauge (full/happy inverted); ≥50 orange, ≥80 red; sick/injured red, hospital orange
  gaugeFull:{full:100,dirt:0,fatigue:0,happy:100,boredom:0}, // 갱신 116: 모든 게이지 100%, 행복 만점

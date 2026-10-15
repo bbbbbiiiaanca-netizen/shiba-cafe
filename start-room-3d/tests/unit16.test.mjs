@@ -6,9 +6,9 @@ const now=Date.UTC(2026,9,14,3);
 const fresh=()=>{const s=S.newState(now);S.chooseStart(s,'red','',()=>.9,now);return s;};
 
 // §16-1 / §17: one row of five, no duplicate ids/labels, the old list tabs are all merged, one main item in the centre, icons only existing files or null.
-assert.deepEqual(TABS.map(t=>t.id),['village','shiba','manage','shop','bag']);assert.equal(TABS.findIndex(t=>t.main),2);
+assert.deepEqual(TABS.map(t=>t.id),['village','shiba','manage','shop','bag']);assert.ok(!TABS.some(t=>t.main));
 assert.equal(new Set(TABS.map(t=>t.label)).size,TABS.length);
-assert.equal(TABS.filter(t=>t.main).length,1);assert.equal(DEFAULT_TAB,'manage');
+assert.equal(DEFAULT_TAB,'manage');
 const {existsSync}=await import('node:fs');const root=new URL('..',import.meta.url).pathname;
 for(const t of TABS)if(t.icon&&t.icon!=='shiba')assert.ok(existsSync(root+t.icon),t.icon);
 for(const b of CFG.breeds)assert.ok(existsSync(root+`assets/drive/shiba-${b}.png`));

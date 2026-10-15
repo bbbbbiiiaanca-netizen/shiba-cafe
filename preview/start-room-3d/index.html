@@ -276,6 +276,24 @@ small.fx{display:block;font-family:'Gowun Dodum',sans-serif;font-size:11px;opaci
 .cook2-title{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap;white-space:nowrap}.cook2-title h3{font-size:16px}.cook2-title .cook2-fx{background:#fff3dc;border-radius:10px;padding:2px 10px;font-size:14px;gap:4px}.cook2-dot{color:#b08a5a}
 .cook2-ings{flex-wrap:nowrap;gap:8px}.cook2-ing{flex-direction:row;gap:6px;padding:4px 8px;min-width:0;border-radius:12px}.cook2-ing>img:first-child{width:34px!important;height:34px!important}.cook2-ing b{font-size:15px}.cook2-ing button{font-size:16px;padding:3px 9px}
 .cook2-card{flex:0 0 70px;padding:4px 2px;font-size:12px}.cook2-card img{width:34px;height:34px}.cook2-card.preview .slot{width:34px!important;height:34px!important}.cook2-card .cook2-lock img{width:12px;height:12px}.cook2-lock{white-space:nowrap}
+
+/* 수인님 10-15 UI B: 하단 5칸 같은 크기, 가게관리 큰 탭, 마을 지도 꽉 찬 팝업 */
+.main-tabs{display:grid!important;grid-template-columns:repeat(5,1fr);gap:4px}
+.main-tabs button,.main-tabs button.main{height:54px;margin:0;border:0;border-radius:12px;font-size:10px;background:none}
+.main-tabs button.active,.main-tabs button.main.active{background:#fff3da}
+.main-tabs .tab-ico,.main-tabs button.main .tab-ico{width:30px;height:30px}
+.manage-lv{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 10px;margin:4px 0 8px;background:#fff3da;border-radius:14px;font-size:13px;color:#5a3a22}
+.manage-lv>img{width:24px;height:24px;object-fit:contain}.manage-lv .bar{flex:1;margin:0}.manage-lv small{font-size:11px;color:#8a6a4a;white-space:nowrap}
+.manage-tabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px;overflow:visible;align-items:stretch}.manage-tabs button{width:100%;max-height:110px;margin:0}
+.manage-tabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:84px;padding:8px 4px;font-size:14px;font-weight:700;text-align:center;border-radius:16px;background:#f6dfb3;color:#5a3a22;position:relative}
+.manage-tabs button img{width:40px;height:40px;object-fit:contain}
+.manage-tabs button small{position:absolute;top:4px;right:6px;font-size:10px;background:#e8774a;color:#fff;border-radius:8px;padding:1px 5px}
+#app[data-tab=village] #mainMenu{position:fixed;inset:0;z-index:60;border-radius:0;background:#f6e9cf}
+#app[data-tab=village] .menu-heading,#app[data-tab=village] #mainTabs{display:none!important}
+#app[data-tab=village] #menuList{flex:1;display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden;height:100%}
+#app[data-tab=village] .village-map{width:auto;height:100%;max-width:100%;border-radius:0}
+.village-close{position:absolute;top:10px;right:10px;z-index:3;width:44px;height:44px;padding:0;background:none;box-shadow:none;border:0}.village-close img{width:100%;height:100%;object-fit:contain}
+.manage-tabs button.big img{width:50px;height:50px;margin:-5px 0}
 </style>
 <div id="app">
  <div id="hud" aria-label="카페 자원">
