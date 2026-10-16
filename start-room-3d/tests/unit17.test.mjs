@@ -95,7 +95,7 @@ test('§17-5 leave events carry what the floats need: paid coins, request met, m
  let e=run({fulfilled:true,met:[1]});assert.equal(e.requestMet,true);assert.equal(e.metShiba,true);assert.deepEqual(e.cell,[1,3]);assert.equal(e.coins,2,'coffee 1 × Lv21 meeting ×2');
  e=run({});assert.equal(e.requestMet,false);assert.equal(e.metShiba,false);
  e=run({met:[1]});assert.equal(e.requestMet,false,'meeting a shiba alone is not a met request');assert.equal(e.metShiba,true);
- assert.deepEqual(CFG.feedback,{floatSec:1});
+ assert.equal(CFG.feedback.floatSec,1);
  const main=readFileSync(root+'main.js','utf8');assert.ok(/function floatsFor\(e\)\{const heart=!!e\.requestMet,/.test(main),'heart float only when the request was met');});
 
 test('§17-5 elapsed payment stays at the seat and zero elapsed does not settle',()=>{

@@ -1,3 +1,4 @@
+import {addOrderBubble,ageOrderBubbles} from './order-bubble.js';
 import {installCoinClean} from "./coin-clean.js";installCoinClean();
 import {installWalkProbe,walkTable} from "./walk-frames.js";installWalkProbe();
 import * as Q1715 from './q1715.js';
@@ -118,7 +119,7 @@ function manageTop(now){const C=s.cafe,need=S.cafeNeed(C.level),max=C.level>=CFG
  <div class="chips shop-tabs manage-tabs" data-manage-tabs><button class="big" data-act="listOpen" data-list="menu">${img(UI_ICONS.manageTab.menu)}${L('mm.menuDev')}${s.menuDev?`<small data-manage-dev data-dev="${s.menuDev.id}">${L('shop.developingShort')}</small>`:''}</button><button data-act="listOpen" data-list="upgrade">${img(UI_ICONS.manageTab.upgrade)}${L('mm.upgrade')}</button><button data-act="listOpen" data-list="alba" data-manage-hire>${img(UI_ICONS.manageTab.hire)}${L('mm.hire')}</button></div></div>`;}
 function handleEvents(){for(const e of w.events.splice(0)){
  if(e.type==='menuDone')toast(L('toast.menuDone',{name:L('menu.'+e.id)}));
- if(e.type==='order')toast(L('toast.order',{name:L('menu.'+e.order)}));
+ if(e.type==='order')addOrderBubble(w,e,CFG.feedback.orderBubbleSec);
  if(e.type==='leave')floatsFor(e);
  if(e.type==='angry')addFloat('angry',e.cell,0,e.id);
  if(e.type==='leave')toast(e.coins==null?`${L('menu.'+e.order)}${RELEASE?'':' · '+L('mm.payUnset')}`:L('toast.coinsPlus',{n:(langNow()==='ko'?'':ico('coin'))+f2(e.coins)}));
@@ -136,7 +137,7 @@ P.shibas=()=>{const n=S.placedShibas(s).length,f=ui.shibaView||(ui.shibaView={br
  let list=s.shibas.filter(sh=>f.breed==='all'||sh.breed===f.breed);
  list=[...list].sort(f.sort==='levelAsc'?(a,b)=>a.level-b.level||a.id-b.id:f.sort==='recent'?(a,b)=>b.id-a.id:(a,b)=>b.level-a.level||a.id-b.id);
  const opt=(k,v,label)=>`<button class="chip${f[k]===v?' on':''}" data-act="shibaView" data-k="${k}" data-v="${v}" aria-pressed="${f[k]===v}">${label}</button>`;
- let h=`<button data-open="walk">${L('nav.walk')}</button><div class="card" data-shiba-grid-card><div class="note">${L('shibas.slots',{n,max:S.slotsOf(s),own:s.shibas.length,ownMax:CFG.cafe.maxOwned})}</div>
+ let h=`<div class="card" data-shiba-grid-card><div class="note">${L('shibas.slots',{n,max:S.slotsOf(s),own:s.shibas.length,ownMax:CFG.cafe.maxOwned})}</div>
   <div class="shiba-tools" data-shiba-filter data-shiba-sort><select data-shiba-breed aria-label="${L('shibas.breedAria')}">${['all',...CFG.breeds].map(b=>`<option value="${b}" ${f.breed===b?'selected':''}>${b==='all'?L('app.all'):L('shiba.breed.'+b)}</option>`).join('')}</select><button class="chip" data-act="shibaView" data-k="sort" data-v="${f.sort==='levelAsc'?'levelDesc':'levelAsc'}" data-sort-toggle="${f.sort}">${L('shibas.level')} ${f.sort==='levelAsc'?'↑':'↓'}</button></div>
   <div class="shiba-grid" data-shiba-grid>${list.map(sh=>{const st=S.statusOf(s,sh),r=shibaRisk(sh,st);return `<div class="sq" data-shiba-cell="${sh.id}"><button class="sq-pic" data-act="care" data-id="${sh.id}">${img(shibaImg(sh),nameOf(sh))}<i class="risk ${r}" data-risk="${r}" title="${L('risk.'+r)}"></i><span class="sq-where">${sh.placed?L('shibas.placed'):L('shibas.home')}</span><span class="sq-lv">Lv${sh.level}</span></button><button class="sq-btn${sh.placed?' sec':''}" data-act="place" data-id="${sh.id}" data-on="${sh.placed?0:1}" ${!sh.placed&&S.placeCheck(s,sh.id)?'disabled':''}>${sh.placed?L('shibas.putIn'):L('shibas.takeOut')}</button></div>`;}).join('')||`<div class="note">${L('shibas.none')}</div>`}</div>`;
  h+=`</div><div class="card"><div class="li"><div class="pt">${img(IMG.dongu)}</div><div class="grow"><div class="nm">${L('char.dongu.name')}</div><div class="sub sub-wrap">${L('shibas.dongu')}</div></div>
@@ -430,7 +431,7 @@ function refresh(){Q17.settleCraft(s,clock.now());for(const it of S.heartUnlocks
 let last=performance.now(),saveT=0;
 function step(dt){const now=clock.now();
  if(s.started&&s.settings.language){S.consumeElapsed(s,w,dt,now);S.settleHearts(s,now);}
- ageFloats(dt);handleEvents();if(ui.toastT>0&&(ui.toastT-=dt)<=0)$('toast').style.opacity=0;
+ ageFloats(dt);ageOrderBubbles(w,dt);handleEvents();if(ui.toastT>0&&(ui.toastT-=dt)<=0)$('toast').style.opacity=0;
  if(ui.sel!=null&&!w.sh[ui.sel])ui.sel=null;refresh();
  if((saveT+=dt)>=2){saveT=0;persist();}}
 // a long frame gap means the tab was hidden: the player was away → same offline fast-forward as on launch (임시휴무 rule applies)
@@ -476,7 +477,7 @@ game.applyLang=()=>{applyStatic();refresh();};game.startTutorial=()=>{s.tutorial
 function consumables(){return `<div class=card data-consumables>${[['incomeBoost4h',L('grant.incomeBoost4h')],['expBoost4h',L('grant.expBoost4h')],['cooldownTicket',L('grant.cooldownTicket')]].map(([k,n])=>`<button data-act=useItem data-item=${k} ${s.items[k]>0&&(k==='cooldownTicket'?S.cooldownTarget(s,clock.now()):Number.isFinite(k==='incomeBoost4h'?CFG.itemIncome.boostMul:CFG.stub.expBoost.mul))?'':'disabled'}>${itemIcon(k)}${n} ×${s.items[k]||0}<small class=fx>${ITEM_FX[k]()}</small>${k!=='cooldownTicket'&&!Number.isFinite(k==='incomeBoost4h'?CFG.itemIncome.boostMul:CFG.stub.expBoost.mul)?(L('bag.mulUnset')?' · '+L('bag.mulUnset'):''):' · '+L('shop.use')}</button>`).join('')}</div>`;}
 function unlocks(){return `<div class=card data-unlocks>${[['floor2','', L('space.floor2')],...CFG.themes.filter(t=>t.locked).map(t=>['theme',t.id,LF('theme.'+t.id,t.name)])].map(([kind,id,name])=>`<div>${name} · ${L('app.locked',{lv:kind==='floor2'?CFG.cafe.expansion2FLevel:CFG.themes.find(t=>t.id===id).unlockLevel})}${['coins','dia'].map(via=>`<button data-act=spaceBuy data-kind=${kind} data-id="${id}" data-via=${via} ${S.spaceUnlockCheck(s,kind,id,via)?'disabled':''}>${S.spacePrice(kind,id,via)??L('app.unset')} ${via==='dia'?L('hud.currency.dia'):L('hud.currency.coin')}</button>`).join('')}</div>`).join('')}</div>`;}
 
-// 마을 (2026-10-15): place slots laid out on an empty map area. No village/building art yet → existing icons + labels only (art request).
+// 마을: background buildings and optional place art share configured map coordinates and touch areas.
 function villageHtml(){const hurt=s.shibas.filter(sh=>sh.status==='injured'||sh.status==='sick'||sh.status==='hospital').length,V=CFG.village,[W,H]=V.size;
  const info={hospital:[hurt?L('village.hurt',{n:hurt}):'','data-act="villageHospital"'],walk:[s.walkResults.length?L('village.walkDone'):'','data-open="walk"'],ingredients:['','data-open="cooking"']};
  return `<div class="village-map" data-village data-village-map style="aspect-ratio:${W}/${H};background-image:url(${V.background})">${V.places.filter(p=>p.art?.src).map(p=>{const l=V.lots[p.lot],a=p.art,k=a.scale??1;return `<img class="village-art" data-place-art="${p.id}" src="${a.src}" alt="" style="position:absolute;pointer-events:none;left:${(l.x-a.anchor[0]*k)/W*100}%;top:${(l.y-a.anchor[1]*k)/H*100}%;width:${a.size[0]*k/W*100}%">`;}).join('')}${V.lots.map((l,k)=>{const p=V.places.find(x=>x.lot===k);const st=`left:${l.x/W*100}%;top:${l.y/H*100}%;width:${l.w/W*100}%;height:${l.h/H*100}%`;if(!p)return `<span class="village-lot" data-lot="${k}" style="${st}"></span>`;const [sub,act]=info[p.id]||['',''];return `<button class="village-lot village-place" data-lot="${k}" data-place="${p.id}" ${act} style="${st}">${p.icon?`<img src="${p.icon}" alt="">`:''}<strong>${LF('place.'+p.id,p.name)}</strong>${sub?`<small>${sub}</small>`:''}</button>`;}).join('')}</div>`;}
