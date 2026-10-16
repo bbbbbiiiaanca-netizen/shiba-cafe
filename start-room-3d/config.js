@@ -31,9 +31,9 @@ export const CFG={
  // §17-13 starting value 2026-10-15, pending user confirm: 3 slots, 30–300 sec; energy 1/2.
  // ── 임시 값 (TEMP, 코코아 요청 2026-10-15 via 똑또기 검수): everything in this block is a placeholder until confirmed ──
  cooking:{ingredientBuyCount:1,dishesPerCraft:1, popupHeightPct:0.56,popupAlign:'center', // 수인님 10-15: 높이 56% 유지, 화면 정가운데(위아래·좌우)
- lockedPreview:[{unlockLevel:3},{unlockLevel:5}], // 똑또기 10-15 시작값: 처음 3가지 뒤 잠긴 카드(빈 그림 칸) Lv3·Lv5
+ lockedPreview:[{unlockLevel:3,img:'assets/drive/cooking/dish-locked-lv3.png'},{unlockLevel:5,img:'assets/drive/cooking/dish-locked-lv5.png'}], // 똑또기 10-15 시작값: 처음 3가지 뒤 잠긴 카드 Lv3·Lv5. img = 잠긴 음식 그림(@2x 있음), 없으면 빈 그림 칸
   // 임시
-  fxIcons:{full:null,happy:null}, // 미정: 배고픔·행복 효과 아이콘(interior 그림 없음 → 글자만)
+  fxIcons:{full:'assets/drive/ui/icon-hunger.png',happy:'assets/drive/ui/icon-happy.png'}, // 배고픔·행복 효과 아이콘(@2x 있음) → 아이콘+숫자. null이면 글자+숫자
   startUnlocked:1,craftSecRange:[30,300], // 임시: 1 recipe open at start, others by unlockLevel
   recipes:[ // 임시 recipes. 이름은 여기 한 곳(수인님 10-15: 단호박 시바 죽·고구마 쿠키·닭가슴살 미트볼). img = 완성 음식 그림: 쿠키·미트볼 새 그림이 오면 이 경로만 바꾼다
    {id:'recipe-1',img:'assets/drive/cooking/dish-shiba-porridge.png',name:'단호박 시바 죽',unlockLevel:1,ingredients:{rice:1,carrot:1},craftSec:30,effect:{full:20,happy:10}}, // 임시
