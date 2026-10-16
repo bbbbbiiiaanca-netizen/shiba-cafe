@@ -11,7 +11,7 @@ assert.deepEqual(cellToImage(0,3.5,z),{x:205,y:325});
 assert.deepEqual(cellToImage(2.5,0,z),{x:589,y:293});
 assert.deepEqual(cellToScreen(3,3,{x:10,y:20,scale:.5},z),{x:224.5,y:222.5});
 assert.deepEqual(z.slots.map(s=>[s.type,footprintCells(s)]),[['counter',[[0,0],[1,0]]],['cushion',[[1,3]]],['table',[[2,3]]],['cushion',[[3,3]]],['stairs',[[4,0],[5,0]]]]);
-assert.deepEqual(Object.values(SPRITES).filter(s=>s.file).map(s=>s.anchor),[[50.5,162.5],[92,93],[90,74],[124,132],[121,167]]);
+assert.deepEqual(Object.values(SPRITES).filter(s=>s.file).map(s=>s.anchor),[[50.5,162.5],[92,93],[90,74],[124,116],[121,167]]);
 assert.deepEqual(Object.values(SPRITES).filter(s=>s.file).map(s=>s.scale),[64/89,1,1,1,1]);
 assert.deepEqual(footprintCentre(z.slots[0]),[0.5,0]);
 assert.deepEqual(footprintCentre(z.slots[4]),[4.5,0]);
@@ -31,10 +31,12 @@ assert.equal(validPlacement({...counter,origin:[-1,0]},z.slots),false);
 assert.equal(validPlacement({...counter,origin:[1,3]},z.slots),false);
 assert.equal(validPlacement({...counter,origin:[0,1],dir:1},z.slots),true);
 assert.equal(validPlacement({...counter,origin:[0,5],dir:1},z.slots,MAP.zones[0]),false);
-assert.equal(validPlacement({...counter,dir:2},z.slots),false);
+assert.equal(validPlacement({...counter,dir:2},z.slots),true);assert.equal(validPlacement({type:'wall',id:'w',origin:[0,0],dir:2},[]),false);
 assert.deepEqual([0,1,2,3].map(flipDir),[1,0,3,2]);
-assert.deepEqual(availableDirs('counter'),[0,1]);
-assert.equal(rotateDir('counter',0),1);assert.equal(rotateDir('counter',1),0);
+// 10-14 수인님: 앞 → 앞 반전 → 뒤 → 뒤 반전. 뒷모습 있는 4종은 4방향, 칸막이(뒷모습 없음)는 앞/앞 반전만.
+for(const t of ['table','cushion','counter','stairs']){assert.deepEqual(availableDirs(t),[0,1,2,3]);assert.deepEqual([0,1,2,3].map(d=>rotateDir(t,d)),[1,2,3,0]);assert.match(SPRITES[t].back.file,/-v4-back\.png$/);}
+assert.equal(SPRITES.counter.back.mirror,true);assert.equal(SPRITES.stairs.back.mirror,true);assert.deepEqual(availableDirs('wall'),[0,1]);assert.equal(rotateDir('wall',0),1);assert.equal(rotateDir('wall',1),0);
+{const sv=defaultPlacement();sv.slots[0].dir=3;assert.equal(restorePlacement(JSON.parse(JSON.stringify(sv))).slots[0].dir,3);}
 const back={...SPRITES,counter:{...SPRITES.counter,back:{...SPRITES.counter}}};
 assert.deepEqual(availableDirs('counter',back),[0,1,2,3]);
 assert.deepEqual([0,1,2,3].map(d=>rotateDir('counter',d,back)),[1,2,3,0]);
