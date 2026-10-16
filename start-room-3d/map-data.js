@@ -7,10 +7,10 @@ export const SPRITES={
  // starting value 2026-10-15, pending user confirm: bbox x6–95/y24–181; bottom contact midpoint (50.5,162.5), scaled to existing 64×32 cell edge and offset to the rear cell edge.
  wall:{file:'assets/drive/tiles/wall-inner.png',anchor:[50.5,162.5],scale:64/89,back:null,flip:{file:'assets/drive/tiles/wall-inner-flip.png',anchor:[62.5,162.5],scale:64/89},footprint:{cells:1,axis:null}},
  // 그림이 v4 sprites, original size (scale 1). anchor = centre of floor-contact footprint, sprite px (given by 그림이).
- table:{file:'assets/drive/furn-tea-table-v4.png',anchor:[92,93],scale:1,back:null,footprint:{cells:1,axis:null}},
- cushion:{file:'assets/drive/furn-cushion-v4.png',anchor:[90,74],scale:1,back:null,footprint:{cells:1,axis:null}},
- counter:{file:'assets/drive/furn-counter-v4.png',anchor:[124,132],scale:1,back:null,footprint:{cells:2,axis:'i'}},
- stairs:{file:'assets/drive/furn-stairs-v4.png',anchor:[121,167],scale:1,back:null,footprint:{cells:2,axis:'i'}}
+ table:{file:'assets/drive/furn-tea-table-v4.png',anchor:[92,93],scale:1,back:{file:'assets/drive/furn-tea-table-v4-back.png',anchor:[92,93],scale:1},footprint:{cells:1,axis:null}},
+ cushion:{file:'assets/drive/furn-cushion-v4.png',anchor:[90,74],scale:1,back:{file:'assets/drive/furn-cushion-v4-back.png',anchor:[90,74],scale:1},footprint:{cells:1,axis:null}},
+ counter:{file:'assets/drive/furn-counter-v4.png',anchor:[124,132],scale:1,back:{file:'assets/drive/furn-counter-v4-back.png',anchor:[124,132],scale:1,mirror:true},footprint:{cells:2,axis:'i'}},
+ stairs:{file:'assets/drive/furn-stairs-v4.png',anchor:[121,167],scale:1,back:{file:'assets/drive/furn-stairs-v4-back.png',anchor:[121,167],scale:1,mirror:true},footprint:{cells:2,axis:'i'}}
 };
 // Normal-mode room background (방_기본_다다미_선없음.png, Drive 1V3vO-ZEJfPv30NeDAfVKpLVKjFvtQAGX). Same size/coords as the 시험 image.
 // Opaque top-face bounds measured from alpha: x [1,127), y [0,64).

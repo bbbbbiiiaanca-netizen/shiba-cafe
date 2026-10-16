@@ -139,7 +139,11 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev('document.querySelector("[data-furniture-flip]").click();true');
  await check('flip swaps counter axis','__game.state.placement.slots[0].dir===1');
  await ev('document.querySelector("[data-furniture-rotate]").click();true');
- await check('rotation cycles front views','__game.state.placement.slots[0].dir===0');
+ await check('rotation: front-flip → back (counter back art)','__game.state.placement.slots[0].dir===2&&__game.iso.hits.some(h=>h.id==="counter")');
+ await ev('document.querySelector("[data-furniture-rotate]").click();true');
+ await check('rotation: back → back-flip','__game.state.placement.slots[0].dir===3');
+ await ev('document.querySelector("[data-furniture-rotate]").click();true');
+ await check('rotation: back-flip → front','__game.state.placement.slots[0].dir===0');
  await ev('document.querySelector("[data-furniture-flip]").click();document.querySelector("[data-furniture-done]").click();true');
  await check('done deselects','__game.iso.selected===null');
  await ev('document.querySelector("[data-furniture-save]").click();true');
