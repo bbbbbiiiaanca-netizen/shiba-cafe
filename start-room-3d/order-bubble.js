@@ -7,10 +7,10 @@ export function addOrderBubble(world,event,dur){
 export function ageOrderBubbles(world,dt){
  if(world.orderBubbles)world.orderBubbles=world.orderBubbles.filter(b=>(b.age+=dt)<b.dur);
 }
-export function drawOrderBubble(ctx,image,p){
- ctx.save();ctx.fillStyle='#fff';ctx.strokeStyle='#d8cfc3';ctx.lineWidth=1;
- ctx.beginPath();ctx.roundRect(p.x-23,p.y-52,46,44,12);ctx.fill();ctx.stroke();
- ctx.beginPath();ctx.moveTo(p.x-5,p.y-9);ctx.lineTo(p.x,p.y);ctx.lineTo(p.x+6,p.y-9);ctx.fill();
- if(image.complete&&image.naturalWidth){const k=32/Math.max(image.naturalWidth,image.naturalHeight);ctx.drawImage(image,p.x-image.naturalWidth*k/2,p.y-30-image.naturalHeight*k/2,image.naturalWidth*k,image.naturalHeight*k);}
- ctx.restore();
+// 말풍선 테두리는 그림(request-bubble-empty_512.png)으로 그린다. 꼬리 끝이 p에 오고, 메뉴 아이콘은 몸통 가운데.
+export function drawOrderBubble(ctx,image,p,bubble,cfg){
+ if(!bubble?.complete||!bubble.naturalWidth)return;
+ const k=cfg.drawHeight/cfg.opaqueHeight,ox=p.x-cfg.tip[0]*k,oy=p.y-cfg.tip[1]*k;
+ ctx.drawImage(bubble,ox,oy,bubble.naturalWidth*k,bubble.naturalHeight*k);
+ if(image?.complete&&image.naturalWidth){const cx=ox+cfg.center[0]*k,cy=oy+cfg.center[1]*k,f=cfg.iconSize/Math.max(image.naturalWidth,image.naturalHeight),w=image.naturalWidth*f,h=image.naturalHeight*f;ctx.drawImage(image,cx-w/2,cy-h/2,w,h);}
 }

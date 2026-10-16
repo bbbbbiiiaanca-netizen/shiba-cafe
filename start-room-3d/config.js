@@ -239,7 +239,8 @@ furniture:{starterExtra:{table:1,cushion:2,counter:1,stairs:1}, // starting valu
  // interior §17-5·17-6 floats over a guest's head (layout constants: map-data.js FLOAT_LAYOUT)
  // heart float = request met only (incl. manager), confirmed by user 2026-10-15; meeting a shiba alone → coin only
  // 수인님 2026-10-16: menu image bubble duration in seconds (starting value).
- feedback:{orderBubbleSec:1.5,floatSec:1}, // starting value 2026-10-14, pending user confirm: §17-5/17-6 '약 1초, 시작값' — rise and fade time of coin / heart / anger floats
+ feedback:{orderBubbleArt:{file:'assets/drive/request-bubble-empty_512.png',tip:[76,396],center:[256,238],opaqueHeight:288,drawHeight:44,iconSize:30}, // 2026-10-16 말풍선 그림: tip = 꼬리 끝, center = 몸통 가운데(512 원본 픽셀), drawHeight = 화면 높이 시작값(기존 44px 상자와 같음)
+ orderBubbleSec:1.5,floatSec:1}, // starting value 2026-10-14, pending user confirm: §17-5/17-6 '약 1초, 시작값' — rise and fade time of coin / heart / anger floats
  offline:{capHours:12,stepSec:1}, // 갱신 56: 오프라인 수익 최대 12시간분. EXEMPT stepSec = engine integration step
 
  // ── 시바 ──
