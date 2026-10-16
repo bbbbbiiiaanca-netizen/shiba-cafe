@@ -84,7 +84,7 @@ export default async function({ev,check,sleep,reload}){
  await check('edit toggle returns to normal and keeps furniture tab','document.querySelector("[data-edit-toggle]").getAttribute("aria-pressed")==="false"&&document.querySelector("[data-main-tab=bag]").classList.contains("active")');
 
  await ev('document.querySelector("[data-main-tab=manage]").click();true');
- await check('v3: no bottom nav; gear and 미션 buttons are present','!document.getElementById("nav")&&!!document.querySelector(".gear[data-nav=settings]")&&!!document.querySelector("#hud [data-act=mission]")');
+ await check('v3: no bottom nav; gear and 미션 buttons are present','!document.getElementById("nav")&&!!document.querySelector(".gear[data-nav=settings]")&&!!document.querySelector(".scene-entries [data-act=mission]")');
  await ev('__game.state.cafe.level=9;__game.state.coins=224999;__game.refresh();document.querySelector("#menuList [data-act=listOpen][data-list=menu]").click();true');
  await check('v3: configured cost and disabled insufficient-coins button (popup)','document.querySelector("[data-lp-row=M-04] .lp-price").disabled&&/225,000/.test(document.querySelector("[data-lp-row=M-04] .lp-price").textContent)');
  await ev('const list=document.querySelector("#mbox [data-menu-cards]");list.scrollLeft=list.scrollWidth;true');
