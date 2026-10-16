@@ -39,10 +39,10 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await ev(`__game.state.placement.slots=${JSON.stringify(slots)};__game.iso.setEdit(true);__game.refresh();true`);
   await shot('edit-anchors-'+it.id+'.png');
  }
- const placed=[['shelf',0,[0,0]],['low-table',1,[2,2]],['moon-lamp',2,[3,0]],['stone-lantern',3,[0,3]],['bonsai',0,[4,4]],['noren',2,[5,2]],['rock',1,[1,5]]].map(([type,dir,origin],i)=>({id:'cafe-'+i,type,dir,origin}));
+ const placed=[['shelf',0,[0,0]],['low-table',1,[2,2]],['moon-lamp',0,[3,0]],['stone-lantern',1,[0,3]],['bonsai',0,[4,4]],['noren',0,[5,2]],['rock',1,[1,5]]].map(([type,dir,origin],i)=>({id:'cafe-'+i,type,dir,origin}));
  await ev(`__game.state.placement.slots=${JSON.stringify(placed)};__game.iso.setEdit(false);__game.refresh();true`);await shot('cafe-placed.png');
  await go('&fresh=1&temp=1');await ev(`__game.state.started=true;__game.state.tutorialDone=true;__game.state.settings.language='ko';__game.ui.modals=[];__game.applyLang();true`);
- const sakura=['shelf-sakura','low-table-sakura','stone-lantern-sakura'].map((type,i)=>({id:'sakura-'+i,type,dir:i,origin:[[1,1],[3,2],[2,4]][i]}));
+ const sakura=['shelf-sakura','low-table-sakura','stone-lantern-sakura'].map((type,i)=>({id:'sakura-'+i,type,dir:i%2,origin:[[1,1],[3,2],[2,4]][i]}));
  await ev(`__game.state.placement.slots=${JSON.stringify(sakura.slice(0,2))};__game.refresh();true`);
  if(await ev(`!!document.getElementById('isomap').dataset.sakuraZones`))throw Error('Set active with only 2');
  await ev(`__game.state.placement.slots=${JSON.stringify(sakura.map((it,i)=>i===2?{...it,zone:'B'}:it))};__game.refresh();true`);

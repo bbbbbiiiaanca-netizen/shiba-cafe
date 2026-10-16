@@ -148,6 +148,8 @@ export const CFG={
   items:{incomeBoost4h:'assets/drive/ui/bag/icon_income_boost.png',expBoost4h:'assets/drive/ui/bag/icon_xp_boost.png',cooldownTicket:'assets/drive/ui/bag/icon_cooldown.png',heartReset:'assets/drive/ui/bag/icon_heart_reset.png',potionBig:'assets/drive/ui/bag/icon_potion.png',potionSmall:'assets/drive/ui/bag/icon_potion_small.png',capsule:'assets/drive/ui/bag/icon_gacha_ticket.png'},
   furniture:{table:'assets/drive/ui/ui-icon-tea-table.png',cushion:'assets/drive/ui/ui-icon-zabuton.png',counter:'assets/drive/ui/ui-icon-counter.png',stairs:'assets/drive/ui/ui-icon-stairs.png',wall:'assets/drive/ui/bag/icon_partition_wall.png'}},
 decor:{footprint:{default:{w:1,h:1},overrides:{}},
+ // 뒷모습(돌리기 4방향)을 쓰는 새 가구 id. 뒷모습 그림이 있어도 여기 없으면 앞·앞 반전 2방향만 쓴다. 뒷모습을 확인한 가구만 id를 더한다(2026-10-17: 좌식 테이블 일반·벚꽃).
+ backArt:{enabled:['low-table','low-table-sakura','shelf-momiji','low-table-momiji','stone-lantern-momiji','chochin-momiji','bonsai-momiji','bamboo-fence-momiji','noren-momiji','sign-momiji','shelf-snow','low-table-snow','stone-lantern-snow','chochin-snow','bonsai-snow','bamboo-fence-snow','noren-snow','sign-snow']}, // 2026-10-17 00:36 수인님 승인: 단풍·눈 뒷모습 16장 추가. 예전 v4 뒷모습(선반·석등 등·벚꽃)은 계속 꺼 둠
  effect:{perItem:{demand:0.02,stay:0.01},cap:{demand:0.20,stay:0.10}},
  roomLayers:ROOM_LAYERS,
  momijiSet:{minItems:3,bonusMinItems:null,bonus:null},
