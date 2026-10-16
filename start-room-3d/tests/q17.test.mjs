@@ -28,10 +28,10 @@ const {runInNewContext}=await import('node:vm');
 const {makeT}=await import('../i18n.js'),koL=makeT(()=>'ko');
 const renderSource=main.slice(main.indexOf('function furnitureShop(){'),main.indexOf('game.openExpand=openExpand;'));
 const P={},ui={};
-const renderers=runInNewContext(renderSource+';({shop:furnitureShop})',{RELEASE:false,
+const renderers=runInNewContext(renderSource+';({shop:furnitureShop,friendCafe:friendCafeHtml})',{RELEASE:false,
  L:koL,LF:(k,fb)=>{const v=koL(k);return v===k?fb:v;},temp:false,Q:new URLSearchParams(),P,ui,s,Q17:Q,CFG,S,clock:{now:()=>0},IMG:{shiba:b=>'assets/drive/shiba-'+b+'.png'},
  slot:()=>'<span class="slot"></span>',img:src=>`<img src="${src}">`,nameOf:sh=>sh.name||sh.breed,
- priceText:n=>n==null?'미정':String(n),cookingFx,fmt:String,itemIcon:()=>'',RES:{},tfmt:String,
+ priceText:n=>n==null?'미정':String(n),cookingFx,ico:()=>'',fmt:String,itemIcon:()=>'',RES:{},tfmt:String,
 });
 const shop=renderers.shop();for(const it of CFG.furniture.items){assert.ok(shop.includes('assets/drive/ui/ui-icon-'+it.id+'.png'));assert.ok(shop.includes(String(S.furniturePrice(s,it.id))));}
 ui.furnitureCategory=CFG.furniture.items[0].id;assert.equal((renderers.shop().match(/class="q17-product"/g)||[]).length,1);
@@ -39,6 +39,12 @@ assert.match(P.cooking().html,/단호박 시바 죽/);assert.doesNotMatch(P.cook
 assert.match(P.cooking().html,/data-act="ingredientBuy"[^>]+disabled/);
 assert.match(P.run().html,/data-act="runSkip" disabled/);assert.doesNotMatch(P.run().html,/Lv미정|강화|에너지/);assert.match(P.run().html,/오늘 남은 판 5/);assert.doesNotMatch(P.run().html,/runAd/);
 assert.doesNotMatch(P.profile(s.shibas[0].id).html,/undefined|null|미정/);assert.match(P.profile(s.shibas[0].id).html,new RegExp(CFG.profiles[s.shibas[0].breed].favSnack.name));assert.match(P.profile(s.shibas[0].id).html,/data-act="careOpen"/);
+// 17-12 친구 카페: 하트 받기 버튼의 남은 횟수 = daily - 오늘 count, 0이면 disabled. 모달 sig에 friendCafeHtml 포함(재렌더).
+{const v=CFG.heartUse.visit,saved=[s.friends,s.friendVisits,s.hearts];s.friends=[{id:'fc',name:'F'}];delete s.friendVisits;const h0=s.hearts,btn=()=>renderers.friendCafe('fc').match(/<button data-act="friendVisit"[^>]*>[^]*?<\/button>/)[0];
+assert.match(btn(),new RegExp(`오늘 ${v.daily}/${v.daily}`));assert.equal(Q.visitFriend(s,'fc',0),true);assert.match(btn(),new RegExp(`오늘 ${v.daily-1}/${v.daily}`));assert.doesNotMatch(btn(),/disabled/);
+for(let i=1;i<v.daily;i++)Q.visitFriend(s,'fc',0);assert.match(btn(),new RegExp(`오늘 0/${v.daily}`));assert.match(btn(),/ disabled>/);assert.equal(s.hearts,h0+v.daily*v.hearts);
+assert.match(main,/m\.kind==='friendCafe'\?\[m\.id,friendCafeHtml\(m\.id\)\]/);assert.equal(koL('friend.visitOk'),'하트를 받았어요');
+[s.friends,s.friendVisits,s.hearts]=saved;}
 s.friends=[];assert.match(P.friends().html,/아직 친구가 없어요/);
 console.log('q17 production renderers: placeholder cooking/run, null disabled buttons, empty friends, profile care link passed');
 // Mail receipts represent successful grants only; duplicate claims have no delta.
