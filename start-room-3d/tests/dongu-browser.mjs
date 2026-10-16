@@ -20,3 +20,5 @@ export async function donguBrowser({ev,check,c,shotDir=process.env.DONGU_SHOT_DI
  await ev(`__game.ui.modals=[];__game.state.tutorialDone=true;__game.close();__game.refresh();true`);
 
 }
+
+if(process.argv[1] && (await import('node:url')).pathToFileURL((await import('node:path')).resolve(process.argv[1])).href===import.meta.url){await (await import('./browser-runner.mjs')).runBrowser(donguBrowser);}

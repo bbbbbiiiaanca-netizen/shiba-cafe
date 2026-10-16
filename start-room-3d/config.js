@@ -61,8 +61,8 @@ export const CFG={
  // ── end 임시 block ──
  shop:{itemCategories:{'tea-table':'interior',zabuton:'interior',stairs:'interior',counter:'kitchen'}, // starting value 2026-10-15, pending user confirm
   newItems:['tea-table','zabuton','stairs','counter'], // starting value 2026-10-15, pending user confirm: existing catalog launch badges
-  decorScores:{'tea-table':null,zabuton:null,stairs:null,counter:null},themeLogos:{tatami:'assets/drive/ui/ui-theme-logo-tatami.png',fuji:null,bamboo:null},themeLogoSize:[256,128],luckyBoxArt:'assets/drive/ui/ui-lucky-box.png',luckyBoxArtSize:[512,512], // 행운 상자 = interior 1Fgl1U8v… ; 다다미 logo (256×128) pending
-   // logo/lucky box art pending (empty frames)
+  decorScores:{'tea-table':null,zabuton:null,stairs:null,counter:null},themeLogos:{tatami:'assets/drive/ui/ui-theme-logo-tatami.png',fuji:null,bamboo:null},themeLogoSize:[256,128],luckyBoxArt:'assets/drive/ui/ui-lucky-box.png',luckyBoxArtSize:[512,512], // Existing approved art; fuji/bamboo logos remain empty.
+   // Missing logos: transparent 256×128 PNG at ui-theme-logo-<id>.png
   luckyBoxPrices:{dia:null,coin:null,heart:null}}, // UNSET decor/logo art/lucky box prices pending 똑또기
  run:{bg:'assets/drive/run/bg-ingredient-run-v2.png', /* 재료달리기_배경_v2.png 1080×1920 위아래 반복 */
   // §17-13 재료 달리기 시작값(똑또기 2026-10-15, 수인님 확인 전): 1080×1920 세로, 위로 달림, 3레인, 좌우 스와이프·방향키, 점프 없음
