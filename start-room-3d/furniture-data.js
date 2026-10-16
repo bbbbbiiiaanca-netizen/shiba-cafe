@@ -270,10 +270,10 @@ export const ROOM_LAYERS=[
     "layer": "floor",
     "category": "floorwall",
     "price": null,
-    "art": null,
-    "front": null,
+    "art": "assets/drive/furniture-v4/room-snow-floor-v5.png",
+    "front": "assets/drive/furniture-v4/room-snow-floor-v5.png",
     "source": "room-snow",
-    "filename": null
+    "filename": "room-snow-floor-v5.png"
   },
   {
     "id": "wall-snow",

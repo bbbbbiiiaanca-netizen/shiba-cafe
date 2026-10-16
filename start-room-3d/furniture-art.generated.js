@@ -75,5 +75,6 @@ export const FURN_HD=[
   "assets/drive/furniture-v4/furn-entrance-sign-snow-v4.png",
   "assets/drive/furniture-v4/room-momiji-floor-v4.png",
   "assets/drive/furniture-v4/room-momiji-wall-v4.png",
+  "assets/drive/furniture-v4/room-snow-floor-v5.png",
   "assets/drive/furniture-v4/room-snow-wall-v4.png"
 ];
