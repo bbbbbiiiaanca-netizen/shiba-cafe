@@ -278,6 +278,13 @@ small.fx{display:block;font-family:'Gowun Dodum',sans-serif;font-size:11px;opaci
 .cook2-title{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap;white-space:nowrap}.cook2-title h3{font-size:16px}.cook2-title .cook2-fx{background:#fff3dc;border-radius:10px;padding:2px 10px;font-size:14px;gap:4px}.cook2-dot{color:#b08a5a}
 .cook2-ings{flex-wrap:nowrap;gap:8px}.cook2-ing{flex-direction:row;gap:6px;padding:4px 8px;min-width:0;border-radius:12px}.cook2-ing>img:first-child{width:34px!important;height:34px!important}.cook2-ing b{font-size:15px}.cook2-ing button{font-size:16px;padding:3px 9px}
 .cook2-card{flex:0 0 70px;padding:4px 2px;font-size:12px}.cook2-card img{width:34px;height:34px}.cook2-card.preview .slot{width:34px!important;height:34px!important}.cook2-card .cook2-lock img{width:12px;height:12px}.cook2-lock{white-space:nowrap}
+/* PR-C 10-16 360×640: 요리 제작 버튼이 스크롤 없이 보이게(작은 화면만 촘촘히) */
+@media (max-height:700px){#panel[data-panel=cooking] #pbody{padding:6px 10px 8px}.cook2{gap:4px}.cook2-main{gap:4px}.cook2-dish img{width:60px;height:60px}.cook2-strip{padding:0 2px 2px}.cook2-go{padding:7px 0}}
+/* PR-C: 메뉴 개발 잠긴 카드 = 다른 카드와 같은 틀(그림 칸에 자물쇠 + LvN 해금) */
+.menu-card.locked .menu-lock{display:flex;align-items:center;justify-content:center}.menu-card.locked .menu-lock img{width:64px;height:64px;object-fit:contain;filter:none;opacity:.8}.menu-card.locked::after{display:none}
+/* PR-C: 가구 상점 카드 2열 — 그림 · 이름 한 줄 · 코인 가격 */
+.furn-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:2px 0}.furn-grid .q17-product{width:auto;min-width:0;gap:3px;padding:6px}.furn-grid .q17-product>.furn-img{width:100%;height:52px;object-fit:contain}
+.furn-grid .furn-name{display:block;width:100%;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;line-height:18px}.furn-grid .furn-buy{width:100%;margin:auto 0 0;padding:4px 0;display:flex;align-items:center;justify-content:center;gap:3px;font-size:14px}.furn-grid .furn-buy .ci{width:16px;height:16px;object-fit:contain}
 
 /* 수인님 10-15 UI B: 하단 5칸 같은 크기, 가게관리 큰 탭, 마을 지도 꽉 찬 팝업 */
 .main-tabs{display:grid!important;grid-template-columns:repeat(5,1fr);gap:4px}
