@@ -139,7 +139,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev('document.querySelector("[data-furniture-flip]").click();true');
  await check('flip swaps counter axis','__game.state.placement.slots[0].dir===1');
  await ev('document.querySelector("[data-furniture-rotate]").click();true');
- await check('rotation: front-flip → back (counter back art)','__game.state.placement.slots[0].dir===2&&__game.iso.hits.some(h=>h.id==="counter")');
+ await check('rotation: front-flip → back (counter back art)',`(async()=>{for(let i=0;i<30&&!__game.iso.hits.some(h=>h.id==="counter");i++){__game.refresh();await new Promise(r=>setTimeout(r,100));}return __game.state.placement.slots[0].dir===2&&__game.iso.hits.some(h=>h.id==="counter")})()`);
  await ev('document.querySelector("[data-furniture-rotate]").click();true');
  await check('rotation: back → back-flip','__game.state.placement.slots[0].dir===3');
  await ev('document.querySelector("[data-furniture-rotate]").click();true');

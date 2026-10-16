@@ -9,7 +9,8 @@ export const SPRITES={
  // 그림이 v4 sprites, original size (scale 1). anchor = centre of floor-contact footprint, sprite px (given by 그림이).
  table:{file:'assets/drive/furn-tea-table-v4.png',anchor:[92,93],scale:1,back:{file:'assets/drive/furn-tea-table-v4-back.png',anchor:[92,93],scale:1},footprint:{cells:1,axis:null}},
  cushion:{file:'assets/drive/furn-cushion-v4.png',anchor:[90,74],scale:1,back:{file:'assets/drive/furn-cushion-v4-back.png',anchor:[90,74],scale:1},footprint:{cells:1,axis:null}},
- counter:{file:'assets/drive/furn-counter-v4.png',anchor:[124,132],scale:1,back:{file:'assets/drive/furn-counter-v4-back.png',anchor:[124,132],scale:1,mirror:true},footprint:{cells:2,axis:'i'}},
+  // counter front anchor y 132→116 (똑또기 10-16: 앞모습이 바닥 칸보다 반 칸 뒤에 보임). 뒷모습은 132 유지.
+ counter:{file:'assets/drive/furn-counter-v4.png',anchor:[124,116],scale:1,back:{file:'assets/drive/furn-counter-v4-back.png',anchor:[124,132],scale:1,mirror:true},footprint:{cells:2,axis:'i'}},
  stairs:{file:'assets/drive/furn-stairs-v4.png',anchor:[121,167],scale:1,back:{file:'assets/drive/furn-stairs-v4-back.png',anchor:[121,167],scale:1,mirror:true},footprint:{cells:2,axis:'i'}}
 };
 // Normal-mode room background (방_기본_다다미_선없음.png, Drive 1V3vO-ZEJfPv30NeDAfVKpLVKjFvtQAGX). Same size/coords as the 시험 image.
