@@ -52,3 +52,4 @@ delete state.placement;save(store,state,0);assert.deepEqual(load(store,0).state.
 console.log('furniture edit: directions, bounds, collisions, rotation, placement save and migration passed');
 
 assert.deepEqual(restorePlacement({v:1,slots:defaultPlacement().slots.map(s=>s.id==='stairs'?{...s,origin:null}:s)}),defaultPlacement());
+{const {spriteMirrored,SPRITES}=await import('../map-data.js');const b=SPRITES.counter.back;assert.equal(b.mirror,true);assert.deepEqual([0,1,2,3].map(d=>spriteMirrored('counter',d,d>=2?b:SPRITES.counter)),[false,true,true,false]);assert.deepEqual([0,1,2,3].map(d=>spriteMirrored('stairs',d,d>=2?SPRITES.stairs.back:SPRITES.stairs)),[false,true,false,true]);assert.equal(spriteMirrored('wall',1,SPRITES.wall),false);}

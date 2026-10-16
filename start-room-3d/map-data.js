@@ -9,7 +9,7 @@ export const SPRITES={
  // 그림이 v4 sprites, original size (scale 1). anchor = centre of floor-contact footprint, sprite px (given by 그림이).
  table:{file:'assets/drive/furn-tea-table-v4.png',anchor:[92,93],scale:1,back:{file:'assets/drive/furn-tea-table-v4-back.png',anchor:[92,93],scale:1},footprint:{cells:1,axis:null}},
  cushion:{file:'assets/drive/furn-cushion-v4.png',anchor:[90,74],scale:1,back:{file:'assets/drive/furn-cushion-v4-back.png',anchor:[90,74],scale:1},footprint:{cells:1,axis:null}},
- counter:{file:'assets/drive/furn-counter-v4.png',anchor:[124,132],scale:1,back:{file:'assets/drive/furn-counter-v4-back.png',anchor:[124,132],scale:1},footprint:{cells:2,axis:'i'}},
+ counter:{file:'assets/drive/furn-counter-v4.png',anchor:[124,132],scale:1,back:{file:'assets/drive/furn-counter-v4-back.png',anchor:[124,132],scale:1,mirror:true},footprint:{cells:2,axis:'i'}},
  stairs:{file:'assets/drive/furn-stairs-v4.png',anchor:[121,167],scale:1,back:{file:'assets/drive/furn-stairs-v4-back.png',anchor:[121,167],scale:1},footprint:{cells:2,axis:'i'}}
 };
 // Normal-mode room background (방_기본_다다미_선없음.png, Drive 1V3vO-ZEJfPv30NeDAfVKpLVKjFvtQAGX). Same size/coords as the 시험 image.
@@ -57,6 +57,8 @@ export function zoneAt(map,col,row,floor=1){return map.zones.find(z=>z.floor===f
 
 export function availableDirs(type,sprites=SPRITES){return sprites[type].back?[0,1,2,3]:[0,1];}
 export function flipDir(dir){return dir^1;}
+// 뒷모습 그림이 앞모습과 반대 방향으로 그려진 경우(back.mirror) 뒤 2방향의 좌우 반전을 바꿔서 앞모습과 같은 축·벽에 붙게 한다 (카운터, 2026-10-16)
+export function spriteMirrored(type,dir,sprite){if(type==='wall')return false;const m=Boolean(dir%2);return dir>=2&&sprite?.mirror?!m:m;}
 export function rotateDir(type,dir,sprites=SPRITES){const dirs=availableDirs(type,sprites);return dirs[(dirs.indexOf(dir)+1)%dirs.length];}
 export function footprintCells(item){
  if(item.character||item.tableItem||!item.origin)return item.cells; // legacy footprint callers

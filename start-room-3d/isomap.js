@@ -3,7 +3,7 @@ import {t} from './i18n.js';
 import {CFG} from './config.js';
 import {preservesEntrance} from './navigation.js';
 import {canWalk,walkFrame} from './walk-frames.js';
-import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges,WALL_EXT} from './map-data.js';
+import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,spriteMirrored,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges,WALL_EXT} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
@@ -117,7 +117,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
     if(im.complete&&im.naturalWidth){
      // starting value 2026-10-15, pending user confirm: contact midpoint on the matching rear cell edge.
      if(s.type==='wall'){p.x+=(s.dir%2?-1:1)*z.cell.w*scale/4;p.y-=z.cell.h*scale/4;}
-     const mirrored=s.type!=='wall'&&Boolean(s.dir%2),ax=mirrored?im.naturalWidth-sprite.anchor[0]:sprite.anchor[0];
+     const mirrored=spriteMirrored(s.type,s.dir,sprite),ax=mirrored?im.naturalWidth-sprite.anchor[0]:sprite.anchor[0];
      const x=p.x-ax*spriteScale,y=p.y-sprite.anchor[1]*spriteScale,w=im.naturalWidth*spriteScale,h=im.naturalHeight*spriteScale;
      ctx.save();if(mirrored){ctx.translate(x+w,y);ctx.scale(-1,1);ctx.drawImage(im,0,0,w,h);}else ctx.drawImage(im,x,y,w,h);ctx.restore();
      hits.push({id:s.id,x,y,w,h,im,mirrored,view,zone:z});
@@ -150,7 +150,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
 
     // 똑또기 10-15: 끄는 중에는 가구 그림을 칸 위에 다시 그려 그림이 칸을 따라 보이게 한다
     if(dragSprite&&dragSprite.s.id===item.id){const {sprite,view:v,z:zz}=dragSprite,im=load(sprite.file),p=cellToScreen(...footprintCentre(candidate),v,zz),ss=scale*sprite.scale;
-     if(im.complete&&im.naturalWidth){const m=Boolean(candidate.dir%2),ax=m?im.naturalWidth-sprite.anchor[0]:sprite.anchor[0],x=p.x-ax*ss,y=p.y-sprite.anchor[1]*ss,w=im.naturalWidth*ss,h=im.naturalHeight*ss;
+     if(im.complete&&im.naturalWidth){const m=spriteMirrored(candidate.type,candidate.dir,sprite),ax=m?im.naturalWidth-sprite.anchor[0]:sprite.anchor[0],x=p.x-ax*ss,y=p.y-sprite.anchor[1]*ss,w=im.naturalWidth*ss,h=im.naturalHeight*ss;
       ctx.save();ctx.globalAlpha=.92;if(m){ctx.translate(x+w,y);ctx.scale(-1,1);ctx.drawImage(im,0,0,w,h);}else ctx.drawImage(im,x,y,w,h);ctx.restore();canvas.dataset.dragSprite=item.id;}}
    }}
    y+=heights[index]+24;
