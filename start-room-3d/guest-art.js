@@ -1,5 +1,5 @@
-// 걸어 들어와 앉기 (2026-10-16): 걷기 그림이 있는 손님 종류만 입구 → 자리까지 프레임을 넘기며 걷고, 앉으면 기존 앉은 그림으로 바뀐다.
-// 걷기 그림이 없는 종류는 null → isomap 이 지금처럼 아무것도 그리지 않는다.
+// 걸어 들어와 앉기 (2026-10-16): 손님 10종 모두 입구 → 자리까지 프레임을 넘기며 걷고, 앉으면 그 종류의 기존 앉은 그림으로 바뀐다.
+// config 에 걷기 그림 경로가 없는(null) 종류는 null → isomap 이 아무것도 그리지 않는다.
 import {CFG} from './config.js';
 import {canWalk,walkFrame} from './walk-frames.js';
 export const GUEST_DIRS=['front-dr','front-dl','back-ul','back-ur']; // facing 0..3 (navigation.faceCell)
