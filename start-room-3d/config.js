@@ -281,7 +281,7 @@ furniture:{starterExtra:{table:1,cushion:2,counter:1,stairs:1}, // starting valu
  tabs:{iconScale:{shiba:1.1}}, // starting value 2026-10-15, pending user confirm: 시바들 tab art drawn 1.1×
  village:{background:'assets/drive/village/village-map_v2.png',size:[1024,1536], // 똑또기 검수 통과 2026-10-15 village-map_v2 (건물이 바탕에 그려짐 → 스티커 art 없음)
   lots:[{x:485,y:460,w:270,h:270},{x:200,y:697.5,w:300,h:255},{x:822.5,y:745,w:355,h:280}], // 터치 영역(이미지 px, 중심·크기): 병원 x350–620 y325–595, 재료가게 x50–350 y570–825, 산책 x645–1000 y605–885
-  places:[{id:'hospital',name:'병원',lot:0,icon:null,art:null},{id:'ingredients',name:'재료 가게',lot:1,icon:null,art:null},{id:'walk',name:'산책',lot:2,icon:null,art:null}]},
+  places:[{id:'hospital',name:'병원',lot:0,icon:null,art:{src:'assets/drive/village/place-hospital.png',size:[308,298],anchor:[154,149],scale:0.92}},{id:'ingredients',name:'재료 가게',lot:1,icon:null,art:null},{id:'walk',name:'산책',lot:2,icon:null,art:null}]},
  view:{zoomMin:1,zoomMax:2}, // 수인님 확정 2026-10-15: 최대 2배: pinch/ctrl+wheel zoom range (1 = fit width)
  // 수인님·똑또기 2026-10-15 이동 규칙: 그림 한 장을 미끄러지듯 옮기지 않는다. 걷기 프레임이 있으면 프레임을 넘기며 걷고, 없으면 제자리 동작(idle)만.
  // walkFrames: 값이 있으면 그 파일들을 쓰고, null이면 probe 경로({key}/{dir}/{n})에 첫 프레임 파일이 실제로 있는지 런타임에 확인 → 파일을 추가하면 자동으로 걷는다.

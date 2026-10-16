@@ -10,6 +10,7 @@ import {startRunScreen} from './run.js';
 import {cookingFx,heartFx,menuPickFx,ITEM_FX,ALBA_FX} from './effects.js';
 import {createIsoMap} from './isomap.js';
 import {CFG,GACHA_TABLE,pressureAt,isUnset} from './config.js';
+import * as HOSP from './hospital.js';
 import * as S from './sim.js';
 import {makeT,LANGS,resolveLang,setLangSource,RELEASE,donguArt} from './i18n.js';
 import {TABS,DEFAULT_TAB,tabBadges} from './tabs.js';
@@ -145,7 +146,7 @@ P.shibas=()=>{const n=S.placedShibas(s).length,f=ui.shibaView||(ui.shibaView={br
 function shibaRisk(sh,st=S.statusOf(s,sh)){const R=CFG.shibaRisk;if(st==='sick'||st==='injured')return 'red';let worst='green';
  for(const k of CFG.gauges){const v=sh.g?.[k];if(typeof v!=='number'||!Number.isFinite(v))continue;const bad=R.highIsBad.includes(k)?v:100-v;if(bad>=R.red)return 'red';if(bad>=R.orange)worst='orange';}
  return st==='hospital'?'orange':worst;}
-function statusText(sh,st){if(st==='hospital')return L('st.hospital',{t:tfmt((sh.hospitalUntil-clock.now())/1000)})+' · '+L('inj.'+sh.hospitalKind);if(st==='injured')return L('st.injured')+' · '+L('inj.'+sh.injury);
+function statusText(sh,st){if(st==='hospital'){const left=HOSP.hospitalLeftSec(sh,clock.now()),k=HOSP.hospitalKindOf(sh);return L('st.hospital',{t:left!=null?tfmt(left):L('app.unset')})+' · '+(k?L('inj.'+k):L('app.unset'));}if(st==='injured')return L('st.injured')+' · '+L('inj.'+sh.injury);
  if(st==='ok'&&!sh.placed)return L('st.home');return L('st.'+st);}
 // 갱신 140: 반다나 = 3×3 시트의 한 칸을 CSS로만 보여 줌 (그림은 그대로)
 function bandHtml(id,cls=''){const it=S.accItem(id);if(!it)return slot(L('app.missingImg'),42,28);const B=CFG.accessory.bandana,i=B.colors.indexOf(it.color),[cols,rows]=B.grid;
@@ -257,6 +258,8 @@ let panelSig='';
 function renderPanel(force){if(!ui.panel){$('panel').hidden=true;return;}const v=P[ui.panel](ui.arg);const sig=v.title+v.html;if(!force&&sig===panelSig)return;panelSig=sig;
  const sc=$('pbody').scrollTop;$('ptitle').textContent=v.title;$('pbody').innerHTML=v.html;$('pbody').scrollTop=sc;$('panel').dataset.panel=ui.panel;$('panel').style.setProperty('--cook-h',(CFG.cooking.popupHeightPct??0.75)*100+'%');$('panel').dataset.align=CFG.cooking.popupAlign||'center';$('panel').hidden=false;}
 function open(name,arg=null){if(!P[name]){if(LP[name]){act.listOpen({list:name,kind:arg});refresh();}return;} // 'menu' = 메뉴 개발 목록 팝업 (P.menu 없음)
+ // Leave the full-screen village map before showing a place's panel.
+ if(mainTab==='village'){mainTab='manage';menuSig='';renderMainMenu();}
  ui.panel=name;ui.arg=arg;ui.nav=['shibas','care'].includes(name)?'shibas':name==='income'?ui.nav:name==='hospital'?'village':name;renderPanel(true);navState();}
 function close(){ui.panel=null;$('pbody').innerHTML='';panelSig='';ui.nav='cafe';renderPanel();navState();}
 function navState(){document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('on',b.dataset.nav===ui.nav));}
@@ -460,10 +463,14 @@ const bookHtml=id=>{const sh=S.byId(s,id);if(!sh)return '';const p=sh.profile||C
 P.profile=id=>{const sh=S.byId(s,id);if(!sh)return P.shibas();return {title:nameOf(sh),html:bookHtml(id)};};
 // 병원 (갱신 58·111·111-1·112·131·135-2): 마을 → 진료실. 다친·앓아누운 시바를 보내고, 입원 중이면 남은 시간과 앞당기기.
 // 비용 CFG.hospital.costs (카페 레벨 구간), 시간 CFG.hospital.stays. 아픈 포즈 그림은 CFG.hospitalArt.sick[breed]; 없으면 기존 시바 그림.
-P.hospital=()=>{const H=CFG.hospitalArt||{},list=s.shibas.filter(sh=>['injured','sick','hospital'].includes(sh.status));
- const row=sh=>{const id=sh.id,kind=sh.status==='hospital'?sh.hospitalKind:sh.status==='sick'?'sick':sh.injury,art=H.sick?.[sh.breed]||IMG.shiba(sh.breed),cost=kind?S.hospitalCost(s,kind):null,stay=kind?CFG.hospital.stays[kind]:null,c=sh.status==='hospital'?null:S.hospitalCheck(s,id);
-  return `<div class="hosp-row" data-hosp="${id}"><div class="hosp-art">${art?`<img src="${art}" alt="" ${H.sick?.[sh.breed]?'':'class="hosp-normal" data-knockout'}>`:''}</div><div class="hosp-info"><strong>${nameOf(sh)}</strong><span>${kind?L('inj.'+kind):L('app.unset')}</span>${sh.status==='hospital'?`<span>${L('st.hospital',{t:tfmt((sh.hospitalUntil-clock.now())/1000)})}</span><div class="btns">${skipBtn({type:'hospital',id})}</div>`:`<span>${L('hosp.treat',{t:stay!=null?tfmt(stay):L('app.unset'),cost:cost!=null?money(cost):L('app.unset')})}</span><button class="warn" data-act="hospital" data-id="${id}" ${c?'disabled':''}>${c==='coins'?L('care.hospitalNo',{cost:cost!=null?fmt(cost):L('app.unset')}):L('care.hospital',{cost:cost!=null?fmt(cost):L('app.unset')})}</button>`}</div></div>`;};
- return {title:L('place.hospital'),html:`<section class="hospital-room" data-hospital style="background-image:url(${H.background})"><div class="hosp-list">${list.length?list.map(row).join(''):`<p class="hosp-empty">${L('hosp.none')}</p>`}</div></section>`};};
+P.hospital=()=>{const H=CFG.hospitalArt||{},{admitted,waiting}=HOSP.hospitalPatients(s),U=L('app.unset'),now=clock.now();
+ const name=sh=>sh.name||LF('shiba.breed.'+sh.breed,U);
+ const row=sh=>{const id=sh.id,kind=HOSP.hospitalKindOf(sh),art=HOSP.hospitalArtFor(H,sh.breed)||(CFG.breeds.includes(sh.breed)?IMG.shiba(sh.breed):null),{cost,stay}=HOSP.hospitalNumbers(S,CFG,s,kind),inn=sh.status==='hospital';
+  let body;if(inn){const left=HOSP.hospitalLeftSec(sh,now);body=`<span data-hosp-left>${L('st.hospital',{t:left!=null?tfmt(left):U})}</span><div class="btns">${left!=null?skipBtn({type:'hospital',id}):''}</div>`;}
+  else{const c=S.hospitalCheck(s,id),cs=cost!=null?fmt(cost):U;body=`<span>${L('hosp.treat',{t:stay!=null?tfmt(stay):U,cost:cost!=null?money(cost):U})}</span><button class="warn" data-act="hospital" data-id="${id}" ${c||cost==null?'disabled':''}>${c==='coins'?L('care.hospitalNo',{cost:cs}):L('care.hospital',{cost:cs})}</button>`;}
+  return `<div class="hosp-row" data-hosp="${id}" data-hosp-state="${inn?'admitted':'waiting'}"><div class="hosp-art">${art?`<img src="${art}" alt="" ${HOSP.hospitalArtFor(H,sh.breed)?'data-hosp-pose':'class="hosp-normal" data-knockout'}>`:''}</div><div class="hosp-info"><strong>${name(sh)}</strong><span>${kind?L('inj.'+kind):U}</span>${body}</div></div>`;};
+ const group=(k,list)=>list.length?`<h3 class="hosp-head" data-hosp-group="${k}">${L('hosp.'+k)}</h3>${list.map(row).join('')}`:'';
+ return {title:L('place.hospital'),html:`<section class="hospital-room" data-hospital style="background-image:url(${H.background})"><div class="hosp-list">${admitted.length||waiting.length?group('admitted',admitted)+group('waiting',waiting):`<p class="hosp-empty" data-hosp-empty>${L('hosp.none')}</p>`}</div></section>`};};
 P.cooking=()=>{const recipes=CFG.cooking.recipes,r=recipes.find(r=>r.id===ui.recipe)||recipes[0],c=Q17.craftCheck(s,r),open=Q17.recipeUnlocked(s,r),fxI=CFG.cooking.fxIcons||{},fx=(k,label)=>r.effect?.[k]!=null?`<span class="cook-fx-item" data-fx="${k}">${fxI[k]?img(fxI[k]):''}${label} +${fmt(r.effect[k])}</span>`:`<span class="cook-fx-item">${label} ${L('app.unset')}</span>`;
  return {title:L('cook.title'),html:`<section class="cook2" data-cooking><div class="cook2-strip" data-cook-strip>${recipes.map((x,i)=>{const o=Q17.recipeUnlocked(s,x);return `<button class="cook2-card${o?'':' locked'}" data-act="recipePick" data-item="${x.id}" aria-pressed="${x.id===r.id}">${x.img?img(x.img):slot('',56,56)}<span>${Q17.recipeName(x,i)}</span>${o?'':`<small class="cook2-lock">${img('assets/drive/ui/ui-lock.png')}${L('app.locked',{lv:x.unlockLevel??L('app.unset')})}</small>`}</button>`;}).join('')}${(CFG.cooking.lockedPreview||[]).map(x=>`<button class="cook2-card locked preview" data-cook-preview disabled>${slot('',42,42)}<small class="cook2-lock">${img('assets/drive/ui/ui-lock.png')}${L('app.locked',{lv:x.unlockLevel??L('app.unset')})}</small></button>`).join('')}</div>
  <div class="cook2-main" data-cook-detail="${r.id}"><div class="cook2-dish">${r.img?img(r.img):slot('',160,160)}</div><div class="cook2-title" data-cook-title><h3>${Q17.recipeName(r,recipes.indexOf(r))}</h3><div class="cook2-fx" data-cook-fx>${fx('full',L('cook.full'))}<span class="cook2-dot">·</span>${fx('happy',L('cook.happy'))}</div></div>

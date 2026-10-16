@@ -63,6 +63,8 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  }
  await ev(`__game.state.settings.language='ko';__game.applyLang();[__game.state.coins,__game.state.hearts,__game.state.dia]=window.u14Values;__game.refresh();true`);
  await check('top bar 360px: 평판 · 미션 bar centred under the HUD, inside the screen, clear of the left scene entries',`(()=>{const sub=document.querySelector('.hud-sub'),r=sub.getBoundingClientRect(),h=document.getElementById('hud').getBoundingClientRect(),e=document.querySelector('.scene-entries').getBoundingClientRect(),k=[...sub.children].filter(x=>!x.hidden&&x.getBoundingClientRect().width>0).map(x=>x.getBoundingClientRect()),L=Math.min(...k.map(x=>x.left)),R=Math.max(...k.map(x=>x.right));return r.top>=h.bottom-1&&L>=e.right&&R<=innerWidth&&Math.abs((L+R)/2-innerWidth/2)<2&&[...sub.children].every(x=>x.scrollWidth<=x.clientWidth+1)&&k.every(x=>x.bottom<=e.top||x.left>=e.right);})()`);
+ await (await import('./hospital-browser.mjs')).hospitalBrowser({ev,check,sleep}); // 병원 화면 at 360×640
+ await (await import('./village-browser.mjs')).villageBrowser({ev,c,check,sleep});
  await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await sleep(100);
  await ev(`__game.ui.modals=[];__game.state.coins=1000;__game.state.ledger={days:{},now:__game.clock.now()};__game.S.recordPayment(__game.state,{pending:false,base:12,total:24},__game.clock.now());document.querySelector('#hud [data-act=income]').click();true`);
  await check('§15: pill opens paper ledger',`!document.getElementById('modal').hidden&&document.querySelector('#mbox.ledger-paper h2').textContent==='손익계산서'&&document.querySelector('[data-ledger-category=sales]').textContent.includes('12')`);
