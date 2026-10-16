@@ -28,6 +28,6 @@ export async function q1715Browser({ev,check,shot=async()=>{},mode='all'}){
  await click('[data-act=shopTab][data-item=kitchen]');await check('q1717 counter is kitchen',`document.querySelectorAll('[data-shop-v1717] .q17-product').length===1&&document.querySelector('[data-shop-v1717] .furn-buy').dataset.item==='counter'`);
  await click('[data-act=shopTab][data-item=cash]');await snap('q1717','cash-coupon');await ev(`window.q1717Before=JSON.stringify(__game.state);document.getElementById('couponCode').value='TEST';true`);await click('[data-act=coupon]');await check('q1717 coupon never grants anything',`document.getElementById('toast').textContent==='쿠폰을 확인할 수 없어요'&&JSON.stringify(__game.state)===window.q1717Before`);
  await click('[data-act=shopSpecial]');await check('q1717 lucky boxes unset and disabled',`document.querySelectorAll('[data-shop-v1717] .q17-product button:disabled').length===3&&[...document.querySelectorAll('[data-shop-v1717] .q17-product button')].every(b=>b.textContent.includes('미정'))`);await snap('q1717','special');
- await click('[data-act=furnitureStorage]');await check('q1717 storage opens existing inventory',`document.querySelector('[data-main-tab=bag]').classList.contains('active')&&!!document.querySelector('.furniture-section')`);
+ await click('[data-act=furnitureStorage]');await check('q1717 storage opens existing inventory',`document.querySelector('[data-main-tab=bag]').classList.contains('active')&&!!document.querySelector('.bag-grid[data-bag-grid=furniture]')`);
  }
 }
