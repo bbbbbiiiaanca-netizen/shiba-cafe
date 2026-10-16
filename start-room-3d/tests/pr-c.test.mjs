@@ -12,11 +12,12 @@ const checkCard=({id,body},p)=>{
  assert.ok(img>=0&&img<name&&name<btn,id+': image, name, price in order');
  assert.equal(body.slice(btn).indexOf('</button>'),body.slice(btn).length-'</button>'.length,id+': price button is last');
  const label=body.slice(btn).replace(/<button[^>]*>/,'').replace('</button>','');
- assert.match(label,/^<img class="(ci|res-ico" data-res="coin)" src="assets\/drive\/ui\/res-coin\.png"[^>]*>/,id+': coin icon first');
+ if(Number.isFinite(p))assert.match(label,/^<img class="(ci|res-ico" data-res="coin)" src="assets\/drive\/ui\/res-coin\.png"[^>]*>/,id+': coin icon first');
+ else assert.doesNotMatch(label,/res-coin/,id+': no coin icon when price is 미정 (#22)');
  const text=label.replace(/<[^>]+>/g,'');
  if(Number.isFinite(p)){assert.equal(text.replace(/,/g,''),String(p));assert.doesNotMatch(body,/ disabled>/);}
- else{assert.equal(text,'');assert.match(body,/data-act="buyFurniture"[^>]* disabled>/);}
- assert.doesNotMatch(body,/미정|장식 점수/);
+ else{assert.equal(text,'미정');assert.match(body,/data-act="buyFurniture"[^>]* disabled>/);}
+ assert.doesNotMatch(body.slice(0,btn),/미정/);assert.doesNotMatch(body,/장식 점수/);
  if(isDecor(id))assert.ok(body.includes(decorEffectText()));
  else assert.doesNotMatch(body,/<small/);};
 
