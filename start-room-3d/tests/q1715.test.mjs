@@ -15,7 +15,7 @@ assert.deepEqual(CFG.shop.itemCategories,{'tea-table':'interior',zabuton:'interi
 for(const [tab,count] of [['interior',3],['kitchen',1],['exterior',0]]){const h=Q.shopHtml(CFG,tab,()=>123);assert.equal((h.match(/class="furn-buy"/g)||[]).length,count);assert.doesNotMatch(h,/undefined|null/);}
 assert.match(Q.shopHtml(CFG,'cash',()=>null),/couponCode/);
 const special=Q.shopHtml(CFG,'special',()=>null);assert.equal((special.match(/<button disabled>/g)||[]).length,3);assert.match(special,/하트 미정/);
-{const row=Q.shopHtml(CFG,'interior',()=>null).split('data-theme-logos>')[1].split('</div>')[0];assert.equal((row.match(/class="theme-logo[ "]/g)||[]).length,3);assert.equal((row.match(/theme-lock/g)||[]).length,2);assert.doesNotMatch(row,/art-slot/);assert.match(row,/aspect-ratio:256\/128/);}
+{const row=Q.shopHtml(CFG,'interior',()=>null).split('data-theme-logos>')[1].split('</div>')[0];assert.equal((row.match(/class="theme-logo[ "]/g)||[]).length,3);assert.equal((row.match(/theme-lock/g)||[]).length,0);assert.doesNotMatch(row,/art-slot/);assert.match(row,/aspect-ratio:256\/128/);}
 console.log('q1715/q1717: null config, safe shared dialogues, fixture isolation, progress, shop mapping and disabled prices passed');
 
 const {readFileSync}=await import('node:fs');
@@ -27,3 +27,6 @@ assert.match(main,/mission:\(\)=>open\('quests'\)/);
 assert.deepEqual(S.questTasks(s,now).map(t=>t.progress),[0,0,0]);S.questBump(s,'serve',now);S.questBump(s,'sell',now);assert.deepEqual(S.questTasks(s,now).map(t=>t.progress),[1,0,1]);
 assert.equal(S.questInstant(s,'pet',now),true);assert.equal(s.dia,0);assert.equal(S.questTasks(s,now)[1].progress,1);assert.equal(S.questInstant(s,'serve',now),false);
 assert.deepEqual(S.questTasks(s,now+86400e3).map(t=>t.progress),[0,0,0]);console.log('daily quests: progress, 10-dia instant, KST reset passed');}
+
+for(const tab of ['kitchen','interior','exterior']){const h=Q.shopHtml(CFG,tab,()=>null);assert.ok(h.indexOf('shop-tabs')<h.indexOf('data-theme-logos'));assert.ok(h.indexOf('data-theme-logos')<h.indexOf('data-furn-grid'));assert.match(h,/shop-header/);assert.doesNotMatch(h,/undefined|null|NaN/);if(tab!=='exterior')assert.match(h,/꾸미기 점수 미정/);}
+assert.match(special,/data-lucky-grid/);

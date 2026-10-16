@@ -5,26 +5,26 @@ const main=readFileSync(new URL('../main.js',import.meta.url),'utf8');
 
 // card = image → name (one line) → buy button holding only coin icon + number; no 장식 점수 / 미정 / category label
 const cardsOf=h=>[...h.matchAll(/<article class="q17-product" data-furn-card="([^"]+)">([^]*?)<\/article>/g)].map(m=>({id:m[1],body:m[2]}));
-const checkCard=({id,body},p)=>{
+const checkCard=({id,body},p,styled=false)=>{
  const img=body.indexOf('<img class="furn-img"'),name=body.indexOf('<strong class="furn-name">'),btn=body.indexOf('<button class="furn-buy"');
- assert.ok(img>=0&&img<name&&name<btn,id+': image, name, price in order');
+ assert.ok(img>=0&&(styled?name<img:img<name)&&name<btn,id+': configured card order');
  assert.equal(body.slice(btn).indexOf('</button>'),body.slice(btn).length-'</button>'.length,id+': price button is last');
  const label=body.slice(btn).replace(/<button[^>]*>/,'').replace('</button>','');
  assert.match(label,/^<img class="(ci|res-ico" data-res="coin)" src="assets\/drive\/ui\/res-coin\.png"[^>]*>/,id+': coin icon first');
  const text=label.replace(/<[^>]+>/g,'');
  if(Number.isFinite(p)){assert.equal(text.replace(/,/g,''),String(p));assert.doesNotMatch(body,/ disabled>/);}
- else{assert.equal(text,'');assert.match(body,/data-act="buyFurniture"[^>]* disabled>/);}
- assert.doesNotMatch(body,/미정|장식 점수|<small/);};
+ else{assert.equal(text,styled?'미정':'');assert.match(body,/data-act="buyFurniture"[^>]* disabled>/);}
+ if(styled)assert.match(body,/꾸미기 점수 미정/);else assert.doesNotMatch(body,/미정|장식 점수|<small/);};
 
 const interiorIds=CFG.furniture.items.filter(it=>CFG.shop.itemCategories[it.id]==='interior').map(it=>it.id);
 for(const price of [()=>40000,()=>null,id=>id===interiorIds[0]?null:1500]){
  const h=Q.shopHtml(CFG,'interior',price),cards=cardsOf(h);
- assert.match(h,/<div class="furn-grid" data-furn-grid>/);assert.equal(cards.length,interiorIds.length);assert.deepEqual(cards.map(c=>c.id),interiorIds);
- cards.forEach(c=>checkCard(c,price(c.id)));
- assert.ok(h.indexOf('data-furn-grid')<h.indexOf('data-theme-logos'),'interior cards come before theme logos (first row fits at 360×640)');
+ assert.match(h,/<div class="q17-swipe furn-grid" data-furn-grid>/);assert.equal(cards.length,interiorIds.length);assert.deepEqual(cards.map(c=>c.id),interiorIds);
+ cards.forEach(c=>checkCard(c,price(c.id),true));
+ assert.ok(h.indexOf('data-theme-logos')<h.indexOf('data-furn-grid'),'item cards follow theme logos');
  assert.doesNotMatch(h,/장식 점수|undefined|null/);}
 // other tabs keep their existing cards
-{const k=Q.shopHtml(CFG,'kitchen',()=>123);assert.doesNotMatch(k,/data-furn-grid/);assert.match(k,/class="q17-swipe"/);assert.match(k,/장식 점수/);assert.ok(k.indexOf('data-theme-logos')<k.indexOf('q17-swipe'));}
+{const k=Q.shopHtml(CFG,'kitchen',()=>123);assert.match(k,/data-furn-grid/);assert.match(k,/class="q17-swipe furn-grid"/);assert.match(k,/꾸미기 점수/);assert.ok(k.indexOf('data-theme-logos')<k.indexOf('q17-swipe'));}
 
 // 가방 가구 상점 (main.js furnitureShop) — production source run with stubs
 {const src=main.slice(main.indexOf('function furnitureShop(){'),main.indexOf('\nconst grantName='));

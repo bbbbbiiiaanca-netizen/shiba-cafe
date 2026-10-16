@@ -81,7 +81,7 @@ export const STR={
   'quest.done':'완료','quest.go':'바로가기','quest.instant':'즉시완료','quest.donguTalk':'동구와 대화','quest.resetUnset':'초기화 시간 미정','quest.reset':'{time} KST 초기화','quest.task.serve':'손님 3명 받기',
   'quest.task.pet':'시바 1마리 쓰다듬기','quest.task.sell':'메뉴 1잔 판매','shop.tab.kitchen':'주방','shop.tab.interior':'인테리어','shop.tab.exterior':'익스테리어','shop.tab.theme':'테마','shop.tab.cash':'캐시·골드',
   'shop.storage':'보관함','shop.themeAria':'테마 {name}','shop.locked':'잠김','shop.coupon':'쿠폰 코드','shop.couponPh':'쿠폰 번호','shop.couponOk':'입력완료','shop.special':'특별상점',
-  'shop.luckyBox':'행운 상자','shop.themePick':'테마 선택','shop.decor':'장식 점수 {n}','shop.itemsUnset':'상품 미정','theme.tatami':'다다미','theme.fuji':'후지산 벽화 카페','theme.bamboo':'대나무 회랑',
+  'shop.luckyBox':'행운 상자','shop.themePick':'테마 선택','shop.decor':'꾸미기 점수 {n}','shop.itemsUnset':'상품 미정','theme.tatami':'다다미','theme.fuji':'후지산 벽화 카페','theme.bamboo':'대나무 회랑',
   'furn.tea-table':'찻상','furn.zabuton':'방석','furn.counter':'카운터','furn.stairs':'계단',
   'hud.heartsAria':'하트 {n}','hud.nextHeart':'다음 하트 {t}','app.maxLevel':'최고 레벨','app.max':'최고','app.all':'전체','hud.mission':'미션','hud.boost.income':'수익','hud.boost.exp':'경험치',
   'edit.blocked':'다른 가구와 겹치거나 방 밖으로 나갈 수 없어요.','tab.alert':'알림','hud.paws':'발바닥','mm.hint.manage':'카페 현황 · 메뉴 개발 · 알바','mm.hint.shiba':'돌봄 · 레벨업','mm.hint.village':'병원 · 산책',

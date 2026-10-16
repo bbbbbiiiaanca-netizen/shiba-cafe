@@ -383,6 +383,21 @@ button,button:disabled,button.warn,button[data-act=levelUp]:disabled,.lp-close,.
 .choice{border-width:2px}.cook-row{border:2px solid transparent}
 
 @media (prefers-reduced-motion:reduce){#modal:not([hidden]),#panel:not([hidden]),#app[data-tab=bag] #menuList{animation:none}}
+
+/* 17-17: portrait shop header and the existing two-column vertical catalog. */
+[data-shop-v1717] input,[data-shop-legacy]{text-align:center}
+[data-shop-v1717] .shop-header{position:relative}
+[data-shop-v1717] [data-act=furnitureStorage]{position:absolute;right:0;top:54px;width:auto;padding:6px 12px;font-size:14px}
+[data-shop-v1717] .shop-tabs{display:grid;grid-template-columns:.8fr 1.15fr 1.3fr .7fr 1.15fr;gap:3px;overflow:visible;margin:0}
+[data-shop-v1717] .shop-tabs button{min-width:0;padding:12px 0;font-size:14px;white-space:nowrap;text-align:center;letter-spacing:-.7px}
+[data-shop-v1717] .theme-logos{overflow:visible;margin:8px 0;gap:6px;padding-right:68px}
+[data-shop-v1717] .theme-logos button{min-width:0}
+[data-shop-v1717] .furn-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow-x:hidden;scroll-snap-type:none;gap:8px;padding:2px 0}
+[data-shop-v1717] .q17-product{width:auto;min-width:0;text-align:center;gap:4px;padding:8px}
+[data-shop-v1717] .furn-img{height:64px}
+[data-shop-v1717] .furn-category,[data-shop-v1717] .furn-decor{font-size:12px}
+[data-shop-v1717] .furn-buy{padding:7px 0}
+[data-shop-v1717] .lucky-art{height:100px}
 </style>
 <style id="bag-icon-ui">
 .bag-tabs{display:flex;justify-content:center;gap:10px;padding:4px 0 8px}

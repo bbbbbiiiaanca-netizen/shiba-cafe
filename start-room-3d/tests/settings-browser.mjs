@@ -17,3 +17,5 @@ export async function settingsBrowser({ev,check,c,release,shotDir=process.env.I1
  }
  await ev(`__game.close();__game.state.settings.language="ko";__game.applyLang();true`);
 }
+
+if(process.argv[1] && (await import('node:url')).pathToFileURL((await import('node:path')).resolve(process.argv[1])).href===import.meta.url){await (await import('./browser-runner.mjs')).runBrowser(settingsBrowser);}
