@@ -3,6 +3,7 @@ import {t} from './i18n.js';
 import {CFG} from './config.js';
 import {preservesEntrance} from './navigation.js';
 import {canWalk,walkFrame} from './walk-frames.js';
+import {guestPose,sitCutout} from './guest-art.js';
 import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges,WALL_EXT} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
@@ -110,6 +111,10 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
     // 이동 규칙(10-15): 걷기 프레임이 있는 시바는 프레임을 넘기며 그린다(걷는 중 8fps, 서 있으면 1번 프레임). 없으면 아래 기존 규칙(그림 없음 → 안 그림).
     if(s.character&&!s.character.kind&&s.character.role!=='manager'){const breed=state.shibas?.find(o=>o.id===s.character.id)?.breed;if(canWalk('shiba',breed)){const c=s.character,dirs=['front-dr','front-dl','back-ul','back-ur'],moving=c.state==='walk'||c.phase==='approach',n=moving?1+Math.floor(performance.now()/125)%(CFG.characters.frameCount||4):1,im=load(walkFrame('shiba',breed,dirs[c.facing||0],n)),p=cellToScreen(...s.origin,view,z);
      if(im.complete&&im.naturalWidth){const k=scale*(CFG.characters.shibaScale||1),A=CFG.characters.shibaAnchor||CHAR_SPRITES.shiba.byBreed?.[breed]?.anchor||[im.naturalWidth/2,im.naturalHeight];ctx.drawImage(im,p.x-A[0]*k,p.y-A[1]*k,im.naturalWidth*k,im.naturalHeight*k);}return;}}
+    // 걸어 들어와 앉기(10-16): 걷기 그림이 있는 손님 종류만 걷기 프레임 → 앉으면 앉은 그림. 없는 종류는 guestPose null → 아래 기존 규칙(그림 없음 → 안 그림).
+    if(s.character?.kind){const pose=guestPose(s.character,performance.now()),G=CFG.characters.guest,p=cellToScreen(...s.origin,view,z),k=G.height*CFG.people.scale*(CFG.people.withMapScale?scale:1);
+     if(pose&&!pose.sit){const im=load(pose.file);if(im.complete&&im.naturalWidth){const fit=k/G.walkOpaqueHeight;ctx.drawImage(im,p.x-G.walkAnchor[0]*fit,p.y-G.walkAnchor[1]*fit,im.naturalWidth*fit,im.naturalHeight*fit);}return;}
+     if(pose?.sit){const cut=sitCutout(pose.file,()=>last&&draw(...last));if(cut){const fit=k*G.sitHeight/G.height/cut.height;ctx.drawImage(cut,p.x-cut.width*fit/2,p.y-cut.height*fit,cut.width*fit,cut.height*fit);}return;}}
     if(s.character){let meta=CHAR_SPRITES[s.character.role==='manager'?'manager':s.character.kind?'guest':'shiba'];if(!s.character.kind&&s.character.role!=='manager'){const b=state.shibas?.find(o=>o.id===s.character.id)?.breed;meta=meta.byBreed?.[b]||meta;}if(meta.file&&meta.anchor)stamp(meta.file,cellToScreen(...s.origin,view,z),meta.anchor);return;}
     const base=SPRITES[s.type];if(!base)return;
     if(!base.file){if(edit){const p=cellToScreen(...s.origin,view,z);hits.push({id:s.id,x:p.x-z.cell.w*scale/2,y:p.y-z.cell.h*scale/2,w:z.cell.w*scale,h:z.cell.h*scale,footprint:true,view,zone:z});}return;}const sprite=s.type==='wall'&&s.dir%2?base.flip:s.dir>=2?base.back:base;if(!sprite)return;
