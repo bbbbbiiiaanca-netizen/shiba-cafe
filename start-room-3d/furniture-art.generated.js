@@ -33,7 +33,12 @@ export const FURN_BACKS={
   "bonsai-snow": "assets/drive/furniture-v4/furn-snow-bonsai-v4-back.png",
   "bamboo-fence-snow": "assets/drive/furniture-v4/furn-snow-bamboo-fence-v4-back.png",
   "noren-snow": "assets/drive/furniture-v4/furn-snow-noren-v4-back.png",
-  "sign-snow": "assets/drive/furniture-v4/furn-snow-entrance-sign-v4-back.png"
+  "sign-snow": "assets/drive/furniture-v4/furn-snow-entrance-sign-v4-back.png",
+  "shelf-water": "assets/drive/furniture-v4/furn-water-shelf-v4-back.png",
+  "stone-lantern-water": "assets/drive/furniture-v4/furn-water-stone-lantern-v4-back.png",
+  "chochin-water": "assets/drive/furniture-v4/furn-water-chochin-v4-back.png",
+  "bonsai-water": "assets/drive/furniture-v4/furn-water-bonsai-v4-back.png",
+  "bamboo-fence-water": "assets/drive/furniture-v4/furn-water-bamboo-fence-v4-back.png"
 };
 export const FURN_HD=[
   "assets/drive/furniture-v4/furn-shelf-v4.png",
@@ -106,11 +111,16 @@ export const FURN_HD=[
   "assets/drive/furniture-v4/furn-entrance-sign-snow-v4.png",
   "assets/drive/furniture-v4/furn-snow-entrance-sign-v4-back.png",
   "assets/drive/furniture-v4/furn-shelf-water-v4.png",
+  "assets/drive/furniture-v4/furn-water-shelf-v4-back.png",
   "assets/drive/furniture-v4/furn-low-table-cushion-water-v4.png",
   "assets/drive/furniture-v4/furn-stone-lantern-water-v4.png",
+  "assets/drive/furniture-v4/furn-water-stone-lantern-v4-back.png",
   "assets/drive/furniture-v4/furn-chochin-water-v4.png",
+  "assets/drive/furniture-v4/furn-water-chochin-v4-back.png",
   "assets/drive/furniture-v4/furn-bonsai-water-v4.png",
+  "assets/drive/furniture-v4/furn-water-bonsai-v4-back.png",
   "assets/drive/furniture-v4/furn-bamboo-fence-water-v4.png",
+  "assets/drive/furniture-v4/furn-water-bamboo-fence-v4-back.png",
   "assets/drive/furniture-v4/furn-noren-water-v4.png",
   "assets/drive/furniture-v4/furn-entrance-sign-water-v4.png",
   "assets/drive/furniture-v4/room-momiji-floor-v4.png",

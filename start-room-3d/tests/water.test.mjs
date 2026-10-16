@@ -16,13 +16,13 @@ assert.equal(STR.ko['furn.waterSet'],'물방울 정원 세트');assert.equal(STR
 for(const it of items){
  const cfg=CFG.furniture.items.find(x=>x.id===it.id);
  assert.equal(it.category,NEW_FURNITURE.find(b=>b.id===it.id.replace('water','sakura')).category,it.id);
- assert.equal(it.source,'furn-water');assert.equal(it.backname,null);assert.equal(it.price,null);assert.equal(cfg.price,null);
+ assert.equal(it.source,'furn-water');assert.equal(it.backname,['shelf-water','stone-lantern-water','chochin-water','bonsai-water','bamboo-fence-water'].includes(it.id)?'furn-water-'+it.filename.replace(/^furn-(.+)-water-v4.png$/,'$1')+'-v4-back.png':null);assert.equal(it.price,null);assert.equal(cfg.price,null);
  assert.match(it.name,/^물방울 /);assert.match(it.en,/^Water Garden /);
  assert.equal(STR.ko['furn.'+it.id],it.name);assert.equal(STR.en['furn.'+it.id],it.en);
  assert.ok(existsSync('assets/drive/furniture-v4/'+it.filename));assert.ok(existsSync('assets/drive/furniture-v4/@2x/'+it.filename));
  assert.deepEqual(FURN_ANCHORS[it.filename],[90,202]);assert.deepEqual(SPRITES[it.id].anchor,[90,202]);
  assert.equal(SPRITES[it.id].footprint.cells,1);
- assert.ok(!CFG.decor.backArt.enabled.includes(it.id));assert.equal(FURN_BACKS[it.id],undefined);assert.deepEqual(availableDirs(it.id),[0,1]);
+ const B=['shelf-water','stone-lantern-water','chochin-water','bonsai-water','bamboo-fence-water'].includes(it.id);if(!B){assert.ok(!CFG.decor.backArt.enabled.includes(it.id));assert.equal(FURN_BACKS[it.id],undefined);assert.deepEqual(availableDirs(it.id),[0,1]);}else{assert.ok(CFG.decor.backArt.enabled.includes(it.id));assert.ok(FURN_BACKS[it.id]&&existsSync(FURN_BACKS[it.id])&&existsSync(FURN_BACKS[it.id].replace('furniture-v4/','furniture-v4/@2x/')));assert.deepEqual(availableDirs(it.id),[0,1,2,3]);} /* 03:55 승인, 03:57 정정 5장 */
 }
 const slots=items.slice(0,3).map(it=>({type:it.id}));
 assert.equal(themeSetActive(slots.slice(0,2),'A','water'),false);assert.equal(themeSetActive(slots,'A','water'),true);
