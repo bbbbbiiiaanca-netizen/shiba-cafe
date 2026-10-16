@@ -1,6 +1,6 @@
 // 걸어 들어와 앉기 (2026-10-16): 손님 10종 모두 걷기 그림으로 입구 → 자리, 앉으면 그 종류의 앉은 그림.
 import assert from 'node:assert/strict';import fs from 'node:fs';import * as S from '../sim.js';import {CFG} from '../config.js';import {canWalk,walkFrame,walkTable,installWalkProbe} from '../walk-frames.js';
-import {guestPose,keyBackground,sitFile,GUEST_DIRS} from '../guest-art.js';import {faceCell} from '../navigation.js';
+import {guestDrawRect,guestPose,keyBackground,sitFile,GUEST_DIRS} from '../guest-art.js';import {faceCell} from '../navigation.js';
 const ROOT=new URL('../',import.meta.url),G=CFG.characters.walkFrames.guest;
 // 설정: 종류별 객체, 10종(sim.js NPC_NORMAL) 모두 그 종류 폴더의 경로
 assert.deepEqual(Object.keys(G).sort(),[...S.NPC_NORMAL].sort());assert.equal(S.NPC_NORMAL.length,10);
@@ -47,3 +47,15 @@ function trace(kind){const {s,w}=fixture(()=>0);const out=[];let c=null;
 const iso=fs.readFileSync(new URL('isomap.js',ROOT),'utf8');assert.ok(iso.includes("from './guest-art.js'")&&iso.includes('guestPose(s.character'));
 assert.ok(!/coat|rare/i.test(fs.readFileSync(new URL('guest-art.js',ROOT),'utf8')),'털색·희귀 코드 없음');
 console.log('guest-walk ok');
+
+assert.deepEqual(Object.keys(CFG.characters.guest.scale).sort(),[...S.NPC_NORMAL].sort());
+for(const kind of S.NPC_NORMAL){
+ const scale=['girl','boykid'].includes(kind)?0.85:1;
+ assert.equal(CFG.characters.guest.scale[kind],scale);
+ for(const [w,h,a,fit] of [[128,176,CFG.characters.guest.walkAnchor,150/151],[80,120,[40,120],125/120]]){
+  const p={x:321,y:234},ref=guestDrawRect('commuter',p,w,h,a,fit),r=guestDrawRect(kind,p,w,h,a,fit);
+  assert.ok(Math.abs(r[2]/ref[2]-scale)<1e-12);assert.ok(Math.abs(r[3]/ref[3]-scale)<1e-12);
+  assert.ok(Math.abs(r[0]+r[2]*a[0]/w-p.x)<1e-12);
+  assert.ok(Math.abs(r[1]+r[3]*a[1]/h-p.y)<1e-12);
+ }
+}

@@ -290,7 +290,7 @@ furniture:{starterExtra:{table:1,cushion:2,counter:1,stairs:1}, // starting valu
   probe:'assets/drive/chars/{key}/walk-{dir}-{n}.png',probeDir:'front-dr',frameCount:4,shibaAnchor:null,shibaScale:0.52,
   // 걸어 들어와 앉기 (2026-10-16 starting values, pending user confirm): 걷기 그림 128×176 발 위치 [64,171]·불투명 키 151px (10종 모두 같은 캔버스, 발 바닥 y 168~171) → 알바처럼 150 × people.scale × 지도 배율.
   // 앉으면 기존 앉은 그림(sit, {key}=종류). 원본이 배경 있는 1280×1920 이라 런타임에 가장자리 배경색만 지우고(sitKeyTol) 불투명 키 sitHeight 로 그린다.
-  guest:{walkAnchor:[64,171],walkOpaqueHeight:151,height:150,sit:'assets/drive/guest-sitting-{key}-final.png',sitHeight:125,sitKeyTol:42}}, // shibaAnchor null → CHAR_SPRITES 종류별 발 위치(시루 [64,167]). shibaScale 1: 시루 불투명 키 ≈113px = 알바 150px의 3/4 (2026-10-15 시작값)
+  guest:{scale:{commuter:1,mom:1,dad:1,girl:0.85,boykid:0.85,grandma:1,grandpa:1,coupleman:1,couplewoman:1,friend:1},walkAnchor:[64,171],walkOpaqueHeight:151,height:150,sit:'assets/drive/guest-sitting-{key}-final.png',sitHeight:125,sitKeyTol:42}}, // shibaAnchor null → CHAR_SPRITES 종류별 발 위치(시루 [64,167]). shibaScale 1: 시루 불투명 키 ≈113px = 알바 150px의 3/4 (2026-10-15 시작값)
  people:{scale:1,withMapScale:true}, // starting value 2026-10-15, pending user confirm: people (manager/guests) were drawn at fixed 150 screen px ignoring map scale; now 150 art px × map scale × scale, foot anchor kept
  shibaRisk:{orange:50,red:80,highIsBad:['dirt','fatigue','boredom']}, // starting value 2026-10-15, pending user confirm: 'badness' 0–100 per gauge (full/happy inverted); ≥50 orange, ≥80 red; sick/injured red, hospital orange
  gaugeFull:{full:100,dirt:0,fatigue:0,happy:100,boredom:0}, // 갱신 116: 모든 게이지 100%, 행복 만점

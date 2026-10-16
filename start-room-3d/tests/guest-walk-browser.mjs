@@ -21,10 +21,15 @@ export async function guestWalkBrowser({ev,check,sleep}){
    for(const f of [0,1,2,3]){c.facing=f;for(let i=0;i<60&&seen[['front-dr','front-dl','back-ul','back-ur'][f]]?.size!==4;i++){const d=gwDrawNow();for(const s of d){const t=s.split('/guest-'+k+'-walk-')[1]?.replace('.png','');const m=t&&[null,t.slice(0,-2),t.slice(-1)];if(m)(seen[m[1]]??=new Set()).add(m[2]);}await new Promise(r=>setTimeout(r,40));}}
    c.route=[];const still=gwDrawNow();if(!(['front-dr','front-dl','back-ul','back-ur'].every(d=>seen[d]?.size===4)&&still.length===1&&still[0].endsWith('-1.png')))bad.push(k+':'+JSON.stringify(Object.fromEntries(Object.entries(seen).map(([a,b])=>[a,[...b]]))));}
   return (window.gwBad=bad).length===0;})()`);
- await check('걸어 들어와 앉기: 10종 걷기 그림은 실제 크기(128×176)로 같은 비율, 같은 칸에서 발(walkAnchor) 위치가 모두 같다',`(async()=>{const g=__game,G=(await import('./config.js')).CFG.characters.guest,bad=[];let ref=null;
+ await check('걸어 들어와 앉기: 10종 걷기 그림은 실제 크기(128×176)로 설정 배율(아이 0.85), 같은 칸에서 발(walkAnchor) 위치가 모두 같다',`(async()=>{const g=__game,G=(await import('./config.js')).CFG.characters.guest,bad=[];let ref=null;
   for(const k of g.S.NPC_NORMAL){const c=gwSpawn(k);c.route=[];const r=gwDrawRects();if(r.length!==1){bad.push(k+':n'+r.length);continue;}const [x,y,w,h]=r[0][1];
    if(Math.abs(w/h-128/176)>1e-6)bad.push(k+':ratio');const footY=y+h*G.walkAnchor[1]/176,footX=x+w*G.walkAnchor[0]/128;ref??=[footX,footY,w,h];
-   if(Math.abs(footX-ref[0])>.01||Math.abs(footY-ref[1])>.01||Math.abs(w-ref[2])>.01)bad.push(k+':foot');}
+   if(Math.abs(footX-ref[0])>.01||Math.abs(footY-ref[1])>.01||Math.abs(w/ref[2]-G.scale[k])>1e-6||Math.abs(h/ref[3]-G.scale[k])>1e-6)bad.push(k+':foot');}
+  return (window.gwBad=bad).length===0;})()`);
+ await check('앉은 손님: girl·boykid 높이는 commuter의 0.85배, 좌석 앵커는 그대로',`(()=>{const g=__game,bad=[];let ref=null;
+  for(const k of g.S.NPC_NORMAL){const c=gwSpawn(k);c.phase='seated';const rows=gwDrawRects();if(rows.length!==1){bad.push(k+':missing');continue;}
+   const [x,y,w,h]=rows[0][1],scale=['girl','boykid'].includes(k)?0.85:1;ref??=[x+w/2,y+h,h];
+   if(Math.abs(x+w/2-ref[0])>.01||Math.abs(y+h-ref[1])>.01||Math.abs(h/ref[2]-scale)>1e-6)bad.push(k);}
   return (window.gwBad=bad).length===0;})()`);
  await check('걸어 들어와 앉기: 손님 걷기 그림은 config 경로로만 불러오고 probe 경로(chars/guest-*) 요청(404)이 없다',`(()=>!performance.getEntriesByType('resource').some(e=>e.name.includes('/chars/guest-')))()`);
  await ev(`(()=>{__game.world.custs.length=0;__game.refresh();return true;})()`);

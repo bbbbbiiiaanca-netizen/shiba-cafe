@@ -24,3 +24,9 @@ export function sitCutout(file,onReady=()=>{}){if(sitCache.has(file))return sitC
  const im=new Image();im.onload=()=>{const H=384,W=Math.round(im.naturalWidth*H/im.naturalHeight),c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(im,0,0,W,H);
   const D=g.getImageData(0,0,W,H),b=keyBackground(D.data,W,H);if(!b)return;g.putImageData(D,0,0);const out=document.createElement('canvas');out.width=b.w;out.height=b.h;out.getContext('2d').drawImage(c,b.x,b.y,b.w,b.h,0,0,b.w,b.h);
   out.dataset.sit=file;sitCache.set(file,out);onReady(file);};im.onerror=()=>{};im.src=file;return null;}
+
+// Scale dimensions and offsets together to preserve the foot / seat anchor.
+export function guestDrawRect(kind,p,width,height,anchor,fit){
+ const scale=fit*(CFG.characters.guest.scale[kind]??1);
+ return [p.x-anchor[0]*scale,p.y-anchor[1]*scale,width*scale,height*scale];
+}
