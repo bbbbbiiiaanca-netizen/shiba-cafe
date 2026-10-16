@@ -206,6 +206,5 @@ assert.equal(CFG.partitionWall.enabled,originalEnabled);
 console.log('partition edge 10/17: edge price null (no PARTITION.price), bag place entrance check, adjacent() blocks table/manager/counter/shiba neighbours, disabled = unchanged passed');
 console.log('partition edge (17-7): blocked crossings, entrance/seat/counter rejection, 2-cell range, flip, restore, enabled=false passed');
 
-// @2x는 정확히 2배일 때만 HD_FILES에 올린다(아니면 절반 크기 계산이 어긋남 → 1x 사용). 03:55 승인본 중 1tile-back만 정확히 2배.
-for(const d of dimensions){const exact=d.actual.join()===d.expected.join();assert.equal(HD_FILES.has(d.file),exact,d.file+': @2x '+d.actual+' vs '+d.expected);}
-assert.deepEqual(dimensions.filter(d=>HD_FILES.has(d.file)).map(d=>d.file),['assets/drive/partition/partition-1tile-back-v2.png']);
+for(const d of dimensions)assert.ok(HD_FILES.has(d.file),d.file+' HD');
+assert.deepEqual(dimensions.map(({file,actual})=>({file,size:actual})),dimensions.map(({file,expected})=>({file,size:expected})),'@2x 크기는 정확히 2배');
