@@ -9,7 +9,7 @@ import * as S from '../sim.js';
 for(const theme of ['momiji','snow']){
  const items=NEW_FURNITURE.filter(it=>it.theme===theme);assert.equal(items.length,8);
  assert.deepEqual(CFG.decor[theme+'Set'],{minItems:3,bonusMinItems:null,bonus:null});
- for(const it of items){assert.deepEqual(availableDirs(it.id),[0,1]);assert.ok(existsSync('assets/drive/furniture-v4/@2x/'+it.filename));assert.equal(it.category,NEW_FURNITURE.find(b=>b.id===it.id.replace(theme,'sakura')).category);}
+ for(const it of items){assert.deepEqual(availableDirs(it.id),[0,1,2,3]);assert.ok(existsSync('assets/drive/furniture-v4/'+it.backname)&&existsSync('assets/drive/furniture-v4/@2x/'+it.backname)); /* 10/17 뒷모습 승인 */assert.ok(existsSync('assets/drive/furniture-v4/@2x/'+it.filename));assert.equal(it.category,NEW_FURNITURE.find(b=>b.id===it.id.replace(theme,'sakura')).category);}
  const slots=items.slice(0,3).map(it=>({type:it.id}));
  assert.equal(themeSetActive(slots.slice(0,2),'A',theme),false);assert.equal(themeSetActive(slots,'A',theme),true);
  assert.equal(themeSetActive([...slots.slice(0,2),{...slots[2],zone:'B'}],'A',theme),false);

@@ -190,22 +190,22 @@ export const NEW_FURNITURE=[
     "filename": "furn-entrance-sign-sakura-v4.png",
     "backname": "furn-sakura-entrance-sign-v4-back.png"
   },
-{"id": "shelf-momiji", "name": "단풍 선반", "en": "Momiji Shelf", "category": "furniture", "theme": "momiji", "source": "furn-momiji", "filename": "furn-shelf-momiji-v4.png", "backname": null, "price": null},
-{"id": "low-table-momiji", "name": "단풍 좌식 테이블", "en": "Momiji Low Table", "category": "furniture", "theme": "momiji", "source": "furn-momiji", "filename": "furn-low-table-cushion-momiji-v5.png", "backname": null, "price": null},
-{"id": "stone-lantern-momiji", "name": "단풍 석등", "en": "Momiji Stone Lantern", "category": "light", "theme": "momiji", "source": "furn-momiji", "filename": "furn-stone-lantern-momiji-v4.png", "backname": null, "price": null},
-{"id": "chochin-momiji", "name": "단풍 제등", "en": "Momiji Paper Lantern", "category": "light", "theme": "momiji", "source": "furn-momiji", "filename": "furn-chochin-momiji-v4.png", "backname": null, "price": null},
-{"id": "bonsai-momiji", "name": "단풍 분재", "en": "Momiji Bonsai", "category": "garden", "theme": "momiji", "source": "furn-momiji", "filename": "furn-bonsai-momiji-v4.png", "backname": null, "price": null},
-{"id": "bamboo-fence-momiji", "name": "단풍 대나무 울타리", "en": "Momiji Bamboo Fence", "category": "garden", "theme": "momiji", "source": "furn-momiji", "filename": "furn-bamboo-fence-momiji-v4.png", "backname": null, "price": null},
-{"id": "noren-momiji", "name": "단풍 노렌", "en": "Momiji Noren", "category": "sign", "theme": "momiji", "source": "furn-momiji", "filename": "furn-noren-momiji-v4.png", "backname": null, "price": null},
-{"id": "sign-momiji", "name": "단풍 간판", "en": "Momiji Sign", "category": "sign", "theme": "momiji", "source": "furn-momiji", "filename": "furn-entrance-sign-momiji-v4.png", "backname": null, "price": null},
-{"id": "shelf-snow", "name": "눈 선반", "en": "Snow Shelf", "category": "furniture", "theme": "snow", "source": "furn-snow", "filename": "furn-shelf-snow-v4.png", "backname": null, "price": null},
-{"id": "low-table-snow", "name": "눈 좌식 테이블", "en": "Snow Low Table", "category": "furniture", "theme": "snow", "source": "furn-snow", "filename": "furn-low-table-cushion-snow-v4.png", "backname": null, "price": null},
-{"id": "stone-lantern-snow", "name": "눈 석등", "en": "Snow Stone Lantern", "category": "light", "theme": "snow", "source": "furn-snow", "filename": "furn-stone-lantern-snow-v4.png", "backname": null, "price": null},
-{"id": "chochin-snow", "name": "눈 제등", "en": "Snow Paper Lantern", "category": "light", "theme": "snow", "source": "furn-snow", "filename": "furn-chochin-snow-v4.png", "backname": null, "price": null},
-{"id": "bonsai-snow", "name": "눈 분재", "en": "Snow Bonsai", "category": "garden", "theme": "snow", "source": "furn-snow", "filename": "furn-bonsai-snow-v4.png", "backname": null, "price": null},
-{"id": "bamboo-fence-snow", "name": "눈 대나무 울타리", "en": "Snow Bamboo Fence", "category": "garden", "theme": "snow", "source": "furn-snow", "filename": "furn-bamboo-fence-snow-v4.png", "backname": null, "price": null},
-{"id": "noren-snow", "name": "눈 노렌", "en": "Snow Noren", "category": "sign", "theme": "snow", "source": "furn-snow", "filename": "furn-noren-snow-v4.png", "backname": null, "price": null},
-{"id": "sign-snow", "name": "눈 간판", "en": "Snow Sign", "category": "sign", "theme": "snow", "source": "furn-snow", "filename": "furn-entrance-sign-snow-v4.png", "backname": null, "price": null}
+{"id": "shelf-momiji", "name": "단풍 선반", "en": "Momiji Shelf", "category": "furniture", "theme": "momiji", "source": "furn-momiji", "filename": "furn-shelf-momiji-v4.png", "backname": "furn-momiji-shelf-v4-back.png", "price": null},
+{"id": "low-table-momiji", "name": "단풍 좌식 테이블", "en": "Momiji Low Table", "category": "furniture", "theme": "momiji", "source": "furn-momiji", "filename": "furn-low-table-cushion-momiji-v5.png", "backname": "furn-momiji-low-table-cushion-v4-back.png", "price": null},
+{"id": "stone-lantern-momiji", "name": "단풍 석등", "en": "Momiji Stone Lantern", "category": "light", "theme": "momiji", "source": "furn-momiji", "filename": "furn-stone-lantern-momiji-v4.png", "backname": "furn-momiji-stone-lantern-v4-back.png", "price": null},
+{"id": "chochin-momiji", "name": "단풍 제등", "en": "Momiji Paper Lantern", "category": "light", "theme": "momiji", "source": "furn-momiji", "filename": "furn-chochin-momiji-v4.png", "backname": "furn-momiji-chochin-v4-back.png", "price": null},
+{"id": "bonsai-momiji", "name": "단풍 분재", "en": "Momiji Bonsai", "category": "garden", "theme": "momiji", "source": "furn-momiji", "filename": "furn-bonsai-momiji-v4.png", "backname": "furn-momiji-bonsai-v4-back.png", "price": null},
+{"id": "bamboo-fence-momiji", "name": "단풍 대나무 울타리", "en": "Momiji Bamboo Fence", "category": "garden", "theme": "momiji", "source": "furn-momiji", "filename": "furn-bamboo-fence-momiji-v4.png", "backname": "furn-momiji-bamboo-fence-v4-back.png", "price": null},
+{"id": "noren-momiji", "name": "단풍 노렌", "en": "Momiji Noren", "category": "sign", "theme": "momiji", "source": "furn-momiji", "filename": "furn-noren-momiji-v4.png", "backname": "furn-momiji-noren-v4-back.png", "price": null},
+{"id": "sign-momiji", "name": "단풍 간판", "en": "Momiji Sign", "category": "sign", "theme": "momiji", "source": "furn-momiji", "filename": "furn-entrance-sign-momiji-v4.png", "backname": "furn-momiji-entrance-sign-v4-back.png", "price": null},
+{"id": "shelf-snow", "name": "눈 선반", "en": "Snow Shelf", "category": "furniture", "theme": "snow", "source": "furn-snow", "filename": "furn-shelf-snow-v4.png", "backname": "furn-snow-shelf-v4-back.png", "price": null},
+{"id": "low-table-snow", "name": "눈 좌식 테이블", "en": "Snow Low Table", "category": "furniture", "theme": "snow", "source": "furn-snow", "filename": "furn-low-table-cushion-snow-v4.png", "backname": "furn-snow-low-table-cushion-v4-back.png", "price": null},
+{"id": "stone-lantern-snow", "name": "눈 석등", "en": "Snow Stone Lantern", "category": "light", "theme": "snow", "source": "furn-snow", "filename": "furn-stone-lantern-snow-v4.png", "backname": "furn-snow-stone-lantern-v4-back.png", "price": null},
+{"id": "chochin-snow", "name": "눈 제등", "en": "Snow Paper Lantern", "category": "light", "theme": "snow", "source": "furn-snow", "filename": "furn-chochin-snow-v4.png", "backname": "furn-snow-chochin-v4-back.png", "price": null},
+{"id": "bonsai-snow", "name": "눈 분재", "en": "Snow Bonsai", "category": "garden", "theme": "snow", "source": "furn-snow", "filename": "furn-bonsai-snow-v4.png", "backname": "furn-snow-bonsai-v4-back.png", "price": null},
+{"id": "bamboo-fence-snow", "name": "눈 대나무 울타리", "en": "Snow Bamboo Fence", "category": "garden", "theme": "snow", "source": "furn-snow", "filename": "furn-bamboo-fence-snow-v4.png", "backname": "furn-snow-bamboo-fence-v4-back.png", "price": null},
+{"id": "noren-snow", "name": "눈 노렌", "en": "Snow Noren", "category": "sign", "theme": "snow", "source": "furn-snow", "filename": "furn-noren-snow-v4.png", "backname": "furn-snow-noren-v4-back.png", "price": null},
+{"id": "sign-snow", "name": "눈 간판", "en": "Snow Sign", "category": "sign", "theme": "snow", "source": "furn-snow", "filename": "furn-entrance-sign-snow-v4.png", "backname": "furn-snow-entrance-sign-v4-back.png", "price": null}
 ];
 export const FURN_CATEGORIES=["furniture","light","garden","sign","floorwall"];
 // Snow floor art remains pending the wooden floor revision. Sakura floor/wall art held back by 똑또기 (2026-10-17).

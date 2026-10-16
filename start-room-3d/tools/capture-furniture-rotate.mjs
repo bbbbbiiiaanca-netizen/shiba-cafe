@@ -48,10 +48,17 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await done();await caption('3. 좌식 테이블(위)·벚꽃 좌식 테이블(아래)\n돌리기 0·1·2·3번 → dir 0·1·2·3 (2·3 = 뒷모습)');await shot('3-4dir-low-table.png');
 
  // 4) 2방향만: 뒷모습 그림이 있는 선반 + 단풍 가구. 돌리기 0~3번 눌러도 0↔1
- const two=['shelf','shelf-momiji','low-table-momiji'];
+ const two=['shelf','moon-lamp','shelf-sakura'];
  await place(two.flatMap((type,r)=>[0,1,2,3].map(n=>({id:type+'-'+n,type,dir:0,origin:[[0,0],[2,0],[4,0],[5,1]][n].map((v,k)=>k?v+r*2:v)}))));
  for(const t of two)for(const n of [1,2,3])await press(t+'-'+n,'rotate',n);
  expect(await dirs(),Object.fromEntries(two.flatMap(t=>[0,1,2,3].map(n=>[t+'-'+n,n%2]))),'2dir');
- await done();await caption('4. 선반·단풍 선반·단풍 좌식 테이블\n돌리기 0·1·2·3번 → dir 0·1·0·1 (앞모습만)');await shot('4-2dir-only.png');
- if(errors.length)throw Error(errors.join('\n'));console.log('furniture rotate capture: 4 screenshots, flip/rotate dirs checked');
+ await done();await caption('4. 선반·달 조명·벚꽃 선반(뒷모습 꺼둠)\n돌리기 0·1·2·3번 → dir 0·1·0·1 (앞모습만)');await shot('4-2dir-only.png');
+
+ // 5) 단풍·눈 4방향 (2026-10-17 뒷모습 승인)
+ const ms=['low-table-momiji','shelf-snow'];
+ await place(ms.flatMap((type,r)=>[0,1,2,3].map(n=>({id:type+'-'+n,type,dir:0,origin:[[0,0],[2,0],[4,0],[5,2]][n].map((v,k)=>k?v+r*3:v)}))));
+ for(const t of ms)for(const n of [1,2,3])await press(t+'-'+n,'rotate',n);
+ expect(await dirs(),Object.fromEntries(ms.flatMap(t=>[0,1,2,3].map(n=>[t+'-'+n,n]))),'4dir momiji/snow');
+ await done();await caption('5. 단풍 좌식 테이블(위)·눈 선반(아래)\n돌리기 0·1·2·3번 → dir 0·1·2·3');await shot('5-4dir-momiji-snow.png');
+ if(errors.length)throw Error(errors.join('\n'));console.log('furniture rotate capture: 5 screenshots, flip/rotate dirs checked');
 }finally{chrome.kill('SIGTERM');await sleep(150);rmSync(prof,{recursive:true,force:true});}
