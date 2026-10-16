@@ -385,6 +385,14 @@ button,button:disabled,button.warn,button[data-act=levelUp]:disabled,.lp-close,.
 .choice{border-width:2px}.cook-row{border:2px solid transparent}
 
 @media (prefers-reduced-motion:reduce){#modal:not([hidden]),#panel:not([hidden]),#app[data-tab=bag] #menuList{animation:none}}
+/* Shiba tab: one rhythm between the filter row, cells and Dongu card. */
+#app[data-tab=shiba]:not(.editing) #menuList{--shiba-gap:8px;gap:var(--shiba-gap)}
+#app[data-tab=shiba] #menuList>.card{flex-shrink:0;margin:0;text-align:center}
+#app[data-tab=shiba] #menuList>.shiba-card{padding:8px;gap:var(--shiba-gap)}
+#app[data-tab=shiba] .shiba-card .shiba-grid{width:100%;margin:0;gap:var(--shiba-gap)}
+#app[data-tab=shiba] .shiba-bar .note{text-align:center}
+#app[data-tab=shiba] .shiba-tools{flex-wrap:nowrap}
+#app[data-tab=shiba] [data-shiba-grid]>.note{grid-column:1/-1}
 </style>
 <style id="bag-icon-ui">
 .bag-tabs{display:flex;justify-content:center;gap:10px;padding:4px 0 8px}
