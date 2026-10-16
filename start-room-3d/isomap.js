@@ -1,3 +1,4 @@
+import {drawSakuraSet} from './decor.js';
 import {loadHd} from './hd-assets.js';
 import {t} from './i18n.js';
 import {CFG} from './config.js';
@@ -6,6 +7,7 @@ import {canWalk,walkFrame} from './walk-frames.js';
 import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,spriteMirrored,spriteFor,wallEdge,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges,WALL_EXT} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
+ const seenSakura=new Set();
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
  let dragSprite=null;let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,panX=0,panBounds={minX:0,maxX:0},drag=null,last,selected=null,selectionBefore=null,selectionNew=false,hits=[],gridCells=0,maxScroll=0,markers=[],markerPhase=null,zoom=1;
  const bar=document.createElement('div');bar.hidden=true;bar.className='furniture-actions';bar.setAttribute('aria-label',t('edit.aria'));bar.setAttribute('data-i18n-attr','aria-label:edit.aria');
@@ -38,7 +40,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
  const load=path=>{if(!images.has(path)){const im=loadHd(path,()=>last&&draw(...last));images.set(path,im);}return images.get(path);};
  MAP.zones.forEach(z=>{if(z.image)load(z.image);z.slots.forEach(s=>load(SPRITES[s.type].file));});
  function draw(state,world){
-  last=[state,world];if(!edit||!selected){delete canvas.dataset.placementValid;if(bar.dataset)delete bar.dataset.valid;}hits=[];gridCells=0;markers=[];dragSprite=null;delete canvas.dataset.dragSprite;const W=canvas.clientWidth,H=canvas.clientHeight,dpr=devicePixelRatio||1;
+  last=[state,world];canvas.dataset.sakuraZones="";if(!edit||!selected){delete canvas.dataset.placementValid;if(bar.dataset)delete bar.dataset.valid;}hits=[];gridCells=0;markers=[];dragSprite=null;delete canvas.dataset.dragSprite;const W=canvas.clientWidth,H=canvas.clientHeight,dpr=devicePixelRatio||1;
   if(canvas.width!==Math.round(W*dpr)||canvas.height!==Math.round(H*dpr)){canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);}
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#202224';ctx.fillRect(0,0,W,H);
   const zones=zonesForSpace(state.space).filter(z=>z.floor===(state.cafe.floor===2&&state.space.floor2Unlocked?2:1));
@@ -99,7 +101,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
     for(let r=0;r<z.rows;r++)for(let c=0;c<z.cols;c++){
      ctx.strokeStyle=occupied.has(`${c},${r}`)?'#ffd36b':'#7de7ffb0';ctx.lineWidth=occupied.has(`${c},${r}`)?1.5:.8;
      gridCells++;const p=cellToScreen(c,r,view,z),hw=z.cell.w*scale/2,hh=z.cell.h*scale/2;
-     ctx.beginPath();ctx.moveTo(p.x,p.y-hh);ctx.lineTo(p.x+hw,p.y);ctx.lineTo(p.x,p.y+hh);ctx.lineTo(p.x-hw,p.y);ctx.closePath();ctx.stroke();
+     ctx.beginPath();ctx.moveTo(p.x,p.y-hh);ctx.lineTo(p.x+hw,p.y);ctx.lineTo(p.x,p.y+hh);ctx.lineTo(p.x-hw,p.y);ctx.closePath();if(occupied.has(`${c},${r}`)){ctx.fillStyle="rgba(30,215,80,.35)";ctx.fill();}ctx.stroke();
     }
    }
    for(const edge of plateEdges(z)){const p=cellToScreen(...edge.cell,view,z);stamp('assets/drive/tiles/plate-edge-'+edge.part+'.png',{x:p.x,y:p.y-z.cell.h*scale/2},[64,0]);}
@@ -123,6 +125,9 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
      hits.push({id:s.id,x,y,w,h,im,mirrored,view,zone:z});
     }
    });
+   const active=drawSakuraSet(ctx,{slots:placed.map(it=>({...it,zone:it.zone||z.id})),zone:z,view,cellToScreen,time:performance.now(),reducedMotion:globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false});
+   if(active)canvas.dataset.sakuraZones+=z.id+" ";
+   if(active&&!seenSakura.has(z.id)){seenSakura.add(z.id);const label=document.createElement('div');label.className='sakura-set-label';label.textContent=t('furn.sakuraSet');canvas.parentElement.append(label);setTimeout(()=>label.remove(),3500);}
    if(z.id==='A'){
     for(const c of (world.custs||[]).filter(c=>c.phase==='seated'&&c.request&&!c.fulfilled)){
      const p=cellToScreen(...c.cell,view,z),im=load('assets/drive/request-bubble-empty_512.png');
