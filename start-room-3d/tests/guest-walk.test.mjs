@@ -49,6 +49,8 @@ const iso=fs.readFileSync(new URL('isomap.js',ROOT),'utf8');assert.ok(iso.includ
 assert.ok(!/coat|rare/i.test(fs.readFileSync(new URL('guest-art.js',ROOT),'utf8')),'털색·희귀 코드 없음');
 console.log('guest-walk ok');
 
+assert.equal(CFG.characters.guest.sizeScale,1.25);
+{const p={x:0,y:0},r=guestDrawRect('commuter',p,128,176,[64,171],1);assert.equal(r[3],176*1.25);}
 assert.deepEqual(Object.keys(CFG.characters.guest.scale).sort(),[...S.NPC_NORMAL].sort());
 for(const kind of S.NPC_NORMAL){
  const scale=['girl','boykid'].includes(kind)?0.85:1;
@@ -65,5 +67,5 @@ for(const kind of S.NPC_NORMAL){
 assert.deepEqual(size(CFG.characters.guest.seiza.commuter),[128,176]);
 for(const dir of [0,1,2,3])assert.equal(guestPose({kind:'commuter',phase:'seated'},0,dir).mirrored,!!(dir%2));
 for(const kind of S.NPC_NORMAL){assert.equal(CFG.characters.guest.seiza[kind],`assets/drive/chars/guest/seiza/guest-seiza-${kind}.png`);assert.deepEqual(size(CFG.characters.guest.seiza[kind]),[128,176]);
- const p={x:100,y:200},a=CFG.characters.guest.seizaAnchor,r=guestDrawRect(kind,p,128,176,a,1),scale=CFG.characters.guest.scale[kind];
+ const p={x:100,y:200},a=CFG.characters.guest.seizaAnchor,r=guestDrawRect(kind,p,128,176,a,1),scale=1.25*CFG.characters.guest.scale[kind];
  assert.equal(r[2],128*scale);assert.equal(r[0]+a[0]*scale,p.x);assert.equal(r[1]+a[1]*scale,p.y);}

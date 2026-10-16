@@ -27,6 +27,6 @@ export function sitCutout(file,onReady=()=>{}){if(sitCache.has(file))return sitC
 
 // Scale dimensions and offsets together to preserve the foot / seat anchor.
 export function guestDrawRect(kind,p,width,height,anchor,fit){
- const scale=fit*(CFG.characters.guest.scale[kind]??1);
+ const G=CFG.characters.guest,scale=fit*(G.sizeScale??1)*(G.scale[kind]??1);
  return [p.x-anchor[0]*scale,p.y-anchor[1]*scale,width*scale,height*scale];
 }
