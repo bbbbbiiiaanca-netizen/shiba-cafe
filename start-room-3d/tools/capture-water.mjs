@@ -1,3 +1,4 @@
+import {assertSetLabelClear} from './set-label-check.mjs';
 import {spawn} from 'node:child_process';import {resolve,dirname,join} from 'node:path';import {fileURLToPath} from 'node:url';import {rmSync} from 'node:fs';
 const ROOT=join(dirname(fileURLToPath(import.meta.url)),'..');const prof='/tmp/shiba-furniture-'+process.pid;
 const chrome=spawn('google-chrome',['--headless','--no-sandbox','--disable-dev-shm-usage','--user-data-dir='+prof,'--remote-debugging-pipe','--allow-file-access-from-files','--autoplay-policy=no-user-gesture-required','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'],{stdio:['ignore','ignore','pipe','pipe','pipe']});
@@ -32,6 +33,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  if(await ev(`!!document.getElementById('isomap').dataset.waterZones.trim()`))throw Error('split-zone set');
  await ev(`__game.state.placement.slots=${JSON.stringify(slots.slice(0,3))};__game.refresh();true`);await shot('water-set.png');
  if(!await ev(`document.getElementById('isomap').dataset.waterZones.trim()==='A'&&document.querySelector('.water-set-label')?.textContent==='물방울 정원 세트'`))throw Error('water set label missing');
+ await assertSetLabelClear(ev,'water');
  // 바닥·벽 레이어: 가방 배치 동작(placeFurniture)으로 선택.
  await setup();
  await ev(`__game.state.placement.slots=[];for(const id of ['floor-water','wall-water']){__game.state.furnitureInv[id]=1;__game.S.placeFurniture(__game.state,id,[0,0]);}__game.refresh();true`);

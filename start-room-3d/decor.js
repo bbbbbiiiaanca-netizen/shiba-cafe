@@ -27,6 +27,15 @@ export function themeSetActive(slots,zone,theme){
  return slots.filter(it=>(it.zone||'A')===zone&&ids.has(it.type)).length>=set.minItems;
 }
 export const sakuraSetActive=(slots,zone)=>themeSetActive(slots,zone,'sakura');
+// 똑또기 10-17: 세트 라벨은 방·가구 그림을 가리지 않게 그 위 빈 곳(상단 HUD 아래로 clamp), 모자라면 방 아래, 둘 다 안 되면 위쪽 clamp.
+// rects: 화면에 그려진 방 바닥판·가구 그림 사각형 {x,y,w,h}. minY/maxY: 라벨이 들어갈 수 있는 세로 범위(HUD 아래 ~ 하단 패널 위).
+export function setLabelPlacement({rects,labelH,minY,maxY,gap=6}){
+ const live=rects.filter(r=>r&&r.w>0&&r.h>0);if(!live.length)return {pos:'top',y:minY};
+ const top=Math.min(...live.map(r=>r.y)),bottom=Math.max(...live.map(r=>r.y+r.h));
+ const above=top-gap-labelH;if(above>=minY)return {pos:'top',y:above};
+ const below=bottom+gap;if(below+labelH<=maxY)return {pos:'bottom',y:below};
+ return {pos:'top',y:minY};
+}
 // Reuse the set presentation entry point. No new particle art was supplied.
 export function drawThemeSet(ctx,options,theme){
  return theme==='sakura'?drawSakuraSet(ctx,options):themeSetActive(options.slots,options.zone.id,theme);
