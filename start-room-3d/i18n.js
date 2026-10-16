@@ -5,7 +5,7 @@
 // Lookup order: STR[lang][key] → STR.ko[key] → key.
 export const LANGS=['ko','en'];
 export const STR={
- ko:{'unset':'미정',
+ ko:{'unset':'미정','app.temp':'임시','book.growth':'성장 단계',
   'lang.name.ko':'한국어','lang.name.en':'English','lang.select.title':'언어를 골라 주세요','lang.select.hint':'설정에서 언제든 바꿀 수 있어요','lang.select.confirm':'확인',
   'settings.language':'언어','settings.language.current':'지금 언어: {language}',
   'hud.currency.coin':'코인','hud.currency.heart':'하트','hud.currency.dia':'다이아',
@@ -703,6 +703,7 @@ export const STR={
   "friend.visitNote":"Visit for {n} hearts · {d}×/day",
   "friend.getHeart":"Get hearts",
   "friend.list":"Friend list",
+  "app.temp":"Temporary","book.growth":"Growth stage",
   "book.favSnack":"Favorite treat",
   "book.favPlay":"Favorite game",
   "book.friends":"Best buddies",

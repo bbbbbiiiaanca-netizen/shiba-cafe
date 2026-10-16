@@ -349,6 +349,7 @@ await new Promise(r=>setTimeout(r,600));
  {const p=await ev(`(()=>{const m=__game.iso.markers.find(m=>m.kind==='row'),r=document.getElementById('isomap').getBoundingClientRect();return {x:r.left+m.x0+m.w/2,y:r.top+m.y0+m.h*.55}})()`);for(const t of ['mousePressed','mouseReleased'])await c('Input.dispatchMouseEvent',{type:t,x:p.x,y:p.y,button:'left',buttons:t==='mousePressed'?1:0,clickCount:1});await sleep(200);}
  await check('땅 넓히기 최대 8단계: 확인 창 "(최대 8단계)", 8단계에서 + 사라지고 구매 막힘',`(()=>{const g=__game,txt=document.getElementById('mbox')?.textContent||'';g.ui.modals=[];g.debugExpand(8);g.state.coins=1e12;g.refresh();const ok=txt.includes('(최대 8단계)')&&!g.iso.markers.some(m=>m.kind==='row')&&g.S.spaceUnlockCheck(g.state,'row',null,'coins')==='max'&&!g.S.unlockSpace(g.state,'row',null,'coins',g.clock.now());g.debugExpand(0);g.refresh();return ok;})()`);
  await go(true,'&temp=1');{const {startFlow}=await import('./start-flow.mjs');await startFlow(ev);}await sleep(300);
+ await (await import('./shiba-detail-browser.mjs')).shibaDetailBrowser({ev,check,c});
  await check('시작 직후 카페 시바 수 ≤ 배치 상한(slotsOf, config)',`(()=>{const g=__game,n=g.state.shibas.filter(o=>o.placed).length;return n>=1&&n<=g.S.slotsOf(g.state)&&g.state.shibas.length>=n;})()`);
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}
 for(const [k,n] of checks)console.log(k==='ok'?'  ok  ':'  FAIL',n);for(const e of errors)console.log('  ERROR',e);
