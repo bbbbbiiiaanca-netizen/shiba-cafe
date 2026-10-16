@@ -489,7 +489,9 @@ function knockoutWhite(el){const src=el.getAttribute('src');if(el.dataset.knocke
   const white=i=>a[i*4+3]>0&&a[i*4]>=T&&a[i*4+1]>=T&&a[i*4+2]>=T;for(let i=0;i<w;i++){st.push(i,(h-1)*w+i);}for(let j=0;j<h;j++){st.push(j*w,j*w+w-1);}
   while(st.length){const i=st.pop();if(seen[i])continue;seen[i]=1;if(!white(i))continue;a[i*4+3]=0;const px=i%w,py=(i/w)|0;if(px>0)st.push(i-1);if(px<w-1)st.push(i+1);if(py>0)st.push(i-w);if(py<h-1)st.push(i+w);}
   x.putImageData(d,0,0);const u=c.toDataURL('image/png');knockCache.set(src,u);if(el.isConnected)done(u);}catch(e){knockCache.delete(src);}};im.src=src;}
-new MutationObserver(()=>document.querySelectorAll('img[data-knockout]').forEach(knockoutWhite)).observe(document.body,{childList:true,subtree:true});
+// 상점 테마 카드 이름: 칸보다 길면 글자 크기를 줄여 한 줄에 맞춘다(최소 8px, 카드 크기 유지).
+export function fitThemeNames(root=document){root.querySelectorAll('.theme-logo small').forEach(el=>{el.style.fontSize='';let fs=parseFloat(getComputedStyle(el).fontSize)||11;while(el.scrollWidth>el.clientWidth+0.5&&fs>8){fs-=0.5;el.style.fontSize=fs+'px';}});}
+new MutationObserver(()=>{document.querySelectorAll('img[data-knockout]').forEach(knockoutWhite);fitThemeNames();}).observe(document.body,{childList:true,subtree:true});
 
 // 첫 실행 동구 안내 (v3): dialogue modals in order; 확인 = 다음, 건너뛰기 = 전부 닫기. Shown once (s.tutorialDone).
 function startTutorial(){if(s.tutorialDone||!CFG.tutorial?.steps?.length)return;s.tutorialDone=true;tutorialStep(0);}
