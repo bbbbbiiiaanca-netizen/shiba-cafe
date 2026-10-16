@@ -4,14 +4,24 @@ import {webcrypto} from 'node:crypto';
 if(!globalThis.crypto)Object.defineProperty(globalThis,'crypto',{value:webcrypto});
 import {readFileSync} from 'node:fs';
 import {CFG} from '../config.js';
-import {MAP,defaultPlacement,restorePlacement,edgeSegments,validEdge,activeEdges} from '../map-data.js';
+import {MAP,defaultPlacement,restorePlacement,edgeSegments,edgeMirrored,cellToScreen,validEdge,activeEdges} from '../map-data.js';
 import {pathfind,preservesEntrance,layout,routeTo} from '../navigation.js';
 import {newState,newWorld,save,load} from '../sim.js';
 
 const zone=MAP.zones[0],base=defaultPlacement().slots,E=(id,type,cell,side,flip=false)=>({id,type,cell,side,flip});
-assert.equal(CFG.partitionWall.enabled,false,'기본은 꺼짐(그림 대기)');
+assert.equal(CFG.partitionWall.enabled,true,'기본 켜짐');
+const originalEnabled=CFG.partitionWall.enabled;
+const withEnabled=(enabled,fn)=>{const before=CFG.partitionWall.enabled;CFG.partitionWall.enabled=enabled;try{return fn();}finally{CFG.partitionWall.enabled=before;}};
 assert.deepEqual(Object.fromEntries(Object.entries(CFG.partitionWall.types).map(([k,v])=>[k,v.len])),{edge1:1,edge2:2});
-for(const t of Object.values(CFG.partitionWall.types))assert.deepEqual(t.art,{front:null,back:null});
+const {HD_FILES,hdPath}=await import('../hd-assets.js');
+const dimensions=[];
+const anchors={edge1:{front:[40,64],back:[39,60]},edge2:{front:[79,72],back:[78,72]}};
+const pngSize=file=>{const b=readFileSync(new URL('../'+file,import.meta.url));assert.equal(b.subarray(0,8).toString('hex'),'89504e470d0a1a0a');assert.equal(b.toString('ascii',12,16),'IHDR');return [b.readUInt32BE(16),b.readUInt32BE(20)];};
+for(const [type,t] of Object.entries(CFG.partitionWall.types))for(const side of ['front','back']){const a=t.art[side];assert.equal(a.file,`assets/drive/partition/partition-${t.len}tile-${side}-v2.png`);assert.deepEqual(a.anchor,anchors[type][side]);assert.equal(a.scale,1);dimensions.push({file:a.file,actual:pngSize(hdPath(a.file)),expected:pngSize(a.file).map(n=>n*2)});}
+for(const cell of [[0,0],[2,3],[4,1]])for(const type of ['edge1','edge2'])for(const side of ['i','j']){
+ const points=edgeSegments(E('mirror',type,cell,side)).flatMap(([a,b])=>{const p=cellToScreen(...a,{x:17,y:29,scale:.75},zone),hw=zone.cell.w*.75/2,hh=zone.cell.h*.75/2;return b[0]>a[0]?[{x:p.x+hw,y:p.y},{x:p.x,y:p.y+hh}]:[{x:p.x,y:p.y+hh},{x:p.x-hw,y:p.y}];});
+ assert.equal(edgeMirrored(points),side==='j');assert.equal(edgeMirrored([...points].reverse()),side==='j');
+}
 assert.equal(CFG.partitionWall.count,null);assert.equal(CFG.partitionWall.price,null);
 
 // 경계 모양: side 'i' = [i,j]|[i+1,j], 2칸은 선을 따라 j+1 쪽으로
@@ -71,16 +81,16 @@ assert.equal(validEdge(E('b','edge1',[0,1],'i'),[E('b','edge2',[0,0],'i')],zone)
  assert.deepEqual(load(store,0).state.placement.edges,good,'저장 → 불러오기');}
 
 // enabled=false → 길찾기·편집에 효과 없음(저장 값은 남음)
-{const s=newState(0),w=newWorld(s);s.placement.edges=[E('a','edge1',[2,4],'i')];
+withEnabled(false,()=>{const s=newState(0),w=newWorld(s);s.placement.edges=[E('a','edge1',[2,4],'i')];
  assert.deepEqual(activeEdges(s.placement),[]);assert.deepEqual(layout(s,w).edges,[]);
  const ch={cell:[2,4]};routeTo(s,w,ch,[3,4]);assert.equal(ch.route.length,1,'꺼져 있으면 선을 그냥 건넘');
  CFG.partitionWall.enabled=true;
  assert.equal(layout(s,w).edges.length,1);routeTo(s,w,ch,[3,4]);assert.equal(ch.route.length,3,'손님·시바 이동(routeTo)도 가벽 반영');
- CFG.partitionWall.enabled=false;}
+ CFG.partitionWall.enabled=false;});
 
-// 편집 UI(실제 isomap): 버튼, 배치, 뒤집기, 제거, 막힘 토스트, 그림 없음 → 편집 모드 선만
-const strokes=[],draws=[];
-const ctx={fill(){},translate(){},scale(){},setTransform(){},fillRect(){},drawImage(im){draws.push(im.file);},save(){},restore(){},beginPath(){this.path=[];},moveTo(x,y){this.path.push([x,y]);},lineTo(x,y){this.path.push([x,y]);},closePath(){},stroke(){strokes.push({colour:this.strokeStyle,width:this.lineWidth,path:this.path});},createRadialGradient(){return {addColorStop(){}};}};
+// 편집 UI(실제 isomap): 버튼, 배치, 뒤집기, 제거, 막힘 토스트, 앞/뒤 그림과 편집 모드 강조선
+const strokes=[],draws=[],renderOps=[];
+const ctx={fill(){},translate(...args){renderOps.push(["translate",...args]);},scale(...args){renderOps.push(["scale",...args]);},setTransform(){},fillRect(){},drawImage(im,...args){draws.push(im.file);renderOps.push(["draw",im.file,...args]);},save(){},restore(){},beginPath(){this.path=[];},moveTo(x,y){this.path.push([x,y]);},lineTo(x,y){this.path.push([x,y]);},closePath(){},stroke(){strokes.push({colour:this.strokeStyle,width:this.lineWidth,path:this.path});},createRadialGradient(){return {addColorStop(){}};}};
 globalThis.location={search:''};globalThis.devicePixelRatio=1;globalThis.ResizeObserver=class{observe(){}};
 globalThis.Image=class{set src(path){path=path.replace('/@2x/','/');this.file=path;this.naturalWidth=128;this.naturalHeight=64;this.complete=true;try{readFileSync(new URL('../'+path,import.meta.url));}catch{this.naturalWidth=0;}}};
 // 버튼 속성 선택자([a], [a="v"], 쉼표 목록)만 아는 작은 가짜 DOM
@@ -93,6 +103,7 @@ const {createIsoMap}=await import('../isomap.js');
 const canvas={dataset:{},clientWidth:360,clientHeight:600,getContext:()=>ctx,addEventListener(){},getBoundingClientRect:()=>({left:0,top:0}),setPointerCapture(){}};
 let blocked=null,changed=0;const iso=createIsoMap(canvas,{onBlocked:m=>blocked=m??'generic',onChange:()=>changed++});
 const bar=iso.actions,q=s=>bar.querySelector(s),state=newState(0);
+CFG.partitionWall.enabled=false;
 iso.draw(state,{});iso.setEdit(true);
 assert.equal(q('[data-edge-add="edge1"]').hidden,true,'꺼져 있으면 버튼 숨김');assert.equal(q('[data-edge-add="edge2"]').hidden,true);assert.equal(q('[data-edge-remove]').hidden,true);
 assert.equal(iso.placeEdge('edge1',[2,4],'i'),false,'꺼져 있으면 배치 안 됨');assert.equal(state.placement.edges,undefined);
@@ -105,8 +116,8 @@ const edge=state.placement.edges[0];assert.equal(edge.type,'edge1');assert.equal
 strokes.length=0;draws.length=0;iso.draw(state,{});
 assert.ok(strokes.some(s=>s.colour==='#16e05a'&&s.width===4&&s.path.length===2),'고른 가벽 = 초록 강조선');
 assert.ok(iso.hits.some(h=>h.id===id&&h.edge));
-assert.ok(!draws.some(f=>/partition|edge/.test(f||'')),'그림 null → 가벽 그림 없음');
-q('[data-furniture-flip]').onclick();assert.equal(edge.flip,true);q('[data-furniture-flip]').onclick();assert.equal(edge.flip,false);
+assert.ok(draws.includes(CFG.partitionWall.types.edge1.art.front.file),'앞모습 그림');
+q('[data-furniture-flip]').onclick();assert.equal(edge.flip,true);draws.length=0;iso.draw(state,{});assert.ok(draws.includes(CFG.partitionWall.types.edge1.art.back.file),'뒷모습 그림');q('[data-furniture-flip]').onclick();assert.equal(edge.flip,false);
 q('[data-furniture-done]').onclick();assert.equal(iso.selected,null);
 // 2칸 가벽 + 뒤집기
 assert.equal(iso.placeEdge('edge2',[3,1],'i'),true);const e2=state.placement.edges.at(-1);q('[data-furniture-flip]').onclick();assert.equal(e2.flip,true);
@@ -118,15 +129,27 @@ state.placement.edges=[];assert.equal(iso.placeEdge('edge1',zone.entrance,'i'),t
 blocked=null;const snap=JSON.stringify(state.placement);assert.equal(iso.placeEdge('edge1',[0,4],'j'),false);assert.equal(blocked,'입구가 막혔어요!');assert.equal(JSON.stringify(state.placement),snap,'거부하면 그대로');
 // 새로 놓은 가벽 취소 → 사라짐
 assert.equal(iso.placeEdge('edge1',[4,4],'j'),true);q('[data-furniture-cancel]').onclick();assert.equal(state.placement.edges.length,1);
-// 일반 화면: 그림이 없으니 아무것도 그리지 않음
-iso.setEdit(false);strokes.length=0;iso.draw(state,{});assert.equal(strokes.length,0,'편집 밖에서는 선도 없음');
+// 일반 화면: 그림은 표시하고 강조선은 숨김
+iso.setEdit(false);strokes.length=0;draws.length=0;iso.draw(state,{});assert.equal(strokes.length,0,'편집 밖에서는 선도 없음');assert.ok(draws.some(f=>f?.includes('/partition/')),'일반 화면에도 그림 표시');
 CFG.partitionWall.enabled=false;iso.setEdit(true);strokes.length=0;iso.draw(state,{});
 assert.ok(!strokes.some(s=>s.path?.length===2),'꺼지면 저장된 가벽도 안 보임');assert.ok(!iso.hits.some(h=>h.edge));
 assert.ok(changed>0);
+CFG.partitionWall.enabled=originalEnabled;
+// 실제 렌더러: 두 길이·앞/뒤 모두 j만 선 가운데에서 반전한다.
+iso.setEdit(false);
+for(const type of ['edge1','edge2'])for(const side of ['i','j'])for(const flip of [false,true]){
+ state.placement.edges=[E('render',type,[3,3],side,flip)];renderOps.length=0;iso.draw(state,{});
+ const art=CFG.partitionWall.types[type].art[flip?'back':'front'],n=renderOps.findIndex(op=>op[0]==='draw'&&op[1]===art.file);
+ assert.ok(n>=0);const before=renderOps[n-1];
+ if(side==='j'){assert.deepEqual(before,['scale',-1,1]);assert.equal(renderOps[n-2][0],'translate');}else assert.equal(before[0],'translate');
+ const [, ,x,y,w,h]=renderOps[n];assert.equal(x/w,-art.anchor[0]/128);assert.equal(y/h,-art.anchor[1]/64);
+}
+const N=await import('../navigation.js'),S=await import('../sim.js'),{PARTITION}=await import('../map-data.js');
+withEnabled(false,()=>{
 
 // ── 똑또기 확정 10/17 ──
-const N=await import('../navigation.js'),S=await import('../sim.js'),{PARTITION}=await import('../map-data.js');
-const fresh=()=>{const s=newState(0);return {s,w:newWorld(s)};},on=fn=>{CFG.partitionWall.enabled=true;try{return fn();}finally{CFG.partitionWall.enabled=false;}};
+
+const fresh=()=>{const s=newState(0);return {s,w:newWorld(s)};},on=fn=>withEnabled(true,fn);
 // 1) 가격: 종류별 price null(미정), 칸막이 PARTITION.price(50000)를 쓰지 않는다
 for(const t of ['edge1','edge2']){assert.ok(Object.hasOwn(CFG.partitionWall.types[t],'price'));assert.equal(CFG.partitionWall.types[t].price,null);assert.equal(S.edgePrice(newState(0),t),null,'미정');}
 assert.equal(PARTITION.price,50000);assert.notEqual(S.edgePrice(newState(0),'edge1'),S.wallPrice(newState(0)));
@@ -178,5 +201,11 @@ CFG.partitionWall.types.edge2.price=7;assert.equal(S.edgePrice(newState(0),'edge
 // 입구 검사 카운터 판정도 adjacent 사용(기존 시나리오 유지)
 assert.equal(pe(counter,[...counter,E('c2','edge1',[1,0],'i')]),false);
 assert.equal(CFG.partitionWall.enabled,false);
+});
+assert.equal(CFG.partitionWall.enabled,originalEnabled);
 console.log('partition edge 10/17: edge price null (no PARTITION.price), bag place entrance check, adjacent() blocks table/manager/counter/shiba neighbours, disabled = unchanged passed');
 console.log('partition edge (17-7): blocked crossings, entrance/seat/counter rejection, 2-cell range, flip, restore, enabled=false passed');
+
+// @2x는 정확히 2배일 때만 HD_FILES에 올린다(아니면 절반 크기 계산이 어긋남 → 1x 사용). 03:55 승인본 중 1tile-back만 정확히 2배.
+for(const d of dimensions){const exact=d.actual.join()===d.expected.join();assert.equal(HD_FILES.has(d.file),exact,d.file+': @2x '+d.actual+' vs '+d.expected);}
+assert.deepEqual(dimensions.filter(d=>HD_FILES.has(d.file)).map(d=>d.file),['assets/drive/partition/partition-1tile-back-v2.png']);

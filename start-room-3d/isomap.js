@@ -4,7 +4,7 @@ import {t} from './i18n.js';
 import {CFG} from './config.js';
 import {preservesEntrance} from './navigation.js';
 import {canWalk,walkFrame} from './walk-frames.js';
-import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,spriteMirrored,spriteFor,wallEdge,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges,WALL_EXT,activeEdges,edgeSegments,validEdge} from './map-data.js';
+import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,spriteMirrored,spriteFor,wallEdge,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges,WALL_EXT,activeEdges,edgeSegments,edgeMirrored,validEdge} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
  const seenSakura=new Set();
@@ -138,7 +138,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
    const zoneEdges=z.id==='A'?activeEdges(state.placement).map(e=>drag?.edge===e.id?{...e,cell:drag.candidate}:e):[];
    [...placed,...(z.id==='A'?[...characterDepthEntries(world),...tableItemEntries(world),...zoneEdges.filter(e=>edgeArt(e)?.file).map(e=>({edgeItem:e,cells:edgeSegments(e).flat()}))]:[])].map(s=>drag?.item&&drag.item===s.id?{...s,origin:drag.candidate}:s).sort(compareDepth).forEach(s=>{
     // 가벽 그림(CFG.partitionWall.types[type].art.front/back)이 있을 때만 그린다. 기준점 = 가벽 선 가운데.
-    if(s.edgeItem){const art=edgeArt(s.edgeItem),p=edgeCentre(s.edgeItem,view,z),im=load(art.file),k=scale*(art.scale||1);if(im.complete&&im.naturalWidth)ctx.drawImage(im,p.x-art.anchor[0]*k,p.y-art.anchor[1]*k,im.naturalWidth*k,im.naturalHeight*k);return;}
+    if(s.edgeItem){const art=edgeArt(s.edgeItem),p=edgeCentre(s.edgeItem,view,z),im=load(art.file),k=scale*(art.scale||1);if(im.complete&&im.naturalWidth){ctx.save();ctx.translate(p.x,p.y);if(edgeMirrored(edgeSegments(s.edgeItem).flatMap(seg=>segPoints(seg,view,z))))ctx.scale(-1,1);ctx.drawImage(im,-art.anchor[0]*k,-art.anchor[1]*k,im.naturalWidth*k,im.naturalHeight*k);ctx.restore();}return;}
     if(s.tableItem){const c=s.tableItem,p=cellToScreen(...s.origin,view,z),im=load('assets/drive/'+c.order.img),size=tableItemSize(z);if(im.complete&&im.naturalWidth){const fit=size/Math.max(im.naturalWidth,im.naturalHeight)*scale;ctx.drawImage(im,p.x+c.itemSlot.offset[0]*scale-im.naturalWidth*fit/2,p.y+c.itemSlot.offset[1]*scale-im.naturalHeight*fit,im.naturalWidth*fit,im.naturalHeight*fit);}return;}
     if(s.character?.role==='manager'){const m=s.character,im=load(managerFrame(m)),p=cellToScreen(...s.origin,view,z);if(im.complete&&im.naturalWidth){const fit=MANAGER.height*CFG.people.scale*(CFG.people.withMapScale?scale:1)/MANAGER_OPAQUE_HEIGHT[managerFrame(m).split('/').at(-1)];ctx.drawImage(im,p.x-MANAGER.anchor[0]*fit,p.y-MANAGER.anchor[1]*fit,im.naturalWidth*fit,im.naturalHeight*fit);}return;}
     // 이동 규칙(10-15): 걷기 프레임이 있는 시바는 프레임을 넘기며 그린다(걷는 중 8fps, 서 있으면 1번 프레임). 없으면 아래 기존 규칙(그림 없음 → 안 그림).

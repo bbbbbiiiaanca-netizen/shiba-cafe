@@ -93,6 +93,8 @@ export function defaultPlacement(){return {v:1,slots:structuredClone(MAP.zones[0
 // 2칸은 그 선을 따라 한 칸 더: 'i' → [i,j+1]|[i+1,j+1], 'j' → [i+1,j]|[i+1,j+1]. 반환: 막히는 칸 쌍 목록.
 export function edgeSegments(edge){const len=CFG.partitionWall.types[edge.type]?.len||0,[i,j]=edge.cell;
  return Array.from({length:len},(_,n)=>edge.side==='i'?[[i,j+n],[i+1,j+n]]:[[i+n,j],[i+n,j+1]]);}
+// 가벽 그림은 오른쪽 위로 뻗는 선 기준. 화면 끝점으로 판정: 오른쪽 끝이 왼쪽 끝보다 아래(오른쪽 아래로 뻗음)면 좌우 반전. 지금 칸 모양에서 side 'j'가 반전.
+export function edgeMirrored(points){const l=points.reduce((a,p)=>p.x<a.x?p:a),r=points.reduce((a,p)=>p.x>a.x?p:a);return r.y>l.y;}
 // enabled=false → 가벽은 길·그림·편집에 아무 효과 없음(저장된 값은 그대로 둔다)
 export function activeEdges(placement){return CFG.partitionWall.enabled?placement?.edges||[]:[];}
 export function validEdge(edge,edges,zone=MAP.zones[0]){
