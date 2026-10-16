@@ -299,6 +299,7 @@ small.fx{display:block;font-family:'Gowun Dodum',sans-serif;font-size:11px;opaci
 .manage-tabs button small{position:absolute;top:4px;right:6px;font-size:10px;background:#e8774a;color:#fff;border-radius:8px;padding:1px 5px}
 /* Keep the village above the cafe but below the existing place panels. */
 #app[data-tab=village] #mainMenu{position:fixed;inset:0;z-index:9;border-radius:0;background:#f6e9cf}
+#app[data-tab=village] #panel:is([data-panel=walk],[data-panel=hospital],[data-panel=cooking]){position:fixed;inset:0;height:auto;max-height:none;transform:none;border-radius:0;background:#fff8ec;z-index:30}
 #app[data-tab=village] .menu-heading,#app[data-tab=village] #mainTabs{display:none!important}
 #app[data-tab=village] #menuList{flex:1;display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden;height:100%}
 #app[data-tab=village] .village-map{width:auto;height:100%;max-width:100%;border-radius:0}
