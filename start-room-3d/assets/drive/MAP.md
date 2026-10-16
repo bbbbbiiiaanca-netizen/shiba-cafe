@@ -357,6 +357,14 @@ Manager v2 frames replace the v1 files at the same local paths (v1 rows above ar
 | cooking/ing-carrot.png | Drive 1Kenc5iyhR_j_t1AxjePZhngSNSrwVc4T (재료_당근.png, unmodified) | sha256 20508aeec25788b35a5331debbe465e112a015c8b56892bf4898a6193309d0ba | 요리 제작 재료 |
 | cooking/ing-sweet-potato.png | Drive 1DQIArEVeZ83itFZtOqxhQYWv5DLpOHi_ (재료_고구마.png (interior), unmodified) | sha256 a1c1373cf1028784778eed1e445dffd1c014c183d6cb0b7b33d7f8aea87ba07f | 요리 제작 재료 |
 | cooking/ing-chicken.png | Drive 1wu9GPccCnujyU5dOjq4yS3h9nBLYOX6x (재료_닭고기.png, unmodified) | sha256 868ae8a8d78290ba716f039a6eaf6c8c40d9207e6735ce6ef68b86b7738598a3 | 요리 제작 재료 |
+
+| profile/snack-jerky.png | /workspace/gurimi/ui-shiba-detail/out/final/snack-jerky.png (256×256 RGBA, unmodified; 수인님 승인 2026-10-17, 승인은 코코아 전달) | sha256 039866454f0e946026aabf6ab82f3907b8308377f20a647b1bfe7679e6d809d0 | 시바 상세 간식: 육포 |
+| profile/snack-milk-biscuit.png | /workspace/gurimi/ui-shiba-detail/out/final/snack-milk-biscuit.png (256×256 RGBA, unmodified; 수인님 승인 2026-10-17, 승인은 코코아 전달) | sha256 1524a1d67989eb3d20ffea5fca3202eb42bfc33d5381385fcca1dc367c4254c2 | 시바 상세 간식: 우유 과자 |
+| profile/snack-salmon-stick.png | /workspace/gurimi/ui-shiba-detail/out/final/snack-salmon-stick.png (256×256 RGBA, unmodified; 수인님 승인 2026-10-17, 승인은 코코아 전달) | sha256 e9373984e4906b7cd837872b590651142749a5e49bb4053bf7eacc7719e72c36 | 시바 상세 간식: 연어 스틱 |
+| profile/play-short-walk.png | /workspace/gurimi/ui-shiba-detail/out/final/play-short-walk.png (256×256 RGBA, unmodified; 수인님 승인 2026-10-17, 승인은 코코아 전달) | sha256 e3917c2b5eb22b19b68b97c560a796ee550931e5ba2166a7027698e2a247757f | 시바 상세 놀이: 짧은 산책 |
+| profile/play-tug.png | /workspace/gurimi/ui-shiba-detail/out/final/play-tug.png (256×256 RGBA, unmodified; 수인님 승인 2026-10-17, 승인은 코코아 전달) | sha256 fe25db7d8045ee0758064a51c3a7dc77242af09a0a77e736eefb701a68d98664 | 시바 상세 놀이: 줄다리기 |
+
+미승인(빈칸 유지, 파일 없음): profile/snack-sweet-potato-chip.png, profile/play-ball-roll.png, profile/play-sun-nap.png, profile/ribbon-name.png
 | bg-hospital-clinic.png | Drive 10OB6TzgCt79ClTFmrV769zimnUc5IjQ8 (배경_병원진료실.png, 1080×1920, unmodified) | sha256 c93572464743aa4e4eee8c46c0763f696ef959f32db24b4cf673417b1a478b7c | 병원 진료실 배경 (병원 화면에 연결) |
 | hospital/sick-red-bandage.png | Drive 10e_1eRfaUGjp4xFpmvtrzph8YaXEsvUT (interior 시바_적시바_아픔_붕대_v2.png, 1024×1536, unmodified; replaces 19xLjdPp_98d5sqpPGgCB3NWfDiy7iqdE) | sha256 869009d4955b3a17b1b75d25c180f0950988f49c75d8413f931e7bd44c3cb4d7 | 병원: 적시바 아픔·붕대 포즈 v2 |
 | run/bg-ingredient-run-v2.png | Drive 1YwqBiShlWPgf0H6qHPdBqac2AFVgQ0-u (interior 재료달리기_배경_v2.png, 1080×1920, vertical tile, unmodified) | sha256 a29397b8ff7b62c87d7aaddefb831b2d8771c660d427a690a58503f14f530d63 | 재료 달리기: 반복 배경 (화면 미구현) |
