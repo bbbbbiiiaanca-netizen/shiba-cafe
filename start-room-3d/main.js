@@ -258,6 +258,8 @@ let panelSig='';
 function renderPanel(force){if(!ui.panel){$('panel').hidden=true;return;}const v=P[ui.panel](ui.arg);const sig=v.title+v.html;if(!force&&sig===panelSig)return;panelSig=sig;
  const sc=$('pbody').scrollTop;$('ptitle').textContent=v.title;$('pbody').innerHTML=v.html;$('pbody').scrollTop=sc;$('panel').dataset.panel=ui.panel;$('panel').style.setProperty('--cook-h',(CFG.cooking.popupHeightPct??0.75)*100+'%');$('panel').dataset.align=CFG.cooking.popupAlign||'center';$('panel').hidden=false;}
 function open(name,arg=null){if(!P[name]){if(LP[name]){act.listOpen({list:name,kind:arg});refresh();}return;} // 'menu' = 메뉴 개발 목록 팝업 (P.menu 없음)
+ // Leave the full-screen village map before showing a place's panel.
+ if(mainTab==='village'){mainTab='manage';menuSig='';renderMainMenu();}
  ui.panel=name;ui.arg=arg;ui.nav=['shibas','care'].includes(name)?'shibas':name==='income'?ui.nav:name==='hospital'?'village':name;renderPanel(true);navState();}
 function close(){ui.panel=null;$('pbody').innerHTML='';panelSig='';ui.nav='cafe';renderPanel();navState();}
 function navState(){document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('on',b.dataset.nav===ui.nav));}
