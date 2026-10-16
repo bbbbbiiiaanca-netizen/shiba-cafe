@@ -240,7 +240,7 @@ P.shopLegacy=()=>{let h=`<button data-act="unlockPopup">${L('space.unlock')}</bu
     .map(([k,p])=>`<div class="li">${ico('dia')}<div class="grow">${L('dia.'+k)}</div><button disabled>${priceText(p,'dia')}</button></div>`).join('')}</div>`;
  return {title:L('shop.title'),html:h};};
 P.shop=()=>({title:L('shop.title'),html:Q1715.shopHtml(CFG,ui.shopTab,id=>S.furniturePrice(s,id))+(ui.shopTab==='cash'?P.shopLegacy().html:ui.shopTab==='theme'?unlocks():'')});
-P.quests=()=>({title:L('hud.mission'),html:Q1715.questsHtml(CFG.quests,ui.questTab,S.questTasks(s,clock.now()),s.dia)});
+P.quests=()=>({title:L('hud.mission'),html:Q1715.questsHtml(CFG.quests,ui.questTab,S.questTasks(s,clock.now()),s.dia,S.questClock(clock.now())?.leftSec)});
 P.settings=()=>{const h=`<div class="card"><h3>${L('settings.language')}</h3><div class="btns">${LANGS.map(c=>`<button class="${s.settings.language===c?'':'sec'}" data-act="setLang" data-lang="${c}">${makeT(()=>c)('lang.name.'+c)}</button>`).join('')}</div></div>
  <div class="card"><div class="btns"><button class="sec" data-act="toggle" data-k="sound">${L('set.sound')}: ${s.settings.sound?'ON':'OFF'}</button><button class="sec" data-act="toggle" data-k="music">${L('set.music')}: ${s.settings.music?'ON':'OFF'}</button></div></div>
  ${RELEASE?'':`<div class="card"><button data-act="income">${L('set.income')}</button></div>`}

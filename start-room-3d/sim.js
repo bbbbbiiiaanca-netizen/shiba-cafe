@@ -532,10 +532,16 @@ export function claimMail(s,day,now=Date.now()){const m=mailbox(s,now).find(x=>x
 export function cooldownTarget(s,now){if(s.menuDev?.until>now)return {kind:'menu'};for(const sh of s.shibas)if(sh.status==='hospital'&&sh.hospitalUntil>now)return {sh,kind:'hospital'};for(const sh of s.shibas)if(sh.cd.walk>now)return {sh,kind:'walk'};return null;}
 export function useItem(s,kind,now=Date.now()){if(!(s.items[kind]>0))return false;if(kind==='cooldownTicket'){const t=cooldownTarget(s,now);if(!t)return false;if(t.kind==='menu'){s.menuDev.until=now;settleMenuDev(s,now);}else if(t.kind==='hospital'){t.sh.hospitalUntil=now;releaseHospital(s,now);}else t.sh.cd.walk=now;}else {const c=kind==='incomeBoost4h'?CFG.itemIncome:kind==='expBoost4h'?CFG.stub.expBoost:null;if(!c||!Number.isFinite(c.boostHours??c.hours)||!Number.isFinite(c.boostMul??c.mul))return false;const key=kind==='incomeBoost4h'?'boostUntil':'expBoostUntil';s.cafe[key]=Math.min(Math.max(s.cafe[key]||now,now)+(c.boostHours??c.hours)*H,now+(c.boostMaxHours??c.maxHours)*H);}s.items[kind]--;return true;}
 
-// 일일 퀘스트 (임시 config 2026-10-15): progress per KST day, reset at quests.daily.resetKST (HH:MM).
-const questDayKey=now=>{const r=CFG.quests.daily.resetKST;if(r==null)return null;const [h,m]=r.split(':').map(Number);return Math.floor((now+9*3600e3-(h*60+m)*60e3)/86400e3);};
-export function questState(s,now=Date.now()){const d=questDayKey(now);if(!s.quests||s.quests.day!==d)s.quests={day:d,prog:{},done:{}};return s.quests;}
-export function questBump(s,id,now=Date.now()){const t=CFG.quests.daily.tasks?.find(t=>t.id===id);if(!t)return;const q=questState(s,now);q.prog[id]=Math.min(t.goal,(q.prog[id]||0)+1);}
-export function questTasks(s,now=Date.now()){const q=s.quests?.day===questDayKey(now)?s.quests:{prog:{},done:{}};return CFG.quests.daily.tasks?.map(t=>({...t,progress:q.done[t.id]?t.goal:Math.min(t.goal,q.prog[t.id]||0)}))??null;}
-export function questInstantCheck(s,id,now=Date.now()){const t=questTasks(s,now)?.find(t=>t.id===id),c=CFG.quests.instantDia;return !t||t.progress>=t.goal||!Number.isFinite(c)||(s.dia??0)<c;}
-export function questInstant(s,id,now=Date.now()){if(questInstantCheck(s,id,now))return false;if(!spendDia(s,CFG.quests.instantDia))return false;questState(s,now).done[id]=true;return true;}
+// 일일 퀘스트 (임시 config 2026-10-15; 2026-10-16 기기 현지 시간 기준): progress per LOCAL day, reset at quests.daily.resetLocal (HH:MM, device time).
+// tz = minutes like Date#getTimezoneOffset (KST → -540); a number or t=>offset; default = the device timezone (DST-aware).
+export const questResetHM=(d=CFG.quests.daily)=>d?.resetLocal??d?.resetKST??null; // legacy resetKST read as local time
+const tzAt=(tz,t)=>typeof tz==='function'?tz(t):Number.isFinite(tz)?tz:new Date(t).getTimezoneOffset();
+export function questClock(now=Date.now(),reset=questResetHM(),tz){if(reset==null)return null;const [h,m]=reset.split(':').map(Number),r=(h*60+m)*60e3;
+ const day=Math.floor((now-tzAt(tz,now)*60e3-r)/86400e3),base=(day+1)*86400e3+r;let next=base+tzAt(tz,now)*60e3;next=base+tzAt(tz,next)*60e3;
+ return {day,next,leftSec:Math.max(0,(next-now)/1e3)};}
+const questDayKey=(now,tz)=>questClock(now,questResetHM(),tz)?.day??null;
+export function questState(s,now=Date.now(),tz){const d=questDayKey(now,tz);if(!s.quests||s.quests.day!==d)s.quests={day:d,prog:{},done:{}};return s.quests;}
+export function questBump(s,id,now=Date.now(),tz){const t=CFG.quests.daily.tasks?.find(t=>t.id===id);if(!t)return;const q=questState(s,now,tz);q.prog[id]=Math.min(t.goal,(q.prog[id]||0)+1);}
+export function questTasks(s,now=Date.now(),tz){const q=s.quests?.day===questDayKey(now,tz)?s.quests:{prog:{},done:{}};return CFG.quests.daily.tasks?.map(t=>({...t,progress:q.done[t.id]?t.goal:Math.min(t.goal,q.prog[t.id]||0)}))??null;}
+export function questInstantCheck(s,id,now=Date.now(),tz){const t=questTasks(s,now,tz)?.find(t=>t.id===id),c=CFG.quests.instantDia;return !t||t.progress>=t.goal||!Number.isFinite(c)||(s.dia??0)<c;}
+export function questInstant(s,id,now=Date.now(),tz){if(questInstantCheck(s,id,now,tz))return false;if(!spendDia(s,CFG.quests.instantDia))return false;questState(s,now,tz).done[id]=true;return true;}
