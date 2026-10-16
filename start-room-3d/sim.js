@@ -480,6 +480,9 @@ export function behaviourReady(B){const W=B?.weights,ws=W?Object.values(W):[];if
 // Only flooring with approved tile art can be selected; no generated fallback.
 export function selectFlooring(s,id){if(!Object.hasOwn(FLOOR_ART,id)||!s.space.themes.includes(id))return false;s.space.flooring=id;return true;}
 
+// Applied room theme: only owned themes with approved room art; otherwise unchanged.
+export function selectTheme(s,id){if(!s.space.themes.includes(id)||!CFG.themes.find(t=>t.id===id)?.art)return false;s.space.theme=id;return true;}
+
 // §17-9 state is lazy so older v3 saves retain compatibility; daily limits use the existing KST ledger day.
 export const heartItems=()=>[...CFG.heartUse.items].sort((a,b)=>(a.level??Infinity)-(b.level??Infinity));
 export function heartState(s){return s.heartUse??={effects:[],days:{},unlocks:[],seenLevel:s.cafe.level};}

@@ -3,7 +3,7 @@ import {t} from './i18n.js';
 import {CFG} from './config.js';
 import {preservesEntrance} from './navigation.js';
 import {canWalk,walkFrame} from './walk-frames.js';
-import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges,WALL_EXT} from './map-data.js';
+import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges,WALL_EXT,roomFile} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
@@ -68,8 +68,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
     const lo=k=>Math.floor(Math.min(...corners.map(c=>c[k])))-1,hi=k=>Math.ceil(Math.max(...corners.map(c=>c[k])))+1;
     for(let i=lo(0);i<=hi(0);i++)for(let j=lo(1);j<=hi(1);j++){if(i>=0&&j>=0&&i<z.cols&&j<z.rows)continue;const p=cellToScreen(i,j,view,z);ctx.drawImage(grass,p.x-64*scale,p.y-32*scale,128*scale,64*scale);}
    }}
-   const roomFile=z.floor===1&&state.space.unlockedRows>0?'assets/drive/tiles/room-merged-'+(z.cols>MAP.zones[0].cols?'ij':'j')+'.png':z.image;
-   const room=roomFile?load(roomFile):null;if(room?.complete&&room.naturalWidth)ctx.drawImage(room,view.x,view.y,room.naturalWidth*scale,room.naturalHeight*scale);
+   const file=roomFile(z,state.space.unlockedRows),room=file?load(file):null;if(room?.complete&&room.naturalWidth)ctx.drawImage(room,view.x,view.y,room.naturalWidth*scale,room.naturalHeight*scale);
    if(z.floor===1){
     // Approved floor bitmaps replace the grass in every newly owned cell.
     const floor=load(FLOOR_ART[z.flooring]);

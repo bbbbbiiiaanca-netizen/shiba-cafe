@@ -138,9 +138,9 @@ export const CFG={
  rowCost:170000,rowMultiplier:1.6,rowRoundTiers:[[100000,1000],[1000000,10000],[Infinity,100000]],cameraEaseMs:400,markerMinScale:0.6,markerBounce:{periodSec:1.2,minScale:1.0,maxScale:1.1}}, // 똑또기 starting value 2026-10-15: exact ×1.6 chain; shown/charged price rounded: <100,000→1,000, 100,000–<1,000,000→10,000, ≥1,000,000→100,000; cameraEaseMs 400 and markerMinScale 0.6 (+ marker min draw scale) = starting values (approved 08:27); markerBounce 1.2s 1.0–1.1 = 똑또기 starting value 2026-10-15, pending user confirm
  themes:[
   {id:'tatami',name:'다다미',locked:false,unlockCost:null,art:'assets/drive/room-tatami-noline.png'}, // §1.3 default
-  // unlockCost (멍코인) / unlockDia / unlockLevel: starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm. art UNSET (interior §6). Theme UI offers either currency while retaining level gates.
-  {id:'fuji',name:'후지산 벽화 카페',locked:true,unlockCost:2400000,unlockDia:1500,unlockLevel:20,art:null}, // starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: Lv20, 2,400,000멍 or 1,500다이아
-  {id:'bamboo',name:'대나무 회랑',locked:true,unlockCost:5400000,unlockDia:3000,unlockLevel:35,art:null} // starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: Lv35, 5,400,000멍 or 3,000다이아
+  // unlockCost (멍코인) / unlockDia / unlockLevel: starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm. art: 똑또기 승인 방 그림 (861×615, 다다미 방과 같은 위치·크기). Theme UI offers either currency while retaining level gates.
+  {id:'fuji',name:'후지산 벽화 카페',locked:true,unlockCost:2400000,unlockDia:1500,unlockLevel:20,art:'assets/drive/themes/bg-theme-fuji.png'}, // starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: Lv20, 2,400,000멍 or 1,500다이아
+  {id:'bamboo',name:'대나무 회랑',locked:true,unlockCost:5400000,unlockDia:3000,unlockLevel:35,art:'assets/drive/themes/bg-theme-bamboo.png'} // starting value 2026-10-15 (밸런스_2년.md §3), pending user confirm: Lv35, 5,400,000멍 or 3,000다이아
  ],
  bagUi:{ // 가방 아이콘 UI. 아이콘 경로만 바꾸면 교체됨. 그림이 시트(2026-10-16) 반영
   tabs:{furniture:'assets/drive/ui/bag/tab_furniture.png',items:'assets/drive/ui/bag/tab_item.png',acc:'assets/drive/ui/bag/tab_accessory.png'},

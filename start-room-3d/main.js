@@ -239,7 +239,7 @@ P.shopLegacy=()=>{let h=`<button data-act="unlockPopup">${L('space.unlock')}</bu
    ${[['cooldown1',CFG.cooldownTicketDia.one],['cooldown5',CFG.cooldownTicketDia.five],['potionBig',CFG.potion.bigDia],['potionSmall',CFG.potion.smallDia],['boost',CFG.itemIncome.priceDia],['expBoost',CFG.stub.expBoost.priceDia],['slot',CFG.cafe.paidSlotUnlockDia]]
     .map(([k,p])=>`<div class="li">${ico('dia')}<div class="grow">${L('dia.'+k)}</div><button disabled>${priceText(p,'dia')}</button></div>`).join('')}</div>`;
  return {title:L('shop.title'),html:h};};
-P.shop=()=>({title:L('shop.title'),html:Q1715.shopHtml(CFG,ui.shopTab,id=>S.furniturePrice(s,id))+(ui.shopTab==='cash'?P.shopLegacy().html:ui.shopTab==='theme'?unlocks():'')});
+P.shop=()=>({title:L('shop.title'),html:Q1715.shopHtml(CFG,ui.shopTab,id=>S.furniturePrice(s,id),s.space)+(ui.shopTab==='cash'?P.shopLegacy().html:ui.shopTab==='theme'?unlocks():'')});
 P.quests=()=>({title:L('hud.mission'),html:Q1715.questsHtml(CFG.quests,ui.questTab,S.questTasks(s,clock.now()),s.dia)});
 P.settings=()=>{const h=`<div class="card"><h3>${L('settings.language')}</h3><div class="btns">${LANGS.map(c=>`<button class="${s.settings.language===c?'':'sec'}" data-act="setLang" data-lang="${c}">${makeT(()=>c)('lang.name.'+c)}</button>`).join('')}</div></div>
  <div class="card"><div class="btns"><button class="sec" data-act="toggle" data-k="sound">${L('set.sound')}: ${s.settings.sound?'ON':'OFF'}</button><button class="sec" data-act="toggle" data-k="music">${L('set.music')}: ${s.settings.music?'ON':'OFF'}</button></div></div>
@@ -353,7 +353,7 @@ const act={
  questTab:d=>{ui.questTab=d.item;},questInstant:d=>{if(!S.questInstant(s,d.id,clock.now()))toast(L('toast.diaShort'));},questGo:d=>{if(TABS.some(t=>t.id===d.item)){close();mainTab=d.item;menuSig='';}},
  donguOffer:()=>ui.modals.unshift({kind:'dialogue',variant:'quest',actor:'dongu',speech:L('dlg.dongu.speech'),text:L('quest.tab.dongu'),tasks:Q1715.tasksFor(CFG.quests,'dongu',temp&&ui.questFixture),fixture:temp&&ui.questFixture}),
  guestRequest:d=>{const c=w.custs.find(c=>String(c.id)===d.id);if(!c?.request)return;const q=c.request,sh=S.byId(s,q.shibaId);ui.modals.unshift({kind:'dialogue',variant:c.rude?'rude':'normal',actor:c.kind==='girl'?'girl':'man',speech:L('dlg.guest.speech'),text:q.type==='meetShiba'?L('dlg.meet',{name:sh?nameOf(sh):L('shiba.generic')}):L('dlg.trick',{trick:L('trick.'+q.trick)})});},
- shopTab:d=>{ui.shopTab=d.item;menuSig='';},shopSpecial:()=>{ui.shopTab='special';menuSig='';},shopTheme:d=>{ui.shopTab='theme';ui.selectedTheme=d.item;menuSig='';},
+ shopTab:d=>{ui.shopTab=d.item;menuSig='';},shopSpecial:()=>{ui.shopTab='special';menuSig='';},shopTheme:d=>{ui.shopTab='theme';ui.selectedTheme=d.item;if(S.selectTheme(s,d.item))persist();menuSig='';},
  furnitureStorage:()=>{close();mainTab='bag';ui.bagTab='furniture';menuSig='';requestAnimationFrame(()=>document.querySelector('.furniture-section')?.scrollIntoView({block:'start'}));},coupon:()=>toast(L('toast.coupon')),
  furnitureCategory:d=>{ui.furnitureCategory=d.item;menuSig='';},
  friendsOpen:()=>{ui.modals=[];open('friends');},friendAdd:()=>toast(L('app.stub')),

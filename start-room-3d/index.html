@@ -364,6 +364,7 @@ button,button:disabled,button.warn,button[data-act=levelUp]:disabled,.lp-close,.
 .lp-card.locked>*,.cook2-card.locked>:not(.cook2-lock),.cook-row.locked>span,.theme-logo.locked>small,.theme-logo.locked .theme-logo-art>img:not(.theme-lock),.run-locked>span{filter:grayscale(1);opacity:.5}
 .lp-card.locked::after{content:"";position:absolute;top:5px;right:6px;width:14px;height:14px;background:var(--lock) center/contain no-repeat;pointer-events:none}
 .run-locked img,.cook2-lock img,.cook2-card .cook2-lock img,.theme-logo .theme-lock{width:14px;height:14px;object-fit:contain;filter:none;opacity:1}
+.theme-logo.locked .theme-logo-art{position:relative}.theme-logo-art img+.theme-lock{position:absolute;top:5px;right:6px} /* lock on top of theme art, same spot as .lp-card */
 /* new-item marker: plain 8px red dot, no text */
 .main-tabs .tab-dot,.scene-entries i,.new-badge{width:8px;height:8px;border:0;border-radius:50%;background:#e2483d;padding:0}
 .q17-product{position:relative}.new-badge{position:absolute;top:8px;right:8px;display:block}
