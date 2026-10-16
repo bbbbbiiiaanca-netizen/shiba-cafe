@@ -52,4 +52,8 @@ delete state.placement;save(store,state,0);assert.deepEqual(load(store,0).state.
 console.log('furniture edit: directions, bounds, collisions, rotation, placement save and migration passed');
 
 assert.deepEqual(restorePlacement({v:1,slots:defaultPlacement().slots.map(s=>s.id==='stairs'?{...s,origin:null}:s)}),defaultPlacement());
-{const {spriteMirrored,SPRITES}=await import('../map-data.js');const b=SPRITES.counter.back;assert.equal(b.mirror,true);assert.deepEqual([0,1,2,3].map(d=>spriteMirrored('counter',d,d>=2?b:SPRITES.counter)),[false,true,true,false]);assert.deepEqual([0,1,2,3].map(d=>spriteMirrored('stairs',d,d>=2?SPRITES.stairs.back:SPRITES.stairs)),[false,true,false,true]);assert.equal(spriteMirrored('wall',1,SPRITES.wall),false);}
+{const {spriteMirrored,SPRITES}=await import('../map-data.js');const b=SPRITES.counter.back;assert.equal(b.mirror,true);assert.deepEqual([0,1,2,3].map(d=>spriteMirrored('counter',d,d>=2?b:SPRITES.counter)),[false,true,true,false]);assert.deepEqual([0,1,2,3].map(d=>spriteMirrored('stairs',d,d>=2?SPRITES.stairs.back:SPRITES.stairs)),[false,true,false,true]);assert.equal(spriteMirrored('wall',1,SPRITES.wall),false);
+ // 칸막이 벽: 뒷모습 없이 4방향, 2·3은 0·1 그림(원본·좌우반전)을 맞은편 모서리에 세운다
+ const {spriteFor,wallEdge}=await import('../map-data.js');assert.equal(SPRITES.wall.back,null);assert.deepEqual(availableDirs('wall'),[0,1,2,3]);assert.deepEqual([0,1,2,3].map(d=>rotateDir('wall',d)),[1,2,3,0]);
+ assert.deepEqual([0,1,2,3].map(d=>spriteFor('wall',d)),[SPRITES.wall,SPRITES.wall.flip,SPRITES.wall,SPRITES.wall.flip]);assert.ok([0,1,2,3].every(d=>!spriteMirrored('wall',d,spriteFor('wall',d))));
+ for(const d of [0,1])assert.deepEqual(wallEdge(d+2),wallEdge(d).map(v=>-v));assert.equal(spriteFor('counter',2),SPRITES.counter.back);assert.equal(spriteFor('counter',1),SPRITES.counter);}

@@ -19,6 +19,9 @@ const saved={v:1,slots:[...base,w]};assert.deepEqual(restorePlacement(saved),sav
 const rotated={...w,dir:rotateDir('wall',w.dir)};
 assert.equal(preservesEntrance(zone,saved.slots,[...base,rotated]),true);
 assert.deepEqual(footprintCells(rotated),footprintCells(w));
+// 4방향 돌리기(뒷모습 없음): 네 방향 모두 같은 1칸, 놓기·저장·입구 판정 그대로
+{let d=0;for(let n=0;n<4;n++){const r={...w,dir:d};assert.deepEqual(footprintCells(r),[[2,2]]);assert.equal(validPlacement(r,base,zone),true);assert.equal(preservesEntrance(zone,base,[...base,r]),true);assert.deepEqual(restorePlacement({v:1,slots:[...base,r]}).slots.at(-1).dir,d);assert.equal(validPlacement({...r,origin:zone.entrance},base,zone),false);d=rotateDir('wall',d);}assert.equal(d,0);
+ for(const dir of [2,3])assert.equal(preservesEntrance(zone,base,[...base,...barrier.map(b=>({...b,dir}))]),false);}
 // Rotation of a two-cell counter can seal the entrance even though its footprint is in bounds.
 const corridor={...zone,cols:3,rows:3,entrance:[0,2]};
 const before=[{id:'counter',type:'counter',origin:[1,0],dir:1}];

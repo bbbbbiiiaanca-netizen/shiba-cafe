@@ -3,7 +3,7 @@ import {t} from './i18n.js';
 import {CFG} from './config.js';
 import {preservesEntrance} from './navigation.js';
 import {canWalk,walkFrame} from './walk-frames.js';
-import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,spriteMirrored,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges,WALL_EXT} from './map-data.js';
+import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,spriteMirrored,spriteFor,wallEdge,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges,WALL_EXT} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
@@ -111,12 +111,12 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
      if(im.complete&&im.naturalWidth){const k=scale*(CFG.characters.shibaScale||1),A=CFG.characters.shibaAnchor||CHAR_SPRITES.shiba.byBreed?.[breed]?.anchor||[im.naturalWidth/2,im.naturalHeight];ctx.drawImage(im,p.x-A[0]*k,p.y-A[1]*k,im.naturalWidth*k,im.naturalHeight*k);}return;}}
     if(s.character){let meta=CHAR_SPRITES[s.character.role==='manager'?'manager':s.character.kind?'guest':'shiba'];if(!s.character.kind&&s.character.role!=='manager'){const b=state.shibas?.find(o=>o.id===s.character.id)?.breed;meta=meta.byBreed?.[b]||meta;}if(meta.file&&meta.anchor)stamp(meta.file,cellToScreen(...s.origin,view,z),meta.anchor);return;}
     const base=SPRITES[s.type];if(!base)return;
-    if(!base.file){if(edit){const p=cellToScreen(...s.origin,view,z);hits.push({id:s.id,x:p.x-z.cell.w*scale/2,y:p.y-z.cell.h*scale/2,w:z.cell.w*scale,h:z.cell.h*scale,footprint:true,view,zone:z});}return;}const sprite=s.type==='wall'&&s.dir%2?base.flip:s.dir>=2?base.back:base;if(!sprite)return;
+    if(!base.file){if(edit){const p=cellToScreen(...s.origin,view,z);hits.push({id:s.id,x:p.x-z.cell.w*scale/2,y:p.y-z.cell.h*scale/2,w:z.cell.w*scale,h:z.cell.h*scale,footprint:true,view,zone:z});}return;}const sprite=spriteFor(s.type,s.dir);if(!sprite)return;
     const im=load(sprite.file),p=cellToScreen(...footprintCentre(s),view,z),spriteScale=scale*sprite.scale;
     if(drag?.item===s.id)dragSprite={s,sprite,view,z};
     if(im.complete&&im.naturalWidth){
-     // starting value 2026-10-15, pending user confirm: contact midpoint on the matching rear cell edge.
-     if(s.type==='wall'){p.x+=(s.dir%2?-1:1)*z.cell.w*scale/4;p.y-=z.cell.h*scale/4;}
+     // starting value 2026-10-15, pending user confirm: contact midpoint on the matching cell edge (dir 2·3 = opposite edge).
+     if(s.type==='wall'){const [ex,ey]=wallEdge(s.dir);p.x+=ex*z.cell.w*scale/4;p.y+=ey*z.cell.h*scale/4;}
      const mirrored=spriteMirrored(s.type,s.dir,sprite),ax=mirrored?im.naturalWidth-sprite.anchor[0]:sprite.anchor[0];
      const x=p.x-ax*spriteScale,y=p.y-sprite.anchor[1]*spriteScale,w=im.naturalWidth*spriteScale,h=im.naturalHeight*spriteScale;
      ctx.save();if(mirrored){ctx.translate(x+w,y);ctx.scale(-1,1);ctx.drawImage(im,0,0,w,h);}else ctx.drawImage(im,x,y,w,h);ctx.restore();
