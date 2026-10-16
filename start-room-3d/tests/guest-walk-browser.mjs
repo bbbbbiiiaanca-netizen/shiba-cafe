@@ -14,7 +14,7 @@ export async function guestWalkBrowser({ev,check,sleep}){
   for(const k of g.S.NPC_NORMAL){const c=gwSpawn(k),res=[],dirs=new Set(),start=c.cell.join();
    for(let i=0;i<400&&c.phase!=='seated';i++){g.S.tick(g.state,g.world,.05,g.clock.now());if(c.phase==='seated')break;
     const d=gwDrawNow(),want='assets/drive/chars/guest/'+k+'/guest-'+k+'-walk-'+D[c.facing||0]+'-';dirs.add(D[c.facing||0]);res.push(d.length===1&&d[0].includes(want)&&!d[0].includes('sit'));}
-   const seat=gwDrawNow();if(!(res.length>5&&res.every(Boolean)&&c.phase==='seated'&&c.cell.join()!==start&&dirs.size>=2&&seat.length===1&&seat[0]===(k==='commuter'?new URL('assets/drive/chars/guest/seiza/guest-seiza-commuter.png',location.href).href:'sit:assets/drive/guest-sitting-'+k+'-final.png')))bad.push(k);}
+   const seat=gwDrawNow();if(!(res.length>5&&res.every(Boolean)&&c.phase==='seated'&&c.cell.join()!==start&&dirs.size>=2&&seat.length===1&&seat[0]===new URL('assets/drive/chars/guest/seiza/guest-seiza-'+k+'.png',location.href).href))bad.push(k);}
   return (window.gwBad=bad).length===0;})()`);
  await check('걸어 들어와 앉기: 10종 모두 걷는 동안 프레임 1→4 가 돌고(8fps), 4 방향 16장이 실제로 로드되어 그려지며, 멈추면 1번 프레임',`(async()=>{const g=__game,bad=[];
   for(const k of g.S.NPC_NORMAL){const c=gwSpawn(k),seen={};c.route=[[1,5],[2,5]];
@@ -27,9 +27,9 @@ export async function guestWalkBrowser({ev,check,sleep}){
    if(Math.abs(footX-ref[0])>.01||Math.abs(footY-ref[1])>.01||Math.abs(w/ref[2]-G.scale[k])>1e-6||Math.abs(h/ref[3]-G.scale[k])>1e-6)bad.push(k+':foot');}
   return (window.gwBad=bad).length===0;})()`);
  await check('앉은 손님: girl·boykid 높이는 commuter의 0.85배, 좌석 앵커는 그대로',`(()=>{const g=__game,bad=[];let ref=null;
-  for(const k of g.S.NPC_NORMAL.filter(k=>k!=='commuter')){const c=gwSpawn(k);c.phase='seated';const rows=gwDrawRects();if(rows.length!==1){bad.push(k+':missing');continue;}
-   const [x,y,w,h]=rows[0][1],scale=['girl','boykid'].includes(k)?0.85:1;ref??=[x+w/2,y+h,h];
-   if(Math.abs(x+w/2-ref[0])>.01||Math.abs(y+h-ref[1])>.01||Math.abs(h/ref[2]-scale)>1e-6)bad.push(k);}
+  for(const k of ['mom',...g.S.NPC_NORMAL.filter(k=>k!=='commuter'&&k!=='mom')]){const c=gwSpawn(k);c.phase='seated';const rows=gwDrawRects();if(rows.length!==1){bad.push(k+':missing');continue;}
+   const [x,y,w,h]=rows[0][1],scale=['girl','boykid'].includes(k)?0.85:1,A=g.CFG.characters.guest.seizaAnchor,ax=x+w*A[0]/128,ay=y+h*A[1]/176;ref??=[ax,ay,h];
+   if(Math.abs(ax-ref[0])>.01||Math.abs(ay-ref[1])>.01||Math.abs(h/ref[2]-scale)>1e-6)bad.push(k);}
   return (window.gwBad=bad).length===0;})()`);
  await check('정좌: commuter 투명 원본과 좌석 방향 반전, 아이 배율 및 엉덩이 앵커',`(async()=>{const g=__game,G=(await import('./config.js')).CFG.characters.guest,c=gwSpawn('commuter'),seat=g.state.placement.slots.find(s=>s.id===c.seatFurniture),old=seat.dir,bad=[];c.phase='seated';
  try{for(const dir of [0,1,2,3]){seat.dir=dir;c.facing=(dir+1)%4;const rows=gwDrawRects(),idx=gwDraw.findIndex(s=>s.includes('guest-seiza-commuter'));if(rows.length!==1||idx<0||Math.sign(gwMatrix[idx])!==((dir%2)?-1:1))bad.push('mirror'+dir);
