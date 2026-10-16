@@ -205,7 +205,15 @@ export const NEW_FURNITURE=[
 {"id": "bonsai-snow", "name": "눈 분재", "en": "Snow Bonsai", "category": "garden", "theme": "snow", "source": "furn-snow", "filename": "furn-bonsai-snow-v4.png", "backname": "furn-snow-bonsai-v4-back.png", "price": null},
 {"id": "bamboo-fence-snow", "name": "눈 대나무 울타리", "en": "Snow Bamboo Fence", "category": "garden", "theme": "snow", "source": "furn-snow", "filename": "furn-bamboo-fence-snow-v4.png", "backname": "furn-snow-bamboo-fence-v4-back.png", "price": null},
 {"id": "noren-snow", "name": "눈 노렌", "en": "Snow Noren", "category": "sign", "theme": "snow", "source": "furn-snow", "filename": "furn-noren-snow-v4.png", "backname": "furn-snow-noren-v4-back.png", "price": null},
-{"id": "sign-snow", "name": "눈 간판", "en": "Snow Sign", "category": "sign", "theme": "snow", "source": "furn-snow", "filename": "furn-entrance-sign-snow-v4.png", "backname": "furn-snow-entrance-sign-v4-back.png", "price": null}
+{"id": "sign-snow", "name": "눈 간판", "en": "Snow Sign", "category": "sign", "theme": "snow", "source": "furn-snow", "filename": "furn-entrance-sign-snow-v4.png", "backname": "furn-snow-entrance-sign-v4-back.png", "price": null},
+{"id": "shelf-water", "name": "물방울 선반", "en": "Water Garden Shelf", "category": "furniture", "theme": "water", "source": "furn-water", "filename": "furn-shelf-water-v4.png", "backname": null, "price": null},
+{"id": "low-table-water", "name": "물방울 좌식 테이블", "en": "Water Garden Low Table", "category": "furniture", "theme": "water", "source": "furn-water", "filename": "furn-low-table-cushion-water-v4.png", "backname": null, "price": null},
+{"id": "stone-lantern-water", "name": "물방울 석등", "en": "Water Garden Stone Lantern", "category": "light", "theme": "water", "source": "furn-water", "filename": "furn-stone-lantern-water-v4.png", "backname": null, "price": null},
+{"id": "chochin-water", "name": "물방울 제등", "en": "Water Garden Paper Lantern", "category": "light", "theme": "water", "source": "furn-water", "filename": "furn-chochin-water-v4.png", "backname": null, "price": null},
+{"id": "bonsai-water", "name": "물방울 분재", "en": "Water Garden Bonsai", "category": "garden", "theme": "water", "source": "furn-water", "filename": "furn-bonsai-water-v4.png", "backname": null, "price": null},
+{"id": "bamboo-fence-water", "name": "물방울 대나무 울타리", "en": "Water Garden Bamboo Fence", "category": "garden", "theme": "water", "source": "furn-water", "filename": "furn-bamboo-fence-water-v4.png", "backname": null, "price": null},
+{"id": "noren-water", "name": "물방울 노렌", "en": "Water Garden Noren", "category": "sign", "theme": "water", "source": "furn-water", "filename": "furn-noren-water-v4.png", "backname": null, "price": null},
+{"id": "sign-water", "name": "물방울 간판", "en": "Water Garden Sign", "category": "sign", "theme": "water", "source": "furn-water", "filename": "furn-entrance-sign-water-v4.png", "backname": null, "price": null}
 ];
 export const FURN_CATEGORIES=["furniture","light","garden","sign","floorwall"];
 // Snow floor art remains pending the wooden floor revision. Sakura floor/wall art held back by 똑또기 (2026-10-17).
@@ -287,5 +295,31 @@ export const ROOM_LAYERS=[
     "front": "assets/drive/furniture-v4/room-snow-wall-v4.png",
     "source": "room-snow",
     "filename": "room-snow-wall-v4.png"
+  },
+  {
+    "id": "floor-water",
+    "name": "물방울 바닥",
+    "en": "Water Garden Floor",
+    "theme": "water",
+    "layer": "floor",
+    "category": "floorwall",
+    "price": null,
+    "art": "assets/drive/furniture-v4/room-water-floor-v4.png",
+    "front": "assets/drive/furniture-v4/room-water-floor-v4.png",
+    "source": "room-water",
+    "filename": "room-water-floor-v4.png"
+  },
+  {
+    "id": "wall-water",
+    "name": "물방울 벽",
+    "en": "Water Garden Wall",
+    "theme": "water",
+    "layer": "wall",
+    "category": "floorwall",
+    "price": null,
+    "art": "assets/drive/furniture-v4/room-water-wall-v4.png",
+    "front": "assets/drive/furniture-v4/room-water-wall-v4.png",
+    "source": "room-water",
+    "filename": "room-water-wall-v4.png"
   }
 ];

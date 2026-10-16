@@ -154,6 +154,7 @@ decor:{footprint:{default:{w:1,h:1},overrides:{}},
  roomLayers:ROOM_LAYERS,
  momijiSet:{minItems:3,bonusMinItems:null,bonus:null},
  snowSet:{minItems:3,bonusMinItems:null,bonus:null},
+ waterSet:{minItems:3,bonusMinItems:null,bonus:null},
  sakuraSet:{minItems:3,bonusMinItems:null,bonus:null}},
 furniture:{starterExtra:{table:1,cushion:2,counter:1,stairs:1}, // starting value 2026-10-15, pending user confirm: five extra approved-sprite items, unplaced
  // starting value 2026-10-15, pending user confirm: table 40,000; cushion 20,000; extra props 5,000 coins.

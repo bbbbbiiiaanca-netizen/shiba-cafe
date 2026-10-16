@@ -2,7 +2,7 @@ import {CFG} from './config.js';
 import {NEW_FURNITURE} from './furniture-data.js';
 import {t} from './i18n.js';
 const decorIds=new Set(NEW_FURNITURE.map(it=>it.id));
-export const SET_THEMES=['sakura','momiji','snow'];
+export const SET_THEMES=['sakura','momiji','snow','water'];
 export const isDecor=id=>decorIds.has(id);
 export function furnitureSize(id){return CFG.decor.footprint.overrides[id]??CFG.decor.footprint.default;}
 export function decorBonus(slots){

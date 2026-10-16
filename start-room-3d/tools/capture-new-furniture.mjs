@@ -22,7 +22,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await ev(`document.querySelector('[data-act=furnitureCategory][data-item="${category}"]').scrollIntoView({block:'nearest',inline:'nearest'});true`);
   await sleep(150);
   const count=await ev(`document.querySelectorAll('[data-furniture-shop] [data-furn-card]').length`);
-  const expected={all:45,furniture:12,light:9,garden:10,sign:8,floorwall:6}[category];
+  const expected={all:55,furniture:14,light:11,garden:12,sign:10,floorwall:8}[category];
   if(count!==expected)throw Error(category+' count '+count+' expected '+expected);
   if(!await ev(`[...document.querySelectorAll('[data-furniture-shop] [data-furn-card]')].filter(e=>!['tea-table','zabuton','counter','stairs'].includes(e.dataset.furnCard)).every(e=>e.querySelector('button').disabled&&e.querySelector('button').textContent==='미정')`))throw Error('TBD button');
   await shot('shop-'+category+'.png');
@@ -50,5 +50,5 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev(`__game.state.placement.slots=${JSON.stringify(sakura)};__game.refresh();true`);await shot('sakura-set.png');
  if(!await ev(`document.getElementById('isomap').dataset.sakuraZones.trim()==='A'`))throw Error('Set missing with 3');
  if(!await ev(`!!document.querySelector('.sakura-set-label')`))throw Error('Sakura label missing');
- if(errors.length)throw Error(errors.join('\n'));console.log('new furniture browser: 6 categories, ko/en TBD, inventory placement, set thresholds + 35 direction screenshots passed');
+ if(errors.length)throw Error(errors.join('\n'));console.log('new furniture browser: 6 categories, ko/en TBD, inventory placement, set thresholds + 43 direction screenshots passed');
 }finally{chrome.kill('SIGTERM');await sleep(150);rmSync(prof,{recursive:true,force:true});}
