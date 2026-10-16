@@ -9,7 +9,9 @@ const main=readFileSync(new URL('../main.js',import.meta.url),'utf8');
 const cardsOf=h=>[...h.matchAll(/<article class="q17-product" data-furn-card="([^"]+)">([^]*?)<\/article>/g)].map(m=>({id:m[1],body:m[2]}));
 const checkCard=({id,body},p)=>{
  const img=body.indexOf('<img class="furn-img"'),name=body.indexOf('<strong class="furn-name">'),btn=body.indexOf('<button class="furn-buy"');
- assert.ok(img>=0&&img<name&&name<btn,id+': image, name, price in order');
+ const item=CFG.furniture.items.find(it=>it.id===id);
+ if(item?.category==='floorwall'&&!item.art)assert.ok(img===-1&&name>=0&&name<btn,id+': pending art has name and price only');
+ else assert.ok(img>=0&&img<name&&name<btn,id+': image, name, price in order');
  assert.equal(body.slice(btn).indexOf('</button>'),body.slice(btn).length-'</button>'.length,id+': price button is last');
  const label=body.slice(btn).replace(/<button[^>]*>/,'').replace('</button>','');
  assert.match(label,/^<img class="(ci|res-ico" data-res="coin)" src="assets\/drive\/ui\/res-coin\.png"[^>]*>/,id+': coin icon first');

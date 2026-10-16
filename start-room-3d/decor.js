@@ -2,14 +2,18 @@ import {CFG} from './config.js';
 import {NEW_FURNITURE} from './furniture-data.js';
 import {t} from './i18n.js';
 const decorIds=new Set(NEW_FURNITURE.map(it=>it.id));
-const sakuraIds=new Set(NEW_FURNITURE.filter(it=>it.theme==='sakura').map(it=>it.id));
+export const SET_THEMES=['sakura','momiji','snow'];
 export const isDecor=id=>decorIds.has(id);
 export function furnitureSize(id){return CFG.decor.footprint.overrides[id]??CFG.decor.footprint.default;}
 export function decorBonus(slots){
- const placed=slots.filter(it=>isDecor(it.type)),{perItem,cap}=CFG.decor.effect,set=CFG.decor.sakuraSet;
- const zones=new Map();
- for(const it of placed)if(sakuraIds.has(it.type)){const zone=it.zone||'A';zones.set(zone,(zones.get(zone)||0)+1);}
- const setBonus=set.bonus!=null&&set.bonusMinItems!=null&&[...zones.values()].some(n=>n>=set.bonusMinItems)?set.bonus:0;
+ const placed=slots.filter(it=>isDecor(it.type)),{perItem,cap}=CFG.decor.effect;
+ let setBonus=0;
+ for(const theme of SET_THEMES){
+  const set=CFG.decor[theme+'Set'],zones=new Map();
+  const ids=new Set(NEW_FURNITURE.filter(it=>it.theme===theme).map(it=>it.id));
+  for(const it of placed)if(ids.has(it.type)){const zone=it.zone||'A';zones.set(zone,(zones.get(zone)||0)+1);}
+  if(set.bonus!=null&&set.bonusMinItems!=null&&[...zones.values()].some(n=>n>=set.bonusMinItems))setBonus+=set.bonus;
+ }
  return {demand:Math.min(cap.demand,placed.length*perItem.demand+setBonus),stay:Math.min(cap.stay,placed.length*perItem.stay)};
 }
 export function decorEffectText(cfg=CFG){
@@ -17,9 +21,15 @@ export function decorEffectText(cfg=CFG){
  return t('shop.decorEffect',{demand:percent(cfg.decor.effect.perItem.demand),stay:percent(cfg.decor.effect.perItem.stay)});
 }
 // Presentation only. Count placed instances within an explicit room/floor zone.
-export function sakuraSetActive(slots,zone){
- const themes=new Set(CFG.furniture.items.filter(it=>it.theme==='sakura').map(it=>it.id));
- return slots.filter(it=>(it.zone||'A')===zone&&themes.has(it.type)).length>=CFG.decor.sakuraSet.minItems;
+export function themeSetActive(slots,zone,theme){
+ const set=CFG.decor[theme+'Set'];if(!set)return false;
+ const ids=new Set(NEW_FURNITURE.filter(it=>it.theme===theme).map(it=>it.id));
+ return slots.filter(it=>(it.zone||'A')===zone&&ids.has(it.type)).length>=set.minItems;
+}
+export const sakuraSetActive=(slots,zone)=>themeSetActive(slots,zone,'sakura');
+// Reuse the set presentation entry point. No new particle art was supplied.
+export function drawThemeSet(ctx,options,theme){
+ return theme==='sakura'?drawSakuraSet(ctx,options):themeSetActive(options.slots,options.zone.id,theme);
 }
 export function drawSakuraSet(ctx,{slots,zone,view,cellToScreen,time,reducedMotion}){
  if(!sakuraSetActive(slots,zone.id))return false;

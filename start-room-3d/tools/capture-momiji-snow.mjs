@@ -1,0 +1,46 @@
+import {spawn} from 'node:child_process';import {resolve,dirname,join} from 'node:path';import {fileURLToPath} from 'node:url';import {rmSync} from 'node:fs';
+const ROOT=join(dirname(fileURLToPath(import.meta.url)),'..');const prof='/tmp/shiba-furniture-'+process.pid;
+const chrome=spawn('google-chrome',['--headless','--no-sandbox','--disable-dev-shm-usage','--user-data-dir='+prof,'--remote-debugging-pipe','--allow-file-access-from-files','--autoplay-policy=no-user-gesture-required','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'],{stdio:['ignore','ignore','pipe','pipe','pipe']});
+let id=0,buf='';const pend=new Map(),errors=[];for(const p of [chrome.stdio[3],chrome.stdio[4]])p.on('error',()=>{});
+chrome.stdio[4].on('data',d=>{buf+=d;let e;while((e=buf.indexOf('\0'))>=0){const m=JSON.parse(buf.slice(0,e));buf=buf.slice(e+1);
+ if(m.method==='Runtime.exceptionThrown')errors.push(JSON.stringify(m.params.exceptionDetails).slice(0,500));
+ if(m.id&&pend.has(m.id)){const p=pend.get(m.id);pend.delete(m.id);m.error?p.reject(Error(JSON.stringify(m.error))):p.resolve(m.result);}}});
+let chromeStderr='';chrome.stderr.on('data',d=>chromeStderr+=d);
+chrome.on('exit',(code,signal)=>{if(pend.size){const error=Error(`Chrome exited before completing CDP (${signal||code}): ${chromeStderr.trim()}`);for(const p of pend.values())p.reject(error);pend.clear();}});
+const call=(method,params={},sessionId)=>new Promise((res,rej)=>{const n=++id;pend.set(n,{resolve:res,reject:rej});chrome.stdio[3].write(JSON.stringify({id:n,method,params,sessionId})+'\0');});
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));const checks=[];
+try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const {sessionId}=await call('Target.attachToTarget',{targetId,flatten:true});const c=(m,p)=>call(m,p,sessionId);
+ await c('Emulation.setDeviceMetricsOverride',{width:360,height:800,deviceScaleFactor:1,mobile:true});await c('Page.enable');await c('Runtime.enable');
+ const ev=async(x)=>{const r=await c('Runtime.evaluate',{expression:x,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(x.slice(0,80)+' -> '+JSON.stringify(r.exceptionDetails).slice(0,500));return r.result.value;};
+ const go=async(q='')=>{await c('Page.navigate',{url:'file://'+resolve(ROOT,'index.html')+'?still=1&seed=7'+q});await sleep(300);for(let i=0;i<300&&!(await ev('Boolean(window.__ready)'));i++)await sleep(100);};
+ const OUT='/workspace/compare/momiji-snow';const {writeFileSync,mkdirSync}=await import('node:fs');mkdirSync(OUT,{recursive:true});
+ const shot=async n=>{await sleep(600);const {data}=await c('Page.captureScreenshot',{format:'png'});writeFileSync(OUT+'/'+n,Buffer.from(data,'base64'));console.log('shot',n);};
+ const {NEW_FURNITURE}=await import('../furniture-data.js');
+ const setup=async()=>{await go('&fresh=1&temp=1');await ev(`__game.state.started=true;__game.state.tutorialDone=true;__game.state.settings.language='ko';__game.ui.modals=[];__game.applyLang();true`);};
+ await setup();await ev(`document.querySelector('[data-main-tab=shop]').click();__game.ui.furnitureCategory='floorwall';__game.refresh();true`);await shot('shop-floorwall.png');
+ if(!await ev(`document.querySelector('[data-furn-card="floor-snow"] .furn-buy').textContent==='미정'`))throw Error('snow floor TBD missing');
+ await ev(`document.querySelector('[data-act=furnitureCategory][data-item=floorwall]').click();true`);await sleep(300);await ev(`document.querySelector('[data-furn-card="wall-sakura"]').scrollIntoView({block:'center'});true`);await shot('shop-floorwall-tbd.png');
+ for(const id of ['floor-sakura','wall-sakura'])if(!await ev(`document.querySelector('[data-furn-card="${id}"] .furn-buy').textContent==='미정'`))throw Error(id+' TBD missing');
+ for(const theme of ['momiji','snow']){
+  await setup();await ev(`document.querySelector('[data-main-tab=shop]').click();__game.refresh();true`);
+  // Show the eight theme cards without introducing a product filter solely for capture.
+  await ev(`[...document.querySelectorAll('[data-furniture-shop] [data-furn-card]')].forEach(e=>{e.hidden=!e.dataset.furnCard.endsWith('-${theme}')||e.dataset.furnCard.startsWith('floor-')||e.dataset.furnCard.startsWith('wall-');});true`);
+  await shot('shop-'+theme+'.png');
+  await setup();
+  const items=NEW_FURNITURE.filter(it=>it.theme===theme);
+  const slots=items.map((it,i)=>({id:theme+i,type:it.id,dir:i%2,origin:[[0,0],[2,2],[4,0],[0,3],[4,4],[2,4],[4,2],[1,5]][i]}));
+  await ev(`__game.state.placement.slots=${JSON.stringify(slots)};__game.refresh();true`);await shot('cafe-'+theme+'-placed.png');
+  if(!await ev(`document.getElementById('isomap').dataset.${theme}Zones.trim()==='A'`))throw Error(theme+' set missing');
+  await setup();await ev(`__game.state.placement.slots=${JSON.stringify(slots.slice(0,2))};__game.refresh();true`);
+  if(await ev(`!!document.getElementById('isomap').dataset.${theme}Zones.trim()`))throw Error('set with two');
+  await ev(`__game.state.placement.slots=${JSON.stringify(slots.slice(0,3).map((it,i)=>i===2?{...it,zone:'B'}:it))};__game.refresh();true`);
+  if(await ev(`!!document.getElementById('isomap').dataset.${theme}Zones.trim()`))throw Error('split-zone set');
+  await ev(`__game.state.placement.slots=${JSON.stringify(slots.slice(0,3))};__game.refresh();true`);await shot(theme+'-set.png');
+  if(!await ev(`!!document.querySelector('.${theme}-set-label')`))throw Error('set label missing');
+  await setup();
+  await ev(`__game.state.placement.slots=[];__game.state.furnitureInv['wall-${theme}']=1;__game.S.placeFurniture(__game.state,'wall-${theme}',[0,0]);${theme==='momiji'?"__game.state.furnitureInv['floor-momiji']=1;__game.S.placeFurniture(__game.state,'floor-momiji',[0,0]);":''}__game.refresh();true`);
+  if(!await ev(`__game.state.space.roomLayers.wall==='wall-${theme}'`))throw Error('wall selection');
+  await shot(theme==='momiji'?'room-momiji-layer.png':'room-snow-wall.png');
+ }
+ if(errors.length)throw Error(errors.join('\n'));console.log('momiji/snow browser checks passed');
+}finally{chrome.kill('SIGTERM');await sleep(150);rmSync(prof,{recursive:true,force:true});}

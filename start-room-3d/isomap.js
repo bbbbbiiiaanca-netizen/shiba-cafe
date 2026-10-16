@@ -1,4 +1,4 @@
-import {drawSakuraSet} from './decor.js';
+import {drawThemeSet,SET_THEMES} from './decor.js';
 import {loadHd} from './hd-assets.js';
 import {t} from './i18n.js';
 import {CFG} from './config.js';
@@ -40,7 +40,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
  const load=path=>{if(!images.has(path)){const im=loadHd(path,()=>last&&draw(...last));images.set(path,im);}return images.get(path);};
  MAP.zones.forEach(z=>{if(z.image)load(z.image);z.slots.forEach(s=>load(SPRITES[s.type].file));});
  function draw(state,world){
-  last=[state,world];canvas.dataset.sakuraZones="";if(!edit||!selected){delete canvas.dataset.placementValid;if(bar.dataset)delete bar.dataset.valid;}hits=[];gridCells=0;markers=[];dragSprite=null;delete canvas.dataset.dragSprite;const W=canvas.clientWidth,H=canvas.clientHeight,dpr=devicePixelRatio||1;
+  last=[state,world];for(const theme of SET_THEMES)canvas.dataset[theme+'Zones']="";if(!edit||!selected){delete canvas.dataset.placementValid;if(bar.dataset)delete bar.dataset.valid;}hits=[];gridCells=0;markers=[];dragSprite=null;delete canvas.dataset.dragSprite;const W=canvas.clientWidth,H=canvas.clientHeight,dpr=devicePixelRatio||1;
   if(canvas.width!==Math.round(W*dpr)||canvas.height!==Math.round(H*dpr)){canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);}
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#202224';ctx.fillRect(0,0,W,H);
   const zones=zonesForSpace(state.space).filter(z=>z.floor===(state.cafe.floor===2&&state.space.floor2Unlocked?2:1));
@@ -71,6 +71,11 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
    }}
    const roomFile=z.floor===1&&state.space.unlockedRows>0?'assets/drive/tiles/room-merged-'+(z.cols>MAP.zones[0].cols?'ij':'j')+'.png':z.image;
    const room=roomFile?load(roomFile):null;if(room?.complete&&room.naturalWidth)ctx.drawImage(room,view.x,view.y,room.naturalWidth*scale,room.naturalHeight*scale);
+   // Transparent full-room layers share the approved room canvas coordinates.
+   if(z.floor===1)for(const layer of ['floor','wall']){
+    const item=CFG.decor.roomLayers.find(it=>it.layer===layer&&it.id===state.space.roomLayers?.[layer]);
+    if(item?.art){const im=load(item.art);if(im.complete&&im.naturalWidth)ctx.drawImage(im,view.x,view.y,im.naturalWidth*scale,im.naturalHeight*scale);}
+   }
    if(z.floor===1){
     // Approved floor bitmaps replace the grass in every newly owned cell.
     const floor=load(FLOOR_ART[z.flooring]);
@@ -125,9 +130,13 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
      hits.push({id:s.id,x,y,w,h,im,mirrored,view,zone:z});
     }
    });
-   const active=drawSakuraSet(ctx,{slots:placed.map(it=>({...it,zone:it.zone||z.id})),zone:z,view,cellToScreen,time:performance.now(),reducedMotion:globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false});
-   if(active)canvas.dataset.sakuraZones+=z.id+" ";
-   if(active&&!seenSakura.has(z.id)){seenSakura.add(z.id);const label=document.createElement('div');label.className='sakura-set-label';label.textContent=t('furn.sakuraSet');canvas.parentElement.append(label);setTimeout(()=>label.remove(),3500);}
+   for(const theme of SET_THEMES){
+    const active=drawThemeSet(ctx,{slots:placed.map(it=>({...it,zone:it.zone||z.id})),zone:z,view,cellToScreen,time:performance.now(),reducedMotion:globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false},theme);
+    if(active)canvas.dataset[theme+'Zones']+=z.id+" ";
+    const key=theme+':'+z.id;
+    if(active&&!seenSakura.has(key)){seenSakura.add(key);const label=document.createElement('div');label.className='sakura-set-label '+theme+'-set-label';label.textContent=t('furn.'+theme+'Set');canvas.parentElement.append(label);setTimeout(()=>label.remove(),3500);}
+    if(!active)seenSakura.delete(key);
+   }
    if(z.id==='A'){
     for(const c of (world.custs||[]).filter(c=>c.phase==='seated'&&c.request&&!c.fulfilled)){
      const p=cellToScreen(...c.cell,view,z),im=load('assets/drive/request-bubble-empty_512.png');

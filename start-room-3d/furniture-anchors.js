@@ -147,5 +147,23 @@ export const FURN_ANCHORS={
   "furn-sakura-entrance-sign-v4-back.png": [
     90,
     187
-  ]
+  ],
+
+  "furn-shelf-momiji-v4.png": [90, 182],
+  "furn-low-table-cushion-momiji-v5.png": [90, 186],
+  "furn-stone-lantern-momiji-v4.png": [90, 186],
+  "furn-chochin-momiji-v4.png": [79, 190],
+  "furn-bonsai-momiji-v4.png": [94, 191],
+  "furn-bamboo-fence-momiji-v4.png": [90, 181],
+  "furn-noren-momiji-v4.png": [89, 176],
+  "furn-entrance-sign-momiji-v4.png": [94, 186],
+  "furn-shelf-snow-v4.png": [90, 182],
+  "furn-low-table-cushion-snow-v4.png": [90, 186],
+  "furn-stone-lantern-snow-v4.png": [89, 186],
+  "furn-chochin-snow-v4.png": [77, 190],
+  "furn-bonsai-snow-v4.png": [94, 190],
+  "furn-bamboo-fence-snow-v4.png": [90, 180],
+  "furn-noren-snow-v4.png": [89, 176],
+  "furn-entrance-sign-snow-v4.png": [94, 186]
+
 };
