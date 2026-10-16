@@ -117,7 +117,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await go(false);
  await ev('document.querySelector("[data-main-tab=bag]").click();document.querySelector("[data-edit-toggle]").click();true');
  await check('toggle enters edit in furniture panel','__game.iso.edit && __game.iso.gridCells===36 && document.querySelector("[data-main-tab=bag]").classList.contains("active")');
- await check('action bar is inside bottom panel, clear of map',`(()=>{const bar=document.querySelector('.furniture-actions'),map=document.getElementById('isomap').getBoundingClientRect();return document.getElementById('scene').contains(bar)&&!bar.hidden&&!!bar.querySelector('[data-furniture-save]');})()`);
+ await check('edit overlay is mounted in #scene, not the bottom panel',`(()=>{const bar=document.querySelector('.furniture-actions'),map=document.getElementById('isomap').getBoundingClientRect();return document.getElementById('scene').contains(bar)&&!bar.hidden&&!!bar.querySelector('[data-furniture-save]');})()`);
  await ev('document.querySelector("[data-main-tab=manage]").click();__game.iso.setEdit(true);true');
  await check('programmatic edit activation switches to furniture','document.querySelector("[data-main-tab=bag]").classList.contains("active")');
  await ev('new Promise(r=>setTimeout(r,300))');
@@ -126,12 +126,31 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  const mouse=(type,p)=>c('Input.dispatchMouseEvent',{type,x:p.x,y:p.y,button:'left',buttons:type==='mouseReleased'?0:1,clickCount:1});
  let p=await spritePoint('counter');await mouse('mousePressed',p);await mouse('mouseReleased',p);
  await check('sprite selects counter','__game.iso.selected==="counter"&&!document.querySelector(".furniture-actions").hidden');
- await check('selected furniture: 4 round buttons (취소·보관·돌리기·확인) around it, green when placeable',`(()=>{const bar=document.querySelector('.furniture-actions'),vis=[...bar.querySelectorAll('button')].filter(b=>getComputedStyle(b).display!=='none'&&!b.hasAttribute('data-furniture-save'));const names=vis.map(b=>b.textContent).sort().join();const round=vis.every(b=>getComputedStyle(b).borderRadius==='50%');return names==='돌리기,보관,취소,확인'&&round&&bar.dataset.valid==='true'&&getComputedStyle(bar.querySelector('[data-furniture-done]')).backgroundColor==='rgb(47, 184, 85)'})()`);
+ // 17-12: five round buttons ring the selected furniture inside #scene; 저장하기 sits top-right.
+ const ring=`(()=>{const bar=document.querySelector('.furniture-actions'),scene=document.getElementById('scene').getBoundingClientRect(),map=document.getElementById('isomap').getBoundingClientRect(),h=__game.iso.hits.find(h=>h.id===__game.iso.selected&&!h.footprint),vis=[...bar.querySelectorAll('button')].filter(b=>getComputedStyle(b).display!=='none'&&!b.hasAttribute('data-furniture-save')),rs=vis.map(b=>b.getBoundingClientRect()),cx=rs.reduce((a,r)=>a+r.left+r.width/2,0)/rs.length,cy=rs.reduce((a,r)=>a+r.top+r.height/2,0)/rs.length,sx=map.left+parseFloat(bar.style.getPropertyValue('--select-x')),sy=map.top+parseFloat(bar.style.getPropertyValue('--select-y')),save=bar.querySelector('[data-furniture-save]').getBoundingClientRect();
+  return {names:vis.map(b=>b.textContent).sort().join(),round:vis.every(b=>getComputedStyle(b).borderRadius==='50%')&&rs.every(r=>Math.abs(r.width-r.height)<1&&r.width>=44),inside:rs.every(r=>r.left>=scene.left&&r.right<=scene.right&&r.top>=scene.top&&r.bottom<=scene.bottom),apart:rs.every((a,i)=>rs.every((b,k)=>k<=i||Math.hypot(a.left-b.left,a.top-b.top)>=a.width)),centred:Math.abs(cx-sx)<2&&Math.abs(cy-sy-2)<2,onFurniture:!!h&&sx>=map.left+h.x-110&&sx<=map.left+h.x+h.w+110&&sy>=map.top+h.y-110&&sy<=map.top+h.y+h.h+110,sx,sy,saveTopRight:Math.abs(scene.right-save.right-10)<2&&Math.abs(save.top-scene.top-10)<2&&!rs.some(r=>r.right>save.left&&r.left<save.right&&r.bottom>save.top&&r.top<save.bottom)};})()`;
+ await check('selected furniture: 5 round buttons (취소·보관·돌리기·뒤집기·확인) around it, green when placeable',`(()=>{const r=${ring},bar=document.querySelector('.furniture-actions');return r.names==='돌리기,뒤집기,보관,취소,확인'&&r.round&&r.inside&&r.apart&&r.centred&&r.onFurniture&&r.saveTopRight&&bar.dataset.valid==='true'&&getComputedStyle(bar.querySelector('[data-furniture-done]')).backgroundColor==='rgb(47, 184, 85)'})()`);
+ await check('no edit buttons left in the bottom panel','!document.getElementById("mainMenu").querySelector("[data-furniture-cancel],[data-furniture-rotate],[data-furniture-flip],[data-wall-remove]")&&!document.querySelector("[data-wall-remove]")');
+ {await ev('window.pan0=[__game.iso.panX,__game.iso.scroll];__game.iso.panTo(__game.iso.panX+40,__game.iso.scroll);true');
+  await check('ring follows furniture when panning',`(()=>{const r=${ring};return r.centred&&r.onFurniture&&r.inside})()`);
+  await ev('window.z0=__game.iso.zoom;__game.iso.setZoom(window.z0*1.4);true');
+  await check('ring follows furniture when zooming and stays on screen',`(()=>{const r=${ring};return r.centred&&r.onFurniture&&r.inside&&r.names.split(',').length===5})()`);
+  await ev('__game.iso.setZoom(window.z0);__game.iso.panTo(-99999,__game.iso.scroll);true');
+  await check('ring clamps inside the canvas near the edge',`(()=>{const r=${ring};return r.inside&&r.centred&&r.saveTopRight})()`);
+  await c('Emulation.setDeviceMetricsOverride',{width:360,height:640,deviceScaleFactor:1,mobile:true});await sleep(150);await ev('__game.refresh();true');
+  await check('360×640: ring and top-right 저장하기 stay tappable',`(()=>{const r=${ring};return r.inside&&r.centred&&r.onFurniture&&r.saveTopRight&&r.names.split(',').length===5})()`);
+  await ev(`__game.state.settings.language='en';__game.applyLang();__game.refresh();true`);
+  await check('English ring labels',`(()=>{const r=${ring};return r.names==='Cancel,Flip,OK,Rotate,Store'&&document.querySelector('[data-furniture-save]').textContent==='Save'&&document.querySelector('.furniture-actions').getAttribute('aria-label')==='Edit furniture'&&r.inside})()`);
+  await ev(`__game.state.settings.language='ko';__game.applyLang();__game.refresh();true`);
+  await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await sleep(150);
+  await ev('__game.iso.setZoom(window.z0);__game.iso.panTo(...window.pan0);__game.refresh();true');await sleep(100);}
+ await check('Korean labels restored',`document.querySelector('[data-furniture-save]').textContent==='저장하기'&&document.querySelector('[data-furniture-rotate]').textContent==='돌리기'`);
  await ev(`(()=>{const b=__game.iso.actions;b.dataset.valid='false';return true})()`);
  await check('blocked placement shows red buttons',`getComputedStyle(document.querySelector('[data-furniture-done]')).backgroundColor==='rgb(224, 72, 72)'`);
  await ev(`__game.refresh();true`);
  p=await spritePoint('counter');await mouse('mousePressed',p);await mouse('mouseMoved',{x:p.x+p.dx*1.2,y:p.y+p.dy*1.2});await mouse('mouseReleased',{x:p.x+p.dx*1.2,y:p.y+p.dy*1.2});
  await check('drag snaps to whole cell','JSON.stringify(__game.state.placement.slots[0].origin)==="[0,1]"');
+ await check('ring follows dragged furniture',`(()=>{const r=${ring};return r.centred&&r.onFurniture&&r.inside})()`);
  p=await spritePoint('counter');await mouse('mousePressed',p);await mouse('mouseMoved',{x:p.x-p.dx*2,y:p.y-p.dy*2});
  await check('invalid drag is only a preview','JSON.stringify(__game.state.placement.slots[0].origin)==="[0,1]"');
  await mouse('mouseReleased',{x:p.x-p.dx*2,y:p.y-p.dy*2});

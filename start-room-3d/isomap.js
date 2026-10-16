@@ -9,9 +9,9 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
  let dragSprite=null;let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,panX=0,panBounds={minX:0,maxX:0},drag=null,last,selected=null,selectionBefore=null,selectionNew=false,hits=[],gridCells=0,maxScroll=0,markers=[],markerPhase=null,zoom=1;
  const bar=document.createElement('div');bar.hidden=true;bar.className='furniture-actions';bar.setAttribute('aria-label',t('edit.aria'));bar.setAttribute('data-i18n-attr','aria-label:edit.aria');
- bar.innerHTML=`<button data-furniture-cancel data-i18n="app.cancel">${t('app.cancel')}</button><button data-furniture-store data-i18n="edit.store">${t('edit.store')}</button><button data-furniture-save data-i18n="edit.save">${t('edit.save')}</button><button data-furniture-flip data-i18n="edit.flip">${t('edit.flip')}</button><button data-furniture-rotate data-i18n="edit.rotate">${t('edit.rotate')}</button><button data-wall-add hidden data-i18n="edit.wallAdd">${t('edit.wallAdd')}</button><button data-wall-remove data-i18n="edit.wallRemove">${t('edit.wallRemove')}</button><button data-furniture-done data-i18n="app.ok">${t('app.ok')}</button>`;
+ bar.innerHTML=`<button data-furniture-cancel data-i18n="app.cancel">${t('app.cancel')}</button><button data-furniture-store data-i18n="edit.store">${t('edit.store')}</button><button data-furniture-rotate data-i18n="edit.rotate">${t('edit.rotate')}</button><button data-furniture-flip data-i18n="edit.flip">${t('edit.flip')}</button><button data-furniture-done data-i18n="app.ok">${t('app.ok')}</button><button data-furniture-save data-i18n="edit.save">${t('edit.save')}</button><button data-wall-add hidden data-i18n="edit.wallAdd">${t('edit.wallAdd')}</button>`;
 
- function syncBar(){bar.hidden=!edit;bar.classList.toggle('has-selection',!!selected);for(const button of bar.querySelectorAll('button'))button.disabled=button.hasAttribute('data-furniture-save')||button.hasAttribute('data-wall-add')?false:button.hasAttribute('data-wall-remove')?current()?.type!=='wall':!selected;}
+ function syncBar(){bar.hidden=!edit;bar.classList.toggle('has-selection',!!selected);for(const button of bar.querySelectorAll('button'))button.disabled=button.hasAttribute('data-furniture-save')||button.hasAttribute('data-wall-add')?false:!selected;}
  const slots=()=>last?.[0].placement.slots||MAP.zones[0].slots;
  const current=()=>slots().find(s=>s.id===selected);
  syncBar();
@@ -28,7 +28,6 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
  bar.querySelector('[data-wall-add]').onclick=()=>{const zone=zonesForSpace(last[0].space)[0];for(let j=0;j<zone.rows;j++)for(let i=0;i<zone.cols;i++){
   const c={id:'wall-preview',type:'wall',origin:[i,j],dir:0};if(validPlacement(c,slots(),zone)&&preservesEntrance(zone,slots(),[...slots(),c])){placeWall(c.origin);return;}
  }onBlocked(t('edit.entranceBlocked'));};
- bar.querySelector('[data-wall-remove]').onclick=()=>{const item=current();if(item?.type!=='wall')return;slots().splice(slots().indexOf(item),1);selected=null;onChange();repaint();};
  function orient(dir){const item=current();if(!item||drag?.item)return;const candidate={...item,dir};if(!accept(candidate,zonesForSpace(last[0].space)[0]))return;item.dir=dir;onChange();repaint();}
  bar.querySelector('[data-furniture-flip]').onclick=()=>current()&&orient(flipDir(current().dir));
  bar.querySelector('[data-furniture-rotate]').onclick=()=>current()&&orient(rotateDir(current().type,current().dir));
@@ -144,7 +143,8 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
    }
    if(edit&&selected){const item=placed.find(s=>s.id===selected);if(item){const candidate=drag?.item===item.id?{...item,origin:drag.candidate}:item;
     const valid=validPlacement(candidate,placed,z)&&preservesEntrance(z,placed,[...placed.filter(p=>p.id!==candidate.id),candidate]);canvas.dataset.placementValid=String(valid);if(bar.dataset)bar.dataset.valid=String(valid);ctx.fillStyle=valid?'rgba(30,215,80,.55)':'rgba(235,55,55,.32)';ctx.strokeStyle=valid?'#16e05a':'#ff4545';
-    const centre=cellToScreen(...footprintCentre(candidate),view,z);bar.style.setProperty('--select-x',centre.x+'px');bar.style.setProperty('--select-y',centre.y+'px');ctx.lineWidth=2;
+    const centre=cellToScreen(...footprintCentre(candidate),view,z);// 17-12: 둥근 버튼 고리(가로 106·위 84·아래 106px)가 화면 밖으로 나가지 않게 가운데를 당긴다
+    const ringX=Math.min(Math.max(centre.x,106),Math.max(106,W-106)),ringY=Math.min(Math.max(centre.y,84),Math.max(84,H-106));bar.style.setProperty('--select-x',ringX+'px');bar.style.setProperty('--select-y',ringY+'px');ctx.lineWidth=2;
     for(const [i,j] of footprintCells(candidate)){const p=cellToScreen(i,j,view,z),hw=z.cell.w*scale/2,hh=z.cell.h*scale/2;
      ctx.beginPath();ctx.moveTo(p.x,p.y-hh);ctx.lineTo(p.x+hw,p.y);ctx.lineTo(p.x,p.y+hh);ctx.lineTo(p.x-hw,p.y);ctx.closePath();ctx.fill();ctx.stroke();}
 

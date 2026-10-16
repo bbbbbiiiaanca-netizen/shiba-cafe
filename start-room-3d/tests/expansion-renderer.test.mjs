@@ -11,7 +11,7 @@ const button={disabled:false};
 globalThis.location={search:''};globalThis.devicePixelRatio=1;
 globalThis.ResizeObserver=class{observe(){}};
 globalThis.Image=class{set src(path){const hd=path.includes('/@2x/'),k=hd?2:1;path=path.replace('/@2x/','/');loads.push(path);this.file=path;const png=readFileSync(new URL('../'+(hd?path.replace(/\/([^/]+)$/,'/@2x/$1'):path),import.meta.url));this.naturalWidth=png.readUInt32BE(16)/k;this.naturalHeight=png.readUInt32BE(20)/k;this.complete=true;}};// @2x는 화면에서 절반 크기(hd-assets.js)
-globalThis.document={createElement(type){return type==='canvas'?{getContext:()=>ctx}:{classList:{toggle(){}},style:{setProperty(){}},buttons:new Map(),setAttribute(){},querySelector(selector){if(!this.buttons.has(selector))this.buttons.set(selector,{...button});return this.buttons.get(selector);},querySelectorAll:()=>[]};}};
+globalThis.document={createElement(type){return type==='canvas'?{getContext:()=>ctx}:{classList:{names:new Set(),toggle(name,on){on?this.names.add(name):this.names.delete(name);},contains(name){return this.names.has(name);}},style:{setProperty(){}},buttons:new Map(),setAttribute(){},querySelector(selector){if(!this.buttons.has(selector))this.buttons.set(selector,{...button,hasAttribute:a=>selector==='['+a+']'});return this.buttons.get(selector);},querySelectorAll(){return [...this.buttons.values()];}};}};
 const canvas={dataset:{},clientWidth:390,clientHeight:300,getContext:()=>ctx,addEventListener:(name,fn)=>events[name]=fn,getBoundingClientRect:()=>({left:0,top:0}),setPointerCapture(){}};
 let opens=0;
 const iso=createIsoMap(canvas,{onExpand:()=>opens++});
@@ -63,8 +63,10 @@ const dx=-3,dy=3,scale=p.h.view.scale;
 const end=pointer(p.x+(dx-dy)*64*scale,p.y+(dx+dy)*32*scale);
 events.pointermove(end);events.pointerup(end);
 assert.equal(JSON.stringify(wallState.placement),snapshot);
-wallIso.actions.querySelector('[data-wall-remove]').onclick();
-assert.ok(!wallState.placement.slots.some(s=>s.type==='wall'));assert.ok(changed>=4);
+// 17-12: 가벽 제거는 둥근 보관 버튼으로 한다(가구 보관함에는 들어가지 않음).
+assert.equal(wallIso.selected,wallId);const wallInv=JSON.stringify(wallState.furnitureInv||{});
+wallIso.actions.querySelector('[data-furniture-store]').onclick();
+assert.ok(!wallState.placement.slots.some(s=>s.type==='wall'));assert.equal(JSON.stringify(wallState.furnitureInv||{}),wallInv);assert.equal(wallIso.selected,null);assert.ok(changed>=4);
 console.log('§17 renderer: approved wall images, alpha selection, move/rotate/remove and blocked rollback passed');
 
 // Both axes use approved floor art, full edit grid and clamped drag pan.
@@ -136,6 +138,14 @@ events.pointerdown(pointer(qp.x,qp.y));events.pointerup(pointer(qp.x,qp.y));
 assert.equal(qiso.selected,'q17-counter');assert.equal(canvas.dataset.placementValid,'true');
 qiso.actions.querySelector('[data-furniture-rotate]').onclick();assert.equal(qstate.placement.slots[0].dir,1);
 qiso.actions.querySelector('[data-furniture-cancel]').onclick();assert.equal(qstate.placement.slots[0].dir,0);assert.equal(qiso.selected,null);
+// 17-12: 돌리기·뒤집기는 따로 있는 둥근 버튼, 확인은 바뀐 방향을 두고 선택만 푼다.
+events.pointerdown(pointer(qp.x,qp.y));events.pointerup(pointer(qp.x,qp.y));assert.equal(qiso.selected,'q17-counter');
+assert.ok(qiso.actions.classList.contains('has-selection'));for(const a of ['cancel','store','rotate','flip','done'])assert.equal(qiso.actions.querySelector(`[data-furniture-${a}]`).disabled,false,a);
+qiso.actions.querySelector('[data-furniture-flip]').onclick();assert.equal(qstate.placement.slots[0].dir,1);
+qiso.actions.querySelector('[data-furniture-rotate]').onclick();assert.equal(qstate.placement.slots[0].dir,0);
+qiso.actions.querySelector('[data-furniture-flip]').onclick();qiso.actions.querySelector('[data-furniture-done]').onclick();assert.equal(qiso.selected,null);assert.equal(qstate.placement.slots[0].dir,1);
+assert.ok(!qiso.actions.classList.contains('has-selection'));assert.equal(qiso.actions.querySelector('[data-furniture-rotate]').disabled,true);assert.equal(qiso.actions.querySelector('[data-furniture-save]').disabled,false);
+qstate.placement.slots[0].dir=0;qiso.draw(qstate,{});
 events.pointerdown(pointer(qp.x,qp.y));events.pointermove(pointer(qp.x-300,qp.y-300));assert.equal(canvas.dataset.placementValid,'false');events.pointerup(pointer(qp.x-300,qp.y-300));
 assert.deepEqual(qstate.placement.slots[0].origin,[2,2]);
 const invBefore=qstate.furnitureInv.counter||0;qiso.actions.querySelector('[data-furniture-store]').onclick();assert.equal(qstate.placement.slots.length,0);assert.equal(qstate.furnitureInv.counter,invBefore+1);
