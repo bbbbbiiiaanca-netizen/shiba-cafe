@@ -10,7 +10,7 @@ for(const [kind,id,why] of [['floor2',undefined,'locked'],['theme','fuji','locke
  assert.equal(spaceUnlockCheck(state,kind,id),why,kind+(id||''));const before=JSON.stringify(state);assert.equal(unlockSpace(state,kind,id),false);assert.equal(JSON.stringify(state),before);
 }
 assert.deepEqual(CFG.themes.map(t=>t.name),['다다미','후지산 벽화 카페','대나무 회랑']);assert.equal(CFG.themes[0].locked,false);
-assert.ok(CFG.themes.filter(t=>t.locked).every(t=>t.art===null));
+assert.deepEqual(CFG.themes.filter(t=>t.locked).map(t=>t.art),['assets/drive/themes/bg-theme-fuji.png','assets/drive/themes/bg-theme-bamboo.png']); // 똑또기 승인 방 그림
 // starting values 2026-10-15 (밸런스_2년.md §3), pending user confirm
 assert.equal(CFG.expansion.rowCost,170000);assert.deepEqual([CFG.cafe.expansion2FCost,CFG.cafe.expansion2FLevel],[7000000,30]);
 assert.deepEqual(CFG.themes.filter(t=>t.locked).map(t=>[t.id,t.unlockLevel,t.unlockCost,t.unlockDia]),[['fuji',20,2400000,1500],['bamboo',35,5400000,3000]]);

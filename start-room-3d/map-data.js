@@ -89,9 +89,13 @@ export const WALL_EXT={left:'assets/drive/tiles/wall-ext-left.png',right:'assets
 export function nextExpansion(zone,count){return count%2===0?{axis:'j',cells:Array.from({length:zone.cols},(_,i)=>[i,zone.rows])}:{axis:'i',cells:Array.from({length:zone.rows},(_,j)=>[zone.cols,j])};}
 export function restoreSpace(saved){
  const unlockedRows=Number.isSafeInteger(saved?.unlockedRows)&&saved.unlockedRows>=0?saved.unlockedRows:0;
- return {unlockedRows,flooring:Object.hasOwn(FLOOR_ART,saved?.flooring)?saved.flooring:'tatami',floor2Unlocked:saved?.floor2Unlocked===true,themes:[...new Set([...CFG.themes.filter(t=>!t.locked).map(t=>t.id),...(Array.isArray(saved?.themes)?saved.themes.filter(id=>CFG.themes.some(t=>t.id===id)):[])])]};
+ const space={unlockedRows,flooring:Object.hasOwn(FLOOR_ART,saved?.flooring)?saved.flooring:'tatami',floor2Unlocked:saved?.floor2Unlocked===true,themes:[...new Set([...CFG.themes.filter(t=>!t.locked).map(t=>t.id),...(Array.isArray(saved?.themes)?saved.themes.filter(id=>CFG.themes.some(t=>t.id===id)):[])])]};
+ return {...space,theme:space.themes.includes(saved?.theme)&&CFG.themes.find(t=>t.id===saved.theme)?.art?saved.theme:'tatami'}; // applied room theme; old saves → 다다미
 }
-export function zonesForSpace(space){const data=restoreSpace(space);return MAP.zones.map(z=>({...z,cols:z.cols+(z.floor===1?Math.floor(data.unlockedRows/2):0),rows:z.rows+(z.floor===1?Math.ceil(data.unlockedRows/2):0),flooring:data.flooring,locked:z.floor===2?!data.floor2Unlocked:z.locked}));}
+// Room bitmap for a zone. Applied theme art (861×615) shares the 다다미 room anchor/size; 다다미 keeps its merged expansion art.
+export function roomFile(z,unlockedRows){const art=z.floor===1&&z.theme&&z.theme!=='tatami'?CFG.themes.find(t=>t.id===z.theme)?.art:null;
+ return art||(z.floor===1&&unlockedRows>0?'assets/drive/tiles/room-merged-'+(z.cols>MAP.zones[0].cols?'ij':'j')+'.png':z.image);}
+export function zonesForSpace(space){const data=restoreSpace(space);return MAP.zones.map(z=>({...z,cols:z.cols+(z.floor===1?Math.floor(data.unlockedRows/2):0),rows:z.rows+(z.floor===1?Math.ceil(data.unlockedRows/2):0),flooring:data.flooring,theme:data.theme,locked:z.floor===2?!data.floor2Unlocked:z.locked}));}
 
 // starting value 똑또기 2026-10-14, pending user batch confirm: one item per table cell, centred on that cell's table top,
 // displayed at 35% of the cell width. offset = table-top point above the cell centre (image px; layout only).
