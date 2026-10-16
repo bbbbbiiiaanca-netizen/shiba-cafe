@@ -4,8 +4,8 @@ import {CFG} from './config.js';
 // 그림이 will provide back views; unavailable until the art is supplied.
 export const PARTITION={count:3,price:50000}; // starting value 2026-10-15, pending user confirm
 export const SPRITES={
- // starting value 2026-10-15, pending user confirm: bbox x6–95/y24–181; bottom contact midpoint (50.5,162.5), scaled to existing 64×32 cell edge and offset to the rear cell edge.
- wall:{file:'assets/drive/tiles/wall-inner.png',anchor:[50.5,162.5],scale:64/89,back:{file:'assets/drive/tiles/furn-partition-v4-back.png',anchor:[54.5,157],scale:64/89},flip:{file:'assets/drive/tiles/wall-inner-flip.png',anchor:[62.5,162.5],scale:64/89},footprint:{cells:1,axis:null}},
+  // 10-16 똑또기: 앞·앞 반전이 초록 칸보다 반 칸 뒤에 서서 기준점 y 162.5→118(뒷모습 2·3처럼 칸 위에). 이전 메모: bbox x6–95/y24–181; bottom contact midpoint (50.5,162.5), scaled to existing 64×32 cell edge and offset to the rear cell edge.
+ wall:{file:'assets/drive/tiles/wall-inner.png',anchor:[50.5,118],scale:64/89,back:{file:'assets/drive/tiles/furn-partition-v4-back.png',anchor:[54.5,157],scale:64/89},flip:{file:'assets/drive/tiles/wall-inner-flip.png',anchor:[62.5,118],scale:64/89},footprint:{cells:1,axis:null}},
  // 그림이 v4 sprites, original size (scale 1). anchor = centre of floor-contact footprint, sprite px (given by 그림이).
  table:{file:'assets/drive/furn-tea-table-v4.png',anchor:[92,93],scale:1,back:{file:'assets/drive/furn-tea-table-v4-back.png',anchor:[92,93],scale:1},footprint:{cells:1,axis:null}},
  cushion:{file:'assets/drive/furn-cushion-v4.png',anchor:[90,74],scale:1,back:{file:'assets/drive/furn-cushion-v4-back.png',anchor:[90,74],scale:1},footprint:{cells:1,axis:null}},

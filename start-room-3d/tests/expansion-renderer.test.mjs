@@ -45,12 +45,12 @@ const wallState=newState(0);wallIso.draw(wallState,{});wallIso.setEdit(true);
 assert.equal(wallIso.placeWall([2,2]),true);
 const wallId=wallIso.selected;
 assert.ok(wallIso.hits.find(h=>h.id===wallId)&&!wallIso.hits.find(h=>h.id===wallId).footprint);assert.ok(draws.some(d=>d.file.endsWith('wall-inner.png')));
-{const h=wallIso.hits.find(h=>h.id===wallId),p=cellToScreen(2,2,h.view,h.zone);assert.ok(Math.abs(h.x+50.5*(64/89)*h.view.scale-(p.x+h.zone.cell.w*h.view.scale/4))<1e-9);assert.ok(Math.abs(h.y+162.5*(64/89)*h.view.scale-(p.y-h.zone.cell.h*h.view.scale/4))<1e-9);}
+{const h=wallIso.hits.find(h=>h.id===wallId),p=cellToScreen(2,2,h.view,h.zone);assert.ok(Math.abs(h.x+50.5*(64/89)*h.view.scale-(p.x+h.zone.cell.w*h.view.scale/4))<1e-9);assert.ok(Math.abs(h.y+118*(64/89)*h.view.scale-(p.y-h.zone.cell.h*h.view.scale/4))<1e-9);}
 assert.ok(!loads.includes(null));
 wallIso.actions.querySelector('[data-furniture-rotate]').onclick();
 assert.equal(wallState.placement.slots.find(s=>s.id===wallId).dir,1);assert.ok(draws.some(d=>d.file.endsWith('wall-inner-flip.png')));
 const center=()=>{const h=wallIso.hits.find(h=>h.id===wallId);return {h,x:h.x+h.w/2,y:h.y+h.h/2};};
-let p=center();events.pointerdown(pointer(p.x,p.y));
+let p=center();p.y=p.h.y+p.h.h*0.2;events.pointerdown(pointer(p.x,p.y));
 const delta=[p.h.zone.cell.w*p.h.view.scale/2,p.h.zone.cell.h*p.h.view.scale/2];
 events.pointermove(pointer(p.x+delta[0],p.y+delta[1]));events.pointerup(pointer(p.x+delta[0],p.y+delta[1]));
 assert.deepEqual(wallState.placement.slots.find(s=>s.id===wallId).origin,[3,2]);
@@ -58,7 +58,7 @@ const snapshot=JSON.stringify(wallState.placement);
 assert.equal(wallIso.placeWall([0,5]),false);assert.equal(blocked,'입구가 막혔어요!');
 assert.equal(JSON.stringify(wallState.placement),snapshot);
 // Drag the existing wall onto the entrance; the original cell must survive.
-p=center();events.pointerdown(pointer(p.x,p.y));
+p=center();p.y=p.h.y+p.h.h*0.2;events.pointerdown(pointer(p.x,p.y));
 const dx=-3,dy=3,scale=p.h.view.scale;
 const end=pointer(p.x+(dx-dy)*64*scale,p.y+(dx+dy)*32*scale);
 events.pointermove(end);events.pointerup(end);
