@@ -22,8 +22,8 @@ const CAFE_EXP=[7187,7187,11293,10853,10853,14813,14227,18480,18480,99792,77000,
 
 export const CFG={
  // §17-14 시바 상세 = 펼친 책 팝업. Frame art pending (empty popup of the same ratio). Boxes are [x,y,w,h] in frame px; starting values until 그림이 gives coordinates.
- profileBook:{ribbon:null,growthStages:null,frame:'assets/drive/ui/ui-shiba-book-frame.png',size:[1080,1600], // interior UI_시바상세_책틀.png 1VZRsBZT…; paper (lower page) = [88,804,900,532]
-  boxes:{art:[88,153,900,561],paper:[88,804,900,532],intro:[112,828,852,202],favs:[112,1042,852,138],friends:[112,1192,852,120]}, // 그림이 coordinates (frame px)
+ profileBook:{ribbon:{src:'assets/drive/profile/ribbon-name.png',w:768,h:192,safe:{x:104,y:40,w:560,h:112}},growthStages:null,frame:'assets/drive/ui/ui-shiba-book-frame.png',size:[1080,1600], // interior UI_시바상세_책틀.png 1VZRsBZT…; paper (lower page) = [88,804,900,532]
+  boxes:{art:[88,280,900,410],paper:[88,804,900,532],intro:[112,828,852,202],favs:[112,1042,852,138],friends:[112,1192,852,120]}, // 그림이 coordinates (frame px)
   careGap:16, // 똑또기 starting value 2026-10-15: 돌봄 button outside the frame, centred just below it, 16px gap
   close:{right:-14,top:-14},knockoutMin:240}, // starting value: close button outside the frame, top-right (CSS px)
  itemGet:{dimAlpha:0.75, // 시작값 2026-10-15(똑또기): 아이템 획득 팝업 아래 검정 75% 어두운 막(상단 바·패널·탭 줄까지 화면 전체)
@@ -45,10 +45,10 @@ export const CFG={
     {id:'pet',name:'시바 1마리 쓰다듬기',goal:1,tab:'shiba',icon:'assets/drive/ui/tab-shiba.png'}, // 임시
     {id:'sell',name:'메뉴 1잔 판매',goal:1,tab:'manage',icon:'assets/drive/ui/tab-manage.png'}]}, // 임시
   dongu:{chapters:null},instantDia:10}, // 임시: 즉시완료 10다이아
- profiles:{red:{intro:'활발하고 사람을 좋아해요',favSnack:{name:'육포',icon:null,line:null},favPlay:{name:'공 굴리기',icon:null,line:null}}, // 임시
-  white:{intro:'조용하고 다정해요',favSnack:{name:'우유 과자',icon:null,line:null},favPlay:{name:'햇살 낮잠',icon:null,line:null}}, // 임시
-  sesame:{intro:'호기심이 많아요',favSnack:{name:'고구마칩',icon:null,line:null},favPlay:{name:'짧은 산책',icon:null,line:null}}, // 임시
-  kuro:{intro:'쿨해 보이지만 잘 챙겨요',favSnack:{name:'연어 스틱',icon:null,line:null},favPlay:{name:'줄다리기',icon:null,line:null}}}, // 임시
+ profiles:{red:{intro:'활발하고 사람을 좋아해요',favSnack:{name:'육포',icon:'assets/drive/profile/snack-jerky.png',line:null},favPlay:{name:'공 굴리기',icon:'assets/drive/profile/play-ball-roll.png',line:null}}, // 임시
+  white:{intro:'조용하고 다정해요',favSnack:{name:'우유 과자',icon:'assets/drive/profile/snack-milk-biscuit.png',line:null},favPlay:{name:'햇살 낮잠',icon:'assets/drive/profile/play-sun-nap.png',line:null}}, // 임시
+  sesame:{intro:'호기심이 많아요',favSnack:{name:'고구마칩',icon:'assets/drive/profile/snack-sweet-potato-chip.png',line:null},favPlay:{name:'짧은 산책',icon:'assets/drive/profile/play-short-walk.png',line:null}}, // 임시
+  kuro:{intro:'쿨해 보이지만 잘 챙겨요',favSnack:{name:'연어 스틱',icon:'assets/drive/profile/snack-salmon-stick.png',line:null},favPlay:{name:'줄다리기',icon:'assets/drive/profile/play-tug.png',line:null}}}, // 임시
  friendCafe:{room:'assets/drive/room-tatami-noline.png',roomSize:[861,615], // 임시: friend café = our approved room art, view-only
   furniture:[{src:'assets/drive/furn-counter-v4.png',x:30,y:30,w:24},{src:'assets/drive/furn-tea-table-v4.png',x:52,y:56,w:20},{src:'assets/drive/furn-cushion-v4.png',x:40,y:64,w:11},{src:'assets/drive/furn-cushion-v4.png',x:64,y:66,w:11}], // 임시 배치 (% of room, x/y = sprite centre)
   shiba:{x:60,y:48,w:16}}, // 임시: friend's shiba position

@@ -18,7 +18,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await c('Emulation.setDeviceMetricsOverride',{width:360,height:800,deviceScaleFactor:1,mobile:true});
  await go('&fresh=1&temp=1');await (await import('../tests/start-flow.mjs')).startFlow(ev);
  await ev(`(()=>{const g=__game;g.ui.modals=[];g.close();g.state.settings.language='ko';g.applyLang();for(const breed of ['red','white','sesame','kuro'])if(!g.state.shibas.some(x=>x.breed===breed)){const n=g.S.makeShiba(g.state,{breed});if(!g.state.shibas.includes(n))g.state.shibas.push(n);}const red=g.state.shibas.find(x=>x.breed==='red'),white=g.state.shibas.find(x=>x.breed==='white');red.friends=[white.id];white.friends=[red.id];g.ui.modals=[{kind:'book',id:red.id}];g.refresh();return true;})()`);
- await shot('1-detail-red.png');await ev(`document.querySelector('.book-friends button').click();true`);await shot('2-detail-friend.png');await ev(`document.querySelector('[data-act=careOpen]').click();true`);await shot('3-care-open.png');
+ await shot('1-detail-red.png');await shot('2-detail-friend.png');await ev(`document.querySelector('.book-friends button').click();true`);await shot('2b-friend-opened.png');await ev(`document.querySelector('[data-act=careOpen]').click();true`);await shot('3-care-open.png');
  for(const breed of ['red','white','sesame','kuro']){await ev(`__game.close();__game.ui.modals=[{kind:'book',id:__game.state.shibas.find(x=>x.breed==='${breed}').id}];__game.refresh();true`);await shot('detail-'+breed+'.png');}
  if(errors.length)throw Error(errors.join('\n'));
 }catch(e){console.error(e);process.exitCode=1}finally{chrome.kill();await sleep(500);try{rmSync(prof,{recursive:true,force:true});}catch{}}

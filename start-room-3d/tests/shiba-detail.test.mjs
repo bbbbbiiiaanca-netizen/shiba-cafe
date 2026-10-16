@@ -19,7 +19,10 @@ for(const lang of ['ko','en']){
  assert.match(h,new RegExp(`data-act="profile" data-id="${sh.friends[0]}"`));assert.match(h,/data-act="careOpen"/);
  }
 }
-assert.equal(CFG.profileBook.ribbon,null);assert.equal(CFG.profileBook.growthStages,null);
-for(const p of Object.values(CFG.profiles))for(const k of ['favSnack','favPlay']){assert.equal(p[k].icon,null);assert.equal(p[k].line,null);}
+assert.deepEqual(CFG.profileBook.ribbon,{src:'assets/drive/profile/ribbon-name.png',w:768,h:192,safe:{x:104,y:40,w:560,h:112}});assert.equal(CFG.profileBook.growthStages,null);
+for(const p of Object.values(CFG.profiles))for(const k of ['favSnack','favPlay']){assert.match(p[k].icon,/^assets\/drive\/profile\/(snack|play)-[a-z-]+\.png$/);assert.equal(p[k].line,null);}
 assert.match(main,/profile:d=>\{ui.modals=\[\{kind:'book',id:\+d.id\}\];\}/);
 console.log('shiba detail: order, temporary labels, null fallbacks, friend detail route, no cancelled features, empty image slots, ko/en passed');
+
+assert.deepEqual([CFG.profileBook.ribbon.src,...Object.values(CFG.profiles).flatMap(p=>[p.favSnack.icon,p.favPlay.icon])],['ribbon-name','snack-jerky','play-ball-roll','snack-milk-biscuit','play-sun-nap','snack-sweet-potato-chip','play-short-walk','snack-salmon-stick','play-tug'].map(n=>'assets/drive/profile/'+n+'.png'));
+assert.match(main,/art.onerror=\(\)=>art.remove\(\)/);
