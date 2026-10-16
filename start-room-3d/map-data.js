@@ -106,7 +106,8 @@ export const WALL_EXT={left:'assets/drive/tiles/wall-ext-left.png',right:'assets
 export function nextExpansion(zone,count){return count%2===0?{axis:'j',cells:Array.from({length:zone.cols},(_,i)=>[i,zone.rows])}:{axis:'i',cells:Array.from({length:zone.rows},(_,j)=>[zone.cols,j])};}
 export function restoreSpace(saved){
  const unlockedRows=Number.isSafeInteger(saved?.unlockedRows)&&saved.unlockedRows>=0?saved.unlockedRows:0;
- return {unlockedRows,flooring:Object.hasOwn(FLOOR_ART,saved?.flooring)?saved.flooring:'tatami',floor2Unlocked:saved?.floor2Unlocked===true,themes:[...new Set([...CFG.themes.filter(t=>!t.locked).map(t=>t.id),...(Array.isArray(saved?.themes)?saved.themes.filter(id=>CFG.themes.some(t=>t.id===id)):[])])]};
+ const roomLayers=Object.fromEntries(['floor','wall'].map(layer=>[layer,CFG.decor.roomLayers.find(it=>it.layer===layer&&it.id===saved?.roomLayers?.[layer]&&it.art)?.id??null]));
+ return {roomLayers,unlockedRows,flooring:Object.hasOwn(FLOOR_ART,saved?.flooring)?saved.flooring:'tatami',floor2Unlocked:saved?.floor2Unlocked===true,themes:[...new Set([...CFG.themes.filter(t=>!t.locked).map(t=>t.id),...(Array.isArray(saved?.themes)?saved.themes.filter(id=>CFG.themes.some(t=>t.id===id)):[])])]};
 }
 export function zonesForSpace(space){const data=restoreSpace(space);return MAP.zones.map(z=>({...z,cols:z.cols+(z.floor===1?Math.floor(data.unlockedRows/2):0),rows:z.rows+(z.floor===1?Math.ceil(data.unlockedRows/2):0),flooring:data.flooring,locked:z.floor===2?!data.floor2Unlocked:z.locked}));}
 

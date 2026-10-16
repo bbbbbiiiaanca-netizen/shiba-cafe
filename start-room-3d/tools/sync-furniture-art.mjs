@@ -1,17 +1,19 @@
 import {copyFileSync,existsSync,mkdirSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
-import {NEW_FURNITURE} from '../furniture-data.js';
+import {NEW_FURNITURE,ROOM_LAYERS} from '../furniture-data.js';
 const root=resolve(new URL('..',import.meta.url).pathname),source=process.env.FURN_ART_SOURCE||'/workspace/gurimi';
 const dest='assets/drive/furniture-v4/';mkdirSync(resolve(root,dest,'@2x'),{recursive:true});
 const backs={},hd=[];
-for(const it of NEW_FURNITURE){
+for(const it of [...NEW_FURNITURE,...ROOM_LAYERS.filter(it=>it.art)]){
  const front=`${it.source}/out/${it.filename}`,back=`furn-back/out/${it.backname}`;
  for(const [src,name,optional] of [[front,it.filename,false],[back,it.backname,true]]){
-  if(optional&&it.id==='rock')continue;
+  if(optional&&(!it.backname||it.id==='rock'))continue;
   const target=dest+name;
   if(existsSync(resolve(source,src)))copyFileSync(resolve(source,src),resolve(root,target));
   else if(!optional&&!existsSync(resolve(root,target)))throw Error('Missing '+src);
-  const hi=src.replace(/\/([^/]+)$/,'/@2x/$1');
+  const standardHi=src.replace(/\/([^/]+)$/,'/@2x/$1');
+  const namedHi=standardHi.replace(/\.png$/,'@2x.png');
+  const hi=existsSync(resolve(source,standardHi))?standardHi:namedHi;
   if(existsSync(resolve(source,hi)))copyFileSync(resolve(source,hi),resolve(root,dest,'@2x',name));
   if(existsSync(resolve(root,dest,'@2x',name)))hd.push(target);
   if(optional&&existsSync(resolve(root,target)))backs[it.id]=target;
