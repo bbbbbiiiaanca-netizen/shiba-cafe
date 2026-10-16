@@ -3,7 +3,8 @@ const ph=s=>(String(s).match(/\{\w+\}/g)||[]).sort().join();
 const ko=Object.keys(STR.ko),en=Object.keys(STR.en);
 assert.deepEqual(ko.filter(k=>!(k in STR.en)),[],'en missing keys');assert.deepEqual(en.filter(k=>!(k in STR.ko)),[],'en extra keys');
 for(const k of ko)assert.equal(ph(STR.en[k]),ph(STR.ko[k]),'placeholder '+k);
-assert.equal(ko.length,641); // +bag.potionNote, +bag.tab.furniture/acc, bag.fx.capsule/furn (가방 아이콘 UI)
+assert.equal(ko.length,643); // +hosp.admitted, +hosp.waiting (병원 화면)
+// was 641: // +bag.potionNote, +bag.tab.furniture/acc, bag.fx.capsule/furn (가방 아이콘 UI)
 // was 636: // +dongu.unplace (동구 카드 전용, en "Go home"), +fx.heart.walk.one (단수 heart)
 assert.ok(!/KST/.test(STR.en['quest.reset']));
 assert.equal(typeof kstToLocal('00:00','en-US'),'string');
