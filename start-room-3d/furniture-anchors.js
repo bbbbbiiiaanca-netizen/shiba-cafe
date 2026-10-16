@@ -164,6 +164,15 @@ export const FURN_ANCHORS={
   "furn-bonsai-snow-v4.png": [94, 190],
   "furn-bamboo-fence-snow-v4.png": [90, 180],
   "furn-noren-snow-v4.png": [89, 176],
-  "furn-entrance-sign-snow-v4.png": [94, 186]
+  "furn-entrance-sign-snow-v4.png": [94, 186],
+  // 물방울 정원: 180×230 캔버스, 바닥점 (90,202) (수인님 10/17 00:36 승인)
+  "furn-shelf-water-v4.png": [90, 202],
+  "furn-low-table-cushion-water-v4.png": [90, 202],
+  "furn-stone-lantern-water-v4.png": [90, 202],
+  "furn-chochin-water-v4.png": [90, 202],
+  "furn-bonsai-water-v4.png": [90, 202],
+  "furn-bamboo-fence-water-v4.png": [90, 202],
+  "furn-noren-water-v4.png": [90, 202],
+  "furn-entrance-sign-water-v4.png": [90, 202]
 
 };

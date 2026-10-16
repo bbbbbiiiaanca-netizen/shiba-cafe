@@ -60,5 +60,12 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  for(const t of ms)for(const n of [1,2,3])await press(t+'-'+n,'rotate',n);
  expect(await dirs(),Object.fromEntries(ms.flatMap(t=>[0,1,2,3].map(n=>[t+'-'+n,n]))),'4dir momiji/snow');
  await done();await caption('5. 단풍 좌식 테이블(위)·눈 선반(아래)\n돌리기 0·1·2·3번 → dir 0·1·2·3');await shot('5-4dir-momiji-snow.png');
+ // 6) 물방울 정원 뒷모습 5종 4방향 (03:55 승인·03:57 정정, 코코아 전달) + 뒷모습 없는 3종 2방향
+ {const w4=['shelf-water','bonsai-water'],w2=['noren-water'];
+ await place([...w4.flatMap((type,r)=>[0,1,2,3].map(n=>({id:type+'-'+n,type,dir:0,origin:[[0,0],[2,0],[4,0],[5,2]][n].map((v,k)=>k?v+r*3:v)}))),...[0,1].map(n=>({id:'noren-water-'+n,type:'noren-water',dir:0,origin:[[1,1],[3,1]][n]}))]);
+ for(const t of w4)for(const n of [1,2,3])await press(t+'-'+n,'rotate',n);await press('noren-water-1','rotate',3);
+ expect(await dirs(),Object.fromEntries([...w4.flatMap(t=>[0,1,2,3].map(n=>[t+'-'+n,n])),['noren-water-0',0],['noren-water-1',1]]),'water dirs');
+ await done();await caption('6. 물방울 선반·분재 4방향(위 2줄), 물방울 노렌 앞 2방향(남색 천 2개)');mkdirSync('/workspace/compare/approved-0355',{recursive:true});
+ await sleep(600);{const {data}=await c('Page.captureScreenshot',{format:'png'});writeFileSync('/workspace/compare/approved-0355/water-back-4dir.png',Buffer.from(data,'base64'));console.log('shot water-back-4dir.png');}}
  if(errors.length)throw Error(errors.join('\n'));console.log('furniture rotate capture: 5 screenshots, flip/rotate dirs checked');
 }finally{chrome.kill('SIGTERM');await sleep(150);rmSync(prof,{recursive:true,force:true});}

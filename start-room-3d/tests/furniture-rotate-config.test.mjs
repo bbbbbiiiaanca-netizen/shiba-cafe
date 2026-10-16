@@ -5,7 +5,7 @@ import {FURN_BACKS} from '../furniture-art.generated.js';
 import {SPRITES,availableDirs,rotateDir,flipDir,newFurnitureBack,defaultPlacement,restorePlacement} from '../map-data.js';
 
 // 2026-10-17: 뒷모습은 CFG.decor.backArt.enabled에 있는 가구만. 지금은 좌식 테이블 일반·벚꽃.
-const MS=['momiji','snow'].flatMap(th=>['shelf','low-table','stone-lantern','chochin','bonsai','bamboo-fence','noren','sign'].map(b=>b+'-'+th));
+const MS=[...['momiji','snow'].flatMap(th=>['shelf','low-table','stone-lantern','chochin','bonsai','bamboo-fence','noren','sign'].map(b=>b+'-'+th)),...['shelf','stone-lantern','chochin','bonsai','bamboo-fence'].map(b=>b+'-water')];
 assert.deepEqual(CFG.decor.backArt.enabled,['low-table','low-table-sakura',...MS]);
 for(const it of NEW_FURNITURE){
  const on=CFG.decor.backArt.enabled.includes(it.id)&&Boolean(FURN_BACKS[it.id]);
@@ -39,4 +39,5 @@ for(const t of ['counter','cushion','stairs','table','wall'])assert.deepEqual(av
 console.log('furniture rotate config: backArt.enabled gate, 2-dir rotate/flip, fake-data 4-dir, save dir%2 restore passed');
 
 // 2026-10-17: 단풍·눈 16종 뒷모습 승인 → 4방향
-for(const th of ['momiji','snow'])for(const b of ['shelf','low-table','stone-lantern','chochin','bonsai','bamboo-fence','noren','sign']){const id=b+'-'+th;assert.deepEqual(availableDirs(id),[0,1,2,3],id);}
+for(const id of MS)assert.deepEqual(availableDirs(id),[0,1,2,3],id);
+for(const id of ['low-table-water','noren-water','sign-water'])assert.deepEqual(availableDirs(id),[0,1],id); // 03:57: 뒷모습 미승인

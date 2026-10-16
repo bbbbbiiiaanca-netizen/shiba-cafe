@@ -6,7 +6,7 @@ import {SPRITES,availableDirs,spriteFor,spriteMirrored,rotateDir} from '../map-d
 import {sakuraSetActive} from '../decor.js';
 import * as S from '../sim.js';
 import {STR} from '../i18n.js';
-assert.equal(NEW_FURNITURE.length,35);
+assert.equal(NEW_FURNITURE.length,43); // +물방울 정원 8
 assert.equal(NEW_FURNITURE.filter(it=>it.theme==='sakura').length,8);
 const state=S.newState(0);state.coins=1e9;
 
@@ -22,4 +22,4 @@ for(const it of NEW_FURNITURE){
 assert.deepEqual(availableDirs('rock'),[0,1]);
 const ids=NEW_FURNITURE.filter(it=>it.theme==='sakura').slice(0,3).map(it=>({type:it.id}));
 assert.equal(sakuraSetActive(ids.slice(0,2),'A'),false);assert.equal(sakuraSetActive(ids,'A'),true);assert.equal(sakuraSetActive([...ids.slice(0,2),{...ids[2],zone:'B'}],'A'),false);assert.equal(sakuraSetActive(ids,'B'),false);assert.equal(CFG.decor.sakuraSet.bonus,null);
-console.log("new furniture: 35 item cases + set thresholds passed (optional sakura backs follow supplied assets)");
+console.log("new furniture: 43 item cases + set thresholds passed (optional sakura backs follow supplied assets)");

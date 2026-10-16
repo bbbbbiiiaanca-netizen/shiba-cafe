@@ -77,3 +77,9 @@ No commit or push. node_modules symlink untouched. Prices and conflicting numeri
 360×800 스크린샷 9장: `/workspace/compare/momiji-snow/`. 재현: `node tools/capture-momiji-snow.mjs`. 상점 테마별 캡처는 기존 전체 목록에서 해당 테마 카드만 보이도록 캡처 시에만 제한한다.
 
 검증: `npm test` 통과. `npm run test:browser`는 306/308, 페이지 오류 0건이며 기존 PR-C 상점/가방 가구 카드 2건 실패로 종료했다. 따라서 체인의 캡처 두 개는 별도 실행했고 `capture-new-furniture.mjs`, `capture-momiji-snow.mjs` 모두 통과했다. 커밋·푸시 없음.
+
+## Water Garden (2026-10-17)
+
+물방울 정원(theme `water`) 가구 8종 + 바닥·벽을 단풍·눈과 같은 방식으로 추가했다. 그림은 수인님 10/17 00:36 승인본(`furn-water/out`, `room-water/out`, @2x 포함)을 `node tools/sync-furniture-art.mjs`로 복사했다. 가구 180×230, 앵커는 모두 바닥점 (90,202). 뒷모습이 없어 `backArt.enabled`에 넣지 않았고 앞·앞 반전 2방향만 쓴다. 1칸, 가격 null(미정/구매 잠금), `CFG.decor.waterSet={minItems:3,bonusMinItems:null,bonus:null}`, 효과·상한은 공통 설정. 세트 라벨 '물방울 정원 세트' / 'Water Garden Set'.
+
+360×800 스크린샷 3장: `/workspace/compare/water-icons/` (shop-water, water-set, room-water-layer). 재현: `node tools/capture-water.mjs`. 단위 검사: `tests/water.test.mjs`.

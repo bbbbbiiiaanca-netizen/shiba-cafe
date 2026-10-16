@@ -1,4 +1,4 @@
-import {drawThemeSet,SET_THEMES} from './decor.js';
+import {drawThemeSet,SET_THEMES,setLabelPlacement} from './decor.js';
 import {loadHd} from './hd-assets.js';
 import {t} from './i18n.js';
 import {CFG} from './config.js';
@@ -7,7 +7,7 @@ import {canWalk,walkFrame} from './walk-frames.js';
 import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,spriteMirrored,spriteFor,wallEdge,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges,WALL_EXT} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
- const seenSakura=new Set();
+ const seenSakura=new Set(),setLabels=new Map();
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
  let dragSprite=null;let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,panX=0,panBounds={minX:0,maxX:0},drag=null,last,selected=null,selectionBefore=null,selectionNew=false,hits=[],gridCells=0,maxScroll=0,markers=[],markerPhase=null,zoom=1;
  const bar=document.createElement('div');bar.hidden=true;bar.className='furniture-actions';bar.setAttribute('aria-label',t('edit.aria'));bar.setAttribute('data-i18n-attr','aria-label:edit.aria');
@@ -70,7 +70,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
     for(let i=lo(0);i<=hi(0);i++)for(let j=lo(1);j<=hi(1);j++){if(i>=0&&j>=0&&i<z.cols&&j<z.rows)continue;const p=cellToScreen(i,j,view,z);ctx.drawImage(grass,p.x-64*scale,p.y-32*scale,128*scale,64*scale);}
    }}
    const roomFile=z.floor===1&&state.space.unlockedRows>0?'assets/drive/tiles/room-merged-'+(z.cols>MAP.zones[0].cols?'ij':'j')+'.png':z.image;
-   const room=roomFile?load(roomFile):null;if(room?.complete&&room.naturalWidth)ctx.drawImage(room,view.x,view.y,room.naturalWidth*scale,room.naturalHeight*scale);
+   const room=roomFile?load(roomFile):null;let roomRect=null;if(room?.complete&&room.naturalWidth){roomRect={x:view.x,y:view.y,w:room.naturalWidth*scale,h:room.naturalHeight*scale};ctx.drawImage(room,roomRect.x,roomRect.y,roomRect.w,roomRect.h);}
    // Transparent full-room layers share the approved room canvas coordinates.
    if(z.floor===1)for(const layer of ['floor','wall']){
     const item=CFG.decor.roomLayers.find(it=>it.layer===layer&&it.id===state.space.roomLayers?.[layer]);
@@ -134,8 +134,10 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
     const active=drawThemeSet(ctx,{slots:placed.map(it=>({...it,zone:it.zone||z.id})),zone:z,view,cellToScreen,time:performance.now(),reducedMotion:globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false},theme);
     if(active)canvas.dataset[theme+'Zones']+=z.id+" ";
     const key=theme+':'+z.id;
-    if(active&&!seenSakura.has(key)){seenSakura.add(key);const label=document.createElement('div');label.className='sakura-set-label '+theme+'-set-label';label.textContent=t('furn.'+theme+'Set');canvas.parentElement.append(label);setTimeout(()=>label.remove(),3500);}
-    if(!active)seenSakura.delete(key);
+    if(active&&!seenSakura.has(key)){seenSakura.add(key);const label=document.createElement('div');label.className='sakura-set-label '+theme+'-set-label';label.textContent=t('furn.'+theme+'Set');canvas.parentElement.append(label);setLabels.set(key,label);setTimeout(()=>{label.remove();setLabels.delete(key);},3500);}
+    if(!active){seenSakura.delete(key);setLabels.get(key)?.remove();setLabels.delete(key);}
+    // 라벨은 방 바닥판·가구 그림 위(아니면 아래)에 둔다; 그림이 늦게 뜨거나 화면이 움직여도 다시 그릴 때마다 맞춘다.
+    const label=setLabels.get(key);if(active&&label)placeSetLabel(label,[roomRect,...hits.filter(h=>h.zone===z&&!h.footprint)]);
    }
    if(z.id==='A'){
     for(const c of (world.custs||[]).filter(c=>c.phase==='seated'&&c.request&&!c.fulfilled)){
@@ -169,6 +171,14 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
    }}
    y+=heights[index]+24;
   });
+ }
+ // 세트 라벨 자리: 위쪽 한계는 상단 HUD·평판 바 아래, 아래쪽 한계는 지도 칸(하단 패널) 끝. 좌표는 canvas 기준.
+ function placeSetLabel(label,rects){
+  const box=canvas.getBoundingClientRect(),edge=sel=>{const r=document.querySelector(sel)?.getBoundingClientRect();return r&&r.height>0?r:null;};
+  const minY=Math.max(0,...['#hud','.hud-sub'].map(edge).filter(Boolean).map(r=>r.bottom-box.top+4));
+  const menu=edge('#mainMenu'),maxY=Math.min(canvas.clientHeight,menu?menu.top-box.top:Infinity)-4;
+  const {pos,y}=setLabelPlacement({rects,labelH:label.offsetHeight,minY,maxY});
+  label.dataset.setLabelPos=pos;label.style.top=Math.round(y+canvas.offsetTop)+'px';
  }
  // Pinch zoom (two pointers) and ctrl/⌘+wheel zoom; clamp CFG.view.zoomMin..zoomMax (starting values).
  const touches=new Map();let pinch=null;
