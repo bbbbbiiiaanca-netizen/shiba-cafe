@@ -308,7 +308,7 @@ function seat(s,w,c){const entranceCell=layout(s,w).entrance;const queueFrom=c.p
  const target=seatSlots(s,w).find(x=>!used.has(x.id)&&pathfind(zone,slots,from,x.cell,{seatTarget:true}));
  if(!target||w.custs.filter(c=>c.phase!=='exiting').length>=capOf(s))return false;
  Object.assign(c,{phase:'entering',seat:target.id,seatFurniture:target.furnitureId,cell:[...from],t:CFG.cafe.stayingSec,score:0,met:[],with:null,fulfilled:false,request:makeRequest(s,w)});
- routeTo(s,w,c,target.cell,true);if(queueFrom){const prefix=[];for(let j=queueFrom[1]-1;j>=entrance[1];j--)prefix.push([entrance[0],j]);c.route=[...prefix,...c.route];c.cell=queueFrom;}else if(c.entryFrom){c.route.unshift([...entrance]);c.cell=[...c.entryFrom];delete c.entryFrom;}w.custs.push(c);w.events.push({type:'enter',id:c.id});return true;}
+ routeTo(s,w,c,target.cell,true);if(queueFrom){const prefix=[];for(let j=queueFrom[1]-1;j>=entrance[1];j--)prefix.push([entrance[0],j]);c.route=[...prefix,...c.route];c.cell=queueFrom;}else if(c.entryFrom){c.route.unshift([...entrance]);c.cell=[...c.entryFrom];delete c.entryFrom;}faceCell(c,c.route?.[0]);w.custs.push(c);w.events.push({type:'enter',id:c.id});return true;}
 function spawn(s,w,now){const {zone,slots,entrance}=layout(s,w);
  if(!Number.isFinite(CFG.navigation.cellStepSec)||CFG.navigation.cellStepSec<=0||!pathfind(zone,slots,entrance,entrance))return;
  const c={id:w.nextCust++,kind:pick(w.r,NPC_NORMAL),cell:[...entrance],entryFrom:[entrance[0],entrance[1]+1]};
