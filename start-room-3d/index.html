@@ -271,8 +271,13 @@ small.fx{display:block;font-family:'Gowun Dodum',sans-serif;font-size:11px;opaci
 .furniture-actions.has-selection [data-furniture-rotate]{display:flex;margin-left:-78px;margin-top:22px}
 .furniture-actions.has-selection [data-furniture-flip]{display:flex;margin-left:78px;margin-top:22px}
 .furniture-actions.has-selection [data-furniture-done]{display:flex;margin-top:78px}
-.furniture-actions[data-valid=true] button:not([data-furniture-save]){background:#2fb855}
-.furniture-actions[data-valid=false] button:not([data-furniture-save]){background:#e04848}
+/* 17-7 가벽(선 따라, CFG.partitionWall.enabled일 때만): 왼쪽 위 가벽(1칸)·가벽(2칸). 고른 가벽은 보관·돌리기 대신 제거 */
+.furniture-actions [data-edge-add]:not([hidden]){display:flex;left:10px;top:10px;width:auto;height:auto;transform:none;padding:8px 14px;font-size:14px;background:#7a5a3a;border:0;border-radius:999px}
+.furniture-actions [data-edge-add="edge2"]:not([hidden]){top:52px}
+.furniture-actions.edge-selected [data-furniture-store],.furniture-actions.edge-selected [data-furniture-rotate]{display:none}
+.furniture-actions.edge-selected [data-edge-remove]:not([hidden]){display:flex;margin-left:60px;margin-top:-56px}
+.furniture-actions[data-valid=true] button:not([data-furniture-save]):not([data-edge-add]){background:#2fb855}
+.furniture-actions[data-valid=false] button:not([data-furniture-save]):not([data-edge-add]){background:#e04848}
 .furniture-actions[data-valid=false] [data-furniture-done]{opacity:.6}
 .furniture-actions [data-furniture-save]{display:flex;left:auto;right:10px;top:10px;width:auto;height:auto;transform:none;padding:10px 22px;font-size:16px;background:#f0a040;border:0;border-radius:999px}
 /* 수인님 10-15 요리 팝업 v7: 재료 가로 한 줄, 이름+효과 한 줄, 카드 줄은 제작 버튼 바로 위 */

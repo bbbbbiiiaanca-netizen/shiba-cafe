@@ -1,26 +1,28 @@
 // Whole-cell routes; cushions may be entered only as the route's seat target.
-import {cellToScreen,MANAGER,MAP,zonesForSpace,footprintCells,TABLE_ITEM_LAYOUT} from './map-data.js';
+import {cellToScreen,MANAGER,MAP,zonesForSpace,footprintCells,TABLE_ITEM_LAYOUT,activeEdges,edgeSegments} from './map-data.js';
 const key=c=>c.join(',');
-export function layout(s,w){const zone=w.navigation?.zone||zonesForSpace(s.space)[0];return {zone,slots:w.navigation?.slots||s.placement.slots,entrance:w.navigation&&Object.hasOwn(w.navigation,'entrance')?w.navigation.entrance:zone.entrance};}
+export function layout(s,w){const zone=w.navigation?.zone||zonesForSpace(s.space)[0];return {zone,slots:w.navigation?.slots||s.placement.slots,edges:w.navigation?.edges||activeEdges(s.placement),entrance:w.navigation&&Object.hasOwn(w.navigation,'entrance')?w.navigation.entrance:zone.entrance};}
+// 17-7 가벽: 선을 건너는 한 칸 이동(양쪽 방향)
+const crossings=edges=>new Set(edges.flatMap(e=>edgeSegments(e).flatMap(([a,b])=>[key(a)+'|'+key(b),key(b)+'|'+key(a)])));
 export function seatSlots(s,w){return layout(s,w).slots.filter(x=>['cushion','chair'].includes(x.type)).flatMap(x=>footprintCells(x).map(cell=>({id:x.id+':'+key(cell),furnitureId:x.id,cell})));}
-export function pathfind(zone,slots,from,to,{seatTarget=false}={}){
+export function pathfind(zone,slots,from,to,{seatTarget=false,edges=[]}={}){
  const inside=c=>Array.isArray(c)&&c.length===2&&c.every(Number.isInteger)&&c[0]>=0&&c[1]>=0&&c[0]<zone.cols&&c[1]<zone.rows;
  if(!inside(from)||!inside(to))return null;
  const blocked=new Set(slots.flatMap(x=>footprintCells(x).map(key)));
  if(seatTarget&&slots.some(x=>['cushion','chair'].includes(x.type)&&footprintCells(x).some(c=>key(c)===key(to))))blocked.delete(key(to));
  if(blocked.has(key(from))&&!slots.some(s=>['chair','cushion'].includes(s.type)&&footprintCells(s).some(c=>key(c)===key(from))))return null;
  if(blocked.has(key(to)))return null;
- const queue=[from],prev=new Map([[key(from),null]]);
+ const walls=crossings(edges),queue=[from],prev=new Map([[key(from),null]]);
  for(let n=0;n<queue.length;n++){const c=queue[n];if(key(c)===key(to)){const route=[];let p=c;while(prev.get(key(p))!==null){route.unshift(p);p=prev.get(key(p));}return route;}
- for(const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]]){const p=[c[0]+di,c[1]+dj];if(inside(p)&&!blocked.has(key(p))&&!prev.has(key(p))){prev.set(key(p),c);queue.push(p);}}}
+ for(const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]]){const p=[c[0]+di,c[1]+dj];if(inside(p)&&!blocked.has(key(p))&&!prev.has(key(p))&&!walls.has(key(c)+'|'+key(p))){prev.set(key(p),c);queue.push(p);}}}
  return null;
 }
-export function routeTo(s,w,char,target,seatTarget=false){const {zone,slots}=layout(s,w);char.target=target&&[...target];char.seatTarget=seatTarget;char.route=pathfind(zone,slots,char.cell,target,{seatTarget});char.moveAcc=0;}
+export function routeTo(s,w,char,target,seatTarget=false){const {zone,slots,edges}=layout(s,w);char.target=target&&[...target];char.seatTarget=seatTarget;char.route=pathfind(zone,slots,char.cell,target,{seatTarget,edges});char.moveAcc=0;}
 export function moveCell(char,dt,seconds){if(char.noWalk){char.route=char.route&&[];char.moveAcc=0;return !!char.route;} // 걷기 프레임 없음 → 위치 이동 없이 그 자리에서 도착 처리
  if(!Number.isFinite(seconds)||seconds<=0||!char.route)return false;char.moveAcc=(char.moveAcc||0)+dt;while(char.moveAcc>=seconds&&char.route.length){char.moveAcc-=seconds;const next=char.route.shift();faceCell(char,next);char.cell=next;}return char.route.length===0;}
-export function syncRoutes(s,w){const {zone,slots,entrance}=layout(s,w),sig=JSON.stringify([zone.cols,zone.rows,slots,entrance]);if(w.layoutSig===sig)return;w.layoutSig=sig;
+export function syncRoutes(s,w){const {zone,slots,edges,entrance}=layout(s,w),sig=JSON.stringify([zone.cols,zone.rows,slots,edges,entrance]);if(w.layoutSig===sig)return;w.layoutSig=sig;
  const seats=seatSlots(s,w);for(const c of w.custs){const seat=seats.find(x=>x.furnitureId===c.seatFurniture);if(c.phase==='seated'){if(seat){c.seat=seat.id;c.cell=[...seat.cell];if(c.order)linkTable(s,w,c);}continue;}if(c.phase==='entering'&&seat){c.seat=seat.id;routeTo(s,w,c,seat.cell,true);}else if(c.phase==='exiting')routeTo(s,w,c,entrance);}
- for(const sh of Object.values(w.sh)){if(sh.phase==='approach'){const c=w.custs.find(c=>c.id===sh.cust);if(c?.cell){const targets=[[1,0],[-1,0],[0,1],[0,-1]].map(([i,j])=>[c.cell[0]+i,c.cell[1]+j]);routeTo(s,w,sh,targets.find(p=>pathfind(zone,slots,sh.cell,p)));}}else if(sh.target)routeTo(s,w,sh,sh.target,sh.seatTarget);}
+ for(const sh of Object.values(w.sh)){if(sh.phase==='approach'){const c=w.custs.find(c=>c.id===sh.cust);if(c?.cell){const targets=[[1,0],[-1,0],[0,1],[0,-1]].map(([i,j])=>[c.cell[0]+i,c.cell[1]+j]);routeTo(s,w,sh,targets.find(p=>pathfind(zone,slots,sh.cell,p,{edges})));}}else if(sh.target)routeTo(s,w,sh,sh.target,sh.seatTarget);}
 }
 export {MAP};
 
@@ -32,34 +34,36 @@ export function linkTable(s,w,c){const {slots}=layout(s,w);const tables=slots.fi
  c.itemLocation=c.itemSlot?'table':tables.length?'none':'inHand';}
 
 // Preserve every previously reachable floor cell and seat; counter access is included in floor reachability.
-export function preservesEntrance(zone,before,after){
+// 17-7: edgesBefore/edgesAfter = 선 따라 세운 가벽, 같은 기준으로 검사. 카운터는 가벽 너머 옆 칸에서는 닿지 않는다.
+export function preservesEntrance(zone,before,after,{edgesBefore=[],edgesAfter=[]}={}){
  const entrance=zone.entrance;if(!entrance)return true;
- if(!pathfind(zone,after,entrance,entrance))return false;
+ const was={edges:edgesBefore},now={edges:edgesAfter},walls=crossings(edgesAfter);
+ if(!pathfind(zone,after,entrance,entrance,now))return false;
  for(let i=0;i<zone.cols;i++)for(let j=0;j<zone.rows;j++){
   const cell=[i,j],seatTarget=before.some(s=>['chair','cushion'].includes(s.type)&&footprintCells(s).some(c=>key(c)===key(cell)));
-  if(!pathfind(zone,before,entrance,cell,{seatTarget}))continue;
+  if(!pathfind(zone,before,entrance,cell,{...was,seatTarget}))continue;
   // A newly occupied floor is exempt, but seats must retain an approach.
   if(!seatTarget&&after.some(s=>footprintCells(s).some(c=>key(c)===key(cell))))continue;
-  if(!pathfind(zone,after,entrance,cell,{seatTarget}))return false;
+  if(!pathfind(zone,after,entrance,cell,{...now,seatTarget}))return false;
  }
  for(const slot of after){
-  if(['chair','cushion'].includes(slot.type)&&!footprintCells(slot).every(cell=>pathfind(zone,after,entrance,cell,{seatTarget:true})))return false;
-  if(slot.type==='counter'&&!footprintCells(slot).some(([i,j])=>[[i+1,j],[i-1,j],[i,j+1],[i,j-1]].some(cell=>pathfind(zone,after,entrance,cell))))return false;
+  if(['chair','cushion'].includes(slot.type)&&!footprintCells(slot).every(cell=>pathfind(zone,after,entrance,cell,{...now,seatTarget:true})))return false;
+  if(slot.type==='counter'&&!footprintCells(slot).some(([i,j])=>[[i+1,j],[i-1,j],[i,j+1],[i,j-1]].some(cell=>!walls.has(key(cell)+'|'+key([i,j]))&&pathfind(zone,after,entrance,cell,now))))return false;
  }
  return true;
 }
 export function tickManager(s,w,dt,active,seconds){
  if(!active){w.manager=null;return;}
- const {zone,slots,entrance}=layout(s,w);if(!entrance)return;
+ const {zone,slots,edges,entrance}=layout(s,w);if(!entrance)return;
  const adjacent=slot=>footprintCells(slot).flatMap(([i,j])=>[[i+1,j],[i-1,j],[i,j+1],[i,j-1]]);
- const reachable=(from,targets)=>targets.map(p=>({p,route:pathfind(zone,slots,from,p)})).filter(x=>x.route).sort((a,b)=>a.route.length-b.route.length)[0]?.p;
+ const reachable=(from,targets)=>targets.map(p=>({p,route:pathfind(zone,slots,from,p,{edges})})).filter(x=>x.route).sort((a,b)=>a.route.length-b.route.length)[0]?.p;
  // Home = beside the counter's short end (same row), so the 150px sprite doesn't stand in front of the counter and cover it;
  // falls back to any reachable adjacent cell.
  const counters=slots.filter(x=>x.type==='counter'),side=slot=>{const c=footprintCells(slot),is=c.map(p=>p[0]),js=c.map(p=>p[1]),sameRow=new Set(js).size===1;
   return sameRow?[[Math.max(...is)+1,js[0]],[Math.min(...is)-1,js[0]]]:[[is[0],Math.max(...js)+1],[is[0],Math.min(...js)-1]];};
  const home=reachable(entrance,counters.flatMap(side))||reachable(entrance,counters.flatMap(adjacent))||entrance;
  const m=w.manager??={role:'manager',cell:[...home],phase:'idle',route:null,facing:0,anim:0};m.anim+=dt;
- if(!pathfind(zone,slots,m.cell,m.cell)){m.cell=[...home];m.phase='idle';m.target=null;}
+ if(!pathfind(zone,slots,m.cell,m.cell,{edges})){m.cell=[...home];m.phase='idle';m.target=null;}
  if(m.phase==='visiting'){m.wait-=dt;if(m.wait>0)return;m.returning=true;m.phase='idle';}
  if(m.phase==='walking'){
   const acc=m.moveAcc;routeTo(s,w,m,m.target);m.moveAcc=acc;
