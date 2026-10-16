@@ -322,6 +322,60 @@ small.fx{display:block;font-family:'Gowun Dodum',sans-serif;font-size:11px;opaci
 #questGuide{position:static;top:auto;left:auto}
 #questGuide progress{width:80px;height:6px;flex:none}
 .hud-sub #boostChip:empty{display:none}
+
+/* ===== 2026-10-16 soft polish (polish-plan-1016): tokens → per-UI rules → a11y. Diorama/canvas, shiba size, coin icon, popup position and room height untouched. ===== */
+/* 1) Nunito for Latin only (unicode-range), Hangul still falls through to Jua / Gowun Dodum.
+   Weight ranges pick a real Nunito file for any weight: body (400–699) → SemiBold 600, titles/buttons (700+) → ExtraBold 800. */
+@font-face{font-family:"Nunito";src:url(assets/fonts/Nunito-SemiBold.woff2) format("woff2");font-weight:100 699;unicode-range:U+0000-00FF,U+2000-206F;font-display:swap}
+@font-face{font-family:"Nunito";src:url(assets/fonts/Nunito-ExtraBold.woff2) format("woff2");font-weight:700 1000;unicode-range:U+0000-00FF,U+2000-206F;font-display:swap}
+:root{--fs-title:17px;--fs-body:14px;--fs-small:11px;
+ --r-card:16px;--r-btn:12px;--r-pill:999px;
+ --shadow-soft:0 2px 8px rgba(74,46,28,.12);
+ --accent:#f0a64a;--accent-tint:color-mix(in srgb,#f0a64a 16%,#fff);
+ --lock:url(assets/drive/ui/ui-lock.png)}
+html,body{font-family:"Nunito","Gowun Dodum","Noto Sans CJK KR","Apple SD Gothic Neo",sans-serif}
+small.fx{font-family:"Nunito","Gowun Dodum",sans-serif}.shiba-tools select{font-family:"Nunito","Gowun Dodum",sans-serif}
+/* every selector that used Jua: Nunito 800 for Latin/digits; synthesis off so Jua (400 only) is never fake-bolded */
+h1,h2,h3,h4,button,.btn,[role=button],.tab,.main-tabs button,.pill,.badge,.lp-title,.ribbon,#lvl,#rep,.lp-price,.price,strong,
+.land-price,.sq-lv,#questGuide,.hud-sub,.menu-card.locked strong,.furniture-card[data-furniture-card=wall] [data-wall-count],
+#runScreen .run-hud,#runScreen .run-card,.run-start .run-go,#mbox.itemget-popup .q17-itemget .itemget-count,.cook2,.edit-card,
+.furniture-actions.has-selection button:not([data-furniture-save]),#app.editing .furniture-actions [data-furniture-save]
+{font-family:"Nunito","Jua",sans-serif;font-weight:800;font-synthesis-weight:none}
+/* 3-step type scale (HUD keeps its own compact sizes; book/cook popups keep their fitted frames) */
+#phead h2,#mbox:not(.book-popup) h2,#mbox:not(.book-popup) h3,.card h3,.furniture-section h3,.menu-heading,.ledger-section h3{font-size:var(--fs-title)}
+.card,.lp-text strong,.li .nm,.quest-name,.trk,.confirm-text,.furn-row,.menu-info strong{font-size:var(--fs-body)}
+.note,.li .sub,.lp-text small,.menu-heading small,.quest-name small,.village-place small,.theme-logo small,.manage-lv small,small.fx,.menu-info small,.menu-info span{font-size:var(--fs-small)}
+
+/* 2) soft blurred shadow instead of hard 0-blur drop; radius tokens (round buttons keep 50%) */
+button,button:disabled,button.warn,button[data-act=levelUp]:disabled,.lp-close,.lp-price,.lp-price:disabled,.run-start .run-go,.cook2-go{box-shadow:var(--shadow-soft)}
+.card,.lp-card,.menu-card,.choice,.accgrid .ai,.theme-logo,.quest-row,.q17-product,.cook2-card,.cook2-ing,.cook-row,.edit-card,.hosp-row,.hosp-empty,.sq-pic,.manage-tabs button,.manage-lv,#mbox,#mbox.list-popup{border-radius:var(--r-card)}
+.lp-price,.tabs button,.run-start .run-go,.cook2-go,.lp-ribbon{border-radius:var(--r-btn)}
+.chip,.manage-tabs button small,.sq-where,#toast{border-radius:var(--r-pill)}
+
+/* 3) locked / unavailable cells: content grey + faded, a crisp 14px lock on top (lock itself never filtered) */
+.lp-card.locked,.menu-card.locked,.cook2-card.locked,.cook-row.locked,.theme-logo.locked,.run-locked{opacity:1;position:relative}
+.lp-card.locked>*,.cook2-card.locked>:not(.cook2-lock),.cook-row.locked>span,.theme-logo.locked>small,.theme-logo.locked .theme-logo-art>img:not(.theme-lock),.run-locked>span{filter:grayscale(1);opacity:.5}
+.lp-card.locked::after{content:"";position:absolute;top:5px;right:6px;width:14px;height:14px;background:var(--lock) center/contain no-repeat;pointer-events:none}
+.run-locked img,.cook2-lock img,.cook2-card .cook2-lock img,.theme-logo .theme-lock{width:14px;height:14px;object-fit:contain;filter:none;opacity:1}
+/* new-item marker: plain 8px red dot, no text */
+.main-tabs .tab-dot,.scene-entries i,.new-badge{width:8px;height:8px;border:0;border-radius:50%;background:#e2483d;padding:0}
+.q17-product{position:relative}.new-badge{position:absolute;top:8px;right:8px;display:block}
+
+/* 4) #modal dims the screen; popup + bag/panel fade in on opacity only (no transform, positions unchanged) */
+#modal{background:rgba(30,20,12,.45)}
+@keyframes softFadeIn{from{opacity:0}to{opacity:1}}
+#modal:not([hidden]),#panel:not([hidden]),#app[data-tab=bag] #menuList{animation:softFadeIn .2s ease-out}
+
+/* 5) one accent for every "selected" state: light tint + 2px accent border */
+.main-tabs button,.main-tabs button.main{border:2px solid transparent}
+.main-tabs button.active,.main-tabs button.main.active{background:var(--accent-tint);border-color:var(--accent)}
+.chips button[aria-pressed],.chip[aria-pressed],.choices button[aria-pressed],.q17-swipe button[aria-pressed],.run-start .q17-swipe button[aria-pressed]{background:#fffaf0;color:#6b4426;border:2px solid #e3c9a3;outline:0}
+.chips button[aria-pressed],.chip[aria-pressed]{border-radius:var(--r-pill)}
+.chips button[aria-pressed=true],.chip[aria-pressed=true],.chip.on,.choices button[aria-pressed=true],.q17-swipe button[aria-pressed=true],.run-start .q17-swipe button[aria-pressed=true],
+.choice.on,.cook2-card[aria-pressed=true],.cook-row[aria-pressed=true]{background:var(--accent-tint);border-color:var(--accent);color:#4a2e1c;outline:0}
+.choice{border-width:2px}.cook-row{border:2px solid transparent}
+
+@media (prefers-reduced-motion:reduce){#modal:not([hidden]),#panel:not([hidden]),#app[data-tab=bag] #menuList{animation:none}}
 </style>
 <style id="bag-icon-ui">
 .bag-tabs{display:flex;justify-content:center;gap:10px;padding:4px 0 8px}
