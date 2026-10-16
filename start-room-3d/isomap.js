@@ -1,3 +1,4 @@
+import {drawOrderBubble} from './order-bubble.js';
 import {loadHd} from './hd-assets.js';
 import {t} from './i18n.js';
 import {CFG} from './config.js';
@@ -125,12 +126,13 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
     }
    });
    if(z.id==='A'){
-    for(const c of (world.custs||[]).filter(c=>c.phase==='seated'&&c.request&&!c.fulfilled)){
+    for(const c of (world.custs||[]).filter(c=>c.phase==='seated'&&c.request&&!c.fulfilled&&!(world.orderBubbles||[]).some(b=>b.guestId===c.id))){
      const p=cellToScreen(...c.cell,view,z),im=load('assets/drive/request-bubble-empty_512.png');
      if(im.complete&&im.naturalWidth){const size=36;ctx.drawImage(im,p.x-size/2,p.y-size-18,size,size);}
      const icon=load(c.request.type==='meetShiba'?'assets/drive/request-icon-shiba_256.png':'assets/drive/request-icon-trick_256.png');
      if(icon.complete&&icon.naturalWidth)ctx.drawImage(icon,p.x-10,p.y-46,20,20);
     }
+    for(const b of world.orderBubbles||[]){const guest=world.custs.find(c=>c.id===b.guestId),cell=guest?.cell||b.cell;if(cell)drawOrderBubble(ctx,load('assets/drive/'+b.img),floatOrigin({cell},view,z));}
     // §17-5·17-6: icon floats rise from the guest's head and fade (age advanced by main.js); kinds with a null icon draw nothing
     for(const f of world.floats||[]){const file=FLOAT_ICONS[f.kind];if(!file||!f.cell)continue;const im=load(file);if(!(im.complete&&im.naturalWidth))continue;
      const k=Math.min(1,Math.max(0,f.age/f.dur)),p=floatOrigin(f,view,z),size=FLOAT_LAYOUT.iconPx[f.kind],F=FLOAT_LAYOUT;

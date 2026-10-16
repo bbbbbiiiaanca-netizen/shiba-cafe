@@ -26,6 +26,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await check('fresh save starts with the 밸런스_2년.md §5 starting values (30,000 coins, 300 diamonds)','__game.state.coins===__game.CFG.start.coins&&__game.state.coins===30000&&__game.state.dia===300&&__game.state.coinFrac===0');
  await steps({ev,check,sleep,reload:()=>go(false)});
  await ev('__game.ui.modals=[];__game.close();__game.state.settings.language="ko";__game.refresh();true');
+ await (await import('./walk-order-browser.mjs')).walkOrderBrowser({ev,check,c});
  await (await import('./dongu-browser.mjs')).donguBrowser({ev,check,c});
  const SB=(await import('./settings-browser.mjs')).settingsBrowser;const EX=process.env.SPEC_SHOT_DIR?{'settings-en-normal.png':process.env.SPEC_SHOT_DIR+'/i18n-en-settings.png'}:{};
  await SB({ev,check,c,release:false,extraShot:EX});
