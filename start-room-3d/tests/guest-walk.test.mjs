@@ -22,7 +22,7 @@ for(const [to,f] of [[[3,2],0],[[2,3],1],[[1,2],2],[[2,1],3]]){const c={cell:[2,
 // 그림 고르기: 걷는 중 125ms마다 1→4, 멈추면 1번, 앉으면 앉은 그림
 {const c={kind:'commuter',phase:'entering',route:[[0,4]],facing:3};assert.deepEqual([0,125,250,375,500].map(t=>guestPose(c,t).n),[1,2,3,4,1]);
  assert.equal(guestPose(c,250).file,'assets/drive/chars/guest/commuter/guest-commuter-walk-back-ur-3.png');
- assert.equal(guestPose({...c,route:[]},250).n,1);assert.deepEqual(guestPose({...c,phase:'seated'}),{sit:true,file:'assets/drive/guest-sitting-commuter-final.png'});}
+ assert.equal(guestPose({...c,route:[]},250).n,1);assert.deepEqual(guestPose({...c,phase:'seated'}),{sit:true,seiza:true,file:CFG.characters.guest.seiza.commuter,mirrored:false});}
 // 배경 지우기: 가장자리와 이어진 배경색만 투명, 안쪽 그림·둘러싸인 배경은 그대로, bbox = 남은 그림
 {const w=6,h=6,d=new Uint8ClampedArray(w*h*4);for(let i=0;i<w*h;i++)d.set([250,240,230,255],i*4);for(let y=1;y<5;y++)for(let x=2;x<4;x++)d.set([30,40,90,255],(y*w+x)*4);
  assert.deepEqual(keyBackground(d,w,h,42),{x:2,y:1,w:2,h:4});assert.equal(d[3],0);assert.equal(d[(2*w+2)*4+3],255);}
@@ -41,7 +41,7 @@ function trace(kind){const {s,w}=fixture(()=>0);const out=[];let c=null;
 // 10종 모두: 시뮬레이션은 종류와 무관(같은 seed → 같은 길), 걷는 동안 그 종류 걷기 그림, 앉으면 그 종류 앉은 그림
 {const a=trace('commuter').out;for(const k of S.NPC_NORMAL){const {c,out}=trace(k);assert.deepEqual(out,a,k);assert.equal(c.kind,k);
  for(const o of out.slice(0,-1)){const p=guestPose({kind:k,...o,route:Array(o.route)},0);assert.equal(p.sit,false);assert.equal(p.file,`assets/drive/chars/guest/${k}/guest-${k}-walk-${GUEST_DIRS[o.facing||0]}-1.png`);}
- assert.deepEqual(guestPose(c),{sit:true,file:`assets/drive/guest-sitting-${k}-final.png`},k);
+ assert.deepEqual(guestPose(c),k==='commuter'?{sit:true,seiza:true,file:CFG.characters.guest.seiza.commuter,mirrored:false}:{sit:true,file:`assets/drive/guest-sitting-${k}-final.png`},k);
  assert.equal(guestPose({kind:k,phase:'entering',route:[[1,1]],facing:2},250).file,`assets/drive/chars/guest/${k}/guest-${k}-walk-back-ul-3.png`);}}
 // 지도에 연결됨
 const iso=fs.readFileSync(new URL('isomap.js',ROOT),'utf8');assert.ok(iso.includes("from './guest-art.js'")&&iso.includes('guestPose(s.character'));
@@ -59,3 +59,10 @@ for(const kind of S.NPC_NORMAL){
   assert.ok(Math.abs(r[1]+r[3]*a[1]/h-p.y)<1e-12);
  }
 }
+
+// Seiza keeps its transparent canvas and hips anchor; seat direction controls mirroring.
+assert.deepEqual(size(CFG.characters.guest.seiza.commuter),[128,176]);
+for(const dir of [0,1,2,3])assert.equal(guestPose({kind:'commuter',phase:'seated'},0,dir).mirrored,!!(dir%2));
+for(const kind of S.NPC_NORMAL){assert.equal(!!CFG.characters.guest.seiza[kind],kind==='commuter');
+ const p={x:100,y:200},a=CFG.characters.guest.seizaAnchor,r=guestDrawRect(kind,p,128,176,a,1),scale=CFG.characters.guest.scale[kind];
+ assert.equal(r[2],128*scale);assert.equal(r[0]+a[0]*scale,p.x);assert.equal(r[1]+a[1]*scale,p.y);}

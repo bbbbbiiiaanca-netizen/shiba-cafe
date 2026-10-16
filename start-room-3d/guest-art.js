@@ -1,12 +1,12 @@
-// 걸어 들어와 앉기 (2026-10-16): 손님 10종 모두 입구 → 자리까지 프레임을 넘기며 걷고, 앉으면 그 종류의 기존 앉은 그림으로 바뀐다.
+// 앉으면 설정된 투명 seiza 그림을 우선 사용하고, 없으면 기존 의자 그림으로 돌아간다.
 // config 에 걷기 그림 경로가 없는(null) 종류는 null → isomap 이 아무것도 그리지 않는다.
 import {CFG} from './config.js';
 import {canWalk,walkFrame} from './walk-frames.js';
 export const GUEST_DIRS=['front-dr','front-dl','back-ul','back-ur']; // facing 0..3 (navigation.faceCell)
 export const sitFile=kind=>CFG.characters.guest.sit.replace('{key}',kind);
 // 지도에 그릴 손님 그림: {sit:true,file} | {sit:false,file,dir,n} | null(그리지 않음 = 기존 동작)
-export function guestPose(c,nowMs=0){if(!c?.kind||!canWalk('guest',c.kind))return null;
- if(c.phase==='seated')return {sit:true,file:sitFile(c.kind)};
+export function guestPose(c,nowMs=0,seatDir=0){if(!c?.kind||!canWalk('guest',c.kind))return null;
+ if(c.phase==='seated'){const file=CFG.characters.guest.seiza[c.kind];return file?{sit:true,seiza:true,file,mirrored:!!(seatDir%2)}:{sit:true,file:sitFile(c.kind)};}
  const dir=GUEST_DIRS[c.facing||0],moving=!!c.route?.length,n=moving?1+Math.floor(nowMs/125)%(CFG.characters.frameCount||4):1;
  return {sit:false,file:walkFrame('guest',c.kind,dir,n),dir,n};}
 // 배경 지우기: 가장자리에서 시작해 네 모서리 평균색과 비슷한(채널 차 합 ≤ tol) 이어진 픽셀만 투명하게. 남은 불투명 영역의 bbox 를 돌려준다.
