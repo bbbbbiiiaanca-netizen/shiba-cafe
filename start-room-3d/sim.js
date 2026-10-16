@@ -1,3 +1,4 @@
+import {decorBonus} from './decor.js';
 import {tickManager,linkTable,faceCell,layout,seatSlots,pathfind,routeTo,moveCell,syncRoutes} from './navigation.js';
 export {tickManager,seatSlots,syncRoutes,pathfind};
 // Spec v3 game core — pure logic (no DOM), deterministic with an injected RNG so tests can replay it.
@@ -114,7 +115,7 @@ export const slotsOf=s=>Math.min(CFG.cafe.maxPlaced,pressureAt(s.cafe.level).slo
 export const capOf=s=>pressureAt(s.cafe.level).cap; // actual seats come only from placed chairs/cushions
 
 export function arrivalMul(rep){for(const [at,m] of CFG.rep.arrivalMul)if(rep>=at)return m;return CFG.rep.arrivalMul.at(-1)[1];}
-export const arrivalInterval=s=>3600/(CFG.cafe.customersPerHourPerCap*capOf(s))*arrivalMul(s.cafe.rep)*upgradeMul(s,'interval')/heartMultiplier(s,'guests',s.heartUseNow??s.lastSeen);
+export const arrivalInterval=s=>3600/(CFG.cafe.customersPerHourPerCap*capOf(s))*arrivalMul(s.cafe.rep)*upgradeMul(s,'interval')/heartMultiplier(s,'guests',s.heartUseNow??s.lastSeen)/(1+decorBonus(s.placement?.slots??[]).demand);
 export function satisfiedGain(rep,base=CFG.rep.satisfied){for(const [at,m] of CFG.rep.damp)if(rep>=at)return base*m;return base;}
 // offline: if a drop reaches the floor the café closes for the day (갱신 126-1)
 export function addRep(s,d,ctx={}){const C=s.cafe;C.rep=clamp(C.rep+d,CFG.rep.min,CFG.rep.max);
@@ -304,10 +305,11 @@ export function newWorld(s,r=Math.random,navigation=null){s.heartUseNow=s.lastSe
 function makeRequest(s,w){const T=[];const working=s.shibas.filter(o=>canWork(s,o));
  if(working.length)T.push('meetShiba');const known=CFG.tricks.filter(t=>working.some(o=>o.tricks[t.id]>0));if(known.length)T.push('seeTrick');
  if(!T.length)return null;const type=pick(w.r,T);return type==='meetShiba'?{type,shibaId:pick(w.r,working).id}:{type,trick:pick(w.r,known).id};}
+export const customerStayDuration=s=>CFG.cafe.stayingSec*(1+decorBonus(s.placement?.slots??[]).stay);
 function seat(s,w,c){const entranceCell=layout(s,w).entrance;const queueFrom=c.phase==='queue'&&c.cell?[...c.cell]:null;const from=c.phase==='queue'?entranceCell:c.cell||entranceCell;const used=new Set(w.custs.filter(c=>c.phase!=='exiting').map(x=>x.seat));const {zone,slots,entrance}=layout(s,w);
  const target=seatSlots(s,w).find(x=>!used.has(x.id)&&pathfind(zone,slots,from,x.cell,{seatTarget:true}));
  if(!target||w.custs.filter(c=>c.phase!=='exiting').length>=capOf(s))return false;
- Object.assign(c,{phase:'entering',seat:target.id,seatFurniture:target.furnitureId,cell:[...from],t:CFG.cafe.stayingSec,score:0,met:[],with:null,fulfilled:false,request:makeRequest(s,w)});
+ Object.assign(c,{phase:'entering',seat:target.id,seatFurniture:target.furnitureId,cell:[...from],t:customerStayDuration(s),score:0,met:[],with:null,fulfilled:false,request:makeRequest(s,w)});
  routeTo(s,w,c,target.cell,true);if(queueFrom){const prefix=[];for(let j=queueFrom[1]-1;j>=entrance[1];j--)prefix.push([entrance[0],j]);c.route=[...prefix,...c.route];c.cell=queueFrom;}else if(c.entryFrom){c.route.unshift([...entrance]);c.cell=[...c.entryFrom];delete c.entryFrom;}w.custs.push(c);w.events.push({type:'enter',id:c.id});return true;}
 function spawn(s,w,now){const {zone,slots,entrance}=layout(s,w);
  if(!Number.isFinite(CFG.navigation.cellStepSec)||CFG.navigation.cellStepSec<=0||!pathfind(zone,slots,entrance,entrance))return;

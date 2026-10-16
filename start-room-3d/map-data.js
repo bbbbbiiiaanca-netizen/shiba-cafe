@@ -1,3 +1,4 @@
+import {furnitureSize} from './decor.js';
 import {NEW_FURNITURE} from './furniture-data.js';
 import {FURN_BACKS} from './furniture-art.generated.js';
 import {FURN_ANCHORS} from './furniture-anchors.js';
@@ -8,7 +9,7 @@ import {CFG} from './config.js';
 export const PARTITION={count:3,price:50000}; // starting value 2026-10-15, pending user confirm
 export const SPRITES={
  // footprint 시작값 1칸, 명세 없음. Sakura back is optional (null until synced repo art exists).
- ...Object.fromEntries(NEW_FURNITURE.map(it=>[it.id,{file:'assets/drive/furniture-v4/'+it.filename,anchor:FURN_ANCHORS[it.filename],scale:1,back:FURN_BACKS[it.id]?{file:FURN_BACKS[it.id],anchor:FURN_ANCHORS[it.backname]||FURN_ANCHORS[it.filename],scale:1}:null,footprint:{cells:1,axis:null}}])),
+ ...Object.fromEntries(NEW_FURNITURE.map(it=>[it.id,{file:'assets/drive/furniture-v4/'+it.filename,anchor:FURN_ANCHORS[it.filename],scale:1,back:FURN_BACKS[it.id]?{file:FURN_BACKS[it.id],anchor:FURN_ANCHORS[it.backname]||FURN_ANCHORS[it.filename],scale:1}:null,get footprint(){const {w,h}=furnitureSize(it.id);return {cells:w*h,axis:null};}}])),
   // 10-16 똑또기: 앞·앞 반전이 초록 칸보다 반 칸 뒤에 서서 기준점 y 162.5→118(뒷모습 2·3처럼 칸 위에). 이전 메모: bbox x6–95/y24–181; bottom contact midpoint (50.5,162.5), scaled to existing 64×32 cell edge and offset to the rear cell edge.
  wall:{file:'assets/drive/tiles/wall-inner.png',anchor:[50.5,118],scale:64/89,back:{file:'assets/drive/tiles/furn-partition-v4-back.png',anchor:[54.5,157],scale:64/89},flip:{file:'assets/drive/tiles/wall-inner-flip.png',anchor:[62.5,118],scale:64/89},footprint:{cells:1,axis:null}},
  // 그림이 v4 sprites, original size (scale 1). anchor = centre of floor-contact footprint, sprite px (given by 그림이).
@@ -72,6 +73,10 @@ export function flipDir(dir){return dir^1;}
 export function rotateDir(type,dir,sprites=SPRITES){const dirs=availableDirs(type,sprites);return dirs[(dirs.indexOf(dir)+1)%dirs.length];}
 export function footprintCells(item){
  if(item.character||item.tableItem||!item.origin)return item.cells; // legacy footprint callers
+ if(NEW_FURNITURE.some(it=>it.id===item.type)){
+  const size=furnitureSize(item.type),w=item.dir%2?size.h:size.w,h=item.dir%2?size.w:size.h;
+  return Array.from({length:w*h},(_,n)=>[item.origin[0]+n%w,item.origin[1]+Math.floor(n/w)]);
+ }
  const f=SPRITES[item.type].footprint,axis=item.dir%2?(f.axis==='i'?'j':'i'):f.axis;
  return Array.from({length:f.cells},(_,n)=>[item.origin[0]+(axis==='i'?n:0),item.origin[1]+(axis==='j'?n:0)]);
 }

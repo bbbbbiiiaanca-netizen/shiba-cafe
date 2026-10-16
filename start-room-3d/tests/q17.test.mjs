@@ -1,3 +1,4 @@
+import {isDecor,decorEffectText} from '../decor.js';
 import {FURN_CATEGORIES} from '../furniture-data.js';
 import assert from 'node:assert/strict';
 import {CFG} from '../config.js';
@@ -29,7 +30,7 @@ const {runInNewContext}=await import('node:vm');
 const {makeT}=await import('../i18n.js'),koL=makeT(()=>'ko');
 const renderSource=main.slice(main.indexOf('function furnitureShop(){'),main.indexOf('game.openExpand=openExpand;'));
 const P={},ui={};
-const renderers=runInNewContext(renderSource+';({shop:furnitureShop})',{FURN_CATEGORIES,RELEASE:false,
+const renderers=runInNewContext(renderSource+';({shop:furnitureShop})',{isDecor,decorEffectText,FURN_CATEGORIES,RELEASE:false,
  L:koL,LF:(k,fb)=>{const v=koL(k);return v===k?fb:v;},temp:false,Q:new URLSearchParams(),P,ui,s,Q17:Q,CFG,S,clock:{now:()=>0},IMG:{shiba:b=>'assets/drive/shiba-'+b+'.png'},
  slot:()=>'<span class="slot"></span>',img:src=>`<img src="${src}">`,nameOf:sh=>sh.name||sh.breed,
  priceText:n=>n==null?'미정':String(n),cookingFx,fmt:String,itemIcon:()=>'',RES:{},tfmt:String,
@@ -50,7 +51,7 @@ const claimed=Q.rewardSnapshot(mailState);assert.equal(S.claimMail(mailState,1,0
 const modalSource=main.slice(main.indexOf("let modalSig='';"),main.indexOf('if(L0.offline'));
 const modalNodes={modal:{hidden:true},mbox:{classList:{toggle(){},remove(){}},dataset:{},innerHTML:''}};
 const modalUi={modals:[{kind:'itemget',reward:{id:'expBoost4h',n:1}}]};mailState.started=true;mailState.settings.language='ko';
-const modalRender=runInNewContext(modalSource+';renderModal',{FURN_CATEGORIES,RELEASE:false,
+const modalRender=runInNewContext(modalSource+';renderModal',{isDecor,decorEffectText,FURN_CATEGORIES,RELEASE:false,
  L:koL,ui:modalUi,s:mailState,CFG,S,$:id=>modalNodes[id],grantName:()=> '경험치 부스트',grantImage:()=>'<img src="assets/drive/ui/item-exp-boost.png">',fmt:String,
 });
 modalRender();assert.equal(modalNodes.modal.hidden,false);assert.match(modalNodes.mbox.innerHTML,/data-itemget/);assert.match(modalNodes.mbox.innerHTML,/받기/);assert.match(modalNodes.mbox.innerHTML,/경험치 부스트/);assert.match(modalNodes.mbox.innerHTML,/data-itemget-count>×1</);

@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import {setLangSource} from '../i18n.js';
+import {CFG} from '../config.js';
+import {NEW_FURNITURE} from '../furniture-data.js';
+import {furnitureSize,decorBonus,decorEffectText} from '../decor.js';
+import {footprintCells,SPRITES} from '../map-data.js';
+import {newState,arrivalInterval,customerStayDuration} from '../sim.js';
+let count=0;
+const check=(actual,expected)=>{assert.deepEqual(actual,expected);count++;};
+const saved=structuredClone(CFG.decor);
+try{
+ for(const it of NEW_FURNITURE){check(furnitureSize(it.id),{w:1,h:1});check(CFG.furniture.items.find(x=>x.id===it.id).price,null);check(footprintCells({type:it.id,origin:[0,0],dir:0}),[[0,0]]);}
+ CFG.decor.footprint.default={w:2,h:1};
+ check(footprintCells({type:'shelf',origin:[1,2],dir:1}),[[1,2],[1,3]]);
+ CFG.decor.footprint.overrides.shelf={w:2,h:2};
+ check(footprintCells({type:'shelf',origin:[0,0],dir:0}),[[0,0],[1,0],[0,1],[1,1]]);
+ check(SPRITES.shelf.footprint.cells,4);
+ check(decorBonus([]),{demand:0,stay:0});
+ check(decorBonus([{type:'table'},{type:'unknown'},{type:'shelf'},{type:'shelf'}]),{demand:.04,stay:.02});
+ const sakura=Array.from({length:3},()=>({type:'shelf-sakura'}));
+ check(CFG.decor.sakuraSet.bonusMinItems,null);
+ check(decorBonus(sakura),{demand:.06,stay:.03});
+ CFG.decor.sakuraSet.bonus=.05;
+ check(decorBonus(sakura).demand,.06);
+ CFG.decor.sakuraSet.bonusMinItems=3;
+ check(decorBonus(sakura).demand,.11);
+ check(decorBonus(sakura.map((x,i)=>({...x,zone:i===2?'B':'A'}))).demand,.06);
+ check(decorBonus(Array(30).fill({type:'shelf-sakura'})),{demand:.2,stay:.1});
+ const s=newState(0);s.placement.slots=[];
+ const interval=arrivalInterval(s),stay=customerStayDuration(s);
+ s.placement.slots=[{type:'shelf'}];
+ check(arrivalInterval(s),interval/1.02);
+ check(customerStayDuration(s),stay*1.01);
+ check(decorEffectText(),'수요 +2% · 체류 +1%');
+ CFG.decor.effect.perItem={demand:.035,stay:.025};
+ check(decorEffectText(),'수요 +3.5% · 체류 +2.5%');
+ setLangSource(()=>'en');
+ check(decorEffectText(),'Demand +3.5% · Stay +2.5%');
+}finally{CFG.decor=saved;setLangSource(()=>'ko');}
+console.log(`decor: ${count} tests passed`);

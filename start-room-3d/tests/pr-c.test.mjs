@@ -1,3 +1,4 @@
+import {isDecor,decorEffectText} from '../decor.js';
 import {FURN_CATEGORIES} from '../furniture-data.js';
 // PR-C (2026-10-16) 360×640 small fixes: furniture card markup (shop interior + 가방 가구 상점), menu locked card, open('menu').
 import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {runInNewContext} from 'node:vm';
@@ -15,7 +16,9 @@ const checkCard=({id,body},p)=>{
  const text=label.replace(/<[^>]+>/g,'');
  if(Number.isFinite(p)){assert.equal(text.replace(/,/g,''),String(p));assert.doesNotMatch(body,/ disabled>/);}
  else{assert.equal(text,'');assert.match(body,/data-act="buyFurniture"[^>]* disabled>/);}
- assert.doesNotMatch(body,/미정|장식 점수|<small/);};
+ assert.doesNotMatch(body,/미정|장식 점수/);
+ if(isDecor(id))assert.ok(body.includes(decorEffectText()));
+ else assert.doesNotMatch(body,/<small/);};
 
 const interiorIds=CFG.furniture.items.filter(it=>CFG.shop.itemCategories[it.id]==='interior').map(it=>it.id);
 for(const price of [()=>40000,()=>null,id=>id===interiorIds[0]?null:1500]){
@@ -31,7 +34,7 @@ for(const price of [()=>40000,()=>null,id=>id===interiorIds[0]?null:1500]){
 {const src=main.slice(main.indexOf('function furnitureShop(){'),main.indexOf('\nconst grantName='));
  const fmt=n=>String(n).replace(/\B(?=(\d{3})+(?!\d))/g,','),ico=k=>`<img class="res-ico" data-res="${k}" src="assets/drive/ui/res-${k}.png" alt="" draggable="false">`;
  for(const priceOf of [id=>CFG.furniture.items.findIndex(it=>it.id===id)*1000+500,()=>null]){
-  const shop=runInNewContext(src+';furnitureShop',{FURN_CATEGORIES,CFG,ui:{},s:{},S:{furniturePrice:(_,id)=>priceOf(id)},L:()=>'전체',LF:(k,fb)=>fb,ico,priceText:(p,u)=>p==null?'미정':ico(u)+fmt(p)})();
+  const shop=runInNewContext(src+';furnitureShop',{isDecor,decorEffectText,FURN_CATEGORIES,CFG,ui:{},s:{},S:{furniturePrice:(_,id)=>priceOf(id)},L:()=>'전체',LF:(k,fb)=>fb,ico,priceText:(p,u)=>p==null?'미정':ico(u)+fmt(p)})();
   const cards=cardsOf(shop);assert.match(shop,/<div class="furn-grid" data-furn-grid>/);assert.equal(cards.length,CFG.furniture.items.length);
   cards.forEach(c=>{if(Number.isFinite(priceOf(c.id)))checkCard(c,priceOf(c.id));else{assert.match(c.body,/disabled/);assert.match(c.body,/전체/);}});}}
 

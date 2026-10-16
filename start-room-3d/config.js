@@ -147,7 +147,9 @@ export const CFG={
   tabs:{furniture:'assets/drive/ui/bag/tab_furniture.png',items:'assets/drive/ui/bag/tab_item.png',acc:'assets/drive/ui/bag/tab_accessory.png'},
   items:{incomeBoost4h:'assets/drive/ui/bag/icon_income_boost.png',expBoost4h:'assets/drive/ui/bag/icon_xp_boost.png',cooldownTicket:'assets/drive/ui/bag/icon_cooldown.png',heartReset:'assets/drive/ui/bag/icon_heart_reset.png',potionBig:'assets/drive/ui/bag/icon_potion.png',potionSmall:'assets/drive/ui/bag/icon_potion_small.png',capsule:'assets/drive/ui/bag/icon_gacha_ticket.png'},
   furniture:{table:'assets/drive/ui/ui-icon-tea-table.png',cushion:'assets/drive/ui/ui-icon-zabuton.png',counter:'assets/drive/ui/ui-icon-counter.png',stairs:'assets/drive/ui/ui-icon-stairs.png',wall:'assets/drive/ui/bag/icon_partition_wall.png'}},
-decor:{sakuraSet:{minItems:3,bonus:null /* 미정: 2-1 연출만 vs 10-12 업데이트 4개 세트 +2% 충돌, 똑또기 확인 */}},
+decor:{footprint:{default:{w:1,h:1},overrides:{}},
+ effect:{perItem:{demand:0.02,stay:0.01},cap:{demand:0.20,stay:0.10}},
+ sakuraSet:{minItems:3,bonusMinItems:null,bonus:null}},
 furniture:{starterExtra:{table:1,cushion:2,counter:1,stairs:1}, // starting value 2026-10-15, pending user confirm: five extra approved-sprite items, unplaced
  // starting value 2026-10-15, pending user confirm: table 40,000; cushion 20,000; extra props 5,000 coins.
  items:[{id:'tea-table',name:'찻상',category:'furniture',price:40000},{id:'zabuton',name:'방석',category:'furniture',price:20000},{id:'counter',name:'카운터',category:'furniture',price:5000},{id:'stairs',name:'계단',category:'furniture',price:5000},...NEW_FURNITURE.map(it=>({...it,front:'assets/drive/furniture-v4/'+it.filename,price:null /* 미정 — 똑또기 확인 대기 */}))]}, // Prices: starting value 2026-10-15, pending user confirm; historical source: 1.3 / F p6·9 furniture prices
