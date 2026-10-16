@@ -242,8 +242,8 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await stage();await c('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
   await ev(`(()=>{const g=__game,st=g.state;const lv=[30,12,25,7,18,3,21];let i=0;while(st.shibas.length<7){const sh=g.S.makeShiba(st,{breed:g.CFG.breeds[i%4],level:lv[i],r:Math.random,now:0});st.shibas.push(sh);i++;}st.shibas.forEach((sh,k)=>{sh.g={full:100,dirt:0,fatigue:0,happy:100,boredom:0};sh.placed=k<3;});st.shibas[1].g.happy=40;st.shibas[2].status='sick';st.shibas[4].g.fatigue=85;g.refresh();return true;})()`);
   await click('[data-main-tab=shiba]');await sleep(200);await shot('main-screen-shibas-grid.png');
-  await ev(`(()=>{const sel=document.querySelector('[data-shiba-breed]');sel.value='red';sel.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`);await click('[data-sort-toggle]');await sleep(150);await shot('main-screen-shibas-filter.png');
-  await ev(`(()=>{const sel=document.querySelector('[data-shiba-breed]');sel.value='all';sel.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`);await click('[data-sort-toggle]');
+  await click('[data-k=breed][data-v=red]');await click('[data-sort-toggle]');await sleep(150);await shot('main-screen-shibas-filter.png');
+  await click('[data-k=breed][data-v=all]');await click('[data-sort-toggle]');
   await click('#menuList [data-act=care]');await sleep(300);await sleep(300);await shot('main-screen-shibas-profile.png');await click('[data-act=careOpen]');await sleep(500);await shot('main-screen-shibas-care.png');
   await ev(`(()=>{const g=__game;g.ui.panel=null;g.refresh();g.state.cafe.level=g.CFG.alba.manager.unlock;g.state.coins=g.CFG.alba.manager.cost;g.S.hireAlba(g.state,'manager',[],g.clock.now());g.step(g.CFG.navigation.cellStepSec);g.refresh();return true;})()`);
   await click('[data-main-tab=manage]');
