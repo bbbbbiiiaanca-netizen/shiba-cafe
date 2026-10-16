@@ -31,10 +31,12 @@ assert.equal(validPlacement({...counter,origin:[-1,0]},z.slots),false);
 assert.equal(validPlacement({...counter,origin:[1,3]},z.slots),false);
 assert.equal(validPlacement({...counter,origin:[0,1],dir:1},z.slots),true);
 assert.equal(validPlacement({...counter,origin:[0,5],dir:1},z.slots,MAP.zones[0]),false);
-assert.equal(validPlacement({...counter,dir:2},z.slots),false);
+assert.equal(validPlacement({...counter,dir:2},z.slots),true); // back art arrived 2026-10-16
+{const {availableDirs,rotateDir,SPRITES}=await import('../map-data.js');for(const t of ['table','cushion','counter','stairs']){assert.ok(SPRITES[t].back?.file.endsWith('-v4-back.png'));assert.deepEqual(availableDirs(t),[0,1,2,3]);assert.deepEqual([0,1,2,3].map(d=>rotateDir(t,d)),[1,2,3,0]);}
+ const noBack={counter:{...SPRITES.counter,back:null}};assert.deepEqual(availableDirs('counter',noBack),[0,1]);assert.equal(rotateDir('counter',1,noBack),0);}
 assert.deepEqual([0,1,2,3].map(flipDir),[1,0,3,2]);
-assert.deepEqual(availableDirs('counter'),[0,1]);
-assert.equal(rotateDir('counter',0),1);assert.equal(rotateDir('counter',1),0);
+assert.deepEqual(availableDirs('counter'),[0,1,2,3]);
+assert.equal(rotateDir('counter',0),1);assert.equal(rotateDir('counter',3),0);
 const back={...SPRITES,counter:{...SPRITES.counter,back:{...SPRITES.counter}}};
 assert.deepEqual(availableDirs('counter',back),[0,1,2,3]);
 assert.deepEqual([0,1,2,3].map(d=>rotateDir('counter',d,back)),[1,2,3,0]);

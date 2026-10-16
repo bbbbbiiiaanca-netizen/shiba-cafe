@@ -158,13 +158,13 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev('document.querySelector("[data-furniture-flip]").click();true');
  await check('flip swaps counter axis','__game.state.placement.slots[0].dir===1');
  await ev('document.querySelector("[data-furniture-rotate]").click();true');
- await check('rotation cycles front views','__game.state.placement.slots[0].dir===0');
+ await check('rotation goes to back view (back art)','__game.state.placement.slots[0].dir===2');
  await ev('document.querySelector("[data-furniture-flip]").click();document.querySelector("[data-furniture-done]").click();true');
  await check('done deselects','__game.iso.selected===null');
  await ev('document.querySelector("[data-furniture-save]").click();true');
  await check('normal mode has no grid','!__game.iso.edit&&__game.iso.gridCells===0&&document.querySelector("[data-main-tab=bag]").classList.contains("active")&&(!document.querySelector(".furniture-actions")||document.querySelector(".furniture-actions").hidden)');
  await go(false);
- await check('placement survives reload','__game.state.placement.slots[0].dir===1&&JSON.stringify(__game.state.placement.slots[0].origin)==="[0,1]"');
+ await check('placement survives reload','__game.state.placement.slots[0].dir===3&&JSON.stringify(__game.state.placement.slots[0].origin)==="[0,1]"');
  for(const param of ['edit','grid']){
   await go(false,'&'+param+'=1');
   await check(param+'=1 opens edit view','__game.iso.edit===true&&__game.iso.gridCells===36&&document.querySelector("[data-main-tab=bag]").classList.contains("active")&&document.getElementById("scene").contains(document.querySelector(".furniture-actions"))');

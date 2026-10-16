@@ -142,8 +142,8 @@ qiso.actions.querySelector('[data-furniture-cancel]').onclick();assert.equal(qst
 events.pointerdown(pointer(qp.x,qp.y));events.pointerup(pointer(qp.x,qp.y));assert.equal(qiso.selected,'q17-counter');
 assert.ok(qiso.actions.classList.contains('has-selection'));for(const a of ['cancel','store','rotate','flip','done'])assert.equal(qiso.actions.querySelector(`[data-furniture-${a}]`).disabled,false,a);
 qiso.actions.querySelector('[data-furniture-flip]').onclick();assert.equal(qstate.placement.slots[0].dir,1);
-qiso.actions.querySelector('[data-furniture-rotate]').onclick();assert.equal(qstate.placement.slots[0].dir,0);
-qiso.actions.querySelector('[data-furniture-flip]').onclick();qiso.actions.querySelector('[data-furniture-done]').onclick();assert.equal(qiso.selected,null);assert.equal(qstate.placement.slots[0].dir,1);
+qiso.actions.querySelector('[data-furniture-rotate]').onclick();assert.equal(qstate.placement.slots[0].dir,2);
+qiso.actions.querySelector('[data-furniture-flip]').onclick();qiso.actions.querySelector('[data-furniture-done]').onclick();assert.equal(qiso.selected,null);assert.equal(qstate.placement.slots[0].dir,3);
 assert.ok(!qiso.actions.classList.contains('has-selection'));assert.equal(qiso.actions.querySelector('[data-furniture-rotate]').disabled,true);assert.equal(qiso.actions.querySelector('[data-furniture-save]').disabled,false);
 qstate.placement.slots[0].dir=0;qiso.draw(qstate,{});
 events.pointerdown(pointer(qp.x,qp.y));events.pointermove(pointer(qp.x-300,qp.y-300));assert.equal(canvas.dataset.placementValid,'false');events.pointerup(pointer(qp.x-300,qp.y-300));
