@@ -59,6 +59,7 @@ assert.doesNotMatch(P.profile(s.shibas[0].id).html,/undefined|null|미정/);asse
 assert.match(P.friends().html,new RegExp(`오늘 남은 하트 ${v.daily}/${v.daily}`));assert.match(btn(),new RegExp(`오늘 ${v.daily}/${v.daily}`));assert.equal(Q.visitFriend(s,'fc',0),true);assert.match(btn(),new RegExp(`오늘 ${v.daily-1}/${v.daily}`));assert.doesNotMatch(btn(),/disabled/);
 for(let i=1;i<v.daily;i++)Q.visitFriend(s,'fc',0);assert.match(btn(),new RegExp(`오늘 0/${v.daily}`));assert.match(btn(),/ disabled>/);assert.match(P.friends().html,new RegExp(`오늘 남은 하트 0/${v.daily}`));assert.match(P.friends().html,/오늘 다 받았어요/);assert.match(P.friends().html,/data-act="friendGo"/);assert.equal(s.hearts,h0+v.daily*v.hearts);
 assert.match(main,/m\.kind==='friendCafe'\?\[m\.id,friendCafeHtml\(m\.id\)\]/);assert.equal(koL('friend.visitOk'),'하트를 받았어요');
+assert.match(main,/Q17\.visitsLeft\(s,clock\.now\(\)\)===0\?L\('friend\.allClaimed'\):L\('friend\.visitOk'\)/); // 17-12 last heart toast: only 오늘 다 받았어요
 [s.friends,s.friendVisits,s.hearts]=saved;}
 s.friends=[];assert.match(P.friends().html,/아직 친구가 없어요/);
 console.log('q17 production renderers: placeholder cooking/run, null disabled buttons, empty friends, profile care link passed');

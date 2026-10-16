@@ -343,6 +343,7 @@ await new Promise(r=>setTimeout(r,600));
  await check('q17 fixture visit grants configured hearts',"__game.state.hearts===window.q17Before+__game.CFG.heartUse.visit.hearts&&__game.state.friendVisits.count===1");
  await check('17-12 friend café: after 1 tap button shows 오늘 19/20 (re-rendered) and toast has no 준비 중',`(()=>{const v=__game.CFG.heartUse.visit,b=document.querySelector('#mbox [data-act=friendVisit]');return !!b&&b.textContent.includes('오늘 '+(v.daily-1)+'/'+v.daily)&&!b.disabled&&!document.body.textContent.includes('준비 중 · 하트');})()`);
  await ev("for(let i=1;i<__game.CFG.heartUse.visit.daily;i++)document.querySelector('#mbox [data-act=friendVisit]').click();true");
+ await check('17-12 last tap toast shows only 오늘 다 받았어요',"document.body.textContent.includes('오늘 다 받았어요')");
  await check('17-12 friend café: after daily taps button shows 0/20, disabled, hearts +daily×hearts total',`(()=>{const v=__game.CFG.heartUse.visit,b=document.querySelector('#mbox [data-act=friendVisit]');return b.disabled&&b.textContent.includes('오늘 0/'+v.daily)&&__game.state.hearts===window.q17Before+v.daily*v.hearts&&__game.state.friendVisits.count===v.daily;})()`);
 
  await ev("document.querySelector('#mbox [data-act=modalOk]').click();__game.open('friends');true");
