@@ -1,3 +1,4 @@
+import {FURN_CATEGORIES} from '../furniture-data.js';
 // PR-C (2026-10-16) 360×640 small fixes: furniture card markup (shop interior + 가방 가구 상점), menu locked card, open('menu').
 import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {runInNewContext} from 'node:vm';
 import {CFG} from '../config.js';import * as Q from '../q1715.js';
@@ -30,9 +31,9 @@ for(const price of [()=>40000,()=>null,id=>id===interiorIds[0]?null:1500]){
 {const src=main.slice(main.indexOf('function furnitureShop(){'),main.indexOf('\nconst grantName='));
  const fmt=n=>String(n).replace(/\B(?=(\d{3})+(?!\d))/g,','),ico=k=>`<img class="res-ico" data-res="${k}" src="assets/drive/ui/res-${k}.png" alt="" draggable="false">`;
  for(const priceOf of [id=>CFG.furniture.items.findIndex(it=>it.id===id)*1000+500,()=>null]){
-  const shop=runInNewContext(src+';furnitureShop',{CFG,ui:{},s:{},S:{furniturePrice:(_,id)=>priceOf(id)},L:()=>'전체',LF:(k,fb)=>fb,ico,priceText:(p,u)=>p==null?'미정':ico(u)+fmt(p)})();
+  const shop=runInNewContext(src+';furnitureShop',{FURN_CATEGORIES,CFG,ui:{},s:{},S:{furniturePrice:(_,id)=>priceOf(id)},L:()=>'전체',LF:(k,fb)=>fb,ico,priceText:(p,u)=>p==null?'미정':ico(u)+fmt(p)})();
   const cards=cardsOf(shop);assert.match(shop,/<div class="furn-grid" data-furn-grid>/);assert.equal(cards.length,CFG.furniture.items.length);
-  cards.forEach(c=>checkCard(c,priceOf(c.id)));}}
+  cards.forEach(c=>{if(Number.isFinite(priceOf(c.id)))checkCard(c,priceOf(c.id));else{assert.match(c.body,/disabled/);assert.match(c.body,/전체/);}});}}
 
 // 메뉴 개발: 2-column vertical grid (no horizontal swipe); card = image · name · price button; locked = lock icon only in the image slot + 'LvN 해금' in the button slot, no buy button
 {const line=main.split('\n').find(l=>l.includes("if(m.list==='menu')return"));const locked=line.match(/x\.locked\?`([^`]*)`/)[1],open=line.match(/`:`([^`]*)`\)\.join/)[1];

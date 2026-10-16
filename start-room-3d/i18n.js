@@ -5,7 +5,7 @@
 // Lookup order: STR[lang][key] → STR.ko[key] → key.
 export const LANGS=['ko','en'];
 export const STR={
- ko:{'unset':'미정',
+ ko:{"furn.shelf":"선반","furn.low-table":"좌식 테이블","furn.moon-lamp":"달 조명","furn.stone-lantern":"석등","furn.chochin":"제등","furn.bonsai":"분재","furn.rock":"바위","furn.bamboo-fence":"대나무 울타리","furn.cherry-tree":"벚나무","furn.noren":"노렌","furn.sign":"간판","furn.category.sign":"간판·노렌","furn.shelf-sakura":"벚꽃 선반","furn.low-table-sakura":"벚꽃 좌식 테이블","furn.stone-lantern-sakura":"벚꽃 석등","furn.chochin-sakura":"벚꽃 제등","furn.bonsai-sakura":"벚꽃 분재","furn.bamboo-fence-sakura":"벚꽃 대나무 울타리","furn.noren-sakura":"벚꽃 노렌","furn.sign-sakura":"벚꽃 간판","furn.furniture":"가구","furn.light":"조명","furn.garden":"정원 소품","furn.floorwall":"바닥·벽","furn.tbd":"미정","furn.empty":"준비 중","furn.sakuraSet":"벚꽃 세트",'unset':'미정',
   'lang.name.ko':'한국어','lang.name.en':'English','lang.select.title':'언어를 골라 주세요','lang.select.hint':'설정에서 언제든 바꿀 수 있어요','lang.select.confirm':'확인',
   'settings.language':'언어','settings.language.current':'지금 언어: {language}',
   'hud.currency.coin':'코인','hud.currency.heart':'하트','hud.currency.dia':'다이아',
@@ -126,7 +126,7 @@ export const STR={
   'hud.aria.cafeExp':'카페 경험치','hud.aria.quest':'퀘스트','hud.aria.mailEvent':'우편함·이벤트','hud.aria.map':'다다미 카페 지도 · 드래그하여 이동','mm.static.title':'가게 관리',
   'mm.static.hint':'카페 현황 · 메뉴 개발 · 업그레이드','mm.aria.nav':'메뉴',
  },
- en:{
+ en:{"furn.shelf":"Shelf","furn.low-table":"Low Table","furn.moon-lamp":"Moon Lamp","furn.stone-lantern":"Stone Lantern","furn.chochin":"Paper Lantern","furn.bonsai":"Bonsai","furn.rock":"Rock","furn.bamboo-fence":"Bamboo Fence","furn.cherry-tree":"Cherry Tree","furn.noren":"Noren","furn.sign":"Sign","furn.category.sign":"Signs & Noren","furn.shelf-sakura":"Sakura Shelf","furn.low-table-sakura":"Sakura Low Table","furn.stone-lantern-sakura":"Sakura Stone Lantern","furn.chochin-sakura":"Sakura Paper Lantern","furn.bonsai-sakura":"Sakura Bonsai","furn.bamboo-fence-sakura":"Sakura Bamboo Fence","furn.noren-sakura":"Sakura Noren","furn.sign-sakura":"Sakura Sign","furn.furniture":"Furniture","furn.light":"Lighting","furn.garden":"Garden Decor","furn.floorwall":"Floors & Walls","furn.tbd":"TBD","furn.empty":"Coming soon","furn.sakuraSet":"Sakura Set",
   'lang.name.ko':'한국어','lang.name.en':'English',
   'shiba.breed.red':'Shiru','shiba.breed.sesame':'Chamkkae','shiba.breed.kuro':'Kuro','shiba.breed.white':'Yuki',
   // 기획명세 똑또기 영어 초안 (shiba-cafe-docs/i18n-en-draft.md, 628키) 2026-10-15
