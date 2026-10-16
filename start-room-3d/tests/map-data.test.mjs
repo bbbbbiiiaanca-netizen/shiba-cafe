@@ -58,3 +58,7 @@ assert.deepEqual(restorePlacement({v:1,slots:defaultPlacement().slots.map(s=>s.i
  const {spriteFor,wallEdge}=await import('../map-data.js');assert.equal(SPRITES.wall.back.file,'assets/drive/tiles/furn-partition-v4-back.png');assert.deepEqual(availableDirs('wall'),[0,1,2,3]);assert.deepEqual([0,1,2,3].map(d=>rotateDir('wall',d)),[1,2,3,0]);
  assert.deepEqual([0,1,2,3].map(d=>spriteFor('wall',d)),[SPRITES.wall,SPRITES.wall.flip,SPRITES.wall.back,SPRITES.wall.back]);assert.deepEqual([0,1,2,3].map(d=>spriteMirrored('wall',d,spriteFor('wall',d))),[false,false,false,true]);
  for(const d of [0,1])assert.deepEqual(wallEdge(d+2),wallEdge(d).map(v=>-v));assert.equal(spriteFor('counter',2),SPRITES.counter.back);assert.equal(spriteFor('counter',1),SPRITES.counter);}
+// 10-16 #18: 편집 모드의 모든 가구는 좌우 반전 가능. 뒷모습 그림이 있으면 4방향, 없으면 앞·앞 반전 2방향만.
+{const {availableDirs,rotateDir,flipDir,SPRITES}=await import('../map-data.js');
+ for(const t of Object.keys(SPRITES)){const d=availableDirs(t),n=SPRITES[t].back?.file?4:2;assert.equal(d.length,n,t);for(const x of d)assert.ok(d.includes(flipDir(x)),t+' flip stays valid');let x=0;const seen=[];for(let i=0;i<n;i++){seen.push(x);x=rotateDir(t,x);}assert.deepEqual(seen.sort(),d.slice().sort(),t);}
+ const nb=Object.fromEntries(Object.entries(SPRITES).map(([k,v])=>[k,{...v,back:null}]));for(const t of Object.keys(nb)){assert.deepEqual(availableDirs(t,nb),[0,1],t);assert.equal(rotateDir(t,0,nb),1);assert.equal(rotateDir(t,1,nb),0);}}
