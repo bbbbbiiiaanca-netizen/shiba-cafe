@@ -22,7 +22,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await ev(`document.querySelector('[data-act=furnitureCategory][data-item="${category}"]').scrollIntoView({block:'nearest',inline:'nearest'});true`);
   await sleep(150);
   const count=await ev(`document.querySelectorAll('[data-furniture-shop] [data-furn-card]').length`);
-  const expected={all:43,furniture:12,light:9,garden:10,sign:8,floorwall:4}[category];
+  const expected={all:45,furniture:12,light:9,garden:10,sign:8,floorwall:6}[category];
   if(count!==expected)throw Error(category+' count '+count+' expected '+expected);
   if(!await ev(`[...document.querySelectorAll('[data-furniture-shop] [data-furn-card]')].filter(e=>!['tea-table','zabuton','counter','stairs'].includes(e.dataset.furnCard)).every(e=>e.querySelector('button').disabled&&e.querySelector('button').textContent==='미정')`))throw Error('TBD button');
   await shot('shop-'+category+'.png');
