@@ -252,6 +252,10 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await check('§16-1: red dots for shiba level-up and an available 알바 come from state',`(${dots}).shiba&&(${dots}).manage&&!(${dots}).shop&&!(${dots}).bag`);
  await ev('window.u17Before=JSON.stringify(__game.state);document.querySelector(".scene-entries [data-act=mission]").click();true');
  await check('§17-15: top-right 미션 opens daily quests without changing state',`document.querySelectorAll('[data-quests] .quest-row').length===3&&JSON.stringify(__game.state)===window.u17Before`);
+ await check('quest reset: countdown to the next LOCAL reset (device timezone, no KST)',`(()=>{const g=__game,c=g.S.questClock(g.clock.now(),'00:00',new Date(g.clock.now()).getTimezoneOffset()),el=document.querySelector('[data-quest-left]'),d=new Date(c.next);return el&&!/KST/.test(document.querySelector('[data-quest-reset]').textContent)&&d.getHours()===0&&d.getMinutes()===0&&c.leftSec>0&&c.leftSec<=86400&&el.textContent.startsWith(String(Math.floor(Math.ceil(c.leftSec)/3600))+':');})()`);
+ await ev('window.qOff=__game.clock.offset;window.qNext=__game.S.questClock(__game.clock.now()).next;__game.clock.offset+=window.qNext-__game.clock.now()+1000;__game.refresh();true');
+ await check('quest reset: after local reset the countdown restarts near 24h and progress resets',`/^2[34]:/.test(document.querySelector('[data-quest-left]').textContent)&&__game.S.questTasks(__game.state,__game.clock.now()).every(t=>t.progress===0)`);
+ await ev('__game.clock.offset=window.qOff;__game.refresh();true');
  await ev('__game.close();__game.refresh();true');
  await ev('__game.state.shibas[0].paws=0;__game.state.coins=0;__game.ui.modals=[];__game.refresh();true');
  await check('§17: no 시바 dot before a walk returns',`!(${dots}).shiba`);

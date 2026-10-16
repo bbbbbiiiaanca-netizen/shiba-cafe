@@ -26,4 +26,4 @@ assert.match(main,/mission:\(\)=>open\('quests'\)/);
 {const S=await import('../sim.js');const s=S.newState();s.dia=10;const now=Date.UTC(2026,9,15,3);
 assert.deepEqual(S.questTasks(s,now).map(t=>t.progress),[0,0,0]);S.questBump(s,'serve',now);S.questBump(s,'sell',now);assert.deepEqual(S.questTasks(s,now).map(t=>t.progress),[1,0,1]);
 assert.equal(S.questInstant(s,'pet',now),true);assert.equal(s.dia,0);assert.equal(S.questTasks(s,now)[1].progress,1);assert.equal(S.questInstant(s,'serve',now),false);
-assert.deepEqual(S.questTasks(s,now+86400e3).map(t=>t.progress),[0,0,0]);console.log('daily quests: progress, 10-dia instant, KST reset passed');}
+assert.deepEqual(S.questTasks(s,now+86400e3).map(t=>t.progress),[0,0,0]);console.log('daily quests: progress, 10-dia instant, local reset passed');}
