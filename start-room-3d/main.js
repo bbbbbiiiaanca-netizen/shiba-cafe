@@ -50,6 +50,7 @@ const shibaImg=sh=>{const st=S.statusOf(s,sh);if(st==='sleeping'&&IMG.sleepPose[
 // ───────── formatting ─────────
 // 금액·수량 표시는 모두 fmt 하나로: 언어와 상관없이 세 자리마다 쉼표(2,400). money = 코인 금액.
 const fmt=n=>isUnset(n)?L('unset'):String(Math.floor(n)).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+const fmtHud=n=>{if(isUnset(n)||n<1e4)return fmt(n);if(langNow()==='ko')return n<1e8?fmt(Math.floor(n/1e4))+'만':String(Math.floor(n/1e8*10)/10)+'억';const [d,u]=n<1e6?[1e3,'K']:n<1e9?[1e6,'M']:[1e9,'B'];return String(Math.floor(n/d*10)/10)+u;}; // 상단 바 전용: 1만 이상 K/M/B(내림)
 const COIN_HTML='<img class="ci" src="assets/drive/ui/res-coin.png" alt="">';const money=n=>isUnset(n)?L('unset'):COIN_HTML+fmt(n);
 const f2=n=>n==null?L('unset'):(Math.round(n*100)/100).toString();
 const tfmt=sec=>{sec=Math.max(0,Math.ceil(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),x=sec%60;return h?`${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`:`${m}:${String(x).padStart(2,'0')}`;};
@@ -69,7 +70,7 @@ function renderHearts(now){const cap=CFG.hearts.slots,n=Math.max(0,Math.floor(s.
  if(el.dataset.sig!==sig){el.dataset.sig=sig;el.innerHTML=Array.from({length:cap},(_,i)=>`<img class="heart-slot" data-full="${i<n?1:0}" src="${i<n?RES.heart:RES.heartEmpty}" alt="" draggable="false">`).join('')+(n>cap?`<small class="heart-more">+${fmt(n-cap)}</small>`:'');}
  const nh=S.nextHeartInSec(s,now);$('heartT').hidden=nh==null;$('heartT').textContent=nh==null?'':mmss(nh);
  el.parentElement.setAttribute('aria-label',L('hud.heartsAria',{n:fmt(n)})+(nh==null?'':' · '+L('hud.nextHeart',{t:mmss(nh)})));el.parentElement.title=el.parentElement.getAttribute('aria-label');}
-function renderHUD(){const now=clock.now();$('coins').textContent=fmt(s.coins);$('dia').textContent=fmt(s.dia);renderHearts(now);
+function renderHUD(){const now=clock.now();$('coins').textContent=fmtHud(s.coins);$('coins').title=fmt(s.coins);$('dia').textContent=fmt(s.dia);renderHearts(now);
  const C=s.cafe,need=S.cafeNeed(C.level);$('lvl').textContent=String(C.level);$('lvl').setAttribute('aria-label',L('hud.level',{lv:C.level}));$('expBar').style.width=(C.level>=CFG.cafe.maxLevel?100:need==null?0:Math.min(100,C.exp/need*100))+'%';
  $('expBar').parentElement.title=C.level>=CFG.cafe.maxLevel?L('app.maxLevel'):need==null?L('app.unset'):`${fmt(C.exp)} / ${fmt(need)}`;
  const exp=$('cafeExp');exp.setAttribute('aria-valuemin','0');exp.setAttribute('aria-valuemax',String(need??100));exp.setAttribute('aria-valuetext',exp.title=$('expBar').parentElement.title);if(need==null)exp.removeAttribute('aria-valuenow');else exp.setAttribute('aria-valuenow',String(Math.min(C.exp,need)));
