@@ -7,9 +7,11 @@ import {CFG} from './config.js';
 // Previous anchors: v2 given table (74,73), cushion (68,52), counter (114,142), stairs (111,177); v5 measured+scaled. v6 uses 그림이 v4 sprites at scale 1.
 // 그림이 will provide back views; unavailable until the art is supplied.
 export const PARTITION={count:3,price:50000}; // starting value 2026-10-15, pending user confirm
+// 새 가구 뒷모습: 그림(FURN_BACKS)이 있고 CFG.decor.backArt.enabled에 id가 있을 때만 넣는다. 아니면 null → 앞·앞 반전 2방향.
+export function newFurnitureBack(it,backs=FURN_BACKS,enabled=CFG.decor.backArt.enabled){return backs[it.id]&&enabled.includes(it.id)?{file:backs[it.id],anchor:FURN_ANCHORS[it.backname]||FURN_ANCHORS[it.filename],scale:1}:null;}
 export const SPRITES={
  // footprint 시작값 1칸, 명세 없음. Sakura back is optional (null until synced repo art exists).
- ...Object.fromEntries(NEW_FURNITURE.map(it=>[it.id,{file:'assets/drive/furniture-v4/'+it.filename,anchor:FURN_ANCHORS[it.filename],scale:1,back:FURN_BACKS[it.id]?{file:FURN_BACKS[it.id],anchor:FURN_ANCHORS[it.backname]||FURN_ANCHORS[it.filename],scale:1}:null,get footprint(){const {w,h}=furnitureSize(it.id);return {cells:w*h,axis:null};}}])),
+ ...Object.fromEntries(NEW_FURNITURE.map(it=>[it.id,{file:'assets/drive/furniture-v4/'+it.filename,anchor:FURN_ANCHORS[it.filename],scale:1,back:newFurnitureBack(it),get footprint(){const {w,h}=furnitureSize(it.id);return {cells:w*h,axis:null};}}])),
   // 10-16 똑또기: 앞·앞 반전이 초록 칸보다 반 칸 뒤에 서서 기준점 y 162.5→118(뒷모습 2·3처럼 칸 위에). 이전 메모: bbox x6–95/y24–181; bottom contact midpoint (50.5,162.5), scaled to existing 64×32 cell edge and offset to the rear cell edge.
  wall:{file:'assets/drive/tiles/wall-inner.png',anchor:[50.5,118],scale:64/89,back:{file:'assets/drive/tiles/furn-partition-v4-back.png',anchor:[54.5,157],scale:64/89},flip:{file:'assets/drive/tiles/wall-inner-flip.png',anchor:[62.5,118],scale:64/89},footprint:{cells:1,axis:null}},
  // 그림이 v4 sprites, original size (scale 1). anchor = centre of floor-contact footprint, sprite px (given by 그림이).
@@ -90,6 +92,8 @@ export function defaultPlacement(){return {v:1,slots:structuredClone(MAP.zones[0
 export function restorePlacement(saved,zone=MAP.zones[0]){
  const fallback=defaultPlacement();
  if(!saved||saved.v!==1||!Array.isArray(saved.slots)||saved.slots.length<fallback.slots.length)return fallback;
+ // 예전 저장의 뒷모습(2·3)인데 지금은 2방향뿐인 가구 → 앞모습(dir%2). 홀짝이 같아 차지하는 칸도 같다.
+ saved={...saved,slots:saved.slots.map(s=>s&&SPRITES[s.type]&&(s.dir===2||s.dir===3)&&!availableDirs(s.type).includes(s.dir)?{...s,dir:s.dir%2}:s)};
  if(saved.slots.some(s=>!s||!Array.isArray(s.origin)||s.origin.length!==2||!s.origin.every(Number.isInteger)||!SPRITES[s.type]||!availableDirs(s.type).includes(s.dir))||new Set(saved.slots.map(s=>s.id)).size!==saved.slots.length)return fallback;
  if(fallback.slots.some(d=>!saved.slots.some(s=>s.id===d.id&&s.type===d.type)))return fallback;
  const slots=fallback.slots.map(d=>{const s=saved.slots.find(s=>s.id===d.id&&s.type===d.type);return s?{...d,origin:s.origin,dir:s.dir}:d;});
