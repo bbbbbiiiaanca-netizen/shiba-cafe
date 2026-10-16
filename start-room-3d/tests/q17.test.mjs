@@ -11,6 +11,21 @@ s.friends=[{id:'test'}];const hearts=s.hearts;
 for(let i=0;i<CFG.heartUse.visit.daily;i++)assert.equal(Q.visitFriend(s,'test',0),true);
 assert.equal(s.hearts,hearts+CFG.heartUse.visit.daily*CFG.heartUse.visit.hearts);
 assert.equal(Q.visitFriend(s,'test',0),false);assert.equal(Q.visitFriend(s,'test',CFG.ledger.periodMs),true);
+// KST midnight is UTC 15:00: the final millisecond belongs to the old day.
+{const boundary=Date.parse('2026-10-16T15:00:00Z'),state=S.newState(boundary-CFG.ledger.periodMs);state.friends=[{id:'test'}];const initial=state.hearts;
+assert.equal(Q.visitsLeft(state,boundary-1),CFG.heartUse.visit.daily);
+assert.equal(state.friendVisits,undefined); // Reading the allowance does not mutate saves.
+for(let i=0;i<CFG.heartUse.visit.daily;i++)assert.equal(Q.visitFriend(state,'test',boundary-1),true);
+assert.equal(Q.visitFriend(state,'test',boundary-1),false);
+assert.equal(state.hearts,initial+CFG.heartUse.visit.daily*CFG.heartUse.visit.hearts);
+assert.equal(Q.visitsLeft(state,boundary-1),0);
+assert.equal(Q.visitsLeft(state,boundary),CFG.heartUse.visit.daily);
+assert.equal(Q.visitFriend(state,'test',boundary),true);assert.equal(state.friendVisits.count,1);
+const daily=CFG.heartUse.visit.daily;
+try{CFG.heartUse.visit.daily=daily-1;assert.equal(Q.visitsLeft(state,boundary),CFG.heartUse.visit.daily-1);
+for(let i=state.friendVisits.count;i<CFG.heartUse.visit.daily;i++)assert.equal(Q.visitFriend(state,'test',boundary),true);
+assert.equal(Q.visitFriend(state,'test',boundary),false);
+}finally{CFG.heartUse.visit.daily=daily;}}
 const r=CFG.cooking.recipes[0];
 // 임시 recipes (2026-10-15): names, ingredients, times and effects are set; no 미정.
 assert.deepEqual(CFG.cooking.recipes.map(r=>[r.name,r.craftSec,r.effect.full,r.effect.happy]),[['단호박 시바 죽',30,20,10],['고구마 쿠키',60,15,15],['닭가슴살 미트볼',90,25,10]]);
@@ -41,8 +56,8 @@ assert.match(P.run().html,/data-act="runSkip" disabled/);assert.doesNotMatch(P.r
 assert.doesNotMatch(P.profile(s.shibas[0].id).html,/undefined|null|미정/);assert.match(P.profile(s.shibas[0].id).html,new RegExp(CFG.profiles[s.shibas[0].breed].favSnack.name));assert.match(P.profile(s.shibas[0].id).html,/data-act="careOpen"/);
 // 17-12 친구 카페: 하트 받기 버튼의 남은 횟수 = daily - 오늘 count, 0이면 disabled. 모달 sig에 friendCafeHtml 포함(재렌더).
 {const v=CFG.heartUse.visit,saved=[s.friends,s.friendVisits,s.hearts];s.friends=[{id:'fc',name:'F'}];delete s.friendVisits;const h0=s.hearts,btn=()=>renderers.friendCafe('fc').match(/<button data-act="friendVisit"[^>]*>[^]*?<\/button>/)[0];
-assert.match(btn(),new RegExp(`오늘 ${v.daily}/${v.daily}`));assert.equal(Q.visitFriend(s,'fc',0),true);assert.match(btn(),new RegExp(`오늘 ${v.daily-1}/${v.daily}`));assert.doesNotMatch(btn(),/disabled/);
-for(let i=1;i<v.daily;i++)Q.visitFriend(s,'fc',0);assert.match(btn(),new RegExp(`오늘 0/${v.daily}`));assert.match(btn(),/ disabled>/);assert.equal(s.hearts,h0+v.daily*v.hearts);
+assert.match(P.friends().html,new RegExp(`오늘 남은 하트 ${v.daily}/${v.daily}`));assert.match(btn(),new RegExp(`오늘 ${v.daily}/${v.daily}`));assert.equal(Q.visitFriend(s,'fc',0),true);assert.match(btn(),new RegExp(`오늘 ${v.daily-1}/${v.daily}`));assert.doesNotMatch(btn(),/disabled/);
+for(let i=1;i<v.daily;i++)Q.visitFriend(s,'fc',0);assert.match(btn(),new RegExp(`오늘 0/${v.daily}`));assert.match(btn(),/ disabled>/);assert.match(P.friends().html,new RegExp(`오늘 남은 하트 0/${v.daily}`));assert.match(P.friends().html,/오늘 다 받았어요/);assert.match(P.friends().html,/data-act="friendGo"/);assert.equal(s.hearts,h0+v.daily*v.hearts);
 assert.match(main,/m\.kind==='friendCafe'\?\[m\.id,friendCafeHtml\(m\.id\)\]/);assert.equal(koL('friend.visitOk'),'하트를 받았어요');
 [s.friends,s.friendVisits,s.hearts]=saved;}
 s.friends=[];assert.match(P.friends().html,/아직 친구가 없어요/);
