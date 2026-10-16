@@ -31,7 +31,7 @@ const modalSource=mainSource.slice(mainSource.indexOf("let modalSig='';"),mainSo
 const nodes={modal:{hidden:true},mbox:{classList:{toggle(){},remove(){}},dataset:{},innerHTML:''}};
 const ui={modals:[],startPick:null,startBandana:null},state=S.newState(0);state.settings.language='en';
 const render=runInNewContext(modalSource+';renderModal',{RELEASE:false,
- ui,s:state,S,CFG,$:id=>nodes[id],L:key=>key,img:()=>'',IMG:{four:'',shiba:()=>''},bandHtml:()=>'',accName:x=>x,
+ ui,s:state,S,CFG,$:id=>nodes[id],L:key=>key,img:()=>'',IMG:{four:'',shiba:()=>''},shibaArt:()=>'',bandHtml:()=>'',accName:x=>x,
 });
 const startDisabled=()=>/data-act="startGo" disabled/.test(nodes.mbox.innerHTML);
 render();assert.ok(startDisabled());
@@ -67,7 +67,7 @@ console.log('Consumables renderer: same-second CFG activation, consumption and n
 // Task A: actual heart row/HTML rendering, approved assets and cooldown priority.
 const taskState=S.newState(0);taskState.cafe.level=40;taskState.hearts=0;
 const heartSource=mainSource.slice(mainSource.indexOf('const heartRow='),mainSource.indexOf('// Reuse the daycare'));
-const heartRowRender=runInNewContext('const LP={};'+heartSource+';heartRow', {RELEASE:false,L:koL,LF:(k,fb)=>{const v=koL(k);return v===k?fb:v;},s:taskState,S,CFG,clock:{now:()=>0},IMG:{shiba:()=>null},lockedLine:lv=>'Lv'+lv+' 해금',nameOf:sh=>sh.name,heartFx:(await import('../effects.js')).heartFx});
+const heartRowRender=runInNewContext('const LP={};'+heartSource+';heartRow', {RELEASE:false,L:koL,LF:(k,fb)=>{const v=koL(k);return v===k?fb:v;},s:taskState,S,CFG,clock:{now:()=>0},IMG:{shiba:()=>null},shibaArt:()=>null,lockedLine:lv=>'Lv'+lv+' 해금',nameOf:sh=>sh.name,heartFx:(await import('../effects.js')).heartFx});
 const walkRow=heartRowRender(CFG.heartUse.items.find(it=>it.id==='walk'));
 assert.equal(walkRow.disabled,true);assert.equal(walkRow.price,CFG.walk.heartsPer10Min);assert.equal(walkRow.unit,'heart');assert.equal(walkRow.label,null);
 taskState.hearts=CFG.walk.heartsPer10Min;assert.equal(heartRowRender(CFG.heartUse.items.find(it=>it.id==='walk')).disabled,false);

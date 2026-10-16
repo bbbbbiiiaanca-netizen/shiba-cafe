@@ -1,5 +1,6 @@
 // §17-13 재료 달리기 (시작값, 수인님 확인 전). Values come from CFG.run; 미정 values are marked there.
 import {t,tf} from './i18n.js';
+import {tintImage} from './coat-art.js';
 export function obstacleKinds(cfg){return Object.entries(cfg.obstacles||{}).filter(([,src])=>src).map(([id])=>id);} // null art (cat) never spawns
 export const lerpAt=(v,t,len)=>typeof v==='number'?v:v.start+(v.end-v.start)*Math.max(0,Math.min(1,t/len));
 export const speedAt=(cfg,t)=>lerpAt(cfg.speed,t,cfg.lengthSec),spawnAt=(cfg,t)=>lerpAt(cfg.spawnSec,t,cfg.lengthSec);
@@ -19,7 +20,7 @@ export function stepRun(r,dt){if(r.over)return r;const c=r.cfg,sp=speedAt(c,r.t)
 
 // Browser screen: full-screen canvas 1080×1920 (contain-fit), swipe / arrow keys.
 export const runFrame=(sheet,t)=>Math.floor(t*sheet.fps+1e-9)%sheet.frames;
-export function startRunScreen({cfg,ingredients,shibaSrc,sheet=null,coinSrc,onEnd,rng,playsLeft=null,resultExtra=()=>''}){
+export function startRunScreen({cfg,ingredients,shibaSrc,sheet=null,coat=null,coinSrc,onEnd,rng,playsLeft=null,resultExtra=()=>''}){
  const ids=Object.keys(ingredients),r=createRun(cfg,ids,rng),[W,H]=cfg.screen,load=src=>{const i=new Image();i.src=src;return i;};
  const img={bg:load(cfg.bg),shiba:load(sheet?sheet.src:shibaSrc),coin:load(coinSrc),heart:load(cfg.heartImg.full),heartEmpty:load(cfg.heartImg.empty),obs:Object.fromEntries(obstacleKinds(cfg).map(k=>[k,load(cfg.obstacles[k])])),ing:Object.fromEntries(ids.map(k=>[k,load(ingredients[k].img)]))};
  const root=document.createElement('div');root.id='runScreen';root.setAttribute('data-run-screen','');
@@ -28,11 +29,12 @@ export function startRunScreen({cfg,ingredients,shibaSrc,sheet=null,coinSrc,onEn
  const key=e=>{if(e.key==='ArrowLeft'){moveLane(r,-1);e.preventDefault();}if(e.key==='ArrowRight'){moveLane(r,1);e.preventDefault();}};
  addEventListener('keydown',key);
  cv.addEventListener('pointerdown',e=>{sx=e.clientX;});cv.addEventListener('pointerup',e=>{if(sx==null)return;const d=e.clientX-sx;sx=null;if(Math.abs(d)>30)moveLane(r,d>0?1:-1);});
- const draw=(i,x,y,w)=>{if(!i.complete||!i.naturalWidth)return;const h=w*i.naturalHeight/i.naturalWidth;g.drawImage(i,x-w/2,y-h/2,w,h);};
+ const draw=(i,x,y,w,src=i)=>{if(!i.complete||!i.naturalWidth)return;const h=w*i.naturalHeight/i.naturalWidth;g.drawImage(src,x-w/2,y-h/2,w,h);};
+ const shibaArt=()=>coat&&tintImage(img.shiba,coat)||img.shiba; // §17-16 희귀 털색: 시트째 다시 칠함 → 프레임 자르기는 그대로
  const render=()=>{const y0=r.scroll%H;if(img.bg.complete&&img.bg.naturalWidth){g.drawImage(img.bg,0,y0,W,H);g.drawImage(img.bg,0,y0-H,W,H);}
   for(const o of r.objs){if(o.done&&o.type!=='obstacle')continue;const x=cfg.laneX[o.lane];
    if(o.type==='obstacle')draw(img.obs[o.kind],x,o.y,cfg.obstacleW);else if(o.type==='coin')draw(img.coin,x,o.y,cfg.itemW);else draw(img.ing[o.kind],x,o.y,cfg.itemW);}
-  if(sheet){const i=img.shiba;if(i.complete&&i.naturalWidth){const f=runFrame(sheet,r.t),w=cfg.shibaW,h=w*sheet.frameH/sheet.frameW;g.drawImage(i,f*sheet.frameW,0,sheet.frameW,sheet.frameH,r.x-w/2,cfg.shibaY-h/2,w,h);}}else if(cfg.shibaBlend){g.globalCompositeOperation=cfg.shibaBlend;draw(img.shiba,r.x,cfg.shibaY,cfg.shibaW);g.globalCompositeOperation='source-over';}else draw(img.shiba,r.x,cfg.shibaY,cfg.shibaW);
+  if(sheet){const i=img.shiba;if(i.complete&&i.naturalWidth){const f=runFrame(sheet,r.t),w=cfg.shibaW,h=w*sheet.frameH/sheet.frameW;g.drawImage(shibaArt(),f*sheet.frameW,0,sheet.frameW,sheet.frameH,r.x-w/2,cfg.shibaY-h/2,w,h);}}else if(cfg.shibaBlend){g.globalCompositeOperation=cfg.shibaBlend;draw(img.shiba,r.x,cfg.shibaY,cfg.shibaW,shibaArt());g.globalCompositeOperation='source-over';}else draw(img.shiba,r.x,cfg.shibaY,cfg.shibaW,shibaArt());
   const ing=Object.values(r.got).reduce((a,b)=>a+b,0),txt=`<img class="ci" src="${coinSrc}" alt="">${r.coins} · ${t('run.hud',{n:ing,sec:Math.max(0,Math.ceil(cfg.lengthSec-r.t))})}`;if(stats.innerHTML!==txt)stats.innerHTML=txt;
   hearts.forEach((h,i)=>{const s=i<cfg.hits-r.hitsTaken?cfg.heartImg.full:cfg.heartImg.empty;if(!h.src.endsWith(s))h.src=s;});};
  const end=()=>{removeEventListener('keydown',key);onEnd?.(r);const box=root.querySelector('.run-end');

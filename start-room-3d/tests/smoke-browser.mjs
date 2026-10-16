@@ -328,6 +328,7 @@ await new Promise(r=>setTimeout(r,600));
  await check('UI 10-15: 마을 지도 = full-screen popup, only map + close',`(()=>{const m=document.getElementById('mainMenu').getBoundingClientRect(),c=document.querySelector('[data-act=villageClose]');return m.top<=1&&m.height>=innerHeight-1&&!!c&&getComputedStyle(document.getElementById('mainTabs')).display==='none'&&!document.querySelector('#menuList [data-act=friendsOpen]');})()`);
  await ev(`document.querySelector('[data-act=villageClose]').click();true`);
  await check('UI 10-15: 마을 close returns to 가게관리',`document.querySelector('[data-main-tab=manage]').classList.contains('active')&&!!document.querySelector('#menuList [data-manage-tabs]')`);
+ await go(true,'&temp=1');await (await import('./start-flow.mjs')).startFlow(ev);await (await import('./coats-browser.mjs')).coatsBrowser({ev,check,sleep});
  await go(true,'&temp=1');await (await import('./start-flow.mjs')).startFlow(ev);
  await q17Browser({ev,c,check});
  await go(true,'&temp=1');await (await import('./start-flow.mjs')).startFlow(ev);await q1715Browser({ev,check});
@@ -347,6 +348,7 @@ await new Promise(r=>setTimeout(r,600));
  await check('땅 넓히기 최대 8단계: 확인 창 "(최대 8단계)", 8단계에서 + 사라지고 구매 막힘',`(()=>{const g=__game,txt=document.getElementById('mbox')?.textContent||'';g.ui.modals=[];g.debugExpand(8);g.state.coins=1e12;g.refresh();const ok=txt.includes('(최대 8단계)')&&!g.iso.markers.some(m=>m.kind==='row')&&g.S.spaceUnlockCheck(g.state,'row',null,'coins')==='max'&&!g.S.unlockSpace(g.state,'row',null,'coins',g.clock.now());g.debugExpand(0);g.refresh();return ok;})()`);
  await go(true,'&temp=1');{const {startFlow}=await import('./start-flow.mjs');await startFlow(ev);}await sleep(300);
  await check('시작 직후 카페 시바 수 ≤ 배치 상한(slotsOf, config)',`(()=>{const g=__game,n=g.state.shibas.filter(o=>o.placed).length;return n>=1&&n<=g.S.slotsOf(g.state)&&g.state.shibas.length>=n;})()`);
+ await go(true);await check('coats: dev helper is off without temp=1 (no way to get a coat in play)',`(()=>{const g=__game;g.S.chooseStart(g.state,'red','',Math.random);const id=g.state.shibas[0]?.id;return id!=null&&g.debugCoat(id,'pink')===false&&g.state.shibas.every(sh=>sh.coat===null);})()`);
 }catch(e){errors.push(String(e.stack||e));}finally{chrome.kill();setTimeout(()=>rmSync(prof,{recursive:true,force:true}),300);}
 for(const [k,n] of checks)console.log(k==='ok'?'  ok  ':'  FAIL',n);for(const e of errors)console.log('  ERROR',e);
 checks.push([debugHits.length?'FAIL':'ok','no unset/null/undefined/NaN text visible on any checked screen']);if(debugHits.length)console.log('  DEBUG TEXT\n   '+[...new Set(debugHits)].slice(0,30).join('\n   '));

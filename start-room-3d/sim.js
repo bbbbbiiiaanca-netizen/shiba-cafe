@@ -60,13 +60,16 @@ export function newState(now=Date.now()){
 }
 
 // ───────────────────────── shibas ─────────────────────────
-export function makeShiba(s,{breed,level=CFG.gacha.startLevel,name=null,tricks={},r=Math.random,now=Date.now()}){
+export function makeShiba(s,{breed,level=CFG.gacha.startLevel,name=null,tricks={},coat=null,r=Math.random,now=Date.now()}){
  const g=Object.fromEntries(CFG.gauges.map(k=>[k,CFG.gaugeStart?.[k]??null])); // §1.2-3: unknown remains null
  const tr={},te={};for(const t of CFG.tricks){tr[t.id]=clamp(tricks[t.id]||0,0,CFG.trickMaxLevel);te[t.id]=0;}
  return {id:s.nextId++,friends:[],breed,name,personality:drawPersonality(r),level:isUnset(level)?null:clamp(level,1,CFG.level.max),paws:0,
   affinity:CFG.heartUse.affinity.start,intimacy:CFG.intimacy.start,g,tricks:tr,trickExp:te,placed:false,status:'ok',injury:null,hospitalUntil:0,hospitalKind:null,
-  zeroSince:null,sickSince:null,cd:{},joinedAt:now,acc:null,accUnlocked:false,likesFound:{snacks:[],toys:[]}};
+  zeroSince:null,sickSince:null,cd:{},joinedAt:now,acc:null,accUnlocked:false,likesFound:{snacks:[],toys:[]},coat:normCoat(coat)};
 }
+// §17-16 희귀 털색: null = 보통 털. CFG.coats.rare에 있는 이름만 받는다 (얻는 방법은 아직 없음 — 개발용 setCoat만)
+export const normCoat=c=>typeof c==='string'&&Object.hasOwn(CFG.coats?.rare||{},c)?c:null;
+export function setCoat(s,id,coat){const sh=byId(s,id);if(!sh||(coat!=null&&!normCoat(coat)))return false;sh.coat=normCoat(coat);return true;}
 export const byId=(s,id)=>s.shibas.find(o=>o.id===id);
 export const levelEffect=lv=>isUnset(lv)?null:1+CFG.level.incomePerLevel*(lv-1); // 갱신 81
 export const pawsToNext=lv=>isUnset(lv)||lv>=CFG.level.max?null:CFG.level.pawsPerLevel*lv; // 갱신 138: 20×N
@@ -426,7 +429,7 @@ export function load(storage,now=Date.now(),r=Math.random){let s=null;try{s=JSON
  const B=CFG.accessory.bandana,cellId=id=>{const m=/^bandana-(\w+)-(\w+)$/.exec(id||'');const i=m?B.legacyColorIds.indexOf(m[2]):-1;return i<0?id:`bandana-${m[1]}-${B.colors[i]}`;};
  const inv={};for(const [k,n] of Object.entries(s.accInv||{})){const k2=cellId(k);inv[k2]=(inv[k2]||0)+n;}s.accInv=inv;for(const sh of s.shibas)if(sh.acc)sh.acc=cellId(sh.acc);
  // older v3 saves: 90's level slots → 139-6 one slot (the first shiba is the starter)
- for(const sh of s.shibas){sh.affinity??=CFG.heartUse.affinity.start;if(!('accUnlocked' in sh)){sh.starter=sh.id===Math.min(...s.shibas.map(o=>o.id));sh.accUnlocked=sh.starter;sh.acc=sh.starter?starterItem():null;delete sh.accessories;}}let offline=null;if(s.started&&now>s.lastSeen){const w=newWorld(s,r);offline=fastForward(s,w,s.lastSeen,now,{offline:true});}
+ for(const sh of s.shibas){sh.affinity??=CFG.heartUse.affinity.start;sh.coat=normCoat(sh.coat);if(!('accUnlocked' in sh)){sh.starter=sh.id===Math.min(...s.shibas.map(o=>o.id));sh.accUnlocked=sh.starter;sh.acc=sh.starter?starterItem():null;delete sh.accessories;}}let offline=null;if(s.started&&now>s.lastSeen){const w=newWorld(s,r);offline=fastForward(s,w,s.lastSeen,now,{offline:true});}
  settleLedger(s,now);const reopened=reopenCafe(s,now);s.lastSeen=now;return {state:s,fresh:false,offline,reopened};}
 
 // ───────────────────────── UNSET-gated features (stubs) ─────────────────────────

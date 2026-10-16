@@ -3,6 +3,7 @@ import {t} from './i18n.js';
 import {CFG} from './config.js';
 import {preservesEntrance} from './navigation.js';
 import {canWalk,walkFrame} from './walk-frames.js';
+import {tintImage} from './coat-art.js';
 import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges,WALL_EXT} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
@@ -61,7 +62,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
    const view={x:baseX-panX,y:y+(z.screenOffset?.y||0)*scale,scale};const placed=z.id==='A'?state.placement.slots:z.slots;
    if(z.image){const glow=ctx.createRadialGradient(W/2,y+heights[index]*.84,0,W/2,y+heights[index]*.84,W*.55);
    glow.addColorStop(0,'#b9854540');glow.addColorStop(1,'#b9854500');ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);}
-   const stamp=(file,p,anchor)=>{const im=load(file);if(im.complete&&im.naturalWidth)ctx.drawImage(im,p.x-anchor[0]*scale,p.y-anchor[1]*scale,im.naturalWidth*scale,im.naturalHeight*scale);};
+   const stamp=(file,p,anchor,coat=null)=>{const im=load(file);if(im.complete&&im.naturalWidth)ctx.drawImage(coat&&tintImage(im,coat)||im,p.x-anchor[0]*scale,p.y-anchor[1]*scale,im.naturalWidth*scale,im.naturalHeight*scale);};
    // Cover the viewport with exact isometric cells, before the room image.
    if(z.floor===1){const grass=load('assets/drive/tile-grass-outside.png');if(grass.complete&&grass.naturalWidth){
     const corners=[[0,0],[W,0],[0,H],[W,H]].map(([x,y])=>{const dx=(x-view.x)/scale-z.origin.x,dy=(y-view.y)/scale-z.origin.y-z.cell.h/2;return [dy/z.cell.h+dx/z.cell.w,dy/z.cell.h-dx/z.cell.w];});
@@ -108,9 +109,9 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
     if(s.tableItem){const c=s.tableItem,p=cellToScreen(...s.origin,view,z),im=load('assets/drive/'+c.order.img),size=tableItemSize(z);if(im.complete&&im.naturalWidth){const fit=size/Math.max(im.naturalWidth,im.naturalHeight)*scale;ctx.drawImage(im,p.x+c.itemSlot.offset[0]*scale-im.naturalWidth*fit/2,p.y+c.itemSlot.offset[1]*scale-im.naturalHeight*fit,im.naturalWidth*fit,im.naturalHeight*fit);}return;}
     if(s.character?.role==='manager'){const m=s.character,im=load(managerFrame(m)),p=cellToScreen(...s.origin,view,z);if(im.complete&&im.naturalWidth){const fit=MANAGER.height*CFG.people.scale*(CFG.people.withMapScale?scale:1)/MANAGER_OPAQUE_HEIGHT[managerFrame(m).split('/').at(-1)];ctx.drawImage(im,p.x-MANAGER.anchor[0]*fit,p.y-MANAGER.anchor[1]*fit,im.naturalWidth*fit,im.naturalHeight*fit);}return;}
     // 이동 규칙(10-15): 걷기 프레임이 있는 시바는 프레임을 넘기며 그린다(걷는 중 8fps, 서 있으면 1번 프레임). 없으면 아래 기존 규칙(그림 없음 → 안 그림).
-    if(s.character&&!s.character.kind&&s.character.role!=='manager'){const breed=state.shibas?.find(o=>o.id===s.character.id)?.breed;if(canWalk('shiba',breed)){const c=s.character,dirs=['front-dr','front-dl','back-ul','back-ur'],moving=c.state==='walk'||c.phase==='approach',n=moving?1+Math.floor(performance.now()/125)%(CFG.characters.frameCount||4):1,im=load(walkFrame('shiba',breed,dirs[c.facing||0],n)),p=cellToScreen(...s.origin,view,z);
-     if(im.complete&&im.naturalWidth){const k=scale*(CFG.characters.shibaScale||1),A=CFG.characters.shibaAnchor||CHAR_SPRITES.shiba.byBreed?.[breed]?.anchor||[im.naturalWidth/2,im.naturalHeight];ctx.drawImage(im,p.x-A[0]*k,p.y-A[1]*k,im.naturalWidth*k,im.naturalHeight*k);}return;}}
-    if(s.character){let meta=CHAR_SPRITES[s.character.role==='manager'?'manager':s.character.kind?'guest':'shiba'];if(!s.character.kind&&s.character.role!=='manager'){const b=state.shibas?.find(o=>o.id===s.character.id)?.breed;meta=meta.byBreed?.[b]||meta;}if(meta.file&&meta.anchor)stamp(meta.file,cellToScreen(...s.origin,view,z),meta.anchor);return;}
+    if(s.character&&!s.character.kind&&s.character.role!=='manager'){const sh=state.shibas?.find(o=>o.id===s.character.id),breed=sh?.breed;if(canWalk('shiba',breed)){const c=s.character,dirs=['front-dr','front-dl','back-ul','back-ur'],moving=c.state==='walk'||c.phase==='approach',n=moving?1+Math.floor(performance.now()/125)%(CFG.characters.frameCount||4):1,im=load(walkFrame('shiba',breed,dirs[c.facing||0],n)),p=cellToScreen(...s.origin,view,z);
+     if(im.complete&&im.naturalWidth){const k=scale*(CFG.characters.shibaScale||1),A=CFG.characters.shibaAnchor||CHAR_SPRITES.shiba.byBreed?.[breed]?.anchor||[im.naturalWidth/2,im.naturalHeight];ctx.drawImage(sh?.coat&&tintImage(im,sh.coat)||im,p.x-A[0]*k,p.y-A[1]*k,im.naturalWidth*k,im.naturalHeight*k);}return;}}
+    if(s.character){let meta=CHAR_SPRITES[s.character.role==='manager'?'manager':s.character.kind?'guest':'shiba'],coat=null;if(!s.character.kind&&s.character.role!=='manager'){const sh=state.shibas?.find(o=>o.id===s.character.id);coat=sh?.coat||null;meta=meta.byBreed?.[sh?.breed]||meta;}if(meta.file&&meta.anchor)stamp(meta.file,cellToScreen(...s.origin,view,z),meta.anchor,coat);return;}
     const base=SPRITES[s.type];if(!base)return;
     if(!base.file){if(edit){const p=cellToScreen(...s.origin,view,z);hits.push({id:s.id,x:p.x-z.cell.w*scale/2,y:p.y-z.cell.h*scale/2,w:z.cell.w*scale,h:z.cell.h*scale,footprint:true,view,zone:z});}return;}const sprite=s.type==='wall'&&s.dir%2?base.flip:s.dir>=2?base.back:base;if(!sprite)return;
     const im=load(sprite.file),p=cellToScreen(...footprintCentre(s),view,z),spriteScale=scale*sprite.scale;
