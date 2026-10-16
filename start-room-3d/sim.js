@@ -1,9 +1,9 @@
 import {decorBonus} from './decor.js';
-import {tickManager,linkTable,faceCell,layout,seatSlots,pathfind,routeTo,moveCell,syncRoutes} from './navigation.js';
+import {tickManager,linkTable,faceCell,layout,seatSlots,pathfind,routeTo,moveCell,syncRoutes,adjacent,preservesEntrance} from './navigation.js';
 export {tickManager,seatSlots,syncRoutes,pathfind};
 // Spec v3 game core — pure logic (no DOM), deterministic with an injected RNG so tests can replay it.
 // Times: `now` is epoch ms; `dt` is seconds. Every number comes from CFG (config.js); UNSET (null) values disable what depends on them.
-import {defaultPlacement,restorePlacement,restoreSpace,zonesForSpace,FLOOR_ART,PARTITION,footprintCells,validPlacement,SPRITES} from './map-data.js';
+import {defaultPlacement,restorePlacement,restoreSpace,zonesForSpace,FLOOR_ART,PARTITION,footprintCells,validPlacement,SPRITES,activeEdges} from './map-data.js';
 import {CFG,GACHA_TABLE,pressureAt,isUnset} from './config.js';
 import {canWalk} from './walk-frames.js';
 import {t} from './i18n.js';
@@ -306,13 +306,13 @@ function makeRequest(s,w){const T=[];const working=s.shibas.filter(o=>canWork(s,
  if(working.length)T.push('meetShiba');const known=CFG.tricks.filter(t=>working.some(o=>o.tricks[t.id]>0));if(known.length)T.push('seeTrick');
  if(!T.length)return null;const type=pick(w.r,T);return type==='meetShiba'?{type,shibaId:pick(w.r,working).id}:{type,trick:pick(w.r,known).id};}
 export const customerStayDuration=s=>CFG.cafe.stayingSec*(1+decorBonus(s.placement?.slots??[]).stay);
-function seat(s,w,c){const entranceCell=layout(s,w).entrance;const queueFrom=c.phase==='queue'&&c.cell?[...c.cell]:null;const from=c.phase==='queue'?entranceCell:c.cell||entranceCell;const used=new Set(w.custs.filter(c=>c.phase!=='exiting').map(x=>x.seat));const {zone,slots,entrance}=layout(s,w);
- const target=seatSlots(s,w).find(x=>!used.has(x.id)&&pathfind(zone,slots,from,x.cell,{seatTarget:true}));
+function seat(s,w,c){const entranceCell=layout(s,w).entrance;const queueFrom=c.phase==='queue'&&c.cell?[...c.cell]:null;const from=c.phase==='queue'?entranceCell:c.cell||entranceCell;const used=new Set(w.custs.filter(c=>c.phase!=='exiting').map(x=>x.seat));const {zone,slots,edges,entrance}=layout(s,w);
+ const target=seatSlots(s,w).find(x=>!used.has(x.id)&&pathfind(zone,slots,from,x.cell,{seatTarget:true,edges}));
  if(!target||w.custs.filter(c=>c.phase!=='exiting').length>=capOf(s))return false;
  Object.assign(c,{phase:'entering',seat:target.id,seatFurniture:target.furnitureId,cell:[...from],t:customerStayDuration(s),score:0,met:[],with:null,fulfilled:false,request:makeRequest(s,w)});
  routeTo(s,w,c,target.cell,true);if(queueFrom){const prefix=[];for(let j=queueFrom[1]-1;j>=entrance[1];j--)prefix.push([entrance[0],j]);c.route=[...prefix,...c.route];c.cell=queueFrom;}else if(c.entryFrom){c.route.unshift([...entrance]);c.cell=[...c.entryFrom];delete c.entryFrom;}w.custs.push(c);w.events.push({type:'enter',id:c.id});return true;}
-function spawn(s,w,now){const {zone,slots,entrance}=layout(s,w);
- if(!Number.isFinite(CFG.navigation.cellStepSec)||CFG.navigation.cellStepSec<=0||!pathfind(zone,slots,entrance,entrance))return;
+function spawn(s,w,now){const {zone,slots,edges,entrance}=layout(s,w);
+ if(!Number.isFinite(CFG.navigation.cellStepSec)||CFG.navigation.cellStepSec<=0||!pathfind(zone,slots,entrance,entrance,{edges}))return;
  const c={id:w.nextCust++,kind:pick(w.r,NPC_NORMAL),cell:[...entrance],entryFrom:[entrance[0],entrance[1]+1]};
  if(!w.queue.length&&seat(s,w,c))return;
  if(w.queue.length<queueLimit(s,w)){c.phase='queue';c.t=CFG.navigation.queueWaitSec;w.queue.push(c);w.events.push({type:'queue',id:c.id});}
@@ -322,7 +322,7 @@ function spawn(s,w,now){const {zone,slots,entrance}=layout(s,w);
 export function queueCells(s,w){const base=layout(s,w).zone.queueCells||[];const extra=upgradeAdd(s,'queue');if(!base.length||!extra)return base;
  const a=base.at(-1),b=base.at(-2)||layout(s,w).entrance,d=[a[0]-b[0],a[1]-b[1]],out=[...base];for(let n=1;n<=extra;n++)out.push([a[0]+d[0]*n,a[1]+d[1]*n]);return out;}
 const queueLimit=(s,w)=>Math.min(CFG.cafe.queueMax??Infinity,queueCells(s,w).length);
-function approach(s,w,sh,c){const {zone,slots}=layout(s,w);const targets=[[1,0],[-1,0],[0,1],[0,-1]].map(([i,j])=>[c.cell[0]+i,c.cell[1]+j]);const target=targets.find(p=>!Object.values(w.sh).some(other=>other!==sh&&(other.target||other.cell)?.join(',')===p.join(','))&&pathfind(zone,slots,sh.cell,p));if(!target)return false;sh.state='approachGuest';sh.phase='approach';sh.cust=c.id;c.with=sh.id;routeTo(s,w,sh,target);return true;}
+function approach(s,w,sh,c){const {zone,slots,edges}=layout(s,w);const targets=[[1,0],[-1,0],[0,1],[0,-1]].map(([i,j])=>[c.cell[0]+i,c.cell[1]+j]);const target=targets.find(p=>adjacent(c.cell,p,edges)&&!Object.values(w.sh).some(other=>other!==sh&&(other.target||other.cell)?.join(',')===p.join(','))&&pathfind(zone,slots,sh.cell,p,{edges}));if(!target)return false;sh.state='approachGuest';sh.phase='approach';sh.cust=c.id;c.with=sh.id;routeTo(s,w,sh,target);return true;}
 function startMeeting(s,w,sh,c,ctx){const o=byId(s,sh.id);
  // 갱신 100: the shiba shows one learned trick — a random learned one, independent of the request
  const learned=CFG.tricks.filter(t=>o.tricks[t.id]>0).map(t=>t.id);const req=c.request;
@@ -390,8 +390,8 @@ export function tick(s,w,dt,now,ctx={}){s.simNow=now;ctx={...ctx,now};settleLedg
   if(sh.noWalk&&sh.state==='walk')sh.state='lookAround'; // 제자리 동작만
   if(sh.state!=='walk'){sh.t=B.durations[sh.state];continue;}
   // walk 2–4 cells: a reachable cell exactly n steps away, else any within the range; boxed in → pick again next tick
-  const {zone,slots}=layout(s,w),[lo,hi]=B.walkCells,n=lo+Math.floor(w.r()*(hi-lo+1)),near=[];
-  for(let i=0;i<zone.cols;i++)for(let j=0;j<zone.rows;j++){const len=pathfind(zone,slots,sh.cell,[i,j])?.length;if(len>=lo&&len<=hi)near.push({cell:[i,j],len});}
+  const {zone,slots,edges}=layout(s,w),[lo,hi]=B.walkCells,n=lo+Math.floor(w.r()*(hi-lo+1)),near=[];
+  for(let i=0;i<zone.cols;i++)for(let j=0;j<zone.rows;j++){const len=pathfind(zone,slots,sh.cell,[i,j],{edges})?.length;if(len>=lo&&len<=hi)near.push({cell:[i,j],len});}
   const exact=near.filter(x=>x.len===n),list=exact.length?exact:near;if(list.length)routeTo(s,w,sh,pick(w.r,list).cell);else sh.state='wander';sh.t=0;
  }
  const qc=queueCells(s,w);for(let n=0;n<w.queue.length;n++){const c=w.queue[n],cell=qc[n];if(cell){if(c.queueTarget?.join(',')!==cell.join(',')){c.queueTarget=[...cell];c.route=[];const direction=Math.sign(cell[1]-c.cell[1]);for(let j=c.cell[1]+direction;direction&&j!==cell[1]+direction;j+=direction)c.route.push([cell[0],j]);c.moveAcc=0;}moveCell(c,dt,CFG.navigation.cellStepSec);}}
@@ -471,8 +471,8 @@ export function consumeElapsed(s,w,elapsedSec,now,{maxSteps=240,offline=false}={
 
 function behaviour(w){return w.behaviour||CFG.behaviour;}
 // 2026-10-15: 시바끼리 같은 칸에서 시작하지 않게, 입구가 차 있으면 입구에서 가장 가까운 빈 칸(갈 수 있는 칸)에서 시작
-function spawnCell(s,w){const {zone,slots,entrance}=layout(s,w);if(!entrance)return null;const used=new Set(Object.values(w.sh).map(o=>o.cell?.join(',')));if(!used.has(entrance.join(',')))return [...entrance];
- const cand=[];for(let i=0;i<zone.cols;i++)for(let j=0;j<zone.rows;j++){const k=i+','+j;if(used.has(k))continue;const len=pathfind(zone,slots,entrance,[i,j])?.length;if(len>0)cand.push({c:[i,j],len});}
+function spawnCell(s,w){const {zone,slots,edges,entrance}=layout(s,w);if(!entrance)return null;const used=new Set(Object.values(w.sh).map(o=>o.cell?.join(',')));if(!used.has(entrance.join(',')))return [...entrance];
+ const cand=[];for(let i=0;i<zone.cols;i++)for(let j=0;j<zone.rows;j++){const k=i+','+j;if(used.has(k))continue;const len=pathfind(zone,slots,entrance,[i,j],{edges})?.length;if(len>0)cand.push({c:[i,j],len});}
  cand.sort((a,b)=>a.len-b.len||a.c[0]-b.c[0]||a.c[1]-b.c[1]);return cand[0]?cand[0].c:[...entrance];}
 function weightedState(w,weights){let n=w.r()*Object.values(weights).reduce((a,b)=>a+b,0);for(const [state,weight] of Object.entries(weights)){n-=weight;if(n<0)return state;}return 'lookAround';}
 // every state that can be drawn needs its duration (walk: its cell range); otherwise autonomous behaviour stays gated
@@ -517,6 +517,8 @@ export function roundLandPrice(v){const t=CFG.expansion.rowRoundTiers.find(([lim
 export const priceTierMul=s=>{const lv=s?.cafe?.level??1;return (CFG.priceTiers.find(([max])=>lv<=max)||CFG.priceTiers.at(-1))[1];};
 export const tierPrice=(s,base)=>Number.isFinite(base)?Math.round(base*priceTierMul(s)):base;
 export const wallPrice=s=>tierPrice(s,PARTITION.price);
+// 17-7 가벽(선 따라) 가격: 종류별 값만 본다(칸막이 PARTITION.price와 무관). null = 미정 → 표시 '미정'·구매 잠금.
+export const edgePrice=(s,type)=>tierPrice(s,CFG.partitionWall.types[type]?.price??null);
 export const furniturePrice=(s,id)=>tierPrice(s,CFG.furniture.items.find(x=>x.id===id)?.price);
 export const upgradePrice=(s,kind)=>tierPrice(s,CFG.upgrades[kind]?.price);
 // 다이아 pools: s.dia stays the total; s.diaPaid is the paid part. Grants are free.
@@ -531,7 +533,10 @@ export function selectRoomLayer(s,id){
  if(!it?.art||!(s.furnitureInv?.[id]>0))return false;
  s.space.roomLayers??={floor:null,wall:null};s.space.roomLayers[it.layer]=id;return true;
 }
-export function placeFurniture(s,type,origin){if(CFG.decor.roomLayers.some(it=>it.id===type))return selectRoomLayer(s,type);if(!(s.furnitureInv?.[type]>0)||!SPRITES[type]?.file)return false;const item={id:'placed-'+s.nextId,type,origin,dir:0};const zone=zonesForSpace(s.space)[0];if(!validPlacement(item,s.placement.slots,zone))return false;s.nextId++;s.placement.slots.push(item);s.furnitureInv[type]--;return true;}
+// 가방 '놓기'도 편집 모드와 같은 입구 길 검사(가구는 항상, 가벽은 enabled일 때만). 'entrance' = 그 자리는 입구 길을 막는다.
+export function furnitureFit(s,type,origin){const item={id:'placed-'+s.nextId,type,origin,dir:0},zone=zonesForSpace(s.space)[0],slots=s.placement.slots,edges=activeEdges(s.placement);
+ if(!validPlacement(item,slots,zone))return 'invalid';return preservesEntrance(zone,slots,[...slots,item],{edgesBefore:edges,edgesAfter:edges})?'ok':'entrance';}
+export function placeFurniture(s,type,origin){if(CFG.decor.roomLayers.some(it=>it.id===type))return selectRoomLayer(s,type);if(!(s.furnitureInv?.[type]>0)||!SPRITES[type]?.file)return false;const item={id:'placed-'+s.nextId,type,origin,dir:0};if(furnitureFit(s,type,origin)!=='ok')return false;s.nextId++;s.placement.slots.push(item);s.furnitureInv[type]--;return true;}
 export function buyFurniture(s,id,now=Date.now()){const it=CFG.furniture.items.find(x=>x.id===id),p=furniturePrice(s,id);if(!Number.isFinite(p)||s.coins<p)return false;s.coins-=p;const type=({'tea-table':'table',zabuton:'cushion'}[id]||id);s.furnitureInv[type]=(s.furnitureInv[type]||0)+1;recordLedger(s,'furniture',p,now);return true;}
 // starting value 2026-10-15, pending user confirm: KST calendar days from first launch; income boosts one each on days 8, 10 and 14.
 export function mailbox(s,now=Date.now()){const day=ledgerDay(now)-ledgerDay(s.firstLaunch??s.lastSeen)+1;const rows=[];for(let d=1;d<=Math.min(day,CFG.stub.onboarding.days);d++){const items={...CFG.stub.onboarding.rewards[d]};let coins=0,dia=0;if(d<=7){coins=CFG.grants14.days1to7.coins;dia=CFG.grants14.days1to7.dia;items.expBoost4h=1;}if([8,10,12,14].includes(d)){coins=CFG.grants14.days8to14.coins;dia=CFG.grants14.days8to14.dia;}Object.assign(items,CFG.grants14.itemDays[d]);if(coins||dia||Object.values(items).some(x=>x>0))rows.push({day:d,coins,dia,items,claimed:(s.mailClaimed||[]).includes(d)});}return rows;}

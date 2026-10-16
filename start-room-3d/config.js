@@ -155,6 +155,15 @@ decor:{footprint:{default:{w:1,h:1},overrides:{}},
  momijiSet:{minItems:3,bonusMinItems:null,bonus:null},
  snowSet:{minItems:3,bonusMinItems:null,bonus:null},
  sakuraSet:{minItems:3,bonusMinItems:null,bonus:null}},
+// 명세 17-7 가벽(수인님 10/14): 바닥 칸 사이 '선'을 따라 세우는 가벽. 칸을 차지하는 칸막이(SPRITES.wall)와 따로. art = front/back {file,anchor,scale}.
+// count·price: 미정(null). count null = 개수 제한 없음(판매 없음). 기존 칸막이 PARTITION 값(price 50000)과 공유하지 않는다.
+// 가격은 종류별 types.edge1/edge2.price(똑또기 10/17: 미정). 최상위 price는 쓰지 않음(null 유지).
+// v2 그림 4장(승인은 코코아 전달 03:55) → enabled true(똑또기 확정). 그림은 오른쪽 위로 뻗는 선 기준; 오른쪽 아래로 뻗는 선은 isomap이 좌우 반전.
+// anchor = 그림 기준점(왼쪽 기둥 밑동 → 오른쪽 끝, 1x)의 가운데 = 가벽 선 가운데(isomap edgeCentre).
+//  1tile-front (8,80)→(72,48) · 1tile-back (7,76)→(71,44) · 2tile-front (15,104)→(143,40) · 2tile-back (14,104)→(142,40)
+partitionWall:{enabled:true,count:null,price:null,types:{
+ edge1:{len:1,price:null,art:{front:{file:'assets/drive/partition/partition-1tile-front-v2.png',anchor:[40,64],scale:1},back:{file:'assets/drive/partition/partition-1tile-back-v2.png',anchor:[39,60],scale:1}}},
+ edge2:{len:2,price:null,art:{front:{file:'assets/drive/partition/partition-2tile-front-v2.png',anchor:[79,72],scale:1},back:{file:'assets/drive/partition/partition-2tile-back-v2.png',anchor:[78,72],scale:1}}}}},
 furniture:{starterExtra:{table:1,cushion:2,counter:1,stairs:1}, // starting value 2026-10-15, pending user confirm: five extra approved-sprite items, unplaced
  // starting value 2026-10-15, pending user confirm: table 40,000; cushion 20,000; extra props 5,000 coins.
  items:[{id:'tea-table',name:'찻상',category:'furniture',price:40000},{id:'zabuton',name:'방석',category:'furniture',price:20000},{id:'counter',name:'카운터',category:'furniture',price:5000},{id:'stairs',name:'계단',category:'furniture',price:5000},...NEW_FURNITURE.map(it=>({...it,front:'assets/drive/furniture-v4/'+it.filename,price:null /* 미정 — 똑또기 확인 대기 */})),...ROOM_LAYERS]}, // Prices: starting value 2026-10-15, pending user confirm; historical source: 1.3 / F p6·9 furniture prices

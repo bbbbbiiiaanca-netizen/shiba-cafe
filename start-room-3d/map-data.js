@@ -89,6 +89,22 @@ export function validPlacement(item,slots,zone=MAP.zones[0]){
  return cells.every(([i,j])=>i>=0&&j>=0&&i<zone.cols&&j<zone.rows&&!occupied.has(`${i},${j}`));
 }
 export function defaultPlacement(){return {v:1,slots:structuredClone(MAP.zones[0].slots)};}
+// 17-7 가벽(선 따라): edge {id,type:'edge1'|'edge2',cell:[i,j],side:'i'|'j',flip}. side 'i' = 칸 [i,j]와 [i+1,j] 사이 선, 'j' = [i,j]와 [i,j+1] 사이 선.
+// 2칸은 그 선을 따라 한 칸 더: 'i' → [i,j+1]|[i+1,j+1], 'j' → [i+1,j]|[i+1,j+1]. 반환: 막히는 칸 쌍 목록.
+export function edgeSegments(edge){const len=CFG.partitionWall.types[edge.type]?.len||0,[i,j]=edge.cell;
+ return Array.from({length:len},(_,n)=>edge.side==='i'?[[i,j+n],[i+1,j+n]]:[[i+n,j],[i+n,j+1]]);}
+// 가벽 그림은 오른쪽 위로 뻗는 선 기준. 화면 끝점으로 판정: 오른쪽 끝이 왼쪽 끝보다 아래(오른쪽 아래로 뻗음)면 좌우 반전. 지금 칸 모양에서 side 'j'가 반전.
+export function edgeMirrored(points){const l=points.reduce((a,p)=>p.x<a.x?p:a),r=points.reduce((a,p)=>p.x>a.x?p:a);return r.y>l.y;}
+// enabled=false → 가벽은 길·그림·편집에 아무 효과 없음(저장된 값은 그대로 둔다)
+export function activeEdges(placement){return CFG.partitionWall.enabled?placement?.edges||[]:[];}
+export function validEdge(edge,edges,zone=MAP.zones[0]){
+ if(!edge||typeof edge.id!=='string'||!Object.hasOwn(CFG.partitionWall.types,edge.type)||!['i','j'].includes(edge.side)||typeof edge.flip!=='boolean'||!Array.isArray(edge.cell)||edge.cell.length!==2||!edge.cell.every(Number.isInteger))return false;
+ const inside=([i,j])=>i>=0&&j>=0&&i<zone.cols&&j<zone.rows,seg=s=>s.map(c=>c.join(',')).join('|');
+ const taken=new Set(edges.filter(e=>e.id!==edge.id).flatMap(e=>edgeSegments(e).map(seg)));
+ return edgeSegments(edge).every(s=>s.every(inside)&&!taken.has(seg(s)));
+}
+// 잘못된 가벽은 하나씩 버린다(방 밖·겹침·같은 id). 가벽이 없으면 edges 키를 두지 않는다(예전 저장과 같은 모양).
+function restoreEdges(saved,zone){const edges=[];for(const e of Array.isArray(saved)?saved:[]){if(e&&!edges.some(x=>x.id===e.id)&&validEdge(e,edges,zone))edges.push({id:e.id,type:e.type,cell:[...e.cell],side:e.side,flip:e.flip});}return edges;}
 export function restorePlacement(saved,zone=MAP.zones[0]){
  const fallback=defaultPlacement();
  if(!saved||saved.v!==1||!Array.isArray(saved.slots)||saved.slots.length<fallback.slots.length)return fallback;
@@ -98,7 +114,8 @@ export function restorePlacement(saved,zone=MAP.zones[0]){
  if(fallback.slots.some(d=>!saved.slots.some(s=>s.id===d.id&&s.type===d.type)))return fallback;
  const slots=fallback.slots.map(d=>{const s=saved.slots.find(s=>s.id===d.id&&s.type===d.type);return s?{...d,origin:s.origin,dir:s.dir}:d;});
  slots.push(...saved.slots.filter(s=>!fallback.slots.some(d=>d.id===s.id)).map(s=>({...s})));
- return slots.every(s=>validPlacement(s,slots,zone))?{v:1,slots}:fallback;
+ if(!slots.every(s=>validPlacement(s,slots,zone)))return fallback;
+ const edges=restoreEdges(saved.edges,zone);return edges.length?{v:1,slots,edges}:{v:1,slots};
 }
 
 // unlockedRows is the persisted expansion count (legacy key retained).

@@ -4,39 +4,64 @@ import {t} from './i18n.js';
 import {CFG} from './config.js';
 import {preservesEntrance} from './navigation.js';
 import {canWalk,walkFrame} from './walk-frames.js';
-import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,spriteMirrored,spriteFor,wallEdge,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges,WALL_EXT} from './map-data.js';
+import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,spriteMirrored,spriteFor,wallEdge,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges,WALL_EXT,activeEdges,edgeSegments,edgeMirrored,validEdge} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
  const seenSakura=new Set();
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
  let dragSprite=null;let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,panX=0,panBounds={minX:0,maxX:0},drag=null,last,selected=null,selectionBefore=null,selectionNew=false,hits=[],gridCells=0,maxScroll=0,markers=[],markerPhase=null,zoom=1;
  const bar=document.createElement('div');bar.hidden=true;bar.className='furniture-actions';bar.setAttribute('aria-label',t('edit.aria'));bar.setAttribute('data-i18n-attr','aria-label:edit.aria');
- bar.innerHTML=`<button data-furniture-cancel data-i18n="app.cancel">${t('app.cancel')}</button><button data-furniture-store data-i18n="edit.store">${t('edit.store')}</button><button data-furniture-rotate data-i18n="edit.rotate">${t('edit.rotate')}</button><button data-furniture-flip data-i18n="edit.flip">${t('edit.flip')}</button><button data-furniture-done data-i18n="app.ok">${t('app.ok')}</button><button data-furniture-save data-i18n="edit.save">${t('edit.save')}</button><button data-wall-add hidden data-i18n="edit.wallAdd">${t('edit.wallAdd')}</button>`;
+ bar.innerHTML=`<button data-furniture-cancel data-i18n="app.cancel">${t('app.cancel')}</button><button data-furniture-store data-i18n="edit.store">${t('edit.store')}</button><button data-furniture-rotate data-i18n="edit.rotate">${t('edit.rotate')}</button><button data-furniture-flip data-i18n="edit.flip">${t('edit.flip')}</button><button data-furniture-done data-i18n="app.ok">${t('app.ok')}</button><button data-furniture-save data-i18n="edit.save">${t('edit.save')}</button><button data-wall-add hidden data-i18n="edit.wallAdd">${t('edit.wallAdd')}</button><button data-edge-add="edge1" hidden data-i18n="edit.edgeAdd1">${t('edit.edgeAdd1')}</button><button data-edge-add="edge2" hidden data-i18n="edit.edgeAdd2">${t('edit.edgeAdd2')}</button><button data-edge-remove hidden data-i18n="edit.wallRemove">${t('edit.wallRemove')}</button>`;
 
- function syncBar(){bar.hidden=!edit;bar.classList.toggle('has-selection',!!selected);for(const button of bar.querySelectorAll('button'))button.disabled=button.hasAttribute('data-furniture-save')||button.hasAttribute('data-wall-add')?false:!selected;}
+ function syncBar(){bar.hidden=!edit;bar.classList.toggle('has-selection',!!selected);bar.classList.toggle('edge-selected',!!currentEdge());for(const button of bar.querySelectorAll('button'))button.disabled=button.hasAttribute('data-furniture-save')||button.hasAttribute('data-wall-add')||button.hasAttribute('data-edge-add')?false:!selected;
+  // 17-7 가벽(선 따라): CFG.partitionWall.enabled일 때만 버튼이 보인다
+  for(const button of bar.querySelectorAll('[data-edge-add],[data-edge-remove]'))button.hidden=!CFG.partitionWall.enabled;}
  const slots=()=>last?.[0].placement.slots||MAP.zones[0].slots;
  const current=()=>slots().find(s=>s.id===selected);
+ const edges=()=>activeEdges(last?.[0].placement);
+ const currentEdge=()=>edges().find(e=>e.id===selected);
  syncBar();
  const repaint=()=>{syncBar();last&&draw(...last);};
  function accept(candidate,zone){
   const before=slots(),after=[...before.filter(s=>s.id!==candidate.id),candidate];
-  if(!preservesEntrance(zone,before,after)){onBlocked(t('edit.entranceBlocked'));return false;}
+  if(!preservesEntrance(zone,before,after,{edgesBefore:edges(),edgesAfter:edges()})){onBlocked(t('edit.entranceBlocked'));return false;}
   if(!validPlacement(candidate,before,zone)){onBlocked();return false;}return true;
  }
+ // 가벽: 방 밖·겹침 → 일반 거부, 입구에서 닿던 칸·좌석·카운터를 막으면 입구 토스트(가구와 같은 기준)
+ const edgeOk=(candidate,zone)=>validEdge(candidate,edges(),zone)&&preservesEntrance(zone,slots(),slots(),{edgesBefore:edges(),edgesAfter:[...edges().filter(e=>e.id!==candidate.id),candidate]});
+ function acceptEdge(candidate,zone){
+  if(!validEdge(candidate,edges(),zone)){onBlocked();return false;}
+  if(!edgeOk(candidate,zone)){onBlocked(t('edit.entranceBlocked'));return false;}return true;
+ }
+ function placeEdge(type,cell,side){if(!CFG.partitionWall.enabled||!edit||!last)return false;if(Number.isFinite(CFG.partitionWall.count)&&edges().length>=CFG.partitionWall.count)return false;
+  const candidate={id:'edge-'+crypto.randomUUID(),type,cell:[...cell],side,flip:false};
+  if(!acceptEdge(candidate,zonesForSpace(last[0].space)[0]))return false;(last[0].placement.edges??=[]).push(candidate);selected=candidate.id;selectionBefore=null;selectionNew=true;onChange();repaint();return true;
+ }
+ // 버튼: 가구가 없는 바닥 칸 사이의 첫 빈 선에 놓고 고른다(옮기기는 끌어서)
+ for(const button of bar.querySelectorAll('[data-edge-add]'))button.onclick=()=>{const type=button.dataset.edgeAdd,zone=zonesForSpace(last[0].space)[0],used=new Set(slots().flatMap(s=>footprintCells(s).map(c=>c.join(','))));
+  for(let j=0;j<zone.rows;j++)for(let i=0;i<zone.cols;i++)for(const side of ['i','j']){const c={id:'edge-preview',type,cell:[i,j],side,flip:false};if(!edgeSegments(c).flat().some(p=>used.has(p.join(',')))&&edgeOk(c,zone)){placeEdge(type,c.cell,side);return;}}
+  onBlocked(t('edit.entranceBlocked'));};
+ bar.querySelector('[data-edge-remove]').onclick=()=>{const e=currentEdge();if(!e)return;cancelDrag();const list=last[0].placement.edges;list.splice(list.indexOf(e),1);selected=null;selectionBefore=null;selectionNew=false;onChange();repaint();};
  function placeWall(origin){if(!edit||!last)return false;if((last[0].wallOwned??PARTITION.count)<=slots().filter(x=>x.type==='wall').length)return false;const zone=zonesForSpace(last[0].space)[0];
   const candidate={id:'wall-'+crypto.randomUUID(),type:'wall',origin:[...origin],dir:0};
   if(!accept(candidate,zone))return false;slots().push(candidate);selected=candidate.id;selectionBefore=null;selectionNew=true;onChange();repaint();return true;
  }
  bar.querySelector('[data-wall-add]').onclick=()=>{const zone=zonesForSpace(last[0].space)[0];for(let j=0;j<zone.rows;j++)for(let i=0;i<zone.cols;i++){
-  const c={id:'wall-preview',type:'wall',origin:[i,j],dir:0};if(validPlacement(c,slots(),zone)&&preservesEntrance(zone,slots(),[...slots(),c])){placeWall(c.origin);return;}
+  const c={id:'wall-preview',type:'wall',origin:[i,j],dir:0};if(validPlacement(c,slots(),zone)&&preservesEntrance(zone,slots(),[...slots(),c],{edgesBefore:edges(),edgesAfter:edges()})){placeWall(c.origin);return;}
  }onBlocked(t('edit.entranceBlocked'));};
  function orient(dir){const item=current();if(!item||drag?.item)return;const candidate={...item,dir};if(!accept(candidate,zonesForSpace(last[0].space)[0]))return;item.dir=dir;onChange();repaint();}
- bar.querySelector('[data-furniture-flip]').onclick=()=>current()&&orient(flipDir(current().dir));
+ // 가벽 뒤집기: flip 토글(앞/뒤 그림 자리 front/back). 막는 칸은 같지만 같은 검사를 거친다.
+ function flipEdge(){const e=currentEdge();if(!e||drag?.edge)return;if(!acceptEdge({...e,flip:!e.flip},zonesForSpace(last[0].space)[0]))return;e.flip=!e.flip;onChange();repaint();}
+ bar.querySelector('[data-furniture-flip]').onclick=()=>currentEdge()?flipEdge():current()&&orient(flipDir(current().dir));
  bar.querySelector('[data-furniture-rotate]').onclick=()=>current()&&orient(rotateDir(current().type,current().dir));
  bar.querySelector('[data-furniture-save]').onclick=()=>{selected=null;selectionBefore=null;edit=false;onChange();onEditChange(false);repaint();};
- bar.querySelector('[data-furniture-cancel]').onclick=()=>{cancelDrag();if(current()&&selectionNew)slots().splice(slots().indexOf(current()),1);else if(current()&&selectionBefore)Object.assign(current(),selectionBefore);selected=null;selectionBefore=null;selectionNew=false;onChange();repaint();};
+ bar.querySelector('[data-furniture-cancel]').onclick=()=>{cancelDrag();const e=currentEdge();if(e&&selectionNew)last[0].placement.edges.splice(last[0].placement.edges.indexOf(e),1);else if(e&&selectionBefore)Object.assign(e,selectionBefore);else if(current()&&selectionNew)slots().splice(slots().indexOf(current()),1);else if(current()&&selectionBefore)Object.assign(current(),selectionBefore);selected=null;selectionBefore=null;selectionNew=false;onChange();repaint();};
  bar.querySelector('[data-furniture-store]').onclick=()=>{const item=current();if(!item)return;if(item.type!=='wall'){const inv=last[0].furnitureInv??={};inv[item.type]=(inv[item.type]||0)+1;}slots().splice(slots().indexOf(item),1);selected=null;selectionBefore=null;onChange();repaint();};
  bar.querySelector('[data-furniture-done]').onclick=()=>{cancelDrag();selected=null;repaint();};
+ // 가벽 선의 화면 끝점: [i,j]|[i+1,j] = 칸 오른쪽 꼭짓점→아래 꼭짓점, [i,j]|[i,j+1] = 아래 꼭짓점→왼쪽 꼭짓점
+ const segPoints=([a,b],view,z)=>{const p=cellToScreen(...a,view,z),hw=z.cell.w*view.scale/2,hh=z.cell.h*view.scale/2,bottom={x:p.x,y:p.y+hh};return b[0]>a[0]?[{x:p.x+hw,y:p.y},bottom]:[bottom,{x:p.x-hw,y:p.y}];};
+ const edgeCentre=(e,view,z)=>{const ends=edgeSegments(e).flatMap(seg=>segPoints(seg,view,z));return {x:ends.reduce((n,p)=>n+p.x,0)/ends.length,y:ends.reduce((n,p)=>n+p.y,0)/ends.length};};
+ const edgeArt=e=>CFG.partitionWall.types[e.type]?.art?.[e.flip?'back':'front'];
  const load=path=>{if(!images.has(path)){const im=loadHd(path,()=>last&&draw(...last));images.set(path,im);}return images.get(path);};
  MAP.zones.forEach(z=>{if(z.image)load(z.image);z.slots.forEach(s=>load(SPRITES[s.type].file));});
  function draw(state,world){
@@ -110,7 +135,10 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
     }
    }
    for(const edge of plateEdges(z)){const p=cellToScreen(...edge.cell,view,z);stamp('assets/drive/tiles/plate-edge-'+edge.part+'.png',{x:p.x,y:p.y-z.cell.h*scale/2},[64,0]);}
-   [...placed,...(z.id==='A'?[...characterDepthEntries(world),...tableItemEntries(world)]:[])].map(s=>drag?.item&&drag.item===s.id?{...s,origin:drag.candidate}:s).sort(compareDepth).forEach(s=>{
+   const zoneEdges=z.id==='A'?activeEdges(state.placement).map(e=>drag?.edge===e.id?{...e,cell:drag.candidate}:e):[];
+   [...placed,...(z.id==='A'?[...characterDepthEntries(world),...tableItemEntries(world),...zoneEdges.filter(e=>edgeArt(e)?.file).map(e=>({edgeItem:e,cells:edgeSegments(e).flat()}))]:[])].map(s=>drag?.item&&drag.item===s.id?{...s,origin:drag.candidate}:s).sort(compareDepth).forEach(s=>{
+    // 가벽 그림(CFG.partitionWall.types[type].art.front/back)이 있을 때만 그린다. 기준점 = 가벽 선 가운데.
+    if(s.edgeItem){const art=edgeArt(s.edgeItem),p=edgeCentre(s.edgeItem,view,z),im=load(art.file),k=scale*(art.scale||1);if(im.complete&&im.naturalWidth){ctx.save();ctx.translate(p.x,p.y);if(edgeMirrored(edgeSegments(s.edgeItem).flatMap(seg=>segPoints(seg,view,z))))ctx.scale(-1,1);ctx.drawImage(im,-art.anchor[0]*k,-art.anchor[1]*k,im.naturalWidth*k,im.naturalHeight*k);ctx.restore();}return;}
     if(s.tableItem){const c=s.tableItem,p=cellToScreen(...s.origin,view,z),im=load('assets/drive/'+c.order.img),size=tableItemSize(z);if(im.complete&&im.naturalWidth){const fit=size/Math.max(im.naturalWidth,im.naturalHeight)*scale;ctx.drawImage(im,p.x+c.itemSlot.offset[0]*scale-im.naturalWidth*fit/2,p.y+c.itemSlot.offset[1]*scale-im.naturalHeight*fit,im.naturalWidth*fit,im.naturalHeight*fit);}return;}
     if(s.character?.role==='manager'){const m=s.character,im=load(managerFrame(m)),p=cellToScreen(...s.origin,view,z);if(im.complete&&im.naturalWidth){const fit=MANAGER.height*CFG.people.scale*(CFG.people.withMapScale?scale:1)/MANAGER_OPAQUE_HEIGHT[managerFrame(m).split('/').at(-1)];ctx.drawImage(im,p.x-MANAGER.anchor[0]*fit,p.y-MANAGER.anchor[1]*fit,im.naturalWidth*fit,im.naturalHeight*fit);}return;}
     // 이동 규칙(10-15): 걷기 프레임이 있는 시바는 프레임을 넘기며 그린다(걷는 중 8fps, 서 있으면 1번 프레임). 없으면 아래 기존 규칙(그림 없음 → 안 그림).
@@ -156,7 +184,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
      stamp(MAP_MARKERS.floor2.file,p,MAP_MARKERS.floor2.anchor);markers.push({kind:'floor2',...p});}
    }
    if(edit&&selected){const item=placed.find(s=>s.id===selected);if(item){const candidate=drag?.item===item.id?{...item,origin:drag.candidate}:item;
-    const valid=validPlacement(candidate,placed,z)&&preservesEntrance(z,placed,[...placed.filter(p=>p.id!==candidate.id),candidate]);canvas.dataset.placementValid=String(valid);if(bar.dataset)bar.dataset.valid=String(valid);ctx.fillStyle=valid?'rgba(30,215,80,.55)':'rgba(235,55,55,.32)';ctx.strokeStyle=valid?'#16e05a':'#ff4545';
+    const valid=validPlacement(candidate,placed,z)&&preservesEntrance(z,placed,[...placed.filter(p=>p.id!==candidate.id),candidate],{edgesBefore:edges(),edgesAfter:edges()});canvas.dataset.placementValid=String(valid);if(bar.dataset)bar.dataset.valid=String(valid);ctx.fillStyle=valid?'rgba(30,215,80,.55)':'rgba(235,55,55,.32)';ctx.strokeStyle=valid?'#16e05a':'#ff4545';
     const centre=cellToScreen(...footprintCentre(candidate),view,z);// 17-12: 둥근 버튼 고리(가로 106·위 84·아래 106px)가 화면 밖으로 나가지 않게 가운데를 당긴다
     const ringX=Math.min(Math.max(centre.x,106),Math.max(106,W-106)),ringY=Math.min(Math.max(centre.y,84),Math.max(84,H-106));bar.style.setProperty('--select-x',ringX+'px');bar.style.setProperty('--select-y',ringY+'px');ctx.lineWidth=2;
     for(const [i,j] of footprintCells(candidate)){const p=cellToScreen(i,j,view,z),hw=z.cell.w*scale/2,hh=z.cell.h*scale/2;
@@ -167,6 +195,15 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
      if(im.complete&&im.naturalWidth){const m=spriteMirrored(candidate.type,candidate.dir,sprite),ax=m?im.naturalWidth-sprite.anchor[0]:sprite.anchor[0],x=p.x-ax*ss,y=p.y-sprite.anchor[1]*ss,w=im.naturalWidth*ss,h=im.naturalHeight*ss;
       ctx.save();ctx.globalAlpha=.92;if(m){ctx.translate(x+w,y);ctx.scale(-1,1);ctx.drawImage(im,0,0,w,h);}else ctx.drawImage(im,x,y,w,h);ctx.restore();canvas.dataset.dragSprite=item.id;}}
    }}
+   // 17-7 가벽(선 따라): 편집 모드에서만 칸 경계선을 얇게 강조(그림 대체 도형 없음). 고른 가벽은 초록/빨강 굵은 선 + 둘레 버튼.
+   if(edit&&z.id==='A')for(const e of zoneEdges){const chosen=e.id===selected,valid=chosen?edgeOk(e,z):true;
+    ctx.save();ctx.lineCap='round';ctx.lineWidth=chosen?4:2.5;ctx.strokeStyle=!chosen?'#ffd36b':valid?'#16e05a':'#ff4545';
+    for(const [a,b] of edgeSegments(e).map(seg=>segPoints(seg,view,z))){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}ctx.restore();
+    const ends=edgeSegments(e).flatMap(seg=>segPoints(seg,view,z)),xs=ends.map(p=>p.x),ys=ends.map(p=>p.y),pad=12;
+    hits.push({id:e.id,edge:true,segs:edgeSegments(e).map(seg=>segPoints(seg,view,z)),x:Math.min(...xs)-pad,y:Math.min(...ys)-pad,w:Math.max(...xs)-Math.min(...xs)+pad*2,h:Math.max(...ys)-Math.min(...ys)+pad*2,view,zone:z});
+    if(chosen){canvas.dataset.placementValid=String(valid);bar.dataset&&(bar.dataset.valid=String(valid));const c=edgeCentre(e,view,z);
+     bar.style.setProperty('--select-x',Math.min(Math.max(c.x,106),Math.max(106,W-106))+'px');bar.style.setProperty('--select-y',Math.min(Math.max(c.y,84),Math.max(84,H-106))+'px');}
+   }
    y+=heights[index]+24;
   });
  }
@@ -180,7 +217,7 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
  canvas.addEventListener('wheel',e=>{e.preventDefault();if(e.ctrlKey||e.metaKey){const p=point(e);setZoom(zoom*Math.exp(-e.deltaY/200),p.x,p.y);return;}scroll+=e.deltaY;panX+=e.deltaX;last&&draw(...last);},{passive:false});
  // Alpha hit testing uses an offscreen copy only; rendered sprites remain unmodified.
  const masks=new Map();
- function opaque(hit,x,y){if(hit.footprint)return Math.abs((x-hit.x-hit.w/2)/(hit.w/2))+Math.abs((y-hit.y-hit.h/2)/(hit.h/2))<=1;let mask=masks.get(hit.im);if(!mask){const c=document.createElement('canvas');c.width=hit.im.naturalWidth;c.height=hit.im.naturalHeight;const m=c.getContext('2d',{willReadFrequently:true});m.drawImage(hit.im,0,0,c.width,c.height);try{mask=m.getImageData(0,0,c.width,c.height);masks.set(hit.im,mask);}catch{return true;}}
+ function opaque(hit,x,y){if(hit.edge)return hit.segs.some(([a,b])=>{const dx=b.x-a.x,dy=b.y-a.y,k=Math.max(0,Math.min(1,((x-a.x)*dx+(y-a.y)*dy)/(dx*dx+dy*dy||1)));return Math.hypot(a.x+dx*k-x,a.y+dy*k-y)<=12;});if(hit.footprint)return Math.abs((x-hit.x-hit.w/2)/(hit.w/2))+Math.abs((y-hit.y-hit.h/2)/(hit.h/2))<=1;let mask=masks.get(hit.im);if(!mask){const c=document.createElement('canvas');c.width=hit.im.naturalWidth;c.height=hit.im.naturalHeight;const m=c.getContext('2d',{willReadFrequently:true});m.drawImage(hit.im,0,0,c.width,c.height);try{mask=m.getImageData(0,0,c.width,c.height);masks.set(hit.im,mask);}catch{return true;}}
   let px=Math.floor((x-hit.x)/hit.w*mask.width),py=Math.floor((y-hit.y)/hit.h*mask.height);if(hit.mirrored)px=mask.width-1-px;return mask.data[(py*mask.width+px)*4+3]>0;
  }
  const point=e=>{const r=canvas.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};};
@@ -190,20 +227,22 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
   if(e.button!==0||drag)return;const p=point(e);
   const marker=markers.find(m=>m.kind==='row'&&p.x>=m.x0&&p.x<m.x0+m.w&&p.y>=m.y0&&p.y<m.y0+m.h&&opaque({im:images.get(MAP_MARKERS.expansion.file),x:m.x0,y:m.y0,w:m.w,h:m.h},p.x,p.y));
   if(marker)drag={pointerId:e.pointerId,marker:true,start:p,scrollY:e.clientY,scrollX:e.clientX};
-  if(edit&&!drag){const hit=[...hits].reverse().sort((a,b)=>Number(Boolean(b.footprint))-Number(Boolean(a.footprint))).find(h=>p.x>=h.x&&p.x<h.x+h.w&&p.y>=h.y&&p.y<h.y+h.h&&opaque(h,p.x,p.y));const previous=selected;selected=hit?.id||null;if(selected!==previous){selectionNew=false;selectionBefore=current()?{...current(),origin:[...current().origin]}:null;}
-   if(hit){const item=current();drag={pointerId:e.pointerId,item:item.id,start:cell(p,hit.view,hit.zone),origin:[...item.origin],candidate:[...item.origin],view:hit.view,zone:hit.zone};}
+  if(edit&&!drag){const hit=[...hits].reverse().sort((a,b)=>Number(Boolean(b.edge))-Number(Boolean(a.edge))||Number(Boolean(b.footprint))-Number(Boolean(a.footprint))).find(h=>p.x>=h.x&&p.x<h.x+h.w&&p.y>=h.y&&p.y<h.y+h.h&&opaque(h,p.x,p.y));const previous=selected;selected=hit?.id||null;if(selected!==previous){selectionNew=false;selectionBefore=currentEdge()?{...currentEdge(),cell:[...currentEdge().cell]}:current()?{...current(),origin:[...current().origin]}:null;}
+   if(hit?.edge){const it=currentEdge();drag={pointerId:e.pointerId,edge:it.id,start:cell(p,hit.view,hit.zone),origin:[...it.cell],candidate:[...it.cell],view:hit.view,zone:hit.zone};}
+   else if(hit){const item=current();drag={pointerId:e.pointerId,item:item.id,start:cell(p,hit.view,hit.zone),origin:[...item.origin],candidate:[...item.origin],view:hit.view,zone:hit.zone};}
   }
   if(!drag)drag={pointerId:e.pointerId,scrollY:e.clientY,scrollX:e.clientX};
   canvas.setPointerCapture(e.pointerId);repaint();
  });
  canvas.addEventListener('pointermove',e=>{if(!drag||drag.pointerId!==e.pointerId)return;
   if(drag.marker&&Math.hypot(point(e).x-drag.start.x,point(e).y-drag.start.y)>=8)drag.moved=true;
-  if(drag.item){const c=cell(point(e),drag.view,drag.zone);drag.candidate=drag.origin.map((n,i)=>n+Math.round(c[i]-drag.start[i]));}
+  if(drag.item||drag.edge){const c=cell(point(e),drag.view,drag.zone);drag.candidate=drag.origin.map((n,i)=>n+Math.round(c[i]-drag.start[i]));}
   else {scroll+=drag.scrollY-e.clientY;panX+=drag.scrollX-e.clientX;drag.scrollY=e.clientY;drag.scrollX=e.clientX;}repaint();
  });
- canvas.addEventListener('pointerup',e=>{if(!drag||drag.pointerId!==e.pointerId)return;if(drag.marker&&!drag.moved&&Math.hypot(point(e).x-drag.start.x,point(e).y-drag.start.y)<8)onExpand();if(drag?.item){const item=current(),candidate={...item,origin:drag.candidate};if(accept(candidate,drag.zone)){item.origin=[...drag.candidate];onChange();}}cancelDrag();repaint();});
+ canvas.addEventListener('pointerup',e=>{if(!drag||drag.pointerId!==e.pointerId)return;if(drag.marker&&!drag.moved&&Math.hypot(point(e).x-drag.start.x,point(e).y-drag.start.y)<8)onExpand();if(drag?.item){const item=current(),candidate={...item,origin:drag.candidate};if(accept(candidate,drag.zone)){item.origin=[...drag.candidate];onChange();}}
+  if(drag?.edge){const it=currentEdge();if(it&&drag.candidate.join()!==it.cell.join()&&acceptEdge({...it,cell:drag.candidate},drag.zone)){it.cell=[...drag.candidate];onChange();}}cancelDrag();repaint();});
  canvas.addEventListener('pointercancel',e=>{if(drag?.pointerId===e.pointerId){cancelDrag();repaint();}});
  canvas.addEventListener('lostpointercapture',()=>{cancelDrag();repaint();});
  new ResizeObserver(()=>last&&draw(...last)).observe(canvas);
- return {draw,placeWall,actions:bar,get selected(){return selected;},get gridCells(){return gridCells;},get hits(){return hits.map(({im,...h})=>h);},get edit(){return edit;},setEdit(value){cancelDrag();edit=Boolean(value);if(!edit)selected=null;onEditChange(edit);repaint();},get panX(){return panX;},get panBounds(){return {...panBounds};},panTo(x,y=scroll){panX=x;scroll=y;repaint();},get scroll(){return scroll;},get maxScroll(){return maxScroll;},get markers(){return markers;},scrollTo(value){scroll=value;repaint();},setMarkerPhase(v){markerPhase=v;repaint();},get zoom(){return zoom;},setZoom(z){setZoom(z);},easeBy(dx,dy,ms=CFG.expansion.cameraEaseMs){const sx=panX,sy=scroll,t0=performance.now();const step=t=>{const k=Math.min(1,(t-t0)/Math.max(1,ms)),e=1-(1-k)**3;panX=sx+dx*e;scroll=sy+dy*e;repaint();if(k<1)requestAnimationFrame(step);};requestAnimationFrame(step);}};
+ return {draw,placeWall,placeEdge,actions:bar,get selected(){return selected;},get gridCells(){return gridCells;},get hits(){return hits.map(({im,...h})=>h);},get edit(){return edit;},setEdit(value){cancelDrag();edit=Boolean(value);if(!edit)selected=null;onEditChange(edit);repaint();},get panX(){return panX;},get panBounds(){return {...panBounds};},panTo(x,y=scroll){panX=x;scroll=y;repaint();},get scroll(){return scroll;},get maxScroll(){return maxScroll;},get markers(){return markers;},scrollTo(value){scroll=value;repaint();},setMarkerPhase(v){markerPhase=v;repaint();},get zoom(){return zoom;},setZoom(z){setZoom(z);},easeBy(dx,dy,ms=CFG.expansion.cameraEaseMs){const sx=panX,sy=scroll,t0=performance.now();const step=t=>{const k=Math.min(1,(t-t0)/Math.max(1,ms)),e=1-(1-k)**3;panX=sx+dx*e;scroll=sy+dy*e;repaint();if(k<1)requestAnimationFrame(step);};requestAnimationFrame(step);}};
 }
