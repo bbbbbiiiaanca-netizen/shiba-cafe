@@ -34,10 +34,14 @@ for(const price of [()=>40000,()=>null,id=>id===interiorIds[0]?null:1500]){
   const cards=cardsOf(shop);assert.match(shop,/<div class="furn-grid" data-furn-grid>/);assert.equal(cards.length,CFG.furniture.items.length);
   cards.forEach(c=>checkCard(c,priceOf(c.id)));}}
 
-// 메뉴 개발: locked card keeps the card frame (image slot with lock icon + 'LvN 해금'), no buy button
-{const line=main.split('\n').find(l=>l.includes("if(m.list==='menu')return"));const locked=line.match(/x\.locked\?`([^`]*)`/)[1];
- assert.match(locked,/class="lp-face menu-card-img menu-lock">\$\{img\('assets\/drive\/ui\/ui-lock\.png'\)\}<\/span><strong class="lp-effect">\$\{x\.effect\}<\/strong>/);
- assert.doesNotMatch(locked,/data-act=/);}
+// 메뉴 개발: 2-column vertical grid (no horizontal swipe); card = image · name · price button; locked = lock icon only in the image slot + 'LvN 해금' in the button slot, no buy button
+{const line=main.split('\n').find(l=>l.includes("if(m.list==='menu')return"));const locked=line.match(/x\.locked\?`([^`]*)`/)[1],open=line.match(/`:`([^`]*)`\)\.join/)[1];
+ assert.match(line,/<div class="menu-grid" data-list-popup="menu" data-menu-cards>/);assert.doesNotMatch(line,/swipe/);
+ assert.match(locked,/class="lp-face menu-card-img menu-lock">\$\{img\('assets\/drive\/ui\/ui-lock\.png'\)\}<\/span><strong class="menu-name">\$\{x\.name\}<\/strong><strong class="lp-effect menu-unlock">\$\{x\.effect\}<\/strong><\/article>$/);
+ assert.doesNotMatch(locked,/data-act=|x\.face/);
+ assert.match(open,/<span class="lp-face menu-card-img">\$\{x\.face\?img\(x\.face\):''\}<\/span><strong class="menu-name">\$\{x\.name\}<\/strong><small class="lp-effect">\$\{x\.effect\}<\/small>\$\{btn\(x\)\}<\/article>$/);
+ const css=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ assert.match(css,/\.menu-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\);[^}]*overflow-y:auto/);assert.match(css,/\.menu-grid \.menu-card:not\(\.locked\) \.lp-effect\{display:none\}/);}
 
 // open('menu'): no P.menu → opens the menu list modal instead of throwing in renderPanel
 {const src=main.slice(main.indexOf('function open(name,arg=null){'),main.indexOf('\n',main.indexOf('ui.panel=name;')));
@@ -45,4 +49,4 @@ for(const price of [()=>40000,()=>null,id=>id===interiorIds[0]?null:1500]){
  const open=runInNewContext(src+';open',{ui,P:{cooking:()=>({})},LP:{menu:()=>({})},act:{listOpen:d=>{calls.push(d);ui.modals.unshift({kind:'list',list:d.list,arg:d.kind||null});}},refresh:()=>calls.push('refresh'),renderPanel:()=>{throw Error('renderPanel');},navState:()=>{}});
  open('menu');assert.deepEqual(ui.modals,[{kind:'list',list:'menu',arg:null}]);assert.equal(ui.panel,null);assert.equal(calls.at(-1),'refresh');
  open('nope');assert.equal(ui.modals.length,1);assert.equal(ui.panel,null);}
-console.log('PR-C: furniture 2-col cards (shop interior + bag), locked menu card frame, open(menu) fallback passed');
+console.log('PR-C: furniture 2-col cards (shop interior + bag), menu 2-col grid + locked card, open(menu) fallback passed');

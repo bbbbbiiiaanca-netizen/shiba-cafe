@@ -87,7 +87,7 @@ export default async function({ev,check,sleep,reload}){
  await check('v3: no bottom nav; gear and 미션 buttons are present','!document.getElementById("nav")&&!!document.querySelector(".gear[data-nav=settings]")&&!!document.querySelector(".scene-entries [data-act=mission]")');
  await ev('__game.state.cafe.level=9;__game.state.coins=224999;__game.refresh();document.querySelector("#menuList [data-act=listOpen][data-list=menu]").click();true');
  await check('v3: configured cost and disabled insufficient-coins button (popup)','document.querySelector("[data-lp-row=M-04] .lp-price").disabled&&/225,000/.test(document.querySelector("[data-lp-row=M-04] .lp-price").textContent)');
- await ev('const list=document.querySelector("#mbox [data-menu-cards]");list.scrollLeft=list.scrollWidth;true');
+ await ev('const list=document.querySelector("#mbox [data-menu-cards]");list.scrollTop=list.scrollHeight;true');
  await check('v3: last menu row fully visible after scrolling the popup','(()=>{const list=document.querySelector("#mbox [data-menu-cards]").getBoundingClientRect(),last=document.querySelector("[data-lp-row=P-06]").getBoundingClientRect();return last.top>=list.top-1&&last.bottom<=list.bottom+1&&list.bottom<=innerHeight;})()');
  await ev('document.querySelector("#mbox .lp-close").click();true');
  // §17-7/8: real edit actions and rejected placement, then manager hire using configured values.
