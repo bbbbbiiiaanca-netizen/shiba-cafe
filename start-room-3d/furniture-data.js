@@ -17,8 +17,8 @@ export const NEW_FURNITURE=[
     "category": "furniture",
     "theme": null,
     "source": "furn-zataku",
-    "filename": "furn-low-table-cushion-v4.png",
-    "backname": "furn-low-table-cushion-v4-back.png"
+    "filename": "furn-low-table-cushion-v5.png",
+    "backname": "furn-low-table-cushion-v5-back.png"
   },
   {
     "id": "moon-lamp",
@@ -127,8 +127,8 @@ export const NEW_FURNITURE=[
     "category": "furniture",
     "theme": "sakura",
     "source": "furn-sakura",
-    "filename": "furn-low-table-cushion-sakura-v4.png",
-    "backname": "furn-sakura-low-table-cushion-v4-back.png"
+    "filename": "furn-low-table-cushion-sakura-v5.png",
+    "backname": "furn-sakura-low-table-cushion-v5-back.png"
   },
   {
     "id": "stone-lantern-sakura",

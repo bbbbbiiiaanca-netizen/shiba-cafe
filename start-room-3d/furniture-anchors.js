@@ -8,13 +8,13 @@ export const FURN_ANCHORS={
     89,
     181
   ],
-  "furn-low-table-cushion-v4.png": [
+  "furn-low-table-cushion-v5.png": [
     90,
-    187
+    202
   ],
-  "furn-low-table-cushion-v4-back.png": [
+  "furn-low-table-cushion-v5-back.png": [
     90,
-    187
+    202
   ],
   "furn-moon-lamp-v4.png": [
     90,
@@ -92,13 +92,13 @@ export const FURN_ANCHORS={
     89,
     181
   ],
-  "furn-low-table-cushion-sakura-v4.png": [
+  "furn-low-table-cushion-sakura-v5.png": [
     90,
-    187
+    202
   ],
-  "furn-sakura-low-table-cushion-v4-back.png": [
+  "furn-sakura-low-table-cushion-v5-back.png": [
     90,
-    187
+    202
   ],
   "furn-stone-lantern-sakura-v4.png": [
     90,

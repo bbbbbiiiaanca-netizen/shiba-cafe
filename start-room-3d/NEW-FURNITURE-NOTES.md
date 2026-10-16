@@ -13,7 +13,7 @@ Scale 1, footprint 시작값 1칸, 명세 없음. Alpha contact regions were mea
 | Item | Front (x,y) | Back (x,y) |
 |---|---|---|
 | shelf | 89, 181 | 89, 181 |
-| low-table | 90, 187 | 90, 187 |
+| low-table | 90, 202 | 90, 202 |
 | moon-lamp | 90, 182 | 90, 182 |
 | stone-lantern | 90, 189 | 90, 189 |
 | chochin | 79, 194 | 102, 194 |
@@ -24,7 +24,7 @@ Scale 1, footprint 시작값 1칸, 명세 없음. Alpha contact regions were mea
 | noren | 90, 186 | 90, 186 |
 | sign | 90, 187 | 90, 187 |
 | shelf-sakura | 89, 181 | 89, 181 |
-| low-table-sakura | 90, 187 | 90, 187 |
+| low-table-sakura | 90, 202 | 90, 202 |
 | stone-lantern-sakura | 90, 189 | 90, 189 |
 | chochin-sakura | 79, 194 | 102, 194 |
 | bonsai-sakura | 90, 195 | 90, 195 |
@@ -42,3 +42,7 @@ Scale 1, footprint 시작값 1칸, 명세 없음. Alpha contact regions were mea
 Changed areas: config.js, furniture-data.js, map-data.js, furniture-anchors.js, furniture-art.generated.js, hd-assets.js, main.js, q1715.js, isomap.js, decor.js, i18n.js, index.html, package.json, tests, tools, and assets/drive/furniture-v4/.
 
 No commit or push. node_modules symlink untouched. Prices and conflicting numeric set bonus remain pending confirmation as requested.
+
+## low-table v5 (2026-10-16)
+
+그림이 여백 trim + 1.4배 확대본으로 교체. canvas 180×230, floor (90,202). 일반·벚꽃 앞/뒤 + @2x. `node tools/sync-furniture-art.mjs` 후 anchors 갱신. 4방향 유지.
