@@ -156,8 +156,9 @@ decor:{footprint:{default:{w:1,h:1},overrides:{}},
  snowSet:{minItems:3,bonusMinItems:null,bonus:null},
  sakuraSet:{minItems:3,bonusMinItems:null,bonus:null}},
 // 명세 17-7 가벽(수인님 10/14): 바닥 칸 사이 '선'을 따라 세우는 가벽. 칸을 차지하는 칸막이(SPRITES.wall)와 따로. 그림 오면 art(front/back = {file,anchor,scale}) 채우고 enabled true.
-// count·price: 미정(null). count null = 개수 제한 없음(판매 없음). 기존 칸막이 PARTITION 값과 공유하지 않는다.
-partitionWall:{enabled:false,count:null,price:null,types:{edge1:{len:1,art:{front:null,back:null}},edge2:{len:2,art:{front:null,back:null}}}},
+// count·price: 미정(null). count null = 개수 제한 없음(판매 없음). 기존 칸막이 PARTITION 값(price 50000)과 공유하지 않는다.
+// 가격은 종류별 types.edge1/edge2.price(똑또기 10/17: 미정). 최상위 price는 쓰지 않음(null 유지).
+partitionWall:{enabled:false,count:null,price:null,types:{edge1:{len:1,price:null,art:{front:null,back:null}},edge2:{len:2,price:null,art:{front:null,back:null}}}},
 furniture:{starterExtra:{table:1,cushion:2,counter:1,stairs:1}, // starting value 2026-10-15, pending user confirm: five extra approved-sprite items, unplaced
  // starting value 2026-10-15, pending user confirm: table 40,000; cushion 20,000; extra props 5,000 coins.
  items:[{id:'tea-table',name:'찻상',category:'furniture',price:40000},{id:'zabuton',name:'방석',category:'furniture',price:20000},{id:'counter',name:'카운터',category:'furniture',price:5000},{id:'stairs',name:'계단',category:'furniture',price:5000},...NEW_FURNITURE.map(it=>({...it,front:'assets/drive/furniture-v4/'+it.filename,price:null /* 미정 — 똑또기 확인 대기 */})),...ROOM_LAYERS]}, // Prices: starting value 2026-10-15, pending user confirm; historical source: 1.3 / F p6·9 furniture prices

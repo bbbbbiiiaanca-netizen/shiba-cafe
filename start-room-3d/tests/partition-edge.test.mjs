@@ -123,4 +123,60 @@ iso.setEdit(false);strokes.length=0;iso.draw(state,{});assert.equal(strokes.leng
 CFG.partitionWall.enabled=false;iso.setEdit(true);strokes.length=0;iso.draw(state,{});
 assert.ok(!strokes.some(s=>s.path?.length===2),'꺼지면 저장된 가벽도 안 보임');assert.ok(!iso.hits.some(h=>h.edge));
 assert.ok(changed>0);
+
+// ── 똑또기 확정 10/17 ──
+const N=await import('../navigation.js'),S=await import('../sim.js'),{PARTITION}=await import('../map-data.js');
+const fresh=()=>{const s=newState(0);return {s,w:newWorld(s)};},on=fn=>{CFG.partitionWall.enabled=true;try{return fn();}finally{CFG.partitionWall.enabled=false;}};
+// 1) 가격: 종류별 price null(미정), 칸막이 PARTITION.price(50000)를 쓰지 않는다
+for(const t of ['edge1','edge2']){assert.ok(Object.hasOwn(CFG.partitionWall.types[t],'price'));assert.equal(CFG.partitionWall.types[t].price,null);assert.equal(S.edgePrice(newState(0),t),null,'미정');}
+assert.equal(PARTITION.price,50000);assert.notEqual(S.edgePrice(newState(0),'edge1'),S.wallPrice(newState(0)));
+CFG.partitionWall.types.edge2.price=7;assert.equal(S.edgePrice(newState(0),'edge2'),7,'종류별 값만 본다');CFG.partitionWall.types.edge2.price=null;
+{const src=readFileSync(new URL('../isomap.js',import.meta.url),'utf8'),edgeCode=src.slice(src.indexOf('const edgeOk='),src.indexOf('function placeWall('));
+ assert.ok(edgeCode.length>100&&!edgeCode.includes('PARTITION'),'가벽 편집 코드가 PARTITION 값을 쓰지 않음');
+ assert.ok(!readFileSync(new URL('../map-data.js',import.meta.url),'utf8').split('\n').filter(l=>/edge/i.test(l)).some(l=>l.includes('PARTITION')));}
+
+// 2) 가방 '놓기': 입구 길 검사(가구는 항상, 가벽은 enabled일 때만)
+{const {s}=fresh();s.furnitureInv={table:2};s.placement.slots.push({id:'x1',type:'table',origin:[0,3],dir:0},{id:'x2',type:'table',origin:[1,2],dir:0});
+ const snap=JSON.stringify(s.placement),n=s.nextId;
+ assert.equal(S.furnitureFit(s,'table',[1,4]),'entrance','방석 [1,3]의 마지막 접근을 막는 자리');
+ assert.equal(S.placeFurniture(s,'table',[1,4]),false,'가벽이 꺼져 있어도 가구 검사는 한다');
+ assert.equal(JSON.stringify(s.placement),snap);assert.equal(s.furnitureInv.table,2);assert.equal(s.nextId,n);
+ assert.equal(S.furnitureFit(s,'table',[0,0]),'invalid');assert.equal(S.furnitureFit(s,'table',[4,4]),'ok');
+ assert.equal(S.placeFurniture(s,'table',[4,4]),true);assert.equal(s.furnitureInv.table,1);}
+{const {s}=fresh();s.furnitureInv={table:1};s.placement.edges=seat;
+ assert.equal(S.furnitureFit(s,'table',[1,4]),'ok','꺼져 있으면 저장된 가벽은 무시');
+ on(()=>{assert.equal(S.furnitureFit(s,'table',[1,4]),'entrance','켜지면 가벽 포함 검사');assert.equal(S.placeFurniture(s,'table',[1,4]),false);});
+ assert.equal(s.furnitureInv.table,1);assert.equal(S.placeFurniture(s,'table',[1,4]),true);}
+{const src=readFileSync(new URL('../main.js',import.meta.url),'utf8'),act=src.slice(src.indexOf('placeFurniture:d=>{'),src.indexOf('unlockPopup:'));
+ assert.ok(act.includes("S.furnitureFit(")&&act.includes("toast(L('edit.entranceBlocked'))"),'main.js 놓기(bagPlace → placeFurniture)도 같은 토스트');
+ assert.ok(/bagPlace:d=>\{act\.bagDone\(\);act\.placeFurniture\(d\);\}/.test(src));}
+
+// 3) 옆 칸 판정 adjacent(a,b,edges)
+{const eI=E('a','edge1',[0,0],'i');
+ assert.equal(N.adjacent([0,0],[1,0]),true);assert.equal(N.adjacent([0,0],[1,1]),false,'대각선 아님');assert.equal(N.adjacent([0,0],[0,0]),false);assert.equal(N.adjacent([0,0],[2,0]),false);
+ assert.equal(N.adjacent([0,0],[1,0],[eI]),false);assert.equal(N.adjacent([1,0],[0,0],[eI]),false,'양쪽 방향');assert.equal(N.adjacent([0,0],[0,1],[eI]),true,'다른 선은 그대로');
+ for(let a=0;a<36;a++)for(let b=0;b<36;b++){const p=[a%6,a/6|0],q=[b%6,b/6|0];assert.equal(N.adjacent(p,q,[]),Math.abs(p[0]-q[0])+Math.abs(p[1]-q[1])===1,'가벽 없음 = 맨해튼 1');}}
+// 주문 음식을 찻상에: 방석 [1,3]과 찻상 [2,3] 사이 가벽 → 찻상 아님(손에 들고)
+{const between=[E('t','edge1',[1,3],'i')],run=()=>{const {s,w}=fresh();s.placement.edges=between;const c={id:1,phase:'seated',cell:[1,3]};w.custs.push(c);N.linkTable(s,w,c);return c;};
+ const off=run();assert.equal(off.itemLocation,'table');assert.equal(off.itemSlot.tableId,'table');
+ const blockedC=on(run);assert.equal(blockedC.itemLocation,'inHand');assert.equal(blockedC.itemSlot,null);}
+// 매니저: 찻상 옆 칸 중 가벽 너머는 가지 않음 / 찻상과 손님 사이 가벽이면 그 찻상에 가지 않음
+{const mgr=edges=>{const {s,w}=fresh();s.placement.edges=edges;w.custs.push({id:1,phase:'seated',cell:[3,3]});N.tickManager(s,w,0.01,true,1);return w.manager;};
+ const off=mgr([E('u','edge1',[2,2],'j'),E('d','edge1',[2,3],'j')]);assert.equal(off.phase,'walking');assert.ok(['2,2','2,4'].includes(off.target.join(',')));
+ const sides=on(()=>mgr([E('u','edge1',[2,2],'j'),E('d','edge1',[2,3],'j')]));assert.equal(sides.phase,'idle','찻상 옆 빈 칸이 모두 가벽 너머');assert.equal(sides.target??null,null);
+ const guest=on(()=>mgr([E('g','edge1',[2,3],'i')]));assert.equal(guest.phase,'idle','찻상-손님 사이 가벽 → 찻상 아님');
+ assert.deepEqual(on(()=>mgr([])),mgr([]),'가벽 없으면 켜져 있어도 같음');}
+// 카운터 접근: 매니저 자리 [2,0](카운터 [1,0] 옆) 사이 가벽 → 카운터 옆 다른 칸
+{const home=edges=>{const {s,w}=fresh();s.placement.edges=edges;N.tickManager(s,w,0.01,true,1);return w.manager.cell;},wall=[E('h','edge1',[1,0],'i')];
+ assert.deepEqual(home(wall),[2,0],'꺼져 있으면 예전 자리');
+ const h=on(()=>home(wall));assert.notDeepEqual(h,[2,0]);assert.ok([[0,0],[1,0]].some(c=>N.adjacent(c,h,wall)),'가벽 너머가 아닌 카운터 옆 칸');}
+// 시바가 손님 옆 칸 고르기: sim deliver/approach, syncRoutes approach
+{const pick=(edges,via)=>{const {s,w}=fresh();s.placement.edges=edges;const c={id:1,phase:'seated',cell:[1,3],t:30,with:null,score:0,met:[]};w.custs.push(c);
+  w.sh[7]={id:7,phase:'roam',cell:[0,1],t:0,cust:null};assert.ok(S.deliver(s,w,7,1));if(via==='sync'){w.sh[7].target=null;w.layoutSig=null;N.syncRoutes(s,w);}return w.sh[7].target.join(',');};
+ const wall=[E('w','edge1',[0,3],'i')];
+ for(const via of ['deliver','sync']){assert.equal(pick(wall,via),'0,3','꺼져 있으면 예전과 같은 칸');assert.equal(on(()=>pick(wall,via)),'1,4','가벽 너머 [0,3]은 옆 칸 아님 → 다음 칸');assert.equal(on(()=>pick([],via)),'0,3');}}
+// 입구 검사 카운터 판정도 adjacent 사용(기존 시나리오 유지)
+assert.equal(pe(counter,[...counter,E('c2','edge1',[1,0],'i')]),false);
+assert.equal(CFG.partitionWall.enabled,false);
+console.log('partition edge 10/17: edge price null (no PARTITION.price), bag place entrance check, adjacent() blocks table/manager/counter/shiba neighbours, disabled = unchanged passed');
 console.log('partition edge (17-7): blocked crossings, entrance/seat/counter rejection, 2-cell range, flip, restore, enabled=false passed');

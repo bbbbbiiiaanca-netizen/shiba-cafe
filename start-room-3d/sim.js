@@ -1,9 +1,9 @@
 import {decorBonus} from './decor.js';
-import {tickManager,linkTable,faceCell,layout,seatSlots,pathfind,routeTo,moveCell,syncRoutes} from './navigation.js';
+import {tickManager,linkTable,faceCell,layout,seatSlots,pathfind,routeTo,moveCell,syncRoutes,adjacent,preservesEntrance} from './navigation.js';
 export {tickManager,seatSlots,syncRoutes,pathfind};
 // Spec v3 game core — pure logic (no DOM), deterministic with an injected RNG so tests can replay it.
 // Times: `now` is epoch ms; `dt` is seconds. Every number comes from CFG (config.js); UNSET (null) values disable what depends on them.
-import {defaultPlacement,restorePlacement,restoreSpace,zonesForSpace,FLOOR_ART,PARTITION,footprintCells,validPlacement,SPRITES} from './map-data.js';
+import {defaultPlacement,restorePlacement,restoreSpace,zonesForSpace,FLOOR_ART,PARTITION,footprintCells,validPlacement,SPRITES,activeEdges} from './map-data.js';
 import {CFG,GACHA_TABLE,pressureAt,isUnset} from './config.js';
 import {canWalk} from './walk-frames.js';
 import {t} from './i18n.js';
@@ -322,7 +322,7 @@ function spawn(s,w,now){const {zone,slots,edges,entrance}=layout(s,w);
 export function queueCells(s,w){const base=layout(s,w).zone.queueCells||[];const extra=upgradeAdd(s,'queue');if(!base.length||!extra)return base;
  const a=base.at(-1),b=base.at(-2)||layout(s,w).entrance,d=[a[0]-b[0],a[1]-b[1]],out=[...base];for(let n=1;n<=extra;n++)out.push([a[0]+d[0]*n,a[1]+d[1]*n]);return out;}
 const queueLimit=(s,w)=>Math.min(CFG.cafe.queueMax??Infinity,queueCells(s,w).length);
-function approach(s,w,sh,c){const {zone,slots,edges}=layout(s,w);const targets=[[1,0],[-1,0],[0,1],[0,-1]].map(([i,j])=>[c.cell[0]+i,c.cell[1]+j]);const target=targets.find(p=>!Object.values(w.sh).some(other=>other!==sh&&(other.target||other.cell)?.join(',')===p.join(','))&&pathfind(zone,slots,sh.cell,p,{edges}));if(!target)return false;sh.state='approachGuest';sh.phase='approach';sh.cust=c.id;c.with=sh.id;routeTo(s,w,sh,target);return true;}
+function approach(s,w,sh,c){const {zone,slots,edges}=layout(s,w);const targets=[[1,0],[-1,0],[0,1],[0,-1]].map(([i,j])=>[c.cell[0]+i,c.cell[1]+j]);const target=targets.find(p=>adjacent(c.cell,p,edges)&&!Object.values(w.sh).some(other=>other!==sh&&(other.target||other.cell)?.join(',')===p.join(','))&&pathfind(zone,slots,sh.cell,p,{edges}));if(!target)return false;sh.state='approachGuest';sh.phase='approach';sh.cust=c.id;c.with=sh.id;routeTo(s,w,sh,target);return true;}
 function startMeeting(s,w,sh,c,ctx){const o=byId(s,sh.id);
  // 갱신 100: the shiba shows one learned trick — a random learned one, independent of the request
  const learned=CFG.tricks.filter(t=>o.tricks[t.id]>0).map(t=>t.id);const req=c.request;
@@ -517,6 +517,8 @@ export function roundLandPrice(v){const t=CFG.expansion.rowRoundTiers.find(([lim
 export const priceTierMul=s=>{const lv=s?.cafe?.level??1;return (CFG.priceTiers.find(([max])=>lv<=max)||CFG.priceTiers.at(-1))[1];};
 export const tierPrice=(s,base)=>Number.isFinite(base)?Math.round(base*priceTierMul(s)):base;
 export const wallPrice=s=>tierPrice(s,PARTITION.price);
+// 17-7 가벽(선 따라) 가격: 종류별 값만 본다(칸막이 PARTITION.price와 무관). null = 미정 → 표시 '미정'·구매 잠금.
+export const edgePrice=(s,type)=>tierPrice(s,CFG.partitionWall.types[type]?.price??null);
 export const furniturePrice=(s,id)=>tierPrice(s,CFG.furniture.items.find(x=>x.id===id)?.price);
 export const upgradePrice=(s,kind)=>tierPrice(s,CFG.upgrades[kind]?.price);
 // 다이아 pools: s.dia stays the total; s.diaPaid is the paid part. Grants are free.
@@ -531,7 +533,10 @@ export function selectRoomLayer(s,id){
  if(!it?.art||!(s.furnitureInv?.[id]>0))return false;
  s.space.roomLayers??={floor:null,wall:null};s.space.roomLayers[it.layer]=id;return true;
 }
-export function placeFurniture(s,type,origin){if(CFG.decor.roomLayers.some(it=>it.id===type))return selectRoomLayer(s,type);if(!(s.furnitureInv?.[type]>0)||!SPRITES[type]?.file)return false;const item={id:'placed-'+s.nextId,type,origin,dir:0};const zone=zonesForSpace(s.space)[0];if(!validPlacement(item,s.placement.slots,zone))return false;s.nextId++;s.placement.slots.push(item);s.furnitureInv[type]--;return true;}
+// 가방 '놓기'도 편집 모드와 같은 입구 길 검사(가구는 항상, 가벽은 enabled일 때만). 'entrance' = 그 자리는 입구 길을 막는다.
+export function furnitureFit(s,type,origin){const item={id:'placed-'+s.nextId,type,origin,dir:0},zone=zonesForSpace(s.space)[0],slots=s.placement.slots,edges=activeEdges(s.placement);
+ if(!validPlacement(item,slots,zone))return 'invalid';return preservesEntrance(zone,slots,[...slots,item],{edgesBefore:edges,edgesAfter:edges})?'ok':'entrance';}
+export function placeFurniture(s,type,origin){if(CFG.decor.roomLayers.some(it=>it.id===type))return selectRoomLayer(s,type);if(!(s.furnitureInv?.[type]>0)||!SPRITES[type]?.file)return false;const item={id:'placed-'+s.nextId,type,origin,dir:0};if(furnitureFit(s,type,origin)!=='ok')return false;s.nextId++;s.placement.slots.push(item);s.furnitureInv[type]--;return true;}
 export function buyFurniture(s,id,now=Date.now()){const it=CFG.furniture.items.find(x=>x.id===id),p=furniturePrice(s,id);if(!Number.isFinite(p)||s.coins<p)return false;s.coins-=p;const type=({'tea-table':'table',zabuton:'cushion'}[id]||id);s.furnitureInv[type]=(s.furnitureInv[type]||0)+1;recordLedger(s,'furniture',p,now);return true;}
 // starting value 2026-10-15, pending user confirm: KST calendar days from first launch; income boosts one each on days 8, 10 and 14.
 export function mailbox(s,now=Date.now()){const day=ledgerDay(now)-ledgerDay(s.firstLaunch??s.lastSeen)+1;const rows=[];for(let d=1;d<=Math.min(day,CFG.stub.onboarding.days);d++){const items={...CFG.stub.onboarding.rewards[d]};let coins=0,dia=0;if(d<=7){coins=CFG.grants14.days1to7.coins;dia=CFG.grants14.days1to7.dia;items.expBoost4h=1;}if([8,10,12,14].includes(d)){coins=CFG.grants14.days8to14.coins;dia=CFG.grants14.days8to14.dia;}Object.assign(items,CFG.grants14.itemDays[d]);if(coins||dia||Object.values(items).some(x=>x>0))rows.push({day:d,coins,dia,items,claimed:(s.mailClaimed||[]).includes(d)});}return rows;}
