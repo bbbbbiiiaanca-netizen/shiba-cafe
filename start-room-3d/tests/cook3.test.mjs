@@ -7,4 +7,5 @@ assert.deepEqual(CFG.cooking.recipes.map(r=>[r.name,r.unlockLevel]),[['단호박
  assert.equal(d[7],0);assert.ok(Math.abs(d[0]-200)<2&&Math.abs(d[2]-20)<2);assert.deepEqual(Array.from(d.slice(48,52)),mid);}
 assert.ok(fs.readFileSync(new URL('../main.js',import.meta.url),'utf8').includes('installCoinClean'));
 assert.ok(CFG.cooking.lockedPreview.length>=1&&CFG.cooking.lockedPreview.length<=2&&CFG.cooking.lockedPreview.every(x=>Number.isFinite(x.unlockLevel))&&CFG.cooking.lockedPreview.map(x=>x.unlockLevel).join()==='3,5');
+assert.deepEqual(CFG.cooking.lockedPreview.map(x=>x.img),['assets/drive/cooking/dish-locked-lv3.png','assets/drive/cooking/dish-locked-lv5.png']);
 console.log('cook3 ok');
