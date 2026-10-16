@@ -208,8 +208,34 @@ export const NEW_FURNITURE=[
 {"id": "sign-snow", "name": "눈 간판", "en": "Snow Sign", "category": "sign", "theme": "snow", "source": "furn-snow", "filename": "furn-entrance-sign-snow-v4.png", "backname": null, "price": null}
 ];
 export const FURN_CATEGORIES=["furniture","light","garden","sign","floorwall"];
-// Snow floor art remains pending the wooden floor revision.
+// Snow floor art remains pending the wooden floor revision. Sakura floor/wall art held back by 똑또기 (2026-10-17).
 export const ROOM_LAYERS=[
+  {
+    "id": "floor-sakura",
+    "name": "벚꽃 바닥",
+    "en": "Sakura Floor",
+    "theme": "sakura",
+    "layer": "floor",
+    "category": "floorwall",
+    "price": null,
+    "art": null,
+    "front": null,
+    "source": "room-sakura",
+    "filename": null
+  },
+  {
+    "id": "wall-sakura",
+    "name": "벚꽃 벽",
+    "en": "Sakura Wall",
+    "theme": "sakura",
+    "layer": "wall",
+    "category": "floorwall",
+    "price": null,
+    "art": null,
+    "front": null,
+    "source": "room-sakura",
+    "filename": null
+  },
   {
     "id": "floor-momiji",
     "name": "단풍 바닥",

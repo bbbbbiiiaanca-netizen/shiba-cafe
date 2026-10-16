@@ -19,6 +19,8 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  const setup=async()=>{await go('&fresh=1&temp=1');await ev(`__game.state.started=true;__game.state.tutorialDone=true;__game.state.settings.language='ko';__game.ui.modals=[];__game.applyLang();true`);};
  await setup();await ev(`document.querySelector('[data-main-tab=shop]').click();__game.ui.furnitureCategory='floorwall';__game.refresh();true`);await shot('shop-floorwall.png');
  if(!await ev(`document.querySelector('[data-furn-card="floor-snow"] .furn-buy').textContent==='미정'`))throw Error('snow floor TBD missing');
+ await ev(`document.querySelector('[data-act=furnitureCategory][data-item=floorwall]').click();true`);await sleep(300);await ev(`document.querySelector('[data-furn-card="wall-sakura"]').scrollIntoView({block:'center'});true`);await shot('shop-floorwall-tbd.png');
+ for(const id of ['floor-sakura','wall-sakura'])if(!await ev(`document.querySelector('[data-furn-card="${id}"] .furn-buy').textContent==='미정'`))throw Error(id+' TBD missing');
  for(const theme of ['momiji','snow']){
   await setup();await ev(`document.querySelector('[data-main-tab=shop]').click();__game.refresh();true`);
   // Show the eight theme cards without introducing a product filter solely for capture.

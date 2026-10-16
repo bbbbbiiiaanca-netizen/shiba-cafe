@@ -26,6 +26,7 @@ for(const it of ROOM_LAYERS){
  if(it.art){assert.ok(existsSync(it.art));assert.ok(existsSync(it.art.replace(/\/([^/]+)$/,'/@2x/$1')));assert.equal(restoreSpace(s.space).roomLayers[it.layer],it.id);}
 }
 assert.equal(ROOM_LAYERS.find(it=>it.id==='floor-snow').art,null);
+for(const id of ['floor-sakura','wall-sakura']){const it=ROOM_LAYERS.find(x=>x.id===id);assert.equal(it.art,null);assert.equal(it.price,null);}
 assert.deepEqual(restoreSpace({roomLayers:{floor:'floor-snow',wall:'bogus'}}).roomLayers,{floor:null,wall:null});
 assert.equal(NEW_FURNITURE.find(it=>it.id==='low-table-momiji').filename,'furn-low-table-cushion-momiji-v5.png');
 assert.equal(NEW_FURNITURE.find(it=>it.id==='low-table-snow').filename,'furn-low-table-cushion-snow-v4.png');
