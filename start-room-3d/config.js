@@ -40,7 +40,7 @@ export const CFG={
    {id:'recipe-2',img:'assets/drive/cooking/dish-sweet-potato-cookie.png',name:'고구마 쿠키',unlockLevel:1,ingredients:{sweetPotato:1},craftSec:60,effect:{full:15,happy:15}}, // 임시
    {id:'recipe-3',img:'assets/drive/cooking/dish-chicken-meatball.png',name:'닭가슴살 미트볼',unlockLevel:1,ingredients:{chicken:1},craftSec:90,effect:{full:25,happy:10}}]}, // 임시
  ingredients:{rice:{name:'쌀',price:50,img:'assets/drive/cooking/ing-rice.png'},carrot:{name:'당근',price:50,img:'assets/drive/cooking/ing-carrot.png'},sweetPotato:{name:'고구마',price:80,img:'assets/drive/cooking/ing-sweet-potato.png'},chicken:{name:'닭고기',price:120,img:'assets/drive/cooking/ing-chicken.png'}}, // 임시 prices (멍); img = 256 transparent art from 그림이 (pending, slot stays empty)
- quests:{daily:{resetKST:'00:00',reward:null, // 임시 reset time; reward UNSET
+ quests:{temp:['daily.tasks','instantDia'],daily:{resetKST:'00:00',reward:null, // 임시 reset time; reward UNSET
    tasks:[{id:'serve',name:'손님 3명 받기',goal:3,tab:'manage',icon:'assets/drive/ui/tab-manage.png'}, // 임시
     {id:'pet',name:'시바 1마리 쓰다듬기',goal:1,tab:'shiba',icon:'assets/drive/ui/tab-shiba.png'}, // 임시
     {id:'sell',name:'메뉴 1잔 판매',goal:1,tab:'manage',icon:'assets/drive/ui/tab-manage.png'}]}, // 임시

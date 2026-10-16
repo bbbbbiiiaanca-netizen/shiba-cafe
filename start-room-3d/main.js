@@ -59,6 +59,7 @@ const f2=n=>n==null?L('unset'):(Math.round(n*100)/100).toString();
 const tfmt=sec=>{sec=Math.max(0,Math.ceil(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),x=sec%60;return h?`${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`:`${m}:${String(x).padStart(2,'0')}`;};
 const nameOf=sh=>sh.name||L('shiba.breed.'+sh.breed);
 const bar=(k,col)=>isUnset(k)?L('unset'):`<div class="bar"><i style="width:${Math.round(Math.max(0,Math.min(1,k))*100)}%${col?';background:'+col:''}"></i></div>`;
+function warn(text,actor='dongu'){ui.modals.unshift({kind:'dialogue',variant:'warning',actor,speech:L('dlg.check'),text});refresh();}
 function toast(t){const e=$('toast');e.innerHTML=t;e.style.opacity=1;ui.toastT=2.2;}
 const reason={slot:'toast.slot',none:'toast.none',ticket:'toast.ticket',owned:'toast.owned',fatigue:'toast.fatigue',busy:'toast.devBusy',coins:'toast.coins',hearts:'toast.hearts',slots:'toast.slots',unset:'toast.unset',last:'toast.last',dia:'toast.dia',odds:'toast.odds'};
 function why(code){toast(L(reason[code]||'toast.unset'));}
@@ -85,7 +86,7 @@ function renderHUD(){const now=clock.now();$('coins').textContent=fmtShort(s.coi
  $('closed').hidden=!C.closed;$('closed').textContent=L('hud.closed');}
 
 let sceneSig='';
-const iso=createIsoMap($('isomap'),{onChange:()=>{S.syncRoutes(s,w);persist();},onExpand:()=>openExpand(),onBlocked:message=>toast(message||L('edit.blocked')),onEditChange:()=>{mainTab='bag';menuSig='';renderMainMenu();}});
+const iso=createIsoMap($('isomap'),{onChange:()=>{S.syncRoutes(s,w);persist();},onExpand:()=>openExpand(),onBlocked:message=>warn(message||L('edit.blocked')),onEditChange:()=>{mainTab='bag';menuSig='';renderMainMenu();}});
 function renderScene(){iso.draw(s,w);renderMainMenu();}
 $('scene').append(iso.actions);
 let menuSig='',mainTab=iso.edit?'bag':DEFAULT_TAB;
@@ -240,7 +241,7 @@ P.shopLegacy=()=>{let h=`<button data-act="unlockPopup">${L('space.unlock')}</bu
     .map(([k,p])=>`<div class="li">${ico('dia')}<div class="grow">${L('dia.'+k)}</div><button disabled>${priceText(p,'dia')}</button></div>`).join('')}</div>`;
  return {title:L('shop.title'),html:h};};
 P.shop=()=>({title:L('shop.title'),html:Q1715.shopHtml(CFG,ui.shopTab,id=>S.furniturePrice(s,id))+(ui.shopTab==='cash'?P.shopLegacy().html:ui.shopTab==='theme'?unlocks():'')});
-P.quests=()=>({title:L('hud.mission'),html:Q1715.questsHtml(CFG.quests,ui.questTab,S.questTasks(s,clock.now()),s.dia)});
+P.quests=()=>({title:L('hud.mission'),html:Q1715.questsHtml(CFG.quests,ui.questTab,S.questTasks(s,clock.now()),s.dia,clock.now())});
 P.settings=()=>{const h=`<div class="card"><h3>${L('settings.language')}</h3><div class="btns">${LANGS.map(c=>`<button class="${s.settings.language===c?'':'sec'}" data-act="setLang" data-lang="${c}">${makeT(()=>c)('lang.name.'+c)}</button>`).join('')}</div></div>
  <div class="card"><div class="btns"><button class="sec" data-act="toggle" data-k="sound">${L('set.sound')}: ${s.settings.sound?'ON':'OFF'}</button><button class="sec" data-act="toggle" data-k="music">${L('set.music')}: ${s.settings.music?'ON':'OFF'}</button></div></div>
  ${RELEASE?'':`<div class="card"><button data-act="income">${L('set.income')}</button></div>`}
@@ -442,7 +443,7 @@ function frame(t){let dt=(t-last)/1000;last=t;if(document.hidden){requestAnimati
 let hiddenAt=null;
 addEventListener('pagehide',()=>persist());
 document.addEventListener('visibilitychange',()=>{if(document.hidden){hiddenAt=clock.now();persist();}else if(hiddenAt!=null){catchUp(clock.now()-hiddenAt);hiddenAt=null;last=performance.now();persist();refresh();}});
-const game={CFG,S,iso,get walkTable(){return walkTable();},debugQuestFixture(enabled){if(!temp)return false;ui.questFixture=!!enabled;panelSig='';refresh();return true;},debugExpand(n){if(!temp||!Number.isSafeInteger(n)||n<0)return false;s.space.unlockedRows=n;S.syncRoutes(s,w);refresh();return true;},get characterPositions(){return [...w.custs,...w.queue,...Object.values(w.sh)].map(c=>({id:c.id,phase:c.phase,cell:c.cell&&[...c.cell]}));},get state(){return s;},get world(){return w;},step:(dt=.1)=>{step(dt);return {custs:w.custs.length,queue:w.queue.length,coins:s.coins};},advance,open,close,clock,ui,refresh};
+const game={CFG,S,iso,warn,get walkTable(){return walkTable();},debugQuestFixture(enabled){if(!temp)return false;ui.questFixture=!!enabled;panelSig='';refresh();return true;},debugExpand(n){if(!temp||!Number.isSafeInteger(n)||n<0)return false;s.space.unlockedRows=n;S.syncRoutes(s,w);refresh();return true;},get characterPositions(){return [...w.custs,...w.queue,...Object.values(w.sh)].map(c=>({id:c.id,phase:c.phase,cell:c.cell&&[...c.cell]}));},get state(){return s;},get world(){return w;},step:(dt=.1)=>{step(dt);return {custs:w.custs.length,queue:w.queue.length,coins:s.coins};},advance,open,close,clock,ui,refresh};
 function openExpand(){const cost=S.spacePrice('row',null,'coins',s),rows=s.space.unlockedRows;ui.modals.unshift({kind:'confirm',land:true,short:cost!=null&&s.coins<cost,text:`${L('land.title',{n:rows+1})} <small class="land-max">${L('land.max',{n:Number.isFinite(CFG.expansion.maxSteps)?CFG.expansion.maxSteps:L('app.unset')})}</small><br><span class="land-price"><img src="${RES.coin}" alt="">${L('ledger.coins',{n:cost==null?L('app.unset'):fmt(cost)})}</span>`,yes:()=>{if(s.space.unlockedRows!==rows)return;if(!S.unlockSpace(s,'row',null,'coins',clock.now()))toast(L('toast.coinsShort'));else{S.syncRoutes(s,w);const m=iso.markers.find(x=>x.kind==='row'),cv=$('isomap');if(m)iso.easeBy(m.x-cv.clientWidth/2,m.y-cv.clientHeight/2);}}});renderModal();}
 // 배치 편집: 아래 패널은 접고 보관함만 한 줄(옆으로 넘김). 위에는 저장하기만(isomap bar).
 const FURN_ID={table:'tea-table',cushion:'zabuton'},furnName=type=>LF('furn.'+(FURN_ID[type]||type),type),FURN_ART=type=>`assets/drive/furn-${type==='table'?'tea-table':type}-v4.png`;
