@@ -313,6 +313,11 @@ small.fx{display:block;font-family:'Gowun Dodum',sans-serif;font-size:11px;opaci
 #hud #cafeExp{flex:none;width:auto;height:3px;margin:0;border-radius:2px;pointer-events:auto}
 .hud-sub{position:absolute;z-index:3;top:53px;left:48px;right:48px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px;pointer-events:none;font-family:"Jua","Gowun Dodum",sans-serif}
 .hud-sub>*{pointer-events:auto}
+/* #6 fix: the whole 평판·미션 line sits on one translucent dark rounded base (same as the top pills) so it reads over the roof art. */
+.hud-sub{left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:calc(100% - 96px);flex-wrap:nowrap;padding:0 8px;height:24px;border-radius:999px;background:rgba(37,32,30,.76);gap:2px}
+.hud-sub #rep,.hud-sub #mgr,.hud-sub #boostChip,.hud-sub #questGuide{background:transparent!important;padding:0 4px}
+.hud-sub #rep:not(:empty)+#questGuide:not([hidden])::before{content:"·";margin-right:4px;opacity:.7}
+#questGuide progress{appearance:none;-webkit-appearance:none;border:0;border-radius:999px;background:#ffffff40;overflow:hidden}#questGuide progress::-webkit-progress-bar{background:#ffffff40;border-radius:999px}#questGuide progress::-webkit-progress-value{background:#edc671;border-radius:999px}#questGuide progress::-moz-progress-bar{background:#edc671}
 .hud-sub #rep,.hud-sub #mgr,.hud-sub #boostChip,#questGuide{height:20px;padding:0 7px;border-radius:999px;background:#25201ecc;color:#fff;font-size:10px;line-height:20px;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:4px;opacity:1}
 #questGuide{position:static;top:auto;left:auto}
 #questGuide progress{width:80px;height:6px;flex:none}
