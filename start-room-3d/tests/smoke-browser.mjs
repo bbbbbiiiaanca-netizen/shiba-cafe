@@ -25,6 +25,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await go(true);
  await check('fresh save starts with the 밸런스_2년.md §5 starting values (30,000 coins, 300 diamonds)','__game.state.coins===__game.CFG.start.coins&&__game.state.coins===30000&&__game.state.dia===300&&__game.state.coinFrac===0');
  await steps({ev,check,sleep,reload:()=>go(false)});
+ await (await import('./level-quest-browser.mjs')).levelQuestBrowser({ev,check,c});
  await ev('__game.ui.modals=[];__game.close();__game.state.settings.language="ko";__game.refresh();true');
  await (await import('./dongu-browser.mjs')).donguBrowser({ev,check,c});
  const SB=(await import('./settings-browser.mjs')).settingsBrowser;const EX=process.env.SPEC_SHOT_DIR?{'settings-en-normal.png':process.env.SPEC_SHOT_DIR+'/i18n-en-settings.png'}:{};
@@ -90,7 +91,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  await ev('document.querySelector("#mbox [data-act=unequip][data-item=bandana-triangle-cell2]").click();true');
  await check('inventory unequips back to bag','__game.state.shibas[0].acc===null&&__game.state.accInv["bandana-triangle-cell2"]===1');
  await ev('__game.state.cafe.level=1;__game.refresh();__game.state.cafe.exp=__game.S.cafeNeed(1)-1;__game.S.addCafeExp(__game.state,1);__game.refresh();document.querySelector("[data-main-tab=manage]").click();true');
- await check('cafe experience threshold advances level with feedback','__game.state.cafe.level===2&&/카페 Lv 2/.test(document.querySelector("[data-cafe-level]").textContent)&&!/카페 Lv.*레벨업/.test(document.getElementById("toast").textContent)');
+ await check('cafe experience threshold advances level with feedback','__game.state.cafe.level===2&&document.getElementById("lvl").textContent==="2"&&!/카페 Lv.*레벨업/.test(document.getElementById("toast").textContent)');
  await go(true,'&temp=1&rows=7');
  await ev('__game.state.settings.language="ko";__game.state.started=true;__game.ui.modals=[];__game.refresh();document.querySelector("[data-main-tab=bag]").click();new Promise(r=>setTimeout(()=>{document.querySelector("[data-act=bagTab][data-item=furniture]").click();r(true)},150))');
  await check('inventory has starter quantities and placement controls, without theme, space or floor UI',`!document.querySelector('[data-space-card],[data-act=spaceUnlock],[data-act=floor]')&&!/후지산 벽화 카페|대나무 회랑|땅 넓히기|2층 증축/.test(document.getElementById('menuList').textContent+document.querySelector('.menu-heading').textContent)&&Object.entries(__game.state.furnitureInv).every(([type,n])=>{const b=document.querySelector('[data-act=bagCell][data-item=f-'+type+']');return b&&b.classList.contains('empty')===(n<=0)&&(n<=0||b.textContent.includes('×'+n));})`);
@@ -329,7 +330,7 @@ await new Promise(r=>setTimeout(r,600));
 
 
  await ev('__game.ui.modals=[];__game.refresh();document.querySelector("[data-main-tab=manage]").click();true');
- await check('UI 10-15: 가게 관리 = Lv progress line + 3 big tabs, no text-only status boxes, no floating 밥 만들기',`!document.querySelector('[data-main-menu],.menu-card')&&/카페 Lv/.test(document.querySelector('#menuList .manage-lv[data-cafe-level] ').textContent)&&!!document.querySelector('#menuList [data-cafe-level] .bar')&&document.querySelectorAll('#menuList [data-manage-tabs] button').length===3&&!document.querySelector('#menuList [data-act=ledger]')&&!!document.querySelector('#menuList [data-manage-tabs] [data-list=alba]')&&!document.querySelector('#menuList [data-alba]')&&!document.querySelector('#menuList [data-upgrade-levels]')&&!document.querySelector('#menuList [data-open=cooking]')&&document.querySelector('#menuList [data-manage-tabs] button').getBoundingClientRect().height>=70`);
+ await check('UI 10-15: 가게 관리 = 3 big tabs without Lv progress line, no text-only status boxes, no floating 밥 만들기',`!document.querySelector('[data-main-menu],.menu-card')&&!document.querySelector('#menuList [data-cafe-level],#menuList .manage-lv')&&document.querySelectorAll('#menuList [data-manage-tabs] button').length===3&&!document.querySelector('#menuList [data-act=ledger]')&&!!document.querySelector('#menuList [data-manage-tabs] [data-list=alba]')&&!document.querySelector('#menuList [data-alba]')&&!document.querySelector('#menuList [data-upgrade-levels]')&&!document.querySelector('#menuList [data-open=cooking]')&&document.querySelector('#menuList [data-manage-tabs] button').getBoundingClientRect().height>=70`);
  await ev(`document.querySelector('[data-main-tab=village]').click();true`);
  await check('UI 10-15: 마을 지도 = full-screen popup, only map + close',`(()=>{const m=document.getElementById('mainMenu').getBoundingClientRect(),c=document.querySelector('[data-act=villageClose]');return m.top<=1&&m.height>=innerHeight-1&&!!c&&getComputedStyle(document.getElementById('mainTabs')).display==='none'&&!document.querySelector('#menuList [data-act=friendsOpen]');})()`);
  await ev(`document.querySelector('[data-act=villageClose]').click();true`);

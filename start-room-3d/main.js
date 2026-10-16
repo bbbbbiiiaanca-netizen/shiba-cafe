@@ -1,3 +1,4 @@
+import {levelProgressText} from './level-progress.js';
 import {installCoinClean} from "./coin-clean.js";installCoinClean();
 import {installWalkProbe,walkTable} from "./walk-frames.js";installWalkProbe();
 import * as Q1715 from './q1715.js';
@@ -76,6 +77,7 @@ function renderHearts(now){const cap=CFG.hearts.slots,n=Math.max(0,Math.floor(s.
 function renderHUD(){const now=clock.now();$('coins').textContent=fmtShort(s.coins);$('dia').textContent=fmtShort(s.dia);renderHearts(now);
  const C=s.cafe,need=S.cafeNeed(C.level);$('lvl').textContent=String(C.level);$('lvl').setAttribute('aria-label',L('hud.level',{lv:C.level}));$('expBar').style.width=(C.level>=CFG.cafe.maxLevel?100:need==null?0:Math.min(100,C.exp/need*100))+'%';
  $('expBar').parentElement.title=C.level>=CFG.cafe.maxLevel?L('app.maxLevel'):need==null?L('app.unset'):`${fmt(C.exp)} / ${fmt(need)}`;
+ $('levelPopover').textContent=levelProgressText(C.level,C.exp,need,CFG.cafe.maxLevel,L);
  const exp=$('cafeExp');exp.setAttribute('aria-valuemin','0');exp.setAttribute('aria-valuemax',String(need??100));exp.setAttribute('aria-valuetext',exp.title=$('expBar').parentElement.title);if(need==null)exp.removeAttribute('aria-valuenow');else exp.setAttribute('aria-valuenow',String(Math.min(C.exp,need)));
  for(const [id,k,v] of [['coins','hud.aria.coinLedger',s.coins],['dia','hud.currency.dia',s.dia]]){const p=$(id).parentElement,t=L(k)+' '+fmt(v);p.title=t;p.setAttribute('aria-label',t);}
  $('paws').parentElement.title=L('hud.paws')+' '+$('paws').textContent;
@@ -112,9 +114,9 @@ function renderMainMenu(){
 }
 document.querySelectorAll('[data-main-tab]').forEach(b=>b.addEventListener('click',()=>{close();mainTab=b.dataset.mainTab;if(mainTab==='manage')ui.seen.menuDone=false;menuSig='';renderMainMenu();}));
 // 가게 관리 (§17): popup buttons (메뉴 개발 · 업그레이드), §15 ledger, café status (level, current development, upgrade levels).
-// 수인님 10-15 UI: 위쪽은 카페 Lv 진행 막대 한 줄, 그 아래 상점처럼 큰 탭 3개(메뉴 개발·업그레이드·알바채용; 손익계산서는 위 코인 숫자 → 팝업). 글자만 있는 상자는 없앰.
-function manageTop(now){const C=s.cafe,need=S.cafeNeed(C.level),max=C.level>=CFG.cafe.maxLevel;
- return `<div class="manage-top" data-manage-top><div class="manage-lv" data-cafe-level>${img(UI_ICONS.lvBadge)}<b>${L('mm.cafeLv',{lv:C.level})}</b>${bar(max?1:need==null?0:C.exp/need)}<small>${fmt(C.exp)} / ${max?L('app.max'):need==null?L('app.unset'):fmt(need)}</small></div>
+// 가게 관리: 경험치는 상단 레벨 아이콘의 말풍선에서 표시한다.
+function manageTop(now){
+ return `<div class="manage-top" data-manage-top>
  <div class="chips shop-tabs manage-tabs" data-manage-tabs><button class="big" data-act="listOpen" data-list="menu">${img(UI_ICONS.manageTab.menu)}${L('mm.menuDev')}${s.menuDev?`<small data-manage-dev data-dev="${s.menuDev.id}">${L('shop.developingShort')}</small>`:''}</button><button data-act="listOpen" data-list="upgrade">${img(UI_ICONS.manageTab.upgrade)}${L('mm.upgrade')}</button><button data-act="listOpen" data-list="alba" data-manage-hire>${img(UI_ICONS.manageTab.hire)}${L('mm.hire')}</button></div></div>`;}
 function handleEvents(){for(const e of w.events.splice(0)){
  if(e.type==='menuDone')toast(L('toast.menuDone',{name:L('menu.'+e.id)}));
@@ -415,6 +417,10 @@ const act={
  modalOk:()=>{ui.modals.shift();},walkResultOk:()=>{s.walkResults.shift();}, // §17: the result stays in state (시바 red dot) until acknowledged
  tutorialSkip:()=>{ui.modals=ui.modals.filter(m=>!m.tutorial);},confirmYes:()=>{const m=ui.modals[0];if(m?.short){toast(L('toast.coinsShort'));return;}ui.modals.shift();m.yes?.();},
 };
+function closeLevelPopover(){ $('levelPopover').hidden=true;$('lvl').setAttribute('aria-expanded','false'); }
+$('lvl').addEventListener('click',()=>{const show=$('levelPopover').hidden;$('levelPopover').hidden=!show;$('lvl').setAttribute('aria-expanded',String(show));});
+document.addEventListener('click',e=>{if(!e.target.closest('#lvl,#levelPopover'))closeLevelPopover();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLevelPopover();});
 document.addEventListener('click',e=>{if(e.target.id==='modal'&&ui.modals[0]?.kind==='bagItem'){ui.modals.shift();refresh();return;}const opener=e.target.closest('[data-open]');if(opener){open(opener.dataset.open);refresh();return;}const nb=e.target.closest('[data-nav]');if(nb){const n=nb.dataset.nav;if(n==='cafe')close();else open(n);refresh();return;}
  const el=e.target.closest('[data-act]');if(!el||el.disabled)return;const f=act[el.dataset.act];if(f){f(el.dataset);refresh();}});
 // drag a roaming shiba onto a guest (갱신 105)

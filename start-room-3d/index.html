@@ -383,6 +383,17 @@ button,button:disabled,button.warn,button[data-act=levelUp]:disabled,.lp-close,.
 .choice{border-width:2px}.cook-row{border:2px solid transparent}
 
 @media (prefers-reduced-motion:reduce){#modal:not([hidden]),#panel:not([hidden]),#app[data-tab=bag] #menuList{animation:none}}
+/* Level speech bubble and compact, scrolling mission window. */
+#hud #lvl{padding:0;box-shadow:none}
+#levelPopover{position:absolute;top:40px;left:6px;z-index:40;background:#fff8ec;color:#58452b;border:1px solid #d6bc91;border-radius:10px;padding:9px 12px;font-size:13px;white-space:nowrap;box-shadow:0 3px 10px #58452b33;pointer-events:auto}
+#levelPopover::before{content:"";position:absolute;top:-6px;left:12px;width:10px;height:10px;background:#fff8ec;border-top:1px solid #d6bc91;border-left:1px solid #d6bc91;transform:rotate(45deg)}
+#panel[data-panel=quests]{top:24%}
+#panel[data-panel=quests] #pbody{padding:6px 10px 10px}
+#panel[data-panel=quests] [data-quests]{flex-shrink:0}
+#panel[data-panel=quests] .quest-row{padding:5px 4px;margin:4px 0;gap:4px;min-height:48px}
+#panel[data-panel=quests] .quest-icon,#panel[data-panel=quests] .art-slot{width:28px;height:28px}
+#panel[data-panel=quests] .quest-name{font-size:13px;line-height:1.2}
+#panel[data-panel=quests] .quest-row button{font-size:11px;padding:5px 4px}
 </style>
 <style id="bag-icon-ui">
 .bag-tabs{display:flex;justify-content:center;gap:10px;padding:4px 0 8px}
@@ -402,11 +413,22 @@ button,button:disabled,button.warn,button[data-act=levelUp]:disabled,.lp-close,.
 .bag-pop.empty .bag-pop-ico{filter:grayscale(1);opacity:.5}
 .bag-pop h2{margin:0;font-size:20px}.bag-pop p{margin:0;font-size:14px;color:#7a5a3a}
 .bag-pop-note{margin:0;font-size:14px;color:#9a8a7a;padding:10px 0}.bag-pop-btns{display:flex;flex-direction:column;gap:6px;width:100%}.bag-pop-btns button{width:100%}
+/* Level speech bubble and compact, scrolling mission window. */
+#hud #lvl{padding:0;box-shadow:none}
+#levelPopover{position:absolute;top:40px;left:6px;z-index:40;background:#fff8ec;color:#58452b;border:1px solid #d6bc91;border-radius:10px;padding:9px 12px;font-size:13px;white-space:nowrap;box-shadow:0 3px 10px #58452b33;pointer-events:auto}
+#levelPopover::before{content:"";position:absolute;top:-6px;left:12px;width:10px;height:10px;background:#fff8ec;border-top:1px solid #d6bc91;border-left:1px solid #d6bc91;transform:rotate(45deg)}
+#panel[data-panel=quests]{top:24%}
+#panel[data-panel=quests] #pbody{padding:6px 10px 10px}
+#panel[data-panel=quests] [data-quests]{flex-shrink:0}
+#panel[data-panel=quests] .quest-row{padding:5px 4px;margin:4px 0;gap:4px;min-height:48px}
+#panel[data-panel=quests] .quest-icon,#panel[data-panel=quests] .art-slot{width:28px;height:28px}
+#panel[data-panel=quests] .quest-name{font-size:13px;line-height:1.2}
+#panel[data-panel=quests] .quest-row button{font-size:11px;padding:5px 4px}
 </style>
 <div id="app">
  <div id="hud" data-i18n-attr="aria-label:hud.aria.resources">
   <div class="row resources" data-i18n-attr="aria-label:hud.aria.currencies">
-   <span id="lvl"></span>
+   <button id="lvl" aria-expanded="false" aria-controls="levelPopover"></button><div id="levelPopover" role="status" hidden></div>
    <div class="pill"><button class="pill-open" data-act="income" data-i18n-attr="aria-label:hud.aria.coinLedger"><img class="resource" data-res="coin" src="assets/drive/ui/res-coin.png" alt="" draggable="false"><span id="coins"></span></button><button class="resource-add" data-act="resourceShop" data-i18n-attr="aria-label:hud.aria.coinShop">+</button></div>
    <div class="pill hearts-pill"><button class="pill-open" data-act="hearts" data-i18n-attr="aria-label:heart.title"><span id="hearts" class="heart-slots"></span><small id="heartT" hidden></small></button></div>
    <div class="pill"><span class="pill-open" data-i18n-attr="aria-label:hud.currency.dia"><img class="resource" data-res="dia" src="assets/drive/ui/res-diamond.png" alt="" draggable="false"><span id="dia"></span></span><button class="resource-add" data-act="resourceShop" data-i18n-attr="aria-label:hud.aria.diaShop">+</button></div>
