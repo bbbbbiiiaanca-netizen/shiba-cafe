@@ -95,7 +95,8 @@ export default async function({ev,check,sleep,reload}){
 await new Promise(r=>setTimeout(r,500));await ev('__game.refresh&&__game.refresh(),true');
  await check('wall placed with one-cell footprint and approved sprite hit','__game.state.placement.slots.some(s=>s.type==="wall"&&__game.iso.hits.some(h=>h.id===s.id&&!h.footprint))&&__game.iso.gridCells>0');
  await ev('window.wallBefore=JSON.stringify(__game.state.placement);__game.iso.placeWall([0,5]);true');
- await check('entrance blocked toast and rollback','document.getElementById("toast").textContent==="입구가 막혔어요!"&&JSON.stringify(__game.state.placement)===window.wallBefore');
+ await check('entrance blocked dialogue (17-15) and rollback','__game.ui.modals[0]?.kind==="dialogue"&&__game.ui.modals[0].variant==="warning"&&document.querySelector("[data-dialogue=warning] .confirm-text")?.textContent==="입구가 막혔어요!"&&!!document.querySelector("[data-dialogue=warning] .speech")&&JSON.stringify(__game.state.placement)===window.wallBefore');
+ await ev('__game.ui.modals=[];__game.refresh();true');
  await ev('document.querySelector("[data-wall-remove]").click();__game.iso.setEdit(false);__game.state.cafe.level=__game.CFG.alba.manager.unlock;__game.state.coins=__game.CFG.alba.manager.cost;__game.S.hireAlba(__game.state,"manager",[],__game.clock.now());__game.step(__game.CFG.navigation.cellStepSec);true');
  await check('only manager has staff navigation presence','__game.world.manager?.role==="manager"&&!__game.world.daycare&&!__game.world.trainer&&!__game.world.walk');
  // §17-9: real HUD → reusable popup → portrait picker → same popup, plus ad countdown.

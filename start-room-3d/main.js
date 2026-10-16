@@ -255,7 +255,7 @@ P.income=()=>{const now=clock.now(),item=S.itemIncomeMul(s,now),base=CFG.menu.co
  const p=w.lastPay;if(p)h+=`<div class="note">${L('inc.last',{out:L('out.'+p.outcome),base:p.base,lv:f2(p.lvMul),item:p.item,total:f2(p.total)})} ${p.pending?L('inc.pending'):''}</div>`;
  return {title:L('inc.title'),html:h+'</div>'};};
 let panelSig='';
-function renderPanel(force){if(!ui.panel){$('panel').hidden=true;return;}const v=P[ui.panel](ui.arg);const sig=v.title+v.html;if(!force&&sig===panelSig)return;panelSig=sig;
+function renderPanel(force){if(!ui.panel){$('panel').hidden=true;return;}if($('panel').dataset)$('panel').dataset.panel=ui.panel;const v=P[ui.panel](ui.arg);const sig=v.title+v.html;if(!force&&sig===panelSig)return;panelSig=sig;
  const sc=$('pbody').scrollTop;$('ptitle').textContent=v.title;$('pbody').innerHTML=v.html;$('pbody').scrollTop=sc;$('panel').dataset.panel=ui.panel;$('panel').style.setProperty('--cook-h',(CFG.cooking.popupHeightPct??0.75)*100+'%');$('panel').dataset.align=CFG.cooking.popupAlign||'center';$('panel').hidden=false;}
 function open(name,arg=null){if(!P[name]){if(LP[name]){act.listOpen({list:name,kind:arg});refresh();}return;} // 'menu' = 메뉴 개발 목록 팝업 (P.menu 없음)
  ui.panel=name;ui.arg=arg;ui.nav=['shibas','care'].includes(name)?'shibas':name==='income'?ui.nav:name==='hospital'?'village':name;renderPanel(true);navState();}
