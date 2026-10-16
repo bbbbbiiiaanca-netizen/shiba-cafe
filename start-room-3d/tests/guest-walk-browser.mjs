@@ -26,15 +26,15 @@ export async function guestWalkBrowser({ev,check,sleep}){
    if(Math.abs(w/h-128/176)>1e-6)bad.push(k+':ratio');const footY=y+h*G.walkAnchor[1]/176,footX=x+w*G.walkAnchor[0]/128;ref??=[footX,footY,w,h];
    if(Math.abs(footX-ref[0])>.01||Math.abs(footY-ref[1])>.01||Math.abs(w/ref[2]-G.scale[k])>1e-6||Math.abs(h/ref[3]-G.scale[k])>1e-6)bad.push(k+':foot');}
   return (window.gwBad=bad).length===0;})()`);
- await check('앉은 손님: girl·boykid 높이는 commuter의 0.85배, 좌석 앵커는 그대로',`(()=>{const g=__game,bad=[];let ref=null;
+ await check('앉은 손님: girl·boykid 높이는 무릎 어른(1.4)의 0.85/1.4배(아이는 무릎도 0.85), 좌석 앵커는 그대로',`(()=>{const g=__game,bad=[];let ref=null;
   for(const k of ['mom',...g.S.NPC_NORMAL.filter(k=>k!=='commuter'&&k!=='mom')]){const c=gwSpawn(k);c.phase='seated';const rows=gwDrawRects();if(rows.length!==1){bad.push(k+':missing');continue;}
-   const [x,y,w,h]=rows[0][1],scale=['girl','boykid'].includes(k)?0.85:1,A=g.CFG.characters.guest.seizaAnchor,ax=x+w*A[0]/128,ay=y+h*A[1]/176;ref??=[ax,ay,h];
+   const [x,y,w,h]=rows[0][1],scale=['girl','boykid'].includes(k)?0.85/g.CFG.characters.guest.seizaScale:1,A=g.CFG.characters.guest.seizaAnchor,ax=x+w*A[0]/128,ay=y+h*A[1]/176;ref??=[ax,ay,h];
    if(Math.abs(ax-ref[0])>.01||Math.abs(ay-ref[1])>.01||Math.abs(h/ref[2]-scale)>1e-6)bad.push(k);}
   return (window.gwBad=bad).length===0;})()`);
  await check('정좌: commuter 투명 원본과 좌석 방향 반전, 아이 배율 및 엉덩이 앵커',`(async()=>{const g=__game,G=(await import('./config.js')).CFG.characters.guest,c=gwSpawn('commuter'),seat=g.state.placement.slots.find(s=>s.id===c.seatFurniture),old=seat.dir,bad=[];c.phase='seated';
  try{for(const dir of [0,1,2,3]){seat.dir=dir;c.facing=(dir+1)%4;const rows=gwDrawRects(),idx=gwDraw.findIndex(s=>s.includes('guest-seiza-commuter'));if(rows.length!==1||idx<0||Math.sign(gwMatrix[idx])!==((dir%2)?-1:1))bad.push('mirror'+dir);
  const [x,y,w,h]=rows[0][1],a=G.seizaAnchor,anchor=[x+w*a[0]/128,y+h*a[1]/176];if(Math.abs(w/h-128/176)>1e-6)bad.push('canvas');
- for(const kind of ['girl','boykid']){const prev=G.seiza[kind];try{G.seiza[kind]=G.seiza.commuter;c.kind=kind;const r=gwDrawRects()[0][1];if(Math.abs(r[2]/w-.85)>1e-6||Math.abs(r[0]+r[2]*a[0]/128-anchor[0])>.01||Math.abs(r[1]+r[3]*a[1]/176-anchor[1])>.01)bad.push(kind);}finally{G.seiza[kind]=prev;c.kind='commuter';}}
+ for(const kind of ['girl','boykid']){const prev=G.seiza[kind];try{G.seiza[kind]=G.seiza.commuter;c.kind=kind;const r=gwDrawRects()[0][1];if(Math.abs(r[2]/w-.85/G.seizaScale)>1e-6||Math.abs(r[0]+r[2]*a[0]/128-anchor[0])>.01||Math.abs(r[1]+r[3]*a[1]/176-anchor[1])>.01)bad.push(kind);}finally{G.seiza[kind]=prev;c.kind='commuter';}}
  }}finally{seat.dir=old;}return (window.gwBad=bad).length===0;})()`);
  await check('걸어 들어와 앉기: 손님 걷기 그림은 config 경로로만 불러오고 probe 경로(chars/guest-*) 요청(404)이 없다',`(()=>!performance.getEntriesByType('resource').some(e=>e.name.includes('/chars/guest-')))()`);
  await ev(`(()=>{__game.world.custs.length=0;__game.refresh();return true;})()`);

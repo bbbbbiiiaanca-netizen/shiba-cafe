@@ -26,7 +26,9 @@ export function sitCutout(file,onReady=()=>{}){if(sitCache.has(file))return sitC
   out.dataset.sit=file;sitCache.set(file,out);onReady(file);};im.onerror=()=>{};im.src=file;return null;}
 
 // Scale dimensions and offsets together to preserve the foot / seat anchor.
-export function guestDrawRect(kind,p,width,height,anchor,fit){
- const G=CFG.characters.guest,scale=fit*(G.sizeScale??1)*(G.scale[kind]??1);
+// 크기 규칙(똑또기 10-16 확정): 곱하지 않는다. 종류별 값이 1이 아니면(아이 0.85) 자세와 상관없이 그 값, 아니면 무릎 꿇은(seiza) 자세만 seizaScale(1.4), 나머지 1.
+export function guestScale(kind,seiza=false){const G=CFG.characters.guest,k=G.scale[kind]??1;return k!==1?k:seiza?(G.seizaScale??1):1;}
+export function guestDrawRect(kind,p,width,height,anchor,fit,seiza=false){
+ const scale=fit*guestScale(kind,seiza);
  return [p.x-anchor[0]*scale,p.y-anchor[1]*scale,width*scale,height*scale];
 }

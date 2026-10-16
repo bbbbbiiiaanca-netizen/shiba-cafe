@@ -1,6 +1,6 @@
 // 걸어 들어와 앉기 (2026-10-16): 손님 10종 모두 걷기 그림으로 입구 → 자리, 앉으면 그 종류의 앉은 그림.
 import assert from 'node:assert/strict';import fs from 'node:fs';import * as S from '../sim.js';import {CFG} from '../config.js';import {canWalk,walkFrame,walkTable,installWalkProbe} from '../walk-frames.js';
-import {guestDrawRect,guestPose,keyBackground,sitFile,GUEST_DIRS} from '../guest-art.js';import {faceCell} from '../navigation.js';
+import {guestScale,guestDrawRect,guestPose,keyBackground,sitFile,GUEST_DIRS} from '../guest-art.js';import {faceCell} from '../navigation.js';
 const ROOT=new URL('../',import.meta.url),G=CFG.characters.walkFrames.guest;
 // 설정: 종류별 객체, 10종(sim.js NPC_NORMAL) 모두 그 종류 폴더의 경로
 assert.deepEqual(Object.keys(G).sort(),[...S.NPC_NORMAL].sort());assert.equal(S.NPC_NORMAL.length,10);
@@ -49,8 +49,9 @@ const iso=fs.readFileSync(new URL('isomap.js',ROOT),'utf8');assert.ok(iso.includ
 assert.ok(!/coat|rare/i.test(fs.readFileSync(new URL('guest-art.js',ROOT),'utf8')),'털색·희귀 코드 없음');
 console.log('guest-walk ok');
 
-assert.equal(CFG.characters.guest.sizeScale,1.4);
-{const p={x:0,y:0},r=guestDrawRect('commuter',p,128,176,[64,171],1);assert.equal(r[3],176*1.4);}
+assert.equal(CFG.characters.guest.seizaScale,1.4);assert.equal(CFG.characters.guest.sizeScale,undefined,'공통 배율 곱하지 않음');
+{const p={x:0,y:0};assert.equal(guestDrawRect('commuter',p,128,176,[64,171],1)[3],176,'어른 걷기 1배');assert.equal(guestDrawRect('commuter',p,128,176,[64,171],1,true)[3],176*1.4,'어른 무릎 1.4배');
+ assert.equal(guestDrawRect('girl',p,128,176,[64,171],1)[3],176*0.85,'아이 걷기 0.85');assert.equal(guestDrawRect('boykid',p,128,176,[64,171],1,true)[3],176*0.85,'아이 무릎도 0.85');}
 assert.deepEqual(Object.keys(CFG.characters.guest.scale).sort(),[...S.NPC_NORMAL].sort());
 for(const kind of S.NPC_NORMAL){
  const scale=['girl','boykid'].includes(kind)?0.85:1;
@@ -67,5 +68,8 @@ for(const kind of S.NPC_NORMAL){
 assert.deepEqual(size(CFG.characters.guest.seiza.commuter),[128,176]);
 for(const dir of [0,1,2,3])assert.equal(guestPose({kind:'commuter',phase:'seated'},0,dir).mirrored,!!(dir%2));
 for(const kind of S.NPC_NORMAL){assert.equal(CFG.characters.guest.seiza[kind],`assets/drive/chars/guest/seiza/guest-seiza-${kind}.png`);assert.deepEqual(size(CFG.characters.guest.seiza[kind]),[128,176]);
- const p={x:100,y:200},a=CFG.characters.guest.seizaAnchor,r=guestDrawRect(kind,p,128,176,a,1),scale=1.4*CFG.characters.guest.scale[kind];
+ const p={x:100,y:200},a=CFG.characters.guest.seizaAnchor,r=guestDrawRect(kind,p,128,176,a,1,true),scale=['girl','boykid'].includes(kind)?0.85:1.4;
  assert.equal(r[2],128*scale);assert.equal(r[0]+a[0]*scale,p.x);assert.equal(r[1]+a[1]*scale,p.y);}
+
+for(const kind of S.NPC_NORMAL){const kid=['girl','boykid'].includes(kind);assert.equal(guestScale(kind),kid?0.85:1);assert.equal(guestScale(kind,true),kid?0.85:1.4);}
+console.log('guest-scale rule ok');
