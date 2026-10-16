@@ -18,7 +18,7 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
  const {NEW_FURNITURE}=await import('../furniture-data.js');
  const setup=async()=>{await go('&fresh=1&temp=1');await ev(`__game.state.started=true;__game.state.tutorialDone=true;__game.state.settings.language='ko';__game.ui.modals=[];__game.applyLang();true`);};
  await setup();await ev(`document.querySelector('[data-main-tab=shop]').click();__game.ui.furnitureCategory='floorwall';__game.refresh();true`);await shot('shop-floorwall.png');
- if(!await ev(`document.querySelector('[data-furn-card="floor-snow"] .furn-buy').textContent==='미정'`))throw Error('snow floor TBD missing');
+ if(!await ev(`document.querySelector('[data-furn-card="floor-snow"] .furn-buy').textContent==='미정'&&!!document.querySelector('[data-furn-card="floor-snow"] .furn-img')`))throw Error('snow floor card (v5 그림 + 미정) missing');
  await ev(`document.querySelector('[data-act=furnitureCategory][data-item=floorwall]').click();true`);await sleep(300);await ev(`document.querySelector('[data-furn-card="wall-sakura"]').scrollIntoView({block:'center'});true`);await shot('shop-floorwall-tbd.png');
  for(const id of ['floor-sakura','wall-sakura'])if(!await ev(`document.querySelector('[data-furn-card="${id}"] .furn-buy').textContent==='미정'`))throw Error(id+' TBD missing');
  for(const theme of ['momiji','snow']){
@@ -38,9 +38,9 @@ try{const {targetId}=await call('Target.createTarget',{url:'about:blank'});const
   await ev(`__game.state.placement.slots=${JSON.stringify(slots.slice(0,3))};__game.refresh();true`);await shot(theme+'-set.png');
   if(!await ev(`!!document.querySelector('.${theme}-set-label')`))throw Error('set label missing');
   await setup();
-  await ev(`__game.state.placement.slots=[];__game.state.furnitureInv['wall-${theme}']=1;__game.S.placeFurniture(__game.state,'wall-${theme}',[0,0]);${theme==='momiji'?"__game.state.furnitureInv['floor-momiji']=1;__game.S.placeFurniture(__game.state,'floor-momiji',[0,0]);":''}__game.refresh();true`);
-  if(!await ev(`__game.state.space.roomLayers.wall==='wall-${theme}'`))throw Error('wall selection');
-  await shot(theme==='momiji'?'room-momiji-layer.png':'room-snow-wall.png');
+  await ev(`__game.state.placement.slots=[];__game.state.furnitureInv['wall-${theme}']=1;__game.S.placeFurniture(__game.state,'wall-${theme}',[0,0]);__game.state.furnitureInv['floor-${theme}']=1;__game.S.placeFurniture(__game.state,'floor-${theme}',[0,0]);__game.refresh();true`);
+  if(!await ev(`__game.state.space.roomLayers.wall==='wall-${theme}'&&__game.state.space.roomLayers.floor==='floor-${theme}'`))throw Error('wall/floor selection');
+  await shot('room-'+theme+'-layer.png');
  }
  if(errors.length)throw Error(errors.join('\n'));console.log('momiji/snow browser checks passed');
 }finally{chrome.kill('SIGTERM');await sleep(150);rmSync(prof,{recursive:true,force:true});}
