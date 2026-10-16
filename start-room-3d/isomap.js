@@ -3,15 +3,15 @@ import {t} from './i18n.js';
 import {CFG} from './config.js';
 import {preservesEntrance} from './navigation.js';
 import {canWalk,walkFrame} from './walk-frames.js';
-import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges,WALL_EXT} from './map-data.js';
+import {MAP,SPRITES,MAP_MARKERS,cellToImage,cellToScreen,footprintCentre,compareDepth,footprintCells,validPlacement,flipDir,rotateDir,spriteMirrored,spriteFor,wallEdge,zonesForSpace,CHAR_SPRITES,characterDepthEntries,tableItemEntries,tableItemSize,FLOAT_LAYOUT,floatOrigin,FLOAT_ICONS,FLOOR_ART,nextExpansion,PARTITION,MANAGER_OPAQUE_HEIGHT,MANAGER,managerFrame,plateEdges,WALL_EXT} from './map-data.js';
 export {MAP,SPRITES,cellToImage,cellToScreen};
 export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChange=()=>{},onExpand=()=>{}}={}){
  const ctx=canvas.getContext('2d'),images=new Map(),params=new URLSearchParams(location.search);
  let dragSprite=null;let edit=params.get('edit')==='1'||params.get('grid')==='1',scroll=0,panX=0,panBounds={minX:0,maxX:0},drag=null,last,selected=null,selectionBefore=null,selectionNew=false,hits=[],gridCells=0,maxScroll=0,markers=[],markerPhase=null,zoom=1;
  const bar=document.createElement('div');bar.hidden=true;bar.className='furniture-actions';bar.setAttribute('aria-label',t('edit.aria'));bar.setAttribute('data-i18n-attr','aria-label:edit.aria');
- bar.innerHTML=`<button data-furniture-cancel data-i18n="app.cancel">${t('app.cancel')}</button><button data-furniture-store data-i18n="edit.store">${t('edit.store')}</button><button data-furniture-save data-i18n="edit.save">${t('edit.save')}</button><button data-furniture-flip data-i18n="edit.flip">${t('edit.flip')}</button><button data-furniture-rotate data-i18n="edit.rotate">${t('edit.rotate')}</button><button data-wall-add hidden data-i18n="edit.wallAdd">${t('edit.wallAdd')}</button><button data-wall-remove data-i18n="edit.wallRemove">${t('edit.wallRemove')}</button><button data-furniture-done data-i18n="app.ok">${t('app.ok')}</button>`;
+ bar.innerHTML=`<button data-furniture-cancel data-i18n="app.cancel">${t('app.cancel')}</button><button data-furniture-store data-i18n="edit.store">${t('edit.store')}</button><button data-furniture-rotate data-i18n="edit.rotate">${t('edit.rotate')}</button><button data-furniture-flip data-i18n="edit.flip">${t('edit.flip')}</button><button data-furniture-done data-i18n="app.ok">${t('app.ok')}</button><button data-furniture-save data-i18n="edit.save">${t('edit.save')}</button><button data-wall-add hidden data-i18n="edit.wallAdd">${t('edit.wallAdd')}</button>`;
 
- function syncBar(){bar.hidden=!edit;bar.classList.toggle('has-selection',!!selected);for(const button of bar.querySelectorAll('button'))button.disabled=button.hasAttribute('data-furniture-save')||button.hasAttribute('data-wall-add')?false:button.hasAttribute('data-wall-remove')?current()?.type!=='wall':!selected;}
+ function syncBar(){bar.hidden=!edit;bar.classList.toggle('has-selection',!!selected);for(const button of bar.querySelectorAll('button'))button.disabled=button.hasAttribute('data-furniture-save')||button.hasAttribute('data-wall-add')?false:!selected;}
  const slots=()=>last?.[0].placement.slots||MAP.zones[0].slots;
  const current=()=>slots().find(s=>s.id===selected);
  syncBar();
@@ -28,7 +28,6 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
  bar.querySelector('[data-wall-add]').onclick=()=>{const zone=zonesForSpace(last[0].space)[0];for(let j=0;j<zone.rows;j++)for(let i=0;i<zone.cols;i++){
   const c={id:'wall-preview',type:'wall',origin:[i,j],dir:0};if(validPlacement(c,slots(),zone)&&preservesEntrance(zone,slots(),[...slots(),c])){placeWall(c.origin);return;}
  }onBlocked(t('edit.entranceBlocked'));};
- bar.querySelector('[data-wall-remove]').onclick=()=>{const item=current();if(item?.type!=='wall')return;slots().splice(slots().indexOf(item),1);selected=null;onChange();repaint();};
  function orient(dir){const item=current();if(!item||drag?.item)return;const candidate={...item,dir};if(!accept(candidate,zonesForSpace(last[0].space)[0]))return;item.dir=dir;onChange();repaint();}
  bar.querySelector('[data-furniture-flip]').onclick=()=>current()&&orient(flipDir(current().dir));
  bar.querySelector('[data-furniture-rotate]').onclick=()=>current()&&orient(rotateDir(current().type,current().dir));
@@ -112,13 +111,13 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
      if(im.complete&&im.naturalWidth){const k=scale*(CFG.characters.shibaScale||1),A=CFG.characters.shibaAnchor||CHAR_SPRITES.shiba.byBreed?.[breed]?.anchor||[im.naturalWidth/2,im.naturalHeight];ctx.drawImage(im,p.x-A[0]*k,p.y-A[1]*k,im.naturalWidth*k,im.naturalHeight*k);}return;}}
     if(s.character){let meta=CHAR_SPRITES[s.character.role==='manager'?'manager':s.character.kind?'guest':'shiba'];if(!s.character.kind&&s.character.role!=='manager'){const b=state.shibas?.find(o=>o.id===s.character.id)?.breed;meta=meta.byBreed?.[b]||meta;}if(meta.file&&meta.anchor)stamp(meta.file,cellToScreen(...s.origin,view,z),meta.anchor);return;}
     const base=SPRITES[s.type];if(!base)return;
-    if(!base.file){if(edit){const p=cellToScreen(...s.origin,view,z);hits.push({id:s.id,x:p.x-z.cell.w*scale/2,y:p.y-z.cell.h*scale/2,w:z.cell.w*scale,h:z.cell.h*scale,footprint:true,view,zone:z});}return;}const sprite=s.type==='wall'&&s.dir%2?base.flip:s.dir>=2?base.back:base;if(!sprite)return;
+    if(!base.file){if(edit){const p=cellToScreen(...s.origin,view,z);hits.push({id:s.id,x:p.x-z.cell.w*scale/2,y:p.y-z.cell.h*scale/2,w:z.cell.w*scale,h:z.cell.h*scale,footprint:true,view,zone:z});}return;}const sprite=spriteFor(s.type,s.dir);if(!sprite)return;
     const im=load(sprite.file),p=cellToScreen(...footprintCentre(s),view,z),spriteScale=scale*sprite.scale;
     if(drag?.item===s.id)dragSprite={s,sprite,view,z};
     if(im.complete&&im.naturalWidth){
-     // starting value 2026-10-15, pending user confirm: contact midpoint on the matching rear cell edge.
-     if(s.type==='wall'){p.x+=(s.dir%2?-1:1)*z.cell.w*scale/4;p.y-=z.cell.h*scale/4;}
-     const mirrored=s.type!=='wall'&&Boolean(s.dir%2)!==Boolean(sprite.mirror),ax=mirrored?im.naturalWidth-sprite.anchor[0]:sprite.anchor[0];
+     // starting value 2026-10-15, pending user confirm: contact midpoint on the matching cell edge (dir 2·3 = opposite edge).
+     if(s.type==='wall'){const [ex,ey]=wallEdge(s.dir);p.x+=ex*z.cell.w*scale/4;p.y+=ey*z.cell.h*scale/4;}
+     const mirrored=spriteMirrored(s.type,s.dir,sprite),ax=mirrored?im.naturalWidth-sprite.anchor[0]:sprite.anchor[0];
      const x=p.x-ax*spriteScale,y=p.y-sprite.anchor[1]*spriteScale,w=im.naturalWidth*spriteScale,h=im.naturalHeight*spriteScale;
      ctx.save();if(mirrored){ctx.translate(x+w,y);ctx.scale(-1,1);ctx.drawImage(im,0,0,w,h);}else ctx.drawImage(im,x,y,w,h);ctx.restore();
      hits.push({id:s.id,x,y,w,h,im,mirrored,view,zone:z});
@@ -144,13 +143,14 @@ export function createIsoMap(canvas,{onChange=()=>{},onBlocked=()=>{},onEditChan
    }
    if(edit&&selected){const item=placed.find(s=>s.id===selected);if(item){const candidate=drag?.item===item.id?{...item,origin:drag.candidate}:item;
     const valid=validPlacement(candidate,placed,z)&&preservesEntrance(z,placed,[...placed.filter(p=>p.id!==candidate.id),candidate]);canvas.dataset.placementValid=String(valid);if(bar.dataset)bar.dataset.valid=String(valid);ctx.fillStyle=valid?'rgba(30,215,80,.55)':'rgba(235,55,55,.32)';ctx.strokeStyle=valid?'#16e05a':'#ff4545';
-    const centre=cellToScreen(...footprintCentre(candidate),view,z);bar.style.setProperty('--select-x',centre.x+'px');bar.style.setProperty('--select-y',centre.y+'px');ctx.lineWidth=2;
+    const centre=cellToScreen(...footprintCentre(candidate),view,z);// 17-12: 둥근 버튼 고리(가로 106·위 84·아래 106px)가 화면 밖으로 나가지 않게 가운데를 당긴다
+    const ringX=Math.min(Math.max(centre.x,106),Math.max(106,W-106)),ringY=Math.min(Math.max(centre.y,84),Math.max(84,H-106));bar.style.setProperty('--select-x',ringX+'px');bar.style.setProperty('--select-y',ringY+'px');ctx.lineWidth=2;
     for(const [i,j] of footprintCells(candidate)){const p=cellToScreen(i,j,view,z),hw=z.cell.w*scale/2,hh=z.cell.h*scale/2;
      ctx.beginPath();ctx.moveTo(p.x,p.y-hh);ctx.lineTo(p.x+hw,p.y);ctx.lineTo(p.x,p.y+hh);ctx.lineTo(p.x-hw,p.y);ctx.closePath();ctx.fill();ctx.stroke();}
 
     // 똑또기 10-15: 끄는 중에는 가구 그림을 칸 위에 다시 그려 그림이 칸을 따라 보이게 한다
     if(dragSprite&&dragSprite.s.id===item.id){const {sprite,view:v,z:zz}=dragSprite,im=load(sprite.file),p=cellToScreen(...footprintCentre(candidate),v,zz),ss=scale*sprite.scale;
-     if(im.complete&&im.naturalWidth){const m=Boolean(candidate.dir%2)!==Boolean(sprite.mirror),ax=m?im.naturalWidth-sprite.anchor[0]:sprite.anchor[0],x=p.x-ax*ss,y=p.y-sprite.anchor[1]*ss,w=im.naturalWidth*ss,h=im.naturalHeight*ss;
+     if(im.complete&&im.naturalWidth){const m=spriteMirrored(candidate.type,candidate.dir,sprite),ax=m?im.naturalWidth-sprite.anchor[0]:sprite.anchor[0],x=p.x-ax*ss,y=p.y-sprite.anchor[1]*ss,w=im.naturalWidth*ss,h=im.naturalHeight*ss;
       ctx.save();ctx.globalAlpha=.92;if(m){ctx.translate(x+w,y);ctx.scale(-1,1);ctx.drawImage(im,0,0,w,h);}else ctx.drawImage(im,x,y,w,h);ctx.restore();canvas.dataset.dragSprite=item.id;}}
    }}
    y+=heights[index]+24;

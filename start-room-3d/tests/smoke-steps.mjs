@@ -94,9 +94,13 @@ export default async function({ev,check,sleep,reload}){
  await ev('__game.close();__game.iso.setEdit(true);document.querySelector("[data-wall-add]").click();true');
 await new Promise(r=>setTimeout(r,500));await ev('__game.refresh&&__game.refresh(),true');
  await check('wall placed with one-cell footprint and approved sprite hit','__game.state.placement.slots.some(s=>s.type==="wall"&&__game.iso.hits.some(h=>h.id===s.id&&!h.footprint))&&__game.iso.gridCells>0');
+ // 똑또기 10-16: 벽 4방향 돌리기 — 2·3은 그림이 뒷모습(3은 반전)으로 0·1의 맞은편 모서리에 선다
+ await ev('window.wallTurns=[];true');for(let n=0;n<4;n++){await new Promise(r=>setTimeout(r,300));await ev(`(()=>{__game.refresh&&__game.refresh();const w=__game.state.placement.slots.find(s=>s.type==="wall"),h=__game.iso.hits.find(h=>h.id===w.id&&!h.footprint);window.wallTurns.push({dir:w.dir,x:h&&h.x+h.w/2,y:h&&h.y+h.h});document.querySelector("[data-furniture-rotate]").click();window.wallDirAfter=w.dir;return true;})()`);}
+ await check('wall rotates through 4 directions with a sprite each','(()=>{const t=window.wallTurns;return t.map(o=>o.dir).join()==="0,1,2,3"&&window.wallDirAfter===0&&t.every(o=>Number.isFinite(o.x))&&t[2].x<t[0].x&&t[2].y>t[0].y&&t[3].x>t[1].x&&t[3].y>t[1].y;})()');
  await ev('window.wallBefore=JSON.stringify(__game.state.placement);__game.iso.placeWall([0,5]);true');
  await check('entrance blocked toast and rollback','document.getElementById("toast").textContent==="입구가 막혔어요!"&&JSON.stringify(__game.state.placement)===window.wallBefore');
- await ev('document.querySelector("[data-wall-remove]").click();__game.iso.setEdit(false);__game.state.cafe.level=__game.CFG.alba.manager.unlock;__game.state.coins=__game.CFG.alba.manager.cost;__game.S.hireAlba(__game.state,"manager",[],__game.clock.now());__game.step(__game.CFG.navigation.cellStepSec);true');
+ await ev('document.querySelector("[data-furniture-store]").click();window.wallGone=!__game.state.placement.slots.some(s=>s.type==="wall");__game.iso.setEdit(false);__game.state.cafe.level=__game.CFG.alba.manager.unlock;__game.state.coins=__game.CFG.alba.manager.cost;__game.S.hireAlba(__game.state,"manager",[],__game.clock.now());__game.step(__game.CFG.navigation.cellStepSec);true');
+ await check('17-12 wall removed through round 보관 button','window.wallGone===true');
  await check('only manager has staff navigation presence','__game.world.manager?.role==="manager"&&!__game.world.daycare&&!__game.world.trainer&&!__game.world.walk');
  // §17-9: real HUD → reusable popup → portrait picker → same popup, plus ad countdown.
  await ev('__game.ui.modals=[];__game.state.cafe.level=1;__game.S.heartState(__game.state).seenLevel=1;__game.state.shibas[0].affinity=0;__game.state.hearts=__game.CFG.hearts.regenCap;__game.refresh();document.querySelector("#hud [data-act=hearts]").click();true');

@@ -31,12 +31,12 @@ assert.equal(validPlacement({...counter,origin:[-1,0]},z.slots),false);
 assert.equal(validPlacement({...counter,origin:[1,3]},z.slots),false);
 assert.equal(validPlacement({...counter,origin:[0,1],dir:1},z.slots),true);
 assert.equal(validPlacement({...counter,origin:[0,5],dir:1},z.slots,MAP.zones[0]),false);
-assert.equal(validPlacement({...counter,dir:2},z.slots),true);assert.equal(validPlacement({type:'wall',id:'w',origin:[0,0],dir:2},[]),false);
+assert.equal(validPlacement({...counter,dir:2},z.slots),true); // back art arrived 2026-10-16
+{const {availableDirs,rotateDir,SPRITES}=await import('../map-data.js');for(const t of ['table','cushion','counter','stairs']){assert.ok(SPRITES[t].back?.file.endsWith('-v4-back.png'));assert.deepEqual(availableDirs(t),[0,1,2,3]);assert.deepEqual([0,1,2,3].map(d=>rotateDir(t,d)),[1,2,3,0]);}
+ const noBack={counter:{...SPRITES.counter,back:null}};assert.deepEqual(availableDirs('counter',noBack),[0,1]);assert.equal(rotateDir('counter',1,noBack),0);}
 assert.deepEqual([0,1,2,3].map(flipDir),[1,0,3,2]);
-// 10-14 수인님: 앞 → 앞 반전 → 뒤 → 뒤 반전. 뒷모습 있는 4종은 4방향, 칸막이(뒷모습 없음)는 앞/앞 반전만.
-for(const t of ['table','cushion','counter','stairs']){assert.deepEqual(availableDirs(t),[0,1,2,3]);assert.deepEqual([0,1,2,3].map(d=>rotateDir(t,d)),[1,2,3,0]);assert.match(SPRITES[t].back.file,/-v4-back\.png$/);}
-assert.equal(SPRITES.counter.back.mirror,true);assert.equal(SPRITES.stairs.back.mirror,true);assert.deepEqual(availableDirs('wall'),[0,1]);assert.equal(rotateDir('wall',0),1);assert.equal(rotateDir('wall',1),0);
-{const sv=defaultPlacement();sv.slots[0].dir=3;assert.equal(restorePlacement(JSON.parse(JSON.stringify(sv))).slots[0].dir,3);}
+assert.deepEqual(availableDirs('counter'),[0,1,2,3]);
+assert.equal(rotateDir('counter',0),1);assert.equal(rotateDir('counter',3),0);
 const back={...SPRITES,counter:{...SPRITES.counter,back:{...SPRITES.counter}}};
 assert.deepEqual(availableDirs('counter',back),[0,1,2,3]);
 assert.deepEqual([0,1,2,3].map(d=>rotateDir('counter',d,back)),[1,2,3,0]);
@@ -49,6 +49,12 @@ const store={value:null,setItem(k,v){this.value=v;},getItem(){return this.value;
 const state=newState(0);state.placement=restorePlacement({v:1,slots:defaultPlacement().slots.map(s=>s.id==='counter'?{...s,origin:[0,1],dir:1}:s)});
 save(store,state,0);assert.deepEqual(load(store,0).state.placement,state.placement);
 delete state.placement;save(store,state,0);assert.deepEqual(load(store,0).state.placement,defaultPlacement());
+{const sv=defaultPlacement();sv.slots[0].dir=3;assert.equal(restorePlacement(JSON.parse(JSON.stringify(sv))).slots[0].dir,3);}
 console.log('furniture edit: directions, bounds, collisions, rotation, placement save and migration passed');
 
 assert.deepEqual(restorePlacement({v:1,slots:defaultPlacement().slots.map(s=>s.id==='stairs'?{...s,origin:null}:s)}),defaultPlacement());
+{const {spriteMirrored,SPRITES}=await import('../map-data.js');const b=SPRITES.counter.back;assert.equal(b.mirror,true);assert.deepEqual([0,1,2,3].map(d=>spriteMirrored('counter',d,d>=2?b:SPRITES.counter)),[false,true,true,false]);assert.equal(SPRITES.stairs.back.mirror,true);assert.deepEqual([0,1,2,3].map(d=>spriteMirrored('stairs',d,d>=2?SPRITES.stairs.back:SPRITES.stairs)),[false,true,true,false]);assert.equal(spriteMirrored('wall',1,SPRITES.wall),false);
+ // 칸막이 벽(그림이 뒷모습 10-16): 0 원본, 1 flip 그림, 2 뒷모습, 3 뒷모습 반전. 2·3은 0·1 맞은편 모서리.
+ const {spriteFor,wallEdge}=await import('../map-data.js');assert.equal(SPRITES.wall.back.file,'assets/drive/tiles/furn-partition-v4-back.png');assert.deepEqual(availableDirs('wall'),[0,1,2,3]);assert.deepEqual([0,1,2,3].map(d=>rotateDir('wall',d)),[1,2,3,0]);
+ assert.deepEqual([0,1,2,3].map(d=>spriteFor('wall',d)),[SPRITES.wall,SPRITES.wall.flip,SPRITES.wall.back,SPRITES.wall.back]);assert.deepEqual([0,1,2,3].map(d=>spriteMirrored('wall',d,spriteFor('wall',d))),[false,false,false,true]);
+ for(const d of [0,1])assert.deepEqual(wallEdge(d+2),wallEdge(d).map(v=>-v));assert.equal(spriteFor('counter',2),SPRITES.counter.back);assert.equal(spriteFor('counter',1),SPRITES.counter);}

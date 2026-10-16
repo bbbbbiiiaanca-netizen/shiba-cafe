@@ -5,7 +5,7 @@ import {CFG} from './config.js';
 export const PARTITION={count:3,price:50000}; // starting value 2026-10-15, pending user confirm
 export const SPRITES={
  // starting value 2026-10-15, pending user confirm: bbox x6–95/y24–181; bottom contact midpoint (50.5,162.5), scaled to existing 64×32 cell edge and offset to the rear cell edge.
- wall:{file:'assets/drive/tiles/wall-inner.png',anchor:[50.5,162.5],scale:64/89,back:null,flip:{file:'assets/drive/tiles/wall-inner-flip.png',anchor:[62.5,162.5],scale:64/89},footprint:{cells:1,axis:null}},
+ wall:{file:'assets/drive/tiles/wall-inner.png',anchor:[50.5,162.5],scale:64/89,back:{file:'assets/drive/tiles/furn-partition-v4-back.png',anchor:[54.5,157],scale:64/89},flip:{file:'assets/drive/tiles/wall-inner-flip.png',anchor:[62.5,162.5],scale:64/89},footprint:{cells:1,axis:null}},
  // 그림이 v4 sprites, original size (scale 1). anchor = centre of floor-contact footprint, sprite px (given by 그림이).
  table:{file:'assets/drive/furn-tea-table-v4.png',anchor:[92,93],scale:1,back:{file:'assets/drive/furn-tea-table-v4-back.png',anchor:[92,93],scale:1},footprint:{cells:1,axis:null}},
  cushion:{file:'assets/drive/furn-cushion-v4.png',anchor:[90,74],scale:1,back:{file:'assets/drive/furn-cushion-v4-back.png',anchor:[90,74],scale:1},footprint:{cells:1,axis:null}},
@@ -57,6 +57,12 @@ export function cellToScreen(col,row,view,zone=MAP.zones[0]){
 export function zoneAt(map,col,row,floor=1){return map.zones.find(z=>z.floor===floor&&col>=0&&row>=0&&col<z.cols&&row<z.rows);}
 
 export function availableDirs(type,sprites=SPRITES){return sprites[type].back?[0,1,2,3]:[0,1];}
+// 칸막이 벽(그림이 뒷모습 10-16): 0 원본, 1 좌우반전 그림(flip), 2 뒷모습, 3 뒷모습 좌우반전. 2·3은 0·1 맞은편 모서리에 세운다(wallEdge).
+export function spriteFor(type,dir,sprites=SPRITES){const b=sprites[type];if(dir>=2)return b.back;return type==='wall'&&dir%2?b.flip:b;}
+// 벽 판이 서는 칸 모서리: 화면 [x,y] 방향(칸 너비·높이의 1/4 단위). 0 오른쪽 위, 1 왼쪽 위, 2 왼쪽 아래(0의 맞은편), 3 오른쪽 아래(1의 맞은편).
+export function wallEdge(dir){return [[1,-1],[-1,-1],[-1,1],[1,1]][dir];}
+// 좌우 반전 여부. 벽 0·1은 그림 자체가 따로 있어 반전 없음. 뒷모습이 반대 대각선으로 그려진 경우(back.mirror: 카운터·계단) 뒤 2방향 반전을 바꾼다.
+export function spriteMirrored(type,dir,sprite){if(type==='wall'&&dir<2)return false;const m=Boolean(dir%2);return dir>=2&&sprite?.mirror?!m:m;}
 export function flipDir(dir){return dir^1;}
 export function rotateDir(type,dir,sprites=SPRITES){const dirs=availableDirs(type,sprites);return dirs[(dirs.indexOf(dir)+1)%dirs.length];}
 export function footprintCells(item){
